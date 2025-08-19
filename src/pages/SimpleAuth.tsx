@@ -67,9 +67,35 @@ const SimpleAuth = () => {
     setLoading(true);
     console.log('Prøver Vipps innlogging...');
     
-    // Vipps er ikke støttet direkte av Supabase, så vi simulerer det
-    alert('Vipps innlogging er ikke implementert enda. Bruk Google eller Facebook.');
-    setLoading(false);
+    try {
+      // Vipps bruker custom OIDC provider i Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'vipps' as any, // Custom provider
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            prompt: 'login',
+          },
+        },
+      });
+      
+      if (error) {
+        console.error('Vipps sign in error:', error);
+        // Hvis Vipps ikke er konfigurert enda, vis informativ melding
+        if (error.message.includes('Provider not found') || error.message.includes('Invalid provider')) {
+          alert('Vipps innlogging er ikke konfigurert enda. Kontakt administrator for å aktivere Vipps Login.');
+        } else {
+          alert('Feil ved Vipps innlogging: ' + error.message);
+        }
+      } else {
+        console.log('Vipps sign in success:', data);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('Uventet feil: ' + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
