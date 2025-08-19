@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import CalculatorModules from "./calculator/CalculatorModules";
 
 const CalculatorPreview = () => {
   const { translations, language } = useLanguage();
@@ -97,7 +98,7 @@ const CalculatorPreview = () => {
             </Tabs>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-5 gap-8">
             {/* Input Forms */}
             <div className="lg:col-span-2 space-y-6">
               {/* Basic Property Info */}
@@ -295,103 +296,19 @@ const CalculatorPreview = () => {
               </Button>
             </div>
 
-            {/* Results */}
-            <div className="space-y-6">
-              {calculatorMode === 'investment' && (
-                <>
-                  <Card className="shadow-medium border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-primary">Brutto Avkastning</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold text-primary">
-                        {grossYield.toFixed(2)}%
-                      </p>
-                      <p className="text-muted-foreground">
-                        Årlig avkastning før utgifter
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-medium border-accent/20">
-                    <CardHeader>
-                      <CardTitle className="text-accent">Netto Avkastning</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold text-accent">
-                        {netYield.toFixed(2)}%
-                      </p>
-                      <p className="text-muted-foreground">
-                        Årlig avkastning etter utgifter
-                      </p>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-
-              <Card className={`shadow-medium ${monthlyCashFlow >= 0 ? 'border-green-500/20' : 'border-red-500/20'}`}>
-                <CardHeader>
-                  <CardTitle className={monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    Månedlig Cashflow
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={`text-3xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
-                  </p>
-                  <p className="text-muted-foreground">
-                    {monthlyCashFlow >= 0 ? 'Positiv cashflow' : 'Negativ cashflow'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {calculatorMode === 'investment' && isRenovation && (
-                <Card className="shadow-medium border-blue-500/20">
-                  <CardHeader>
-                    <CardTitle className="text-blue-600">Renovering ROI</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {(((parseFloat(postRenovationValue) - parseFloat(propertyValue) - parseFloat(renovationCost)) / parseFloat(renovationCost)) * 100).toFixed(1)}%
-                    </p>
-                    <p className="text-muted-foreground">
-                      Avkastning på renovering
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card className="shadow-medium">
-                <CardHeader>
-                  <CardTitle>Sammendrag</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Total investering:</span>
-                    <span className="font-semibold">{actualPropertyValue.toLocaleString()} kr</span>
-                  </div>
-                  {calculatorMode === 'investment' && (
-                    <div className="flex justify-between">
-                      <span>Månedlig leieinntekt:</span>
-                      <span className="font-semibold">{parseFloat(monthlyRent).toLocaleString()} kr</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Månedlige utgifter:</span>
-                    <span className="font-semibold">{totalMonthlyExpenses.toLocaleString()} kr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Månedlig lålebetaling:</span>
-                    <span className="font-semibold">{monthlyLoanPayment.toLocaleString()} kr</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t font-semibold">
-                    <span>Netto månedlig:</span>
-                    <span className={monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Calculator Modules */}
+            <div className="lg:col-span-3">
+              <CalculatorModules
+                propertyValue={actualPropertyValue}
+                monthlyRent={parseFloat(monthlyRent)}
+                expenses={totalMonthlyExpenses}
+                loanAmount={parseFloat(loanAmount)}
+                interestRate={parseFloat(interestRate)}
+                loanPeriod={parseFloat(loanPeriod)}
+                monthlyLoanPayment={monthlyLoanPayment}
+                calculatorMode={calculatorMode}
+                monthlyCashFlow={monthlyCashFlow}
+              />
             </div>
           </div>
         </div>
