@@ -14,7 +14,316 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deposit_accounts: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+          deposit_amount: number
+          id: string
+          interest_rate: number | null
+          lease_id: string
+          property_owner_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          deposit_amount: number
+          id?: string
+          interest_rate?: number | null
+          lease_id: string
+          property_owner_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          deposit_amount?: number
+          id?: string
+          interest_rate?: number | null
+          lease_id?: string
+          property_owner_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_accounts_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_agreements: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          end_date: string | null
+          id: string
+          lease_terms: string | null
+          monthly_rent: number
+          property_id: string
+          property_owner_id: string
+          start_date: string
+          status: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          end_date?: string | null
+          id?: string
+          lease_terms?: string | null
+          monthly_rent: number
+          property_id: string
+          property_owner_id: string
+          start_date: string
+          status?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          end_date?: string | null
+          id?: string
+          lease_terms?: string | null
+          monthly_rent?: number
+          property_id?: string
+          property_owner_id?: string
+          start_date?: string
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          analysis_id: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string | null
+          payment_type: string
+          updated_at: string
+          user_id: string
+          vipps_order_id: string | null
+        }
+        Insert: {
+          amount: number
+          analysis_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_type: string
+          updated_at?: string
+          user_id: string
+          vipps_order_id?: string | null
+        }
+        Update: {
+          amount?: number
+          analysis_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_type?: string
+          updated_at?: string
+          user_id?: string
+          vipps_order_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string
+          bedrooms: number | null
+          city: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          postal_code: string | null
+          property_type: string | null
+          size_sqm: number | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          postal_code?: string | null
+          property_type?: string | null
+          size_sqm?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          postal_code?: string | null
+          property_type?: string | null
+          size_sqm?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          national_id: string | null
+          phone: string | null
+          property_owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          national_id?: string | null
+          phone?: string | null
+          property_owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          national_id?: string | null
+          phone?: string | null
+          property_owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transfer_protocols: {
+        Row: {
+          condition_notes: string | null
+          created_at: string
+          damages: string | null
+          id: string
+          lease_id: string
+          photos_urls: string[] | null
+          property_owner_id: string
+          protocol_date: string
+          protocol_type: string
+          repairs_needed: string | null
+          signatures_completed: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          condition_notes?: string | null
+          created_at?: string
+          damages?: string | null
+          id?: string
+          lease_id: string
+          photos_urls?: string[] | null
+          property_owner_id: string
+          protocol_date: string
+          protocol_type: string
+          repairs_needed?: string | null
+          signatures_completed?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          condition_notes?: string | null
+          created_at?: string
+          damages?: string | null
+          id?: string
+          lease_id?: string
+          photos_urls?: string[] | null
+          property_owner_id?: string
+          protocol_date?: string
+          protocol_type?: string
+          repairs_needed?: string | null
+          signatures_completed?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_protocols_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
