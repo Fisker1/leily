@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Calculator, Building2, Briefcase, PieChart } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,12 +23,22 @@ const Navigation = () => {
           
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              <a href="#features" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              <a href="#features" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
                 {translations.nav.features}
               </a>
-              <a href="#calculator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              <a href="#calculator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
                 {translations.nav.calculator}
               </a>
+              <Link to="/utleie" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Utleie
+              </Link>
+              <Link to="/portfolio" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                <PieChart className="h-4 w-4" />
+                Portefølje
+              </Link>
             </div>
           </div>
 
@@ -47,12 +57,22 @@ const Navigation = () => {
           <div className="md:hidden border-t border-border bg-background">
             <div className="px-4 py-6 space-y-6">
               <nav className="flex flex-col space-y-4">
-                <a href="#features" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg">
+                <a href="#features" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
                   {translations.nav.features}
                 </a>
-                <a href="#calculator" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg">
+                <a href="#calculator" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
                   {translations.nav.calculator}
                 </a>
+                <Link to="/utleie" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Utleie
+                </Link>
+                <Link to="/portfolio" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
+                  <PieChart className="h-4 w-4" />
+                  Portefølje
+                </Link>
               </nav>
               <div className="space-y-4">
                 <LanguageToggle />

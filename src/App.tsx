@@ -10,6 +10,9 @@ import SimpleAuth from "./pages/SimpleAuth";
 import Dashboard from "./pages/Dashboard";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import Rental from "./pages/Rental";
+import Portfolio from "./pages/Portfolio";
+import RiskAnalysis from "./pages/calculator/RiskAnalysis";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ const App = () => (
               <Route path="/auth" element={<SimpleAuth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/utleie" element={<Rental />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

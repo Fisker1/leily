@@ -10,8 +10,10 @@ import {
   Calendar,
   BarChart3,
   FileText,
-  Settings
+  Settings,
+  ExternalLink
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AdvancedCalculations from "./AdvancedCalculations";
 import MarketAnalysis from "./MarketAnalysis";
 import RiskEvaluation from "./RiskEvaluation";
@@ -174,9 +176,19 @@ const CalculatorModules = ({
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant={module.badge === "Premium" ? "default" : "secondary"}>
-                    {module.badge}
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge variant={module.badge === "Premium" ? "default" : "secondary"}>
+                      {module.badge}
+                    </Badge>
+                    {module.id === "risk" && (
+                      <Link to="/calculator/risk-analysis">
+                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Detaljert analyse
+                        </Badge>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
             </Card>
