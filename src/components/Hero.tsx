@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calculator, TrendingUp, FileText, PieChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-image.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
+import ProcessWalkthrough from "@/components/ProcessWalkthrough";
 
 const Hero = () => {
   const { translations } = useLanguage();
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
   
   return (
     <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
@@ -28,7 +31,12 @@ const Hero = () => {
                   {translations.hero.cta}
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="shadow-soft">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="shadow-soft"
+                onClick={() => setIsWalkthroughOpen(true)}
+              >
                 {translations.hero.secondaryCta}
               </Button>
             </div>
@@ -79,6 +87,11 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      <ProcessWalkthrough 
+        isOpen={isWalkthroughOpen}
+        onClose={() => setIsWalkthroughOpen(false)}
+      />
     </section>
   );
 };

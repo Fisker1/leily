@@ -140,30 +140,40 @@ const CalculatorModules = ({
         </p>
       </div>
 
-      <Tabs defaultValue="profitability" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {modules.map((module) => (
+          <Card 
+            key={module.id}
+            className="cursor-pointer hover:shadow-medium transition-shadow border-primary/20 group"
+            onClick={() => {
+              const tabsTrigger = document.querySelector(`[data-state="inactive"][value="${module.id}"]`) as HTMLButtonElement;
+              if (tabsTrigger) tabsTrigger.click();
+            }}
+          >
+            <div className="p-6 text-center space-y-4">
+              <div className="p-3 bg-primary-soft rounded-lg mx-auto w-fit group-hover:scale-110 transition-transform">
+                <module.icon className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">{module.title}</h3>
+                <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                <Badge 
+                  variant={module.badge === "Premium" ? "default" : "secondary"}
+                  className="text-xs"
+                >
+                  {module.badge}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Tabs defaultValue="profitability" className="space-y-6 mt-8">
+        <TabsList className="hidden">
           {modules.map((module) => (
-            <TabsTrigger
-              key={module.id}
-              value={module.id}
-              className="flex flex-col items-center gap-2 p-4 h-auto"
-            >
-              <module.icon className="h-5 w-5" />
-              <span className="text-xs font-medium leading-tight text-center">
-                {module.title.split(' ')[0]}
-                {module.title.includes(' ') && (
-                  <>
-                    <br />
-                    {module.title.split(' ').slice(1).join(' ')}
-                  </>
-                )}
-              </span>
-              <Badge 
-                variant={module.badge === "Premium" ? "default" : "secondary"}
-                className="text-xs"
-              >
-                {module.badge}
-              </Badge>
+            <TabsTrigger key={module.id} value={module.id}>
+              {module.title}
             </TabsTrigger>
           ))}
         </TabsList>
