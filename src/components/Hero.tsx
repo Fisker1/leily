@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calculator, TrendingUp, FileText, PieChart } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Hero = () => {
+  const { t } = useLanguage();
+  
   return (
     <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,21 +14,20 @@ const Hero = () => {
           {/* Content */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Smart Property
-              <span className="text-primary block">Investment Analysis</span>
+              {t.heroTitle}
+              <span className="text-primary block">{t.heroTitleHighlight}</span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-              Calculate yields, analyze cash flow, and generate professional reports for your property investments. 
-              Make informed decisions with our comprehensive analysis tools.
+              {t.heroDescription}
             </p>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium">
                 <Calculator className="mr-2 h-5 w-5" />
-                Start Analysis
+                {t.startAnalysis}
               </Button>
               <Button variant="outline" size="lg" className="shadow-soft">
-                View Demo
+                {t.viewDemo}
               </Button>
             </div>
 
@@ -33,19 +35,19 @@ const Hero = () => {
             <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Card className="p-4 text-center shadow-soft">
                 <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Yield Analysis</p>
+                <p className="text-sm text-muted-foreground">{t.yieldAnalysis}</p>
               </Card>
               <Card className="p-4 text-center shadow-soft">
                 <PieChart className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Cash Flow</p>
+                <p className="text-sm text-muted-foreground">{t.cashFlow}</p>
               </Card>
               <Card className="p-4 text-center shadow-soft">
                 <FileText className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">PDF Reports</p>
+                <p className="text-sm text-muted-foreground">{t.pdfReports}</p>
               </Card>
               <Card className="p-4 text-center shadow-soft">
                 <Calculator className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">ROI Calculator</p>
+                <p className="text-sm text-muted-foreground">{t.roiCalculator}</p>
               </Card>
             </div>
           </div>
@@ -67,8 +69,8 @@ const Hero = () => {
                   <Calculator className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Quick Analysis</p>
-                  <p className="text-primary text-lg font-bold">8.2% Yield</p>
+                  <p className="font-semibold text-sm">{t.quickAnalysis}</p>
+                  <p className="text-primary text-lg font-bold">8.2% {t.yield}</p>
                 </div>
               </div>
             </Card>

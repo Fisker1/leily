@@ -1,51 +1,53 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator, TrendingUp, FileText, BarChart3, DollarSign, Building } from "lucide-react";
-
-const features = [
-  {
-    icon: Calculator,
-    title: "Advanced Calculator",
-    description: "Comprehensive property analysis with rental yield, cash flow, and ROI calculations."
-  },
-  {
-    icon: TrendingUp,
-    title: "Yield Analysis",
-    description: "Calculate gross and net rental yields to evaluate investment potential."
-  },
-  {
-    icon: FileText,
-    title: "PDF Reports",
-    description: "Generate professional reports for banks, investors, and stakeholders."
-  },
-  {
-    icon: BarChart3,
-    title: "Market Comparison",
-    description: "Compare properties against market averages and similar investments."
-  },
-  {
-    icon: DollarSign,
-    title: "Cash Flow Tracking",
-    description: "Monitor monthly cash flow, expenses, and profitability over time."
-  },
-  {
-    icon: Building,
-    title: "Portfolio Management",
-    description: "Manage multiple properties and track overall portfolio performance."
-  }
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Features = () => {
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: Calculator,
+      title: t.advancedCalculator,
+      description: t.advancedCalculatorDesc
+    },
+    {
+      icon: TrendingUp,
+      title: t.yieldAnalysisTitle,
+      description: t.yieldAnalysisDesc
+    },
+    {
+      icon: FileText,
+      title: t.pdfReportsTitle,
+      description: t.pdfReportsDesc
+    },
+    {
+      icon: BarChart3,
+      title: t.marketComparison,
+      description: t.marketComparisonDesc
+    },
+    {
+      icon: DollarSign,
+      title: t.cashFlowTracking,
+      description: t.cashFlowTrackingDesc
+    },
+    {
+      icon: Building,
+      title: t.portfolioManagement,
+      description: t.portfolioManagementDesc
+    }
+  ];
+
   return (
     <section id="features" className="py-20 lg:py-32 bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Everything You Need for
-            <span className="text-primary block">Property Analysis</span>
+            {t.featuresTitle}
+            <span className="text-primary block">{t.featuresTitleHighlight}</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Professional-grade tools to analyze, evaluate, and report on property investments 
-            with bank-ready documentation.
+            {t.featuresDescription}
           </p>
         </div>
 
