@@ -3,6 +3,9 @@ import React, { createContext, useContext, useState } from 'react';
 export type Language = 'no' | 'en';
 
 interface Translations {
+  // Company
+  companyName: string;
+  
   // Navigation
   features: string;
   calculator: string;
@@ -82,6 +85,9 @@ interface Translations {
 
 const translations: Record<Language, Translations> = {
   no: {
+    // Company
+    companyName: 'Apropos bolig',
+    
     // Navigation
     features: 'Funksjoner',
     calculator: 'Kalkulator',
@@ -134,7 +140,7 @@ const translations: Record<Language, Translations> = {
     // CTA section
     ctaTitle: 'Klar til å Analysere Din',
     ctaTitleHighlight: 'Neste Investering?',
-    ctaDescription: 'Bli med tusenvis av investorer som bruker PropertyCalc for å ta smartere eiendomsinvesteringsbeslutninger med profesjonell analyse og bankklare rapporter.',
+    ctaDescription: 'Bli med tusenvis av investorer som bruker Apropos bolig for å ta smartere eiendomsinvesteringsbeslutninger med profesjonell analyse og bankklare rapporter.',
     startFreeAnalysis: 'Start Gratis Analyse',
     downloadSampleReport: 'Last Ned Eksempelrapport',
     noCreditCard: 'Ikke behov for kredittkort',
@@ -143,7 +149,7 @@ const translations: Record<Language, Translations> = {
     
     // Footer
     companyDescription: 'Profesjonelle eiendomsinvesteringsanalyseverktøy for smartere investeringsbeslutninger.',
-    copyright: '© 2024 PropertyCalc. Alle rettigheter reservert.',
+    copyright: '© 2024 Apropos bolig. Alle rettigheter reservert.',
     product: 'Produkt',
     calculatorNav: 'Kalkulator',
     reports: 'Rapporter',
@@ -159,6 +165,9 @@ const translations: Record<Language, Translations> = {
     currency: 'NOK'
   },
   en: {
+    // Company
+    companyName: 'Apropos bolig',
+    
     // Navigation
     features: 'Features',
     calculator: 'Calculator',
@@ -211,7 +220,7 @@ const translations: Record<Language, Translations> = {
     // CTA section
     ctaTitle: 'Ready to Analyze Your',
     ctaTitleHighlight: 'Next Investment?',
-    ctaDescription: 'Join thousands of investors using PropertyCalc to make smarter property investment decisions with professional analysis and bank-ready reports.',
+    ctaDescription: 'Join thousands of investors using Apropos bolig to make smarter property investment decisions with professional analysis and bank-ready reports.',
     startFreeAnalysis: 'Start Free Analysis',
     downloadSampleReport: 'Download Sample Report',
     noCreditCard: 'No credit card required',
@@ -220,7 +229,7 @@ const translations: Record<Language, Translations> = {
     
     // Footer
     companyDescription: 'Professional property investment analysis tools for smarter investment decisions.',
-    copyright: '© 2024 PropertyCalc. All rights reserved.',
+    copyright: '© 2024 Apropos bolig. All rights reserved.',
     product: 'Product',
     calculatorNav: 'Calculator',
     reports: 'Reports',
