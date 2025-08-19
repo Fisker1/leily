@@ -1,0 +1,82 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Calculator, TrendingUp, FileText, PieChart } from "lucide-react";
+import heroImage from "@/assets/hero-image.jpg";
+
+const Hero = () => {
+  return (
+    <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Content */}
+          <div className="text-center lg:text-left">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+              Smart Property
+              <span className="text-primary block">Investment Analysis</span>
+            </h1>
+            <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
+              Calculate yields, analyze cash flow, and generate professional reports for your property investments. 
+              Make informed decisions with our comprehensive analysis tools.
+            </p>
+            
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium">
+                <Calculator className="mr-2 h-5 w-5" />
+                Start Analysis
+              </Button>
+              <Button variant="outline" size="lg" className="shadow-soft">
+                View Demo
+              </Button>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Card className="p-4 text-center shadow-soft">
+                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Yield Analysis</p>
+              </Card>
+              <Card className="p-4 text-center shadow-soft">
+                <PieChart className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Cash Flow</p>
+              </Card>
+              <Card className="p-4 text-center shadow-soft">
+                <FileText className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">PDF Reports</p>
+              </Card>
+              <Card className="p-4 text-center shadow-soft">
+                <Calculator className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">ROI Calculator</p>
+              </Card>
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="relative">
+            <Card className="overflow-hidden shadow-large">
+              <img 
+                src={heroImage} 
+                alt="Property investment analysis dashboard" 
+                className="w-full h-auto object-cover"
+              />
+            </Card>
+            
+            {/* Floating calculator preview */}
+            <Card className="absolute -bottom-6 -left-6 p-6 shadow-large bg-card-elevated border-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-soft rounded-lg">
+                  <Calculator className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Quick Analysis</p>
+                  <p className="text-primary text-lg font-bold">8.2% Yield</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Hero;
