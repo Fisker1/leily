@@ -13,12 +13,13 @@ import {
   Settings,
   ExternalLink
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AdvancedCalculations from "./AdvancedCalculations";
 import MarketAnalysis from "./MarketAnalysis";
 import RiskEvaluation from "./RiskEvaluation";
 import ProfitabilityCalculator from "./ProfitabilityCalculator";
 import YieldCalculators from "./YieldCalculators";
+import { useCalculatorData } from "@/hooks/useCalculatorData";
 
 interface CalculatorModulesProps {
   propertyValue: number;
@@ -43,6 +44,13 @@ const CalculatorModules = ({
   calculatorMode,
   monthlyCashFlow
 }: CalculatorModulesProps) => {
+  const navigate = useNavigate();
+  const { getReportData } = useCalculatorData();
+
+  const handleGenerateReport = () => {
+    const reportData = getReportData();
+    navigate('/bank-report', { state: reportData });
+  };
 
   const modules = [
     {
@@ -213,6 +221,7 @@ const CalculatorModules = ({
             <Button 
               className="flex-1 bg-gradient-primary hover:opacity-90 text-primary-foreground"
               size="lg"
+              onClick={handleGenerateReport}
             >
               <FileText className="h-4 w-4 mr-2" />
               Generer fullstendig bankerapp

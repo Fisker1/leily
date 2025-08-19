@@ -3,76 +3,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import CalculatorModules from "./calculator/CalculatorModules";
+import { useCalculatorData } from "@/hooks/useCalculatorData";
 
 const CalculatorPreview = () => {
   const { translations, language } = useLanguage();
-  
-  // Mode selection (Investment vs Private)
-  const [calculatorMode, setCalculatorMode] = useState<'investment' | 'private'>('investment');
-  
-  // Basic property data
-  const [propertyValue, setPropertyValue] = useState(language === 'no' ? "2500000" : "300000");
-  const [monthlyRent, setMonthlyRent] = useState(language === 'no' ? "18000" : "2200");
-  
-  // Renovation settings
-  const [isRenovation, setIsRenovation] = useState(false);
-  const [renovationCost, setRenovationCost] = useState("200000");
-  const [postRenovationValue, setPostRenovationValue] = useState("2800000");
-  
-  // Monthly expenses breakdown
-  const [electricity, setElectricity] = useState("800");
-  const [gridRent, setGridRent] = useState("400");
-  const [commonCosts, setCommonCosts] = useState("1500");
-  const [municipalFees, setMunicipalFees] = useState("600");
-  const [internet, setInternet] = useState("300");
-  const [otherExpenses, setOtherExpenses] = useState("400");
-  
-  // Loan calculator
-  const [loanAmount, setLoanAmount] = useState("2000000");
-  const [interestRate, setInterestRate] = useState("4.5");
-  const [loanPeriod, setLoanPeriod] = useState("25");
+  const navigate = useNavigate();
+  const { data, updateField, getReportData } = useCalculatorData();
+
+  // Handle bank report generation
+  const handleGenerateBankReport = () => {
+    const reportData = getReportData();
+    navigate('/bank-report', { state: reportData });
+  };
 
   // Calculations
   const totalMonthlyExpenses = 
-    parseFloat(electricity) + 
-    parseFloat(gridRent) + 
-    parseFloat(commonCosts) + 
-    parseFloat(municipalFees) + 
-    parseFloat(internet) + 
-    parseFloat(otherExpenses);
+    parseFloat(data.electricity) + 
+    parseFloat(data.gridRent) + 
+    parseFloat(data.commonCosts) + 
+    parseFloat(data.municipalFees) + 
+    parseFloat(data.internet) + 
+    parseFloat(data.otherExpenses);
 
-  const actualPropertyValue = isRenovation 
-    ? parseFloat(propertyValue) + parseFloat(renovationCost)
-    : parseFloat(propertyValue);
+  const actualPropertyValue = data.isRenovation 
+    ? parseFloat(data.propertyValue) + parseFloat(data.renovationCost)
+    : parseFloat(data.propertyValue);
   
-  const finalPropertyValue = isRenovation 
-    ? parseFloat(postRenovationValue) 
-    : parseFloat(propertyValue);
+  const finalPropertyValue = data.isRenovation 
+    ? parseFloat(data.postRenovationValue) 
+    : parseFloat(data.propertyValue);
 
   // Investment calculations
-  const grossYield = calculatorMode === 'investment' 
-    ? ((parseFloat(monthlyRent) * 12) / actualPropertyValue) * 100 
+  const grossYield = data.calculatorMode === 'investment' 
+    ? ((parseFloat(data.monthlyRent) * 12) / actualPropertyValue) * 100 
     : 0;
   
-  const netYield = calculatorMode === 'investment' 
-    ? (((parseFloat(monthlyRent) - totalMonthlyExpenses) * 12) / actualPropertyValue) * 100 
+  const netYield = data.calculatorMode === 'investment' 
+    ? (((parseFloat(data.monthlyRent) - totalMonthlyExpenses) * 12) / actualPropertyValue) * 100 
     : 0;
 
   // Loan calculations
-  const monthlyInterest = parseFloat(interestRate) / 100 / 12;
-  const numberOfPayments = parseFloat(loanPeriod) * 12;
-  const monthlyLoanPayment = parseFloat(loanAmount) * 
+  const monthlyInterest = parseFloat(data.interestRate) / 100 / 12;
+  const numberOfPayments = parseFloat(data.loanPeriod) * 12;
+  const monthlyLoanPayment = parseFloat(data.loanAmount) * 
     (monthlyInterest * Math.pow(1 + monthlyInterest, numberOfPayments)) / 
     (Math.pow(1 + monthlyInterest, numberOfPayments) - 1);
 
   // Cash flow calculation
-  const monthlyCashFlow = calculatorMode === 'investment'
-    ? parseFloat(monthlyRent) - totalMonthlyExpenses - monthlyLoanPayment
+  const monthlyCashFlow = data.calculatorMode === 'investment'
+    ? parseFloat(data.monthlyRent) - totalMonthlyExpenses - monthlyLoanPayment
     : -totalMonthlyExpenses - monthlyLoanPayment;
 
   return (
@@ -90,7 +74,7 @@ const CalculatorPreview = () => {
         <div className="max-w-6xl mx-auto">
           {/* Mode Selector */}
           <div className="mb-8">
-            <Tabs value={calculatorMode} onValueChange={(value) => setCalculatorMode(value as 'investment' | 'private')}>
+            <Tabs value={data.calculatorMode} onValueChange={(value) => updateField('calculatorMode', value as 'investment' | 'private')}>
               <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
                 <TabsTrigger value="investment">Investering</TabsTrigger>
                 <TabsTrigger value="private">Privat</TabsTrigger>
@@ -115,20 +99,20 @@ const CalculatorPreview = () => {
                     <Input
                       id="property-value"
                       type="number"
-                      value={propertyValue}
-                      onChange={(e) => setPropertyValue(e.target.value)}
+                      value={data.propertyValue}
+                      onChange={(e) => updateField('propertyValue', e.target.value)}
                       className="text-lg"
                     />
                   </div>
                   
-                  {calculatorMode === 'investment' && (
+                  {data.calculatorMode === 'investment' && (
                     <div>
                       <Label htmlFor="monthly-rent">Månedlig leieinntekt (kr)</Label>
                       <Input
                         id="monthly-rent"
                         type="number"
-                        value={monthlyRent}
-                        onChange={(e) => setMonthlyRent(e.target.value)}
+                        value={data.monthlyRent}
+                        onChange={(e) => updateField('monthlyRent', e.target.value)}
                         className="text-lg"
                       />
                     </div>
@@ -138,22 +122,22 @@ const CalculatorPreview = () => {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Switch 
-                        checked={isRenovation} 
-                        onCheckedChange={setIsRenovation}
+                        checked={data.isRenovation} 
+                        onCheckedChange={(checked) => updateField('isRenovation', checked)}
                         id="renovation-mode"
                       />
                       <Label htmlFor="renovation-mode">Renoveringsobjekt</Label>
                     </div>
                     
-                    {isRenovation && (
+                    {data.isRenovation && (
                       <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                         <div>
                           <Label htmlFor="renovation-cost">Renoveringskostnad (kr)</Label>
                           <Input
                             id="renovation-cost"
                             type="number"
-                            value={renovationCost}
-                            onChange={(e) => setRenovationCost(e.target.value)}
+                            value={data.renovationCost}
+                            onChange={(e) => updateField('renovationCost', e.target.value)}
                           />
                         </div>
                         <div>
@@ -161,8 +145,8 @@ const CalculatorPreview = () => {
                           <Input
                             id="post-renovation-value"
                             type="number"
-                            value={postRenovationValue}
-                            onChange={(e) => setPostRenovationValue(e.target.value)}
+                            value={data.postRenovationValue}
+                            onChange={(e) => updateField('postRenovationValue', e.target.value)}
                           />
                         </div>
                       </div>
@@ -180,62 +164,62 @@ const CalculatorPreview = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="electricity">Strøm (kr)</Label>
-                      <Input
-                        id="electricity"
-                        type="number"
-                        value={electricity}
-                        onChange={(e) => setElectricity(e.target.value)}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="electricity">Strøm (kr)</Label>
+                        <Input
+                          id="electricity"
+                          type="number"
+                          value={data.electricity}
+                          onChange={(e) => updateField('electricity', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="grid-rent">Nettleie (kr)</Label>
+                        <Input
+                          id="grid-rent"
+                          type="number"
+                          value={data.gridRent}
+                          onChange={(e) => updateField('gridRent', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="common-costs">Fellesutgifter (kr)</Label>
+                        <Input
+                          id="common-costs"
+                          type="number"
+                          value={data.commonCosts}
+                          onChange={(e) => updateField('commonCosts', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="municipal-fees">Kommunale avgifter (kr)</Label>
+                        <Input
+                          id="municipal-fees"
+                          type="number"
+                          value={data.municipalFees}
+                          onChange={(e) => updateField('municipalFees', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="internet">Internett (kr)</Label>
+                        <Input
+                          id="internet"
+                          type="number"
+                          value={data.internet}
+                          onChange={(e) => updateField('internet', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="other-expenses">Andre utgifter (kr)</Label>
+                        <Input
+                          id="other-expenses"
+                          type="number"
+                          value={data.otherExpenses}
+                          onChange={(e) => updateField('otherExpenses', e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="grid-rent">Nettleie (kr)</Label>
-                      <Input
-                        id="grid-rent"
-                        type="number"
-                        value={gridRent}
-                        onChange={(e) => setGridRent(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="common-costs">Fellesutgifter (kr)</Label>
-                      <Input
-                        id="common-costs"
-                        type="number"
-                        value={commonCosts}
-                        onChange={(e) => setCommonCosts(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="municipal-fees">Kommunale avgifter (kr)</Label>
-                      <Input
-                        id="municipal-fees"
-                        type="number"
-                        value={municipalFees}
-                        onChange={(e) => setMunicipalFees(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="internet">Internett (kr)</Label>
-                      <Input
-                        id="internet"
-                        type="number"
-                        value={internet}
-                        onChange={(e) => setInternet(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="other-expenses">Andre utgifter (kr)</Label>
-                      <Input
-                        id="other-expenses"
-                        type="number"
-                        value={otherExpenses}
-                        onChange={(e) => setOtherExpenses(e.target.value)}
-                      />
-                    </div>
-                  </div>
                   <div className="pt-2 border-t">
                     <p className="text-sm text-muted-foreground">
                       Totalt månedlig: <span className="font-semibold">{totalMonthlyExpenses.toLocaleString()} kr</span>
@@ -259,8 +243,8 @@ const CalculatorPreview = () => {
                       <Input
                         id="loan-amount"
                         type="number"
-                        value={loanAmount}
-                        onChange={(e) => setLoanAmount(e.target.value)}
+                        value={data.loanAmount}
+                        onChange={(e) => updateField('loanAmount', e.target.value)}
                       />
                     </div>
                     <div>
@@ -269,8 +253,8 @@ const CalculatorPreview = () => {
                         id="interest-rate"
                         type="number"
                         step="0.1"
-                        value={interestRate}
-                        onChange={(e) => setInterestRate(e.target.value)}
+                        value={data.interestRate}
+                        onChange={(e) => updateField('interestRate', e.target.value)}
                       />
                     </div>
                     <div>
@@ -278,8 +262,8 @@ const CalculatorPreview = () => {
                       <Input
                         id="loan-period"
                         type="number"
-                        value={loanPeriod}
-                        onChange={(e) => setLoanPeriod(e.target.value)}
+                        value={data.loanPeriod}
+                        onChange={(e) => updateField('loanPeriod', e.target.value)}
                       />
                     </div>
                   </div>
@@ -291,7 +275,10 @@ const CalculatorPreview = () => {
                 </CardContent>
               </Card>
 
-              <Button className="w-full bg-gradient-primary hover:opacity-90 text-lg py-6">
+              <Button 
+                className="w-full bg-gradient-primary hover:opacity-90 text-lg py-6"
+                onClick={handleGenerateBankReport}
+              >
                 Generer Fullstendig Bankerapp
               </Button>
             </div>
@@ -300,13 +287,13 @@ const CalculatorPreview = () => {
             <div className="lg:col-span-3">
               <CalculatorModules
                 propertyValue={actualPropertyValue}
-                monthlyRent={parseFloat(monthlyRent)}
+                monthlyRent={parseFloat(data.monthlyRent)}
                 expenses={totalMonthlyExpenses}
-                loanAmount={parseFloat(loanAmount)}
-                interestRate={parseFloat(interestRate)}
-                loanPeriod={parseFloat(loanPeriod)}
+                loanAmount={parseFloat(data.loanAmount)}
+                interestRate={parseFloat(data.interestRate)}
+                loanPeriod={parseFloat(data.loanPeriod)}
                 monthlyLoanPayment={monthlyLoanPayment}
-                calculatorMode={calculatorMode}
+                calculatorMode={data.calculatorMode}
                 monthlyCashFlow={monthlyCashFlow}
               />
             </div>

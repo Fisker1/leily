@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Rental from "./pages/Rental";
 import Portfolio from "./pages/Portfolio";
 import RiskAnalysis from "./pages/calculator/RiskAnalysis";
+import BankReport from "./pages/BankReport";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/utleie" element={<Rental />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
+              <Route path="/bank-report" element={<BankReport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
