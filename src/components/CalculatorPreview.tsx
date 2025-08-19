@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const CalculatorPreview = () => {
-  const { t, language } = useLanguage();
+  const { translations, language } = useLanguage();
   const [propertyValue, setPropertyValue] = useState(language === 'no' ? "2500000" : "300000");
   const [monthlyRent, setMonthlyRent] = useState(language === 'no' ? "18000" : "2200");
   const [monthlyExpenses, setMonthlyExpenses] = useState(language === 'no' ? "3500" : "450");
@@ -20,11 +20,10 @@ const CalculatorPreview = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            {t.calculatorTitle}
-            <span className="text-primary block">{t.calculatorTitleHighlight}</span>
+            {translations.calculator.title}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t.calculatorDescription}
+            {translations.calculator.subtitle}
           </p>
         </div>
 
@@ -33,14 +32,14 @@ const CalculatorPreview = () => {
             {/* Input Form */}
             <Card className="shadow-medium">
               <CardHeader>
-                <CardTitle>{t.propertyDetails}</CardTitle>
+                <CardTitle>Eiendomsdetaljer</CardTitle>
                 <CardDescription>
-                  {t.propertyDetailsDesc}
+                  Skriv inn eiendomsinformasjon for å beregne investeringsmålinger
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="property-value">{t.propertyValue}</Label>
+                  <Label htmlFor="property-value">{translations.calculator.propertyValue}</Label>
                   <Input
                     id="property-value"
                     type="number"
@@ -51,7 +50,7 @@ const CalculatorPreview = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="monthly-rent">{t.monthlyRent}</Label>
+                  <Label htmlFor="monthly-rent">{translations.calculator.monthlyRent}</Label>
                   <Input
                     id="monthly-rent"
                     type="number"
@@ -62,7 +61,7 @@ const CalculatorPreview = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="monthly-expenses">{t.monthlyExpenses}</Label>
+                  <Label htmlFor="monthly-expenses">Månedlige Utgifter (kr)</Label>
                   <Input
                     id="monthly-expenses"
                     type="number"
@@ -73,7 +72,7 @@ const CalculatorPreview = () => {
                 </div>
 
                 <Button className="w-full bg-gradient-primary hover:opacity-90">
-                  {t.generateFullReport}
+                  Generer Full Rapport
                 </Button>
               </CardContent>
             </Card>
@@ -82,42 +81,42 @@ const CalculatorPreview = () => {
             <div className="space-y-6">
               <Card className="shadow-medium border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-primary">{t.grossYield}</CardTitle>
+                  <CardTitle className="text-primary">Brutto Avkastning</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-primary">
                     {grossYield.toFixed(2)}%
                   </p>
                   <p className="text-muted-foreground">
-                    {t.grossYieldDesc}
+                    Årlig avkastning før utgifter
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="shadow-medium border-accent/20">
                 <CardHeader>
-                  <CardTitle className="text-accent">{t.netYield}</CardTitle>
+                  <CardTitle className="text-accent">Netto Avkastning</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-accent">
                     {netYield.toFixed(2)}%
                   </p>
                   <p className="text-muted-foreground">
-                    {t.netYieldDesc}
+                    Årlig avkastning etter utgifter
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="shadow-medium">
                 <CardHeader>
-                  <CardTitle>{t.monthlyCashFlow}</CardTitle>
+                  <CardTitle>{translations.calculator.results.monthlyReturn}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold">
-                    {monthlyCashFlow.toLocaleString()} {t.currency}
+                    {monthlyCashFlow.toLocaleString()} kr
                   </p>
                   <p className="text-muted-foreground">
-                    {t.monthlyCashFlowDesc}
+                    Netto månedlig inntekt
                   </p>
                 </CardContent>
               </Card>

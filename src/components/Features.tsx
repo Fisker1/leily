@@ -3,38 +3,38 @@ import { Calculator, TrendingUp, FileText, BarChart3, DollarSign, Building } fro
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Features = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   const features = [
     {
       icon: Calculator,
-      title: t.advancedCalculator,
-      description: t.advancedCalculatorDesc
+      title: translations.features.feature1.title,
+      description: translations.features.feature1.description
     },
     {
       icon: TrendingUp,
-      title: t.yieldAnalysisTitle,
-      description: t.yieldAnalysisDesc
+      title: translations.features.feature2.title,
+      description: translations.features.feature2.description
     },
     {
       icon: FileText,
-      title: t.pdfReportsTitle,
-      description: t.pdfReportsDesc
+      title: translations.features.feature3.title,
+      description: translations.features.feature3.description
     },
     {
       icon: BarChart3,
-      title: t.marketComparison,
-      description: t.marketComparisonDesc
+      title: translations.calculator.title,
+      description: translations.calculator.subtitle
     },
     {
       icon: DollarSign,
-      title: t.cashFlowTracking,
-      description: t.cashFlowTrackingDesc
+      title: translations.calculator.results.monthlyReturn,
+      description: translations.calculator.results.annualReturn
     },
     {
       icon: Building,
-      title: t.portfolioManagement,
-      description: t.portfolioManagementDesc
+      title: translations.dashboard.properties,
+      description: translations.dashboard.totalProperties
     }
   ];
 
@@ -43,11 +43,10 @@ const Features = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            {t.featuresTitle}
-            <span className="text-primary block">{t.featuresTitleHighlight}</span>
+            {translations.features.title}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t.featuresDescription}
+            {translations.features.subtitle}
           </p>
         </div>
 
