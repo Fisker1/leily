@@ -19,22 +19,22 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
 
-    /* Maritime teal primary - Modern, calm and trustworthy */
-    --primary: 184 70% 48%;
+    /* Maritime teal primary - Vibrant and high contrast */
+    --primary: 184 85% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 184 45% 96%;
-    --primary-muted: 184 30% 85%;
+    --primary-soft: 184 60% 96%;
+    --primary-muted: 184 45% 88%;
 
-    /* Clean secondary palette */
-    --secondary: 210 20% 98%;
-    --secondary-foreground: 215 25% 27%;
+    /* Clean secondary palette with better contrast */
+    --secondary: 210 30% 96%;
+    --secondary-foreground: 215 35% 20%;
 
-    /* Sophisticated muted tones */
-    --muted: 210 20% 97%;
-    --muted-foreground: 215 15% 55%;
+    /* Enhanced muted tones for better readability */
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 25% 45%;
 
-    /* Professional accent - Deeper teal */
-    --accent: 190 75% 52%;
+    /* Professional accent - Vibrant deeper teal */
+    --accent: 190 90% 48%;
     --accent-foreground: 0 0% 100%;
 
     /* Error states */
@@ -45,7 +45,7 @@
     --border: 210 20% 92%;
     --input: 210 20% 96%;
     --input-border: 210 20% 88%;
-    --ring: 184 70% 48%;
+    --ring: 184 85% 45%;
 
     /* Design system tokens */
     --radius: 0.75rem;
@@ -57,20 +57,20 @@
     --shadow-medium: 0 4px 16px -4px hsl(215 25% 27% / 0.12);
     --shadow-large: 0 8px 32px -8px hsl(215 25% 27% / 0.16);
 
-    /* Maritime gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(184 70% 48%), hsl(190 75% 52%));
-    --gradient-soft: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(184 70% 48% / 0.05), hsl(190 75% 52% / 0.05));
+    /* Maritime gradients with enhanced contrast */
+    --gradient-primary: linear-gradient(135deg, hsl(184 85% 45%), hsl(190 90% 48%));
+    --gradient-soft: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 30% 96%));
+    --gradient-hero: linear-gradient(135deg, hsl(184 85% 45% / 0.08), hsl(190 90% 48% / 0.08));
 
-    /* Sidebar system */
-    --sidebar-background: 210 20% 99%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 184 70% 48%;
+    /* Sidebar system with enhanced colors */
+    --sidebar-background: 210 30% 98%;
+    --sidebar-foreground: 215 35% 20%;
+    --sidebar-primary: 184 85% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 215 25% 27%;
-    --sidebar-border: 210 20% 92%;
-    --sidebar-ring: 184 70% 48%;
+    --sidebar-accent: 210 30% 94%;
+    --sidebar-accent-foreground: 215 35% 20%;
+    --sidebar-border: 210 25% 90%;
+    --sidebar-ring: 184 85% 45%;
   }
 
   .dark {
