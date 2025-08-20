@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { 
   Building2, 
   MapPin, 
@@ -12,7 +13,8 @@ import {
   Plus,
   FileText,
   Eye,
-  Edit
+  Edit,
+  Calculator
 } from "lucide-react";
 
 const Rental = () => {
@@ -74,10 +76,12 @@ const Rental = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">Utleieoversikt</h1>
               <p className="text-muted-foreground">Administrer og få oversikt over dine utleieeiendommer</p>
             </div>
-            <Button className="bg-gradient-primary hover:opacity-90">
-              <Plus className="h-4 w-4 mr-2" />
-              Legg til eiendom
-            </Button>
+            <PropertyAddDialog>
+              <Button className="bg-gradient-primary hover:opacity-90">
+                <Plus className="h-4 w-4 mr-2" />
+                Legg til eiendom
+              </Button>
+            </PropertyAddDialog>
           </div>
 
           {/* Key Metrics */}
@@ -215,7 +219,7 @@ const Rental = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="shadow-medium border-primary/20">
             <CardHeader>
               <CardTitle className="text-primary">Ny leieavtale</CardTitle>
@@ -248,6 +252,19 @@ const Rental = () => {
             <CardContent>
               <Button variant="outline" className="w-full">
                 Start analyse
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-medium border-secondary/20">
+            <CardHeader>
+              <CardTitle className="text-secondary">Kalkyle/Nytt kjøp</CardTitle>
+              <CardDescription>Analyser nye investeringsmuligheter</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                <Calculator className="h-4 w-4 mr-2" />
+                Start kalkyle
               </Button>
             </CardContent>
           </Card>

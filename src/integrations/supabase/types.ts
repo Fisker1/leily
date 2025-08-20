@@ -202,10 +202,17 @@ export type Database = {
           bedrooms: number | null
           city: string | null
           created_at: string
+          current_value: number | null
           id: string
+          interest_rate: number | null
+          last_valuation_date: string | null
+          loan_amount: number | null
+          loan_duration_years: number | null
           owner_id: string
           postal_code: string | null
           property_type: string | null
+          purchase_date: string | null
+          purchase_price: number | null
           size_sqm: number | null
           updated_at: string
         }
@@ -214,10 +221,17 @@ export type Database = {
           bedrooms?: number | null
           city?: string | null
           created_at?: string
+          current_value?: number | null
           id?: string
+          interest_rate?: number | null
+          last_valuation_date?: string | null
+          loan_amount?: number | null
+          loan_duration_years?: number | null
           owner_id: string
           postal_code?: string | null
           property_type?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
           size_sqm?: number | null
           updated_at?: string
         }
@@ -226,10 +240,17 @@ export type Database = {
           bedrooms?: number | null
           city?: string | null
           created_at?: string
+          current_value?: number | null
           id?: string
+          interest_rate?: number | null
+          last_valuation_date?: string | null
+          loan_amount?: number | null
+          loan_duration_years?: number | null
           owner_id?: string
           postal_code?: string | null
           property_type?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
           size_sqm?: number | null
           updated_at?: string
         }
