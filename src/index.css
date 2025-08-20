@@ -19,11 +19,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
 
-    /* Professional green primary - Inspired by financial/investment platforms */
-    --primary: 158 64% 52%;
+    /* Maritime teal primary - Modern, calm and trustworthy */
+    --primary: 184 70% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 158 45% 96%;
-    --primary-muted: 158 30% 85%;
+    --primary-soft: 184 45% 96%;
+    --primary-muted: 184 30% 85%;
 
     /* Clean secondary palette */
     --secondary: 210 20% 98%;
@@ -33,8 +33,8 @@
     --muted: 210 20% 97%;
     --muted-foreground: 215 15% 55%;
 
-    /* Professional accent - Warmer green */
-    --accent: 142 69% 58%;
+    /* Professional accent - Deeper teal */
+    --accent: 190 75% 52%;
     --accent-foreground: 0 0% 100%;
 
     /* Error states */
@@ -45,7 +45,7 @@
     --border: 210 20% 92%;
     --input: 210 20% 96%;
     --input-border: 210 20% 88%;
-    --ring: 158 64% 52%;
+    --ring: 184 70% 48%;
 
     /* Design system tokens */
     --radius: 0.75rem;
@@ -57,24 +57,24 @@
     --shadow-medium: 0 4px 16px -4px hsl(215 25% 27% / 0.12);
     --shadow-large: 0 8px 32px -8px hsl(215 25% 27% / 0.16);
 
-    /* Gradients for visual interest */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(142 69% 58%));
+    /* Maritime gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(184 70% 48%), hsl(190 75% 52%));
     --gradient-soft: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(158 64% 52% / 0.05), hsl(142 69% 58% / 0.05));
+    --gradient-hero: linear-gradient(135deg, hsl(184 70% 48% / 0.05), hsl(190 75% 52% / 0.05));
 
     /* Sidebar system */
     --sidebar-background: 210 20% 99%;
     --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 158 64% 52%;
+    --sidebar-primary: 184 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 96%;
     --sidebar-accent-foreground: 215 25% 27%;
     --sidebar-border: 210 20% 92%;
-    --sidebar-ring: 158 64% 52%;
+    --sidebar-ring: 184 70% 48%;
   }
 
   .dark {
-    /* Professional dark mode with subtle green accents */
+    /* Professional dark mode with maritime teal accents */
     --background: 215 28% 17%;
     --foreground: 210 20% 98%;
 
@@ -85,10 +85,10 @@
     --popover: 215 25% 20%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 158 64% 52%;
+    --primary: 184 70% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 158 45% 15%;
-    --primary-muted: 158 30% 25%;
+    --primary-soft: 184 45% 15%;
+    --primary-muted: 184 30% 25%;
 
     --secondary: 215 25% 22%;
     --secondary-foreground: 210 20% 98%;
@@ -96,7 +96,7 @@
     --muted: 215 25% 22%;
     --muted-foreground: 215 15% 65%;
 
-    --accent: 142 69% 58%;
+    --accent: 190 75% 52%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
@@ -105,24 +105,24 @@
     --border: 215 25% 27%;
     --input: 215 25% 22%;
     --input-border: 215 25% 32%;
-    --ring: 158 64% 52%;
+    --ring: 184 70% 48%;
 
     --shadow-soft: 0 2px 8px -2px hsl(215 28% 10% / 0.3);
     --shadow-medium: 0 4px 16px -4px hsl(215 28% 10% / 0.4);
     --shadow-large: 0 8px 32px -8px hsl(215 28% 10% / 0.5);
 
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(142 69% 58%));
+    --gradient-primary: linear-gradient(135deg, hsl(184 70% 48%), hsl(190 75% 52%));
     --gradient-soft: linear-gradient(180deg, hsl(215 28% 17%), hsl(215 25% 20%));
-    --gradient-hero: linear-gradient(135deg, hsl(158 64% 52% / 0.1), hsl(142 69% 58% / 0.1));
+    --gradient-hero: linear-gradient(135deg, hsl(184 70% 48% / 0.1), hsl(190 75% 52% / 0.1));
 
     --sidebar-background: 215 28% 15%;
     --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 158 64% 52%;
+    --sidebar-primary: 184 70% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 25% 20%;
     --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 215 25% 27%;
-    --sidebar-ring: 158 64% 52%;
+    --sidebar-ring: 184 70% 48%;
   }
 }
 
