@@ -71,30 +71,30 @@ const YieldCalculators = ({ propertyValue, monthlyRent, expenses }: YieldCalcula
 
             <TabsContent value="monthly" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-primary-soft rounded-lg">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <p className="text-sm text-muted-foreground">Brutto månedlig yield</p>
+                <div className="text-center p-4 bg-primary-soft rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+                    <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground text-center leading-tight">Brutto månedlig yield</p>
                   </div>
-                  <p className="text-2xl font-bold text-primary">{(grossMonthlyYield / 12).toFixed(3)}%</p>
+                  <p className="text-2xl font-bold text-primary break-words">{(grossMonthlyYield / 12).toFixed(3)}%</p>
                   <p className="text-xs text-muted-foreground">per måned</p>
                 </div>
                 
-                <div className="text-center p-4 bg-accent/10 rounded-lg">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <BarChart3 className="h-4 w-4 text-accent" />
-                    <p className="text-sm text-muted-foreground">Netto månedlig yield</p>
+                <div className="text-center p-4 bg-accent/10 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+                    <BarChart3 className="h-4 w-4 text-accent flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground text-center leading-tight">Netto månedlig yield</p>
                   </div>
-                  <p className="text-2xl font-bold text-accent">{(netMonthlyYield / 12).toFixed(3)}%</p>
+                  <p className="text-2xl font-bold text-accent break-words">{(netMonthlyYield / 12).toFixed(3)}%</p>
                   <p className="text-xs text-muted-foreground">per måned</p>
                 </div>
 
-                <div className="text-center p-4 bg-card-elevated rounded-lg">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-foreground" />
-                    <p className="text-sm text-muted-foreground">Månedlig netto</p>
+                <div className="text-center p-4 bg-card-elevated rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+                    <TrendingUp className="h-4 w-4 text-foreground flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground text-center leading-tight">Månedlig netto</p>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">{(monthlyRent - expenses).toLocaleString()} kr</p>
+                  <p className="text-2xl font-bold text-foreground break-words">{(monthlyRent - expenses).toLocaleString()} kr</p>
                   <p className="text-xs text-muted-foreground">kontantstrøm</p>
                 </div>
               </div>
@@ -103,20 +103,20 @@ const YieldCalculators = ({ propertyValue, monthlyRent, expenses }: YieldCalcula
                 <h4 className="font-semibold text-foreground">Månedlig oversikt (2024)</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                   {monthlyBreakdown.map((month, index) => (
-                    <div key={index} className="p-3 bg-muted rounded-lg">
-                      <div className="font-medium text-center mb-1">{month.month}</div>
+                    <div key={index} className="p-3 bg-muted rounded-lg overflow-hidden min-w-0">
+                      <div className="font-medium text-center mb-1 truncate">{month.month}</div>
                       <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Leie:</span>
-                          <span className="text-primary">{month.rent.toLocaleString()}</span>
+                        <div className="flex justify-between items-center gap-1 min-w-0">
+                          <span className="text-muted-foreground flex-shrink-0">Leie:</span>
+                          <span className="text-primary text-right truncate">{month.rent.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Utgifter:</span>
-                          <span className="text-destructive">-{month.expenses.toLocaleString()}</span>
+                        <div className="flex justify-between items-center gap-1 min-w-0">
+                          <span className="text-muted-foreground flex-shrink-0">Utgifter:</span>
+                          <span className="text-destructive text-right truncate">-{month.expenses.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between font-medium pt-1 border-t">
-                          <span>Netto:</span>
-                          <span className="text-primary">{month.net.toLocaleString()}</span>
+                        <div className="flex justify-between items-center gap-1 font-medium pt-1 border-t min-w-0">
+                          <span className="flex-shrink-0">Netto:</span>
+                          <span className="text-primary text-right truncate">{month.net.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -196,59 +196,59 @@ const YieldCalculators = ({ propertyValue, monthlyRent, expenses }: YieldCalcula
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-foreground">Dagens verdier</h4>
+                <div className="space-y-4 overflow-hidden">
+                  <h4 className="font-semibold text-foreground truncate">Dagens verdier</h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Eiendomsverdi:</span>
-                      <span className="font-semibold">{propertyValue.toLocaleString()} kr</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Eiendomsverdi:</span>
+                      <span className="font-semibold text-right truncate">{propertyValue.toLocaleString()} kr</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Månedlig leie:</span>
-                      <span className="font-semibold">{monthlyRent.toLocaleString()} kr</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Månedlig leie:</span>
+                      <span className="font-semibold text-right truncate">{monthlyRent.toLocaleString()} kr</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Årlig yield:</span>
-                      <span className="font-semibold text-primary">{netMonthlyYield.toFixed(2)}%</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Årlig yield:</span>
+                      <span className="font-semibold text-primary text-right">{netMonthlyYield.toFixed(2)}%</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-foreground">Om {years} år</h4>
+                <div className="space-y-4 overflow-hidden">
+                  <h4 className="font-semibold text-foreground truncate">Om {years} år</h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Eiendomsverdi:</span>
-                      <span className="font-semibold">{projectedPropertyValue.toLocaleString()} kr</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Eiendomsverdi:</span>
+                      <span className="font-semibold text-right truncate">{projectedPropertyValue.toLocaleString()} kr</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Månedlig leie:</span>
-                      <span className="font-semibold">{projectedMonthlyRent.toLocaleString()} kr</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Månedlig leie:</span>
+                      <span className="font-semibold text-right truncate">{projectedMonthlyRent.toLocaleString()} kr</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Årlig yield:</span>
-                      <span className="font-semibold text-accent">{futureNetYield.toFixed(2)}%</span>
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground flex-shrink-0">Årlig yield:</span>
+                      <span className="font-semibold text-accent text-right">{futureNetYield.toFixed(2)}%</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="text-center p-6 bg-gradient-soft rounded-lg border">
-                <h4 className="text-lg font-semibold text-foreground mb-2">Total avkastning</h4>
-                <p className="text-3xl font-bold text-primary">{annualizedReturn.toFixed(2)}%</p>
-                <p className="text-sm text-muted-foreground">Årlig gjennomsnittlig avkastning over {years} år</p>
+                <div className="text-center p-6 bg-gradient-soft rounded-lg border overflow-hidden">
+                <h4 className="text-lg font-semibold text-foreground mb-2 break-words">Total avkastning</h4>
+                <p className="text-3xl font-bold text-primary break-words">{annualizedReturn.toFixed(2)}%</p>
+                <p className="text-sm text-muted-foreground break-words">Årlig gjennomsnittlig avkastning over {years} år</p>
                 <div className="mt-4 pt-4 border-t space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total leieinntekt:</span>
-                    <span className="font-semibold">{totalRentIncome.toLocaleString()} kr</span>
+                  <div className="flex justify-between items-center gap-2 min-w-0">
+                    <span className="text-muted-foreground flex-shrink-0">Total leieinntekt:</span>
+                    <span className="font-semibold text-right truncate">{totalRentIncome.toLocaleString()} kr</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kapitalgevinst:</span>
-                    <span className="font-semibold">{(projectedPropertyValue - propertyValue).toLocaleString()} kr</span>
+                  <div className="flex justify-between items-center gap-2 min-w-0">
+                    <span className="text-muted-foreground flex-shrink-0">Kapitalgevinst:</span>
+                    <span className="font-semibold text-right truncate">{(projectedPropertyValue - propertyValue).toLocaleString()} kr</span>
                   </div>
-                  <div className="flex justify-between font-semibold pt-2 border-t">
-                    <span>Total avkastning:</span>
-                    <span className="text-primary">{totalReturn.toLocaleString()} kr</span>
+                  <div className="flex justify-between items-center gap-2 font-semibold pt-2 border-t min-w-0">
+                    <span className="flex-shrink-0">Total avkastning:</span>
+                    <span className="text-primary text-right truncate">{totalReturn.toLocaleString()} kr</span>
                   </div>
                 </div>
               </div>
