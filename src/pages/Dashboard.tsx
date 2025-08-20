@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Home, Users, FileText, DollarSign, Calendar, ArrowRight } from 'lucide-react';
+import { Plus, Home, Users, FileText, DollarSign, Calendar, ArrowRight, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardStats {
@@ -98,6 +98,13 @@ const Dashboard = () => {
       icon: FileText,
       href: '/leases/new',
       color: 'accent',
+    },
+    {
+      title: 'Kalkyle/Nytt kjøp',
+      description: 'Analyser nye investeringsmuligheter',
+      icon: Calculator,
+      href: '/calculator/risk-analysis',
+      color: 'secondary',
     },
   ];
 
@@ -220,7 +227,7 @@ const Dashboard = () => {
         <h2 className="text-xl font-semibold text-foreground">
           {translations.dashboard.quickActions}
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action, index) => (
             <Card key={index} className="hover:shadow-medium transition-all hover:scale-105">
               <CardHeader>
