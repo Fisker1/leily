@@ -26,6 +26,7 @@ const Pricing = () => {
       "Prioritert kundeservice"
     ],
     rental: [
+      "Inkluderer alle Pro-funksjoner",
       "Komplett leieforholdshåndtering",
       "Leietakersporing og dokumenter",
       "Leieavtaler og depositum",
@@ -191,6 +192,7 @@ const Pricing = () => {
 
               <div className="bg-muted/50 p-3 rounded-lg mt-4">
                 <p className="text-xs text-muted-foreground text-center">
+                  <strong>Inkluderer automatisk Pro-abonnement</strong><br />
                   Betales kun når du legger til et nytt leieforhold
                 </p>
               </div>
