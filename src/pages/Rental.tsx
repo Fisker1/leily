@@ -6,7 +6,7 @@ import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
   MapPin, 
@@ -18,6 +18,7 @@ import {
   FileText,
   Eye,
   Edit,
+  Trash,
   Calculator
 } from "lucide-react";
 
@@ -37,6 +38,7 @@ interface Property {
 
 const Rental = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -128,6 +130,35 @@ const Rental = () => {
     }
   }, [user]);
 
+  const handleDeleteProperty = async (propertyId: string) => {
+    if (!confirm("Er du sikker på at du vil slette denne eiendommen? Dette kan ikke angres.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Eiendom slettet",
+        description: "Eiendommen er permanent fjernet fra systemet",
+      });
+
+      fetchUserProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke slette eiendommen",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchUserProperties = async () => {
     if (!user) return;
 
@@ -140,7 +171,11 @@ const Rental = () => {
 
       if (error) {
         console.error('Error fetching properties:', error);
-        toast.error('Feil ved henting av eiendommer');
+        toast({
+          title: "Feil",
+          description: "Feil ved henting av eiendommer",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -152,7 +187,11 @@ const Rental = () => {
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
-      toast.error('Feil ved henting av eiendommer');
+      toast({
+        title: "Feil",
+        description: "Feil ved henting av eiendommer",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -406,6 +445,15 @@ const Rental = () => {
                           <Button variant="outline" size="sm" className="w-full">
                             <FileText className="h-4 w-4 mr-2" />
                             Dokumenter
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => handleDeleteProperty(property.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Slett eiendom
                           </Button>
                         </div>
                       )}
