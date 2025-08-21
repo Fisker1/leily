@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,11 @@ interface Property {
   loan_duration_years?: number;
   current_value?: number;
   image_url?: string;
+  monthly_rent?: number;
+  primary_residence?: boolean;
+  owner_id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface PropertyEditDialogProps {
@@ -50,6 +56,8 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
     interest_rate: property.interest_rate?.toString() || "",
     loan_duration_years: property.loan_duration_years?.toString() || "",
     current_value: property.current_value?.toString() || "",
+    monthly_rent: property.monthly_rent?.toString() || "",
+    primary_residence: property.primary_residence || false,
     image: null as File | null
   });
 
@@ -83,6 +91,14 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
         imageUrl = publicUrl;
       }
 
+      // If setting as primary residence, unset other properties first
+      if (formData.primary_residence) {
+        await supabase
+          .from('properties')
+          .update({ primary_residence: false })
+          .eq('owner_id', property.owner_id);
+      }
+
       const { error } = await supabase
         .from('properties')
         .update({
@@ -98,6 +114,8 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
           interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : null,
           loan_duration_years: formData.loan_duration_years ? parseInt(formData.loan_duration_years) : null,
           current_value: formData.current_value ? parseFloat(formData.current_value) : null,
+          monthly_rent: formData.monthly_rent ? parseFloat(formData.monthly_rent) : null,
+          primary_residence: formData.primary_residence,
           image_url: imageUrl,
         })
         .eq('id', property.id);
@@ -308,6 +326,26 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
                     onChange={(e) => updateField("current_value", e.target.value)}
                     placeholder="3200000"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="monthly_rent">Månedsleie (kr)</Label>
+                  <Input
+                    id="monthly_rent"
+                    type="number"
+                    value={formData.monthly_rent}
+                    onChange={(e) => updateField("monthly_rent", e.target.value)}
+                    placeholder="25000"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="primary_residence"
+                    checked={formData.primary_residence}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, primary_residence: checked }))}
+                  />
+                  <Label htmlFor="primary_residence">Primærbolig</Label>
                 </div>
               </CardContent>
             </Card>
