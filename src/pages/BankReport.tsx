@@ -20,6 +20,9 @@ import { Link, useLocation } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ModuleData {
   [key: string]: any;
@@ -29,6 +32,7 @@ const BankReport = () => {
   const location = useLocation();
   const reportRef = useRef<HTMLDivElement>(null);
   const reportData = location.state || {};
+  const { user } = useAuth();
   
   const {
     basicData = {},
@@ -39,6 +43,46 @@ const BankReport = () => {
     yieldData = {},
     activatedModules = []
   } = reportData;
+
+  const saveReportToDatabase = async (fileName: string, fileSize: number) => {
+    if (!user) return;
+
+    try {
+      const reportRecord = {
+        user_id: user.id,
+        report_type: 'bank_report',
+        property_data: {
+          propertyValue: basicData.propertyValue,
+          loanAmount: basicData.loanAmount,
+          monthlyRent: basicData.monthlyRent,
+          expenses: basicData.expenses,
+          calculatorMode: basicData.calculatorMode
+        },
+        calculations: {
+          monthlyCashFlow: basicData.monthlyCashFlow,
+          grossYield: basicData.grossYield,
+          profitabilityScore: profitabilityData.score,
+          capRate: advancedData.capRate,
+          activatedModules
+        },
+        file_name: fileName,
+        file_size: fileSize
+      };
+
+      const { error } = await supabase
+        .from('reports')
+        .insert([reportRecord]);
+
+      if (error) {
+        console.error('Error saving report:', error);
+        toast.error('Kunne ikke lagre rapport i systemet');
+      } else {
+        toast.success('Rapport lagret og sporet i systemet');
+      }
+    } catch (error) {
+      console.error('Error saving report:', error);
+    }
+  };
 
   const generatePDF = async () => {
     if (!reportRef.current) return;
@@ -82,7 +126,15 @@ const BankReport = () => {
 
       // Save the PDF
       const reportId = `AB-${Date.now().toString(36).toUpperCase()}`;
-      pdf.save(`bankrapport-${reportId}.pdf`);
+      const fileName = `bankrapport-${reportId}.pdf`;
+      pdf.save(fileName);
+
+      // Calculate approximate file size (PDF output as bytes)
+      const pdfOutput = pdf.output('arraybuffer');
+      const fileSize = pdfOutput.byteLength;
+
+      // Save report tracking to database
+      await saveReportToDatabase(fileName, fileSize);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }

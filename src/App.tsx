@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import SimpleAuth from "./pages/SimpleAuth";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Rental from "./pages/Rental";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
               <Route path="/bank-report" element={<BankReport />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
