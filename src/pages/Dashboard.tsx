@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Home, Users, FileText, DollarSign, Calendar, ArrowRight, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Navigation from '@/components/Navigation';
 
 interface DashboardStats {
   totalProperties: number;
@@ -103,7 +104,7 @@ const Dashboard = () => {
       title: 'Kalkyle/Nytt kjøp',
       description: 'Analyser nye investeringsmuligheter',
       icon: Calculator,
-      href: '/calculator/risk-analysis',
+      href: '/calculator',
       color: 'secondary',
     },
   ];
@@ -156,7 +157,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <>
+      <Navigation />
+      <div className="space-y-6 p-6">
       {/* Welcome Section */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-foreground">
@@ -272,6 +275,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

@@ -12,6 +12,7 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Rental from "./pages/Rental";
 import Portfolio from "./pages/Portfolio";
+import Calculator from "./pages/Calculator";
 import RiskAnalysis from "./pages/calculator/RiskAnalysis";
 import BankReport from "./pages/BankReport";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/utleie" element={<Rental />} />
               <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/calculator" element={<Calculator />} />
               <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
               <Route path="/bank-report" element={<BankReport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
