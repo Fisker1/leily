@@ -26,7 +26,7 @@ const Hero = () => {
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium" asChild>
-                <Link to="/auth">
+                <Link to="/calculator">
                   <Calculator className="mr-2 h-5 w-5" />
                   {translations.hero.cta}
                 </Link>

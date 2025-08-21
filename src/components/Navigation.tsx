@@ -62,7 +62,7 @@ const Navigation = () => {
                   <Link to="/auth">{translations.nav.signIn}</Link>
                 </Button>
                 <Button size="sm" className="bg-gradient-primary hover:opacity-90" asChild>
-                  <Link to="/auth">{translations.nav.startAnalysis}</Link>
+                  <Link to="/calculator">{translations.nav.startAnalysis}</Link>
                 </Button>
               </>
             )}
@@ -104,7 +104,7 @@ const Navigation = () => {
                   </Button>
                 ) : (
                   <Button className="w-full" size="lg" asChild>
-                    <Link to="/auth">{translations.nav.startAnalysis}</Link>
+                    <Link to="/calculator">{translations.nav.startAnalysis}</Link>
                   </Button>
                 )}
               </div>
