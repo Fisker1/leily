@@ -92,6 +92,7 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
             loan_duration_years: formData.loan_duration_years ? parseInt(formData.loan_duration_years) : null,
             current_value: formData.current_value ? parseFloat(formData.current_value) : null,
             image_url: imageUrl,
+            show_in_rental: true,
             owner_id: user.id
           }
         ]);

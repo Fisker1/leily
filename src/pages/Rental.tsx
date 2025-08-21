@@ -22,7 +22,8 @@ import {
   Eye,
   Edit,
   Trash,
-  Calculator
+  Calculator,
+  EyeOff
 } from "lucide-react";
 import PropertyImage from "@/components/PropertyImage";
 
@@ -45,6 +46,7 @@ interface Property {
   owner_id: string;
   created_at?: string;
   updated_at?: string;
+  show_in_rental?: boolean;
 }
 
 const Rental = () => {
@@ -184,6 +186,7 @@ const Rental = () => {
         .from('properties')
         .select('*')
         .eq('owner_id', user.id)
+        .eq('show_in_rental', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -211,6 +214,31 @@ const Rental = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleShowInRental = async (propertyId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ show_in_rental: !currentValue })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Oppdatert",
+        description: !currentValue ? "Eiendommen vises nå på utleiesiden" : "Eiendommen er skjult fra utleiesiden",
+      });
+
+      fetchUserProperties();
+    } catch (error) {
+      console.error('Error toggling show_in_rental:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke oppdatere visning",
+        variant: "destructive",
+      });
     }
   };
 
@@ -512,6 +540,24 @@ const Rental = () => {
                           >
                             <FileText className="h-4 w-4 mr-2" />
                             Dokumenter
+                          </Button>
+                          <Button 
+                            variant={property.show_in_rental !== false ? "outline" : "default"} 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
+                          >
+                            {property.show_in_rental !== false ? (
+                              <>
+                                <EyeOff className="h-4 w-4 mr-2" />
+                                Skjul fra utleie
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Vis på utleie
+                              </>
+                            )}
                           </Button>
                           <Button 
                             variant="destructive" 

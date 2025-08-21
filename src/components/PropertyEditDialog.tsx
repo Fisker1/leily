@@ -27,6 +27,7 @@ interface Property {
   image_url?: string;
   monthly_rent?: number;
   primary_residence?: boolean;
+  show_in_rental?: boolean;
   owner_id: string;
   created_at?: string;
   updated_at?: string;
@@ -58,6 +59,7 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
     current_value: property.current_value?.toString() || "",
     monthly_rent: property.monthly_rent?.toString() || "",
     primary_residence: property.primary_residence || false,
+    show_in_rental: property.show_in_rental !== false,
     image: null as File | null
   });
 
@@ -116,6 +118,7 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
           current_value: formData.current_value ? parseFloat(formData.current_value) : null,
           monthly_rent: formData.monthly_rent ? parseFloat(formData.monthly_rent) : null,
           primary_residence: formData.primary_residence,
+          show_in_rental: formData.show_in_rental,
           image_url: imageUrl,
         } as any)
         .eq('id', property.id);
@@ -346,6 +349,15 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
                      onChange={(e) => updateField("monthly_rent", e.target.value)}
                      placeholder="25000"
                    />
+                 </div>
+
+                 <div className="flex items-center space-x-2">
+                   <Switch
+                     id="show_in_rental"
+                     checked={formData.show_in_rental}
+                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show_in_rental: checked }))}
+                   />
+                   <Label htmlFor="show_in_rental">Vis på utleiefanen</Label>
                  </div>
                </CardContent>
              </Card>

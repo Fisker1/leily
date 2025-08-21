@@ -216,6 +216,7 @@ export type Database = {
           property_type: string | null
           purchase_date: string | null
           purchase_price: number | null
+          show_in_rental: boolean | null
           size_sqm: number | null
           updated_at: string
         }
@@ -238,6 +239,7 @@ export type Database = {
           property_type?: string | null
           purchase_date?: string | null
           purchase_price?: number | null
+          show_in_rental?: boolean | null
           size_sqm?: number | null
           updated_at?: string
         }
@@ -260,6 +262,7 @@ export type Database = {
           property_type?: string | null
           purchase_date?: string | null
           purchase_price?: number | null
+          show_in_rental?: boolean | null
           size_sqm?: number | null
           updated_at?: string
         }
