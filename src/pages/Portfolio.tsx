@@ -204,8 +204,6 @@ const Portfolio = () => {
   const showExampleProperty = user && properties.length === 0;
   const displayProperties = !user ? mockProperties : (showExampleProperty ? exampleProperty : properties);
 
-  console.log('Debug - user:', !!user, 'properties.length:', properties.length, 'showExampleProperty:', showExampleProperty);
-
   const totalInvestment = displayProperties.reduce((sum, prop) => sum + (prop.purchase_price || 0), 0);
   const currentPortfolioValue = displayProperties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price || 0), 0);
   const totalReturn = currentPortfolioValue - totalInvestment;
@@ -340,20 +338,34 @@ const Portfolio = () => {
 
           <TabsContent value="properties" className="space-y-6">
             <div className="grid gap-6">
-              {displayProperties.map((property) => (
-                <Card key={property.id} className="shadow-medium">
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                      {/* Property Image */}
-                      <div className="lg:col-span-1">
-                        <PropertyImage
-                          imageUrl={property.image_url}
-                          address={property.address}
-                          city={property.city}
-                          className="w-full h-32 rounded-lg"
-                          alt={`Eiendom på ${property.address}`}
-                        />
-                      </div>
+              {displayProperties.map((property) => {
+                const isPrimaryHome = !property.monthly_rent;
+                const isUserProperty = user && !showExampleProperty;
+                
+                return (
+                  <Card 
+                    key={property.id} 
+                    className={`shadow-medium transition-all duration-300 ${
+                      isPrimaryHome && isUserProperty 
+                        ? 'ring-2 ring-orange-400 shadow-orange-400/20 shadow-2xl' 
+                        : ''
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        {/* Property Image */}
+                        <div className="lg:col-span-1 relative">
+                          <PropertyImage
+                            imageUrl={property.image_url}
+                            address={property.address}
+                            city={property.city}
+                            className="w-full h-32 rounded-lg"
+                            alt={`Eiendom på ${property.address}`}
+                          />
+                          {isPrimaryHome && isUserProperty && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 rounded-full animate-pulse shadow-lg shadow-orange-400/50"></div>
+                          )}
+                        </div>
 
                       {/* Property Info */}
                       <div className="lg:col-span-2">
@@ -410,7 +422,7 @@ const Portfolio = () => {
 
                       {/* Actions */}
                       <div className="lg:col-span-1 flex flex-col gap-2">
-                        {user ? (
+                        {user && !showExampleProperty ? (
                           <>
                             <Button 
                               variant="outline" 
@@ -477,7 +489,8 @@ const Portfolio = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 
@@ -556,104 +569,132 @@ const Portfolio = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Show message when user is logged in but has no properties */}
+            {user && properties.length === 0 ? (
               <Card className="shadow-medium">
-                <CardHeader>
-                  <CardTitle>Porteføljeytelse</CardTitle>
-                  <CardDescription>Utvikling over tid</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="text-center p-6 bg-gradient-soft rounded-lg">
-                      <h4 className="text-lg font-semibold mb-2">Total verdiøkning</h4>
-                      <p className="text-3xl font-bold text-primary">
-                        {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
-                      </p>
-                      <p className="text-muted-foreground">
-                        {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
-                      </p>
-                      {(!user || showExampleProperty) && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {!user ? "Demo tall" : "Legg til eiendommer for å se din faktiske utvikling"}
+                <CardContent className="p-8 text-center">
+                  <PieChart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold mb-2">Ingen analysedata tilgjengelig</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Legg til dine eiendommer for å se detaljert porteføljeanalyse
+                  </p>
+                  <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
+                    <Button className="bg-gradient-primary hover:opacity-90">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Legg til din første eiendom
+                    </Button>
+                  </PropertyAddDialog>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="shadow-medium">
+                  <CardHeader>
+                    <CardTitle>Porteføljeytelse</CardTitle>
+                    <CardDescription>
+                      {user && !showExampleProperty ? "Din faktiske utvikling" : "Eksempel på porteføljeanalyse"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="text-center p-6 bg-gradient-soft rounded-lg">
+                        <h4 className="text-lg font-semibold mb-2">Total verdiøkning</h4>
+                        <p className="text-3xl font-bold text-primary">
+                          {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                         </p>
-                      )}
-                    </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-medium">
-                <CardHeader>
-                  <CardTitle>Beste investering</CardTitle>
-                  <CardDescription>Høyest avkastning i porteføljen</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const bestProperty = displayProperties.reduce((best, current) => {
-                      const currentROI = current.purchase_price && current.current_value ? 
-                        ((current.current_value - current.purchase_price) / current.purchase_price) * 100 : 0;
-                      const bestROI = best.purchase_price && best.current_value ? 
-                        ((best.current_value - best.purchase_price) / best.purchase_price) * 100 : 0;
-                      return currentROI > bestROI ? current : best;
-                    });
-                    const bestROI = bestProperty.purchase_price && bestProperty.current_value ? 
-                      ((bestProperty.current_value - bestProperty.purchase_price) / bestProperty.purchase_price) * 100 : 0;
-                    const bestReturn = bestProperty.current_value && bestProperty.purchase_price ? 
-                      bestProperty.current_value - bestProperty.purchase_price : 0;
-                    
-                    return (
-                      <div className="space-y-3">
-                        <div className="p-4 bg-primary-soft rounded-lg">
-                          <h4 className="font-semibold text-primary">
-                            {bestProperty.address}
-                            {bestProperty.postal_code && `, ${bestProperty.postal_code}`} {bestProperty.city}
-                          </h4>
-                          <p className="text-2xl font-bold text-primary mt-2">
-                            +{bestROI.toFixed(1)}% avkastning
+                        <p className="text-muted-foreground">
+                          {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
+                        </p>
+                        {(!user || showExampleProperty) && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {!user ? "Demo tall" : "Legg til eiendommer for å se din faktiske utvikling"}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Gevinst: +{bestReturn.toLocaleString()} kr
-                          </p>
-                          {(!user || showExampleProperty) && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {!user ? "Demo eiendom" : "Basert på dine eiendommer"}
-                            </p>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
 
-            <Card className="shadow-medium">
-              <CardHeader>
-                <CardTitle>Portefølje diversifisering</CardTitle>
-                <CardDescription>Fordeling av investeringer</CardDescription>
-              </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {displayProperties.map((property) => {
-                      const percentage = property.purchase_price && totalInvestment > 0 ? 
-                        (property.purchase_price / totalInvestment) * 100 : 0;
+                <Card className="shadow-medium">
+                  <CardHeader>
+                    <CardTitle>Beste investering</CardTitle>
+                    <CardDescription>
+                      {user && !showExampleProperty ? "Høyest avkastning i din portefølje" : "Eksempel på beste investering"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const bestProperty = displayProperties.reduce((best, current) => {
+                        const currentROI = current.purchase_price && current.current_value ? 
+                          ((current.current_value - current.purchase_price) / current.purchase_price) * 100 : 0;
+                        const bestROI = best.purchase_price && best.current_value ? 
+                          ((best.current_value - best.purchase_price) / best.purchase_price) * 100 : 0;
+                        return currentROI > bestROI ? current : best;
+                      });
+                      const bestROI = bestProperty.purchase_price && bestProperty.current_value ? 
+                        ((bestProperty.current_value - bestProperty.purchase_price) / bestProperty.purchase_price) * 100 : 0;
+                      const bestReturn = bestProperty.current_value && bestProperty.purchase_price ? 
+                        bestProperty.current_value - bestProperty.purchase_price : 0;
+                      
                       return (
-                        <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
-                          <h5 className="font-semibold text-sm mb-2">
-                            {property.address}
-                            {property.postal_code && `, ${property.postal_code}`}
-                          </h5>
-                          <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
-                          <p className="text-xs text-muted-foreground">av portefølje</p>
+                        <div className="space-y-3">
+                          <div className="p-4 bg-primary-soft rounded-lg">
+                            <h4 className="font-semibold text-primary">
+                              {bestProperty.address}
+                              {bestProperty.postal_code && `, ${bestProperty.postal_code}`} {bestProperty.city}
+                            </h4>
+                            <p className="text-2xl font-bold text-primary mt-2">
+                              +{bestROI.toFixed(1)}% avkastning
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Gevinst: +{bestReturn.toLocaleString()} kr
+                            </p>
+                            {(!user || showExampleProperty) && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {!user ? "Demo eiendom" : "Basert på dine eiendommer"}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       );
-                    })}
-                  </div>
-                  {(!user || showExampleProperty) && (
-                    <p className="text-xs text-center text-muted-foreground mt-4">
-                      {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
-                    </p>
-                  )}
-                </CardContent>
-            </Card>
+                    })()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Diversification Chart - Only show if there are properties to analyze */}
+            {displayProperties.length > 0 && (
+              <Card className="shadow-medium">
+                <CardHeader>
+                  <CardTitle>Portefølje diversifisering</CardTitle>
+                  <CardDescription>
+                    {user && !showExampleProperty ? "Fordeling av dine investeringer" : "Eksempel på diversifisering"}
+                  </CardDescription>
+                </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {displayProperties.map((property) => {
+                        const percentage = property.purchase_price && totalInvestment > 0 ? 
+                          (property.purchase_price / totalInvestment) * 100 : 0;
+                        return (
+                          <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
+                            <h5 className="font-semibold text-sm mb-2">
+                              {property.address}
+                              {property.postal_code && `, ${property.postal_code}`}
+                            </h5>
+                            <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground">av portefølje</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {(!user || showExampleProperty) && (
+                      <p className="text-xs text-center text-muted-foreground mt-4">
+                        {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
+                      </p>
+                    )}
+                  </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
