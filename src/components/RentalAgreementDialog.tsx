@@ -16,6 +16,7 @@ import { nb } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface RentalAgreementDialogProps {
   open: boolean;

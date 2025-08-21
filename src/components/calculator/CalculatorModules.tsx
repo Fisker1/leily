@@ -18,6 +18,7 @@ import {
   ChevronUp
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
 
 interface CalculatorModulesProps {
@@ -53,6 +54,7 @@ const CalculatorModules = ({
   calculatorData = {},
   onDataChange
 }: CalculatorModulesProps) => {
+  const navigate = useNavigate();
   const [expandedModules, setExpandedModules] = useState(false);
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [moduleData, setModuleData] = useState<{[key: string]: any}>({});
@@ -404,31 +406,70 @@ const CalculatorModules = ({
   };
 
   const handleGenerateReportWithModules = () => {
-    // Pass the active modules and their data to the report generator
-    const activatedModules = activeModules.map(moduleId => {
-      const module = modules.find(m => m.id === moduleId);
-      return module?.title || moduleId;
+    // Check if user has modified any module data
+    const hasModifiedData = activeModules.some(moduleId => {
+      const data = getModuleData(moduleId);
+      return data && Object.keys(data).length > 0;
     });
-    
-    // Create report data with module information
-    const reportData = {
+
+    if (hasModifiedData) {
+      // User has filled in module data - redirect to pricing for Pro subscription
+      navigate('/pricing');
+      return;
+    }
+
+    // No modifications - use example data from homepage
+    const exampleReportData = {
       basicData: {
-        propertyValue,
-        monthlyRent,
-        loanAmount,
-        interestRate,
-        loanPeriod,
-        expenses,
-        monthlyLoanPayment,
-        monthlyCashFlow,
-        calculatorMode
+        propertyValue: 4500000,
+        loanAmount: 3600000, 
+        monthlyRent: 25000,
+        expenses: 4500,
+        monthlyLoanPayment: 18500,
+        monthlyCashFlow: 2000,
+        calculatorMode: 'investment',
+        grossYield: 6.67
       },
-      activatedModules,
-      moduleData,
-      ...calculatorData
+      profitabilityData: {
+        score: 75,
+        grossYield: 6.67,
+        netYield: 3.2,
+        cashFlowAnalysis: 'Investeringen viser attraktiv yield på 6.67%. Med forventet årlig vekst på 3% er den annualiserte avkastningen på 8.50% konkurransedyktig.'
+      },
+      advancedData: {
+        capRate: 5.8,
+        cashOnCashReturn: 12.5,
+        totalReturnPercentage: 8.5,
+        netOperatingIncome: 246000,
+        annualAppreciation: 135000,
+        dscr: 1.4
+      },
+      marketData: {
+        averageRentPerSqm: 294,
+        marketGrowthRate: 3.2,
+        pricePerSqmArea: 52941,
+        marketLiquidity: 'Høy'
+      },
+      riskData: {
+        overallRiskScore: 'Moderat',
+        marketRisk: 'Lav',
+        liquidityRisk: 'Lav', 
+        tenantRisk: 'Moderat',
+        maintenanceRisk: 'Moderat'
+      },
+      yieldData: {
+        currentYield: 6.67,
+        projectedYield: 8.5,
+        breakEvenOccupancy: 72,
+        yieldComparison: 'Over markedsgjennomsnitt'
+      },
+      activatedModules: activeModules.map(moduleId => {
+        const module = modules.find(m => m.id === moduleId);
+        return module?.title || moduleId;
+      })
     };
 
-    onGenerateReport();
+    navigate('/bank-report', { state: exampleReportData });
   };
 
   if (!expandedModules) {
@@ -444,6 +485,8 @@ const CalculatorModules = ({
         </Button>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
           Få tilgang til alle 5 analysemodulene og fyll dem ut etter behov. Du kan fjerne moduler du ikke ønsker med X-knappen.
+          <br />
+          <span className="text-orange-600 font-medium">⚡ Modulutfylling krever Pro-abonnement</span>
         </p>
       </div>
     );
@@ -497,8 +540,21 @@ const CalculatorModules = ({
               onClick={handleGenerateReportWithModules}
             >
               <FileText className="h-4 w-4 mr-2" />
-              Generer rapport med {activeModules.length} moduler
+              {activeModules.some(moduleId => {
+                const data = getModuleData(moduleId);
+                return data && Object.keys(data).length > 0;
+              }) 
+                ? "Oppgrader til Pro for å generere"
+                : `Generer eksempelrapport med ${activeModules.length} moduler`}
             </Button>
+            {activeModules.some(moduleId => {
+              const data = getModuleData(moduleId);
+              return data && Object.keys(data).length > 0;
+            }) && (
+              <p className="text-xs text-orange-600 mt-2 text-center">
+                Du har fylt ut moduldata og trenger Pro-abonnement for å generere rapporten
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

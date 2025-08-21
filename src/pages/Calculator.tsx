@@ -56,20 +56,29 @@ const Calculator = () => {
   };
 
   const handleGenerateReport = () => {
-    const reportData = getReportData();
-    // Always activate basic profitability analysis if it's not already activated
-    if (!isModuleActivated('Lönnsomhetsanalyse')) {
-      updateField('activated', true, 'Lönnsomhetsanalyse');
-    }
+    // Generate basic report using simple property details only
+    const basicReportData = {
+      basicData: {
+        propertyValue: parseFloat(calculatorData.propertyValue) || 0,
+        monthlyRent: parseFloat(calculatorData.monthlyRent) || 0,
+        loanAmount: parseFloat(calculatorData.loanAmount) || 0,
+        interestRate: parseFloat(calculatorData.interestRate) || 0,
+        loanPeriod: parseFloat(calculatorData.loanPeriod) || 0,
+        expenses: totalExpenses,
+        monthlyLoanPayment: monthlyLoanPayment,
+        monthlyCashFlow: calculatorData.calculatorMode === 'investment' 
+          ? monthlyRent - totalExpenses - monthlyLoanPayment
+          : -totalExpenses - monthlyLoanPayment,
+        calculatorMode: calculatorData.calculatorMode,
+        grossYield: calculatorData.calculatorMode === 'investment' 
+          ? ((monthlyRent * 12) / propertyValue * 100) 
+          : 0
+      },
+      activatedModules: ['Grunnleggende analyse'] // Only basic analysis
+    };
     
-    // Navigate to bank report with current data and attached modules
     navigate('/bank-report', { 
-      state: { 
-        ...reportData,
-        ...calculatorData,
-        attachedModules: selectedModules,
-        reportType: 'comprehensive'
-      } 
+      state: basicReportData
     });
   };
 
@@ -224,8 +233,11 @@ const Calculator = () => {
           {canShowResults && (
             <div className="mt-6 text-center">
               <Button size="lg" className="px-8" onClick={handleGenerateReport}>
-                Generer fullstendig bankrapport
+                Generer grunnleggende bankrapport
               </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                Gratis rapport basert på dine grunnleggende eiendomsdata
+              </p>
             </div>
           )}
         </div>
