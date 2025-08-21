@@ -23,9 +23,12 @@ import {
   Edit,
   Trash,
   Calculator,
-  EyeOff
+  EyeOff,
+  Download,
+  PenTool
 } from "lucide-react";
 import PropertyImage from "@/components/PropertyImage";
+import { useNavigate } from "react-router-dom";
 
 interface Property {
   id: string;
@@ -52,6 +55,7 @@ interface Property {
 const Rental = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -272,6 +276,60 @@ const Rental = () => {
   const occupancyRate = 100; // Simplified for now
   const averageYield = properties.length > 0 ? 
     (totalRent * 12) / properties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0) * 100 : 0;
+
+  const handleCreateRentalAgreement = () => {
+    if (!user) {
+      toast({
+        title: "Logg inn påkrevd",
+        description: "Du må logge inn for å opprette leieavtaler",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Kommer snart",
+      description: "Leieavtale-funksjonen er under utvikling og kommer snart!",
+    });
+  };
+
+  const handleGenerateMonthlyReport = () => {
+    if (!user) {
+      toast({
+        title: "Logg inn påkrevd", 
+        description: "Du må logge inn for å generere rapporter",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate monthly rental report with current property data
+    const reportData = {
+      reportType: 'monthly_rental',
+      generatedDate: new Date().toISOString(),
+      properties: properties.filter(p => p.id !== 'example'),
+      summary: {
+        totalProperties: properties.filter(p => p.id !== 'example').length,
+        totalRent: totalRent,
+        totalCashflow: totalCashflow,
+        averageYield: averageYield,
+        occupancyRate: occupancyRate
+      }
+    };
+
+    navigate('/bank-report', { 
+      state: { 
+        ...reportData,
+        basicData: {
+          propertyValue: properties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price || 0), 0),
+          loanAmount: properties.reduce((sum, prop) => sum + (prop.loan_amount || 0), 0),
+          monthlyRent: totalRent,
+          monthlyCashFlow: totalCashflow,
+          calculatorMode: 'rental'
+        }
+      } 
+    });
+  };
 
   if (loading) {
     return (
@@ -606,7 +664,11 @@ const Rental = () => {
               <CardDescription>Opprett ny leieavtale for ledig eiendom</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full bg-gradient-primary hover:opacity-90">
+              <Button 
+                className="w-full bg-gradient-primary hover:opacity-90"
+                onClick={handleCreateRentalAgreement}
+              >
+                <PenTool className="h-4 w-4 mr-2" />
                 Opprett leieavtale
               </Button>
             </CardContent>
@@ -618,7 +680,12 @@ const Rental = () => {
               <CardDescription>Generer månedsrapport for alle eiendommer</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleGenerateMonthlyReport}
+              >
+                <Download className="h-4 w-4 mr-2" />
                 Generer rapport
               </Button>
             </CardContent>
