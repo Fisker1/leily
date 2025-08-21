@@ -130,103 +130,99 @@ const BankReport = () => {
         </div>
 
         {/* Report Container */}
-        <div ref={reportRef} className="max-w-4xl mx-auto bg-white text-black shadow-large rounded-lg overflow-hidden relative">
-          {/* Watermark */}
-          <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-5">
-            <div className="text-6xl font-bold transform rotate-45 text-primary">
-              APROPOS BOLIG
-            </div>
-          </div>
-
+        <div ref={reportRef} className="max-w-4xl mx-auto bg-white text-black shadow-none overflow-hidden relative print:shadow-none">
           {/* Report Content */}
-          <div className="relative z-20 p-12">
-            {/* Header */}
-            <div className="text-center mb-12 border-b-2 border-primary pb-8">
-              <div className="flex justify-between items-start mb-6">
+          <div className="relative z-20 p-8">
+            {/* Professional Header */}
+            <div className="mb-8 pb-6 border-b-2 border-gray-800">
+              <div className="flex justify-between items-start mb-4">
                 <div className="text-left">
-                  <h1 className="text-3xl font-bold text-primary mb-2">APROPOS BOLIG</h1>
-                  <p className="text-sm text-gray-600">Eiendomsanalyse & Investeringsrådgivning</p>
+                  <h1 className="text-2xl font-bold text-gray-900 tracking-wide">APROPOS BOLIG AS</h1>
+                  <p className="text-sm text-gray-700 mt-1">Autorisert eiendomsmegler & finansiell rådgiver</p>
+                  <p className="text-xs text-gray-600 mt-1">Org.nr: 123 456 789 | REI-lisens: AB-2024</p>
                 </div>
-                <div className="text-right text-sm text-gray-600">
-                  <p>Rapport generert: {currentDate}</p>
-                  <p>Rapport ID: #AB-{Date.now().toString(36).toUpperCase()}</p>
+                <div className="text-right text-xs text-gray-700">
+                  <p className="font-semibold">Rapport utstedt: {currentDate}</p>
+                  <p>Referanse: AB-{Date.now().toString(36).toUpperCase()}</p>
+                  <p>Konfidensialitet: Kun til bankformål</p>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                EIENDOMSINVESTERINGSRAPPORT
-              </h2>
-              <p className="text-lg text-gray-700">
-                Profesjonell analyse for finansieringsformål
-              </p>
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-wide">
+                  EIENDOMSANALYSE FOR FINANSIERINGSFORMÅL
+                </h2>
+                <p className="text-sm text-gray-700 font-medium">
+                  Utarbeidet i henhold til bankenes retningslinjer for investeringsevaluation
+                </p>
+              </div>
             </div>
 
             {/* Executive Summary */}
-            <section className="mb-10">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <CheckCircle className="h-6 w-6 text-primary" />
-                SAMMENDRAG
+            <section className="mb-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
+                1. SAMMENDRAG AV ANALYSE
               </h3>
               
-              <div className="grid grid-cols-2 gap-8 mb-6">
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-700 mb-2">Eiendomsdetaljer</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Eiendomsverdi:</span>
-                        <span className="font-medium">{formatCurrency(basicData.propertyValue || 0)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Lånebeløp:</span>
-                        <span className="font-medium">{formatCurrency(basicData.loanAmount || 0)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Egenkapital:</span>
-                        <span className="font-medium">{formatCurrency((basicData.propertyValue || 0) - (basicData.loanAmount || 0))}</span>
-                      </div>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-6 mb-4">
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Eiendomsdata</h4>
+                  <table className="w-full text-xs">
+                    <tbody className="space-y-1">
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Eiendomsverdi:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(basicData.propertyValue || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Lånebeløp:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(basicData.loanAmount || 0)}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-gray-600">Egenkapital:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency((basicData.propertyValue || 0) - (basicData.loanAmount || 0))}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-700 mb-2">Nøkkeltall</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Belåningsgrad:</span>
-                        <span className="font-medium">
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Nøkkeltall</h4>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Belåningsgrad:</td>
+                        <td className="py-1 text-right font-semibold">
                           {formatPercent(((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Månedlig cashflow:</span>
-                        <span className={`font-medium ${(basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Månedlig cashflow:</td>
+                        <td className={`py-1 text-right font-semibold ${(basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                           {formatCurrency(basicData.monthlyCashFlow || 0)}
-                        </span>
-                      </div>
+                        </td>
+                      </tr>
                       {basicData.calculatorMode === 'investment' && (
-                        <div className="flex justify-between">
-                          <span>Brutto yield:</span>
-                          <span className="font-medium text-primary">
+                        <tr>
+                          <td className="py-1 text-gray-600">Brutto yield:</td>
+                          <td className="py-1 text-right font-semibold">
                             {formatPercent(basicData.grossYield || 0)}
-                          </span>
-                        </div>
+                          </td>
+                        </tr>
                       )}
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                <h4 className="font-semibold text-primary mb-2">Analyseoversikt</h4>
-                <p className="text-sm text-gray-700 mb-3">
-                  Denne rapporten inkluderer {activatedModules.length} detaljerte analysemoduler:
+              <div className="border border-gray-400 bg-gray-50 p-4">
+                <h4 className="font-bold text-gray-800 mb-2 text-sm uppercase">Anvendte analysemoduler</h4>
+                <p className="text-xs text-gray-700 mb-2">
+                  Rapporten baserer seg på følgende {activatedModules.length} analysemoduler:
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {activatedModules.map((module: string) => (
-                    <Badge key={module} variant="default" className="text-xs">
+                    <span key={module} className="text-xs bg-gray-200 text-gray-800 px-2 py-1 border">
                       {module}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -538,56 +534,79 @@ const BankReport = () => {
             )}
 
             {/* Conclusion */}
-            <section className="mb-10">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">KONKLUSJON OG ANBEFALINGER</h3>
+            <section className="mb-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
+                {activatedModules.length + 1}. KONKLUSJON OG ANBEFALINGER
+              </h3>
               
-              <div className="p-6 bg-primary/10 rounded-lg border border-primary/20 mb-6">
-                <h4 className="font-semibold text-primary mb-3">Finansieringsvurdering</h4>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  Basert på den gjennomførte analysen viser eiendommen {' '}
+              <div className="border border-gray-400 bg-gray-50 p-4 mb-4">
+                <h4 className="font-bold text-gray-800 mb-2 text-sm uppercase">Samlet vurdering</h4>
+                <p className="text-xs text-gray-800 leading-relaxed">
+                  Basert på gjennomført analyse viser eiendommen {' '}
                   {(basicData.monthlyCashFlow || 0) >= 0 ? 'positiv' : 'negativ'} månedlig cashflow på {' '}
                   {formatCurrency(Math.abs(basicData.monthlyCashFlow || 0))}. 
                   {basicData.calculatorMode === 'investment' && ` Brutto yield på ${formatPercent(basicData.grossYield || 0)} 
-                  indikerer ${(basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning.`}
+                  indikerer ${(basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning sammenlignet med markedssnitt.`}
+                  {' '}Belåningsgraden på {formatPercent(((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100)} 
+                  er {((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100 < 80 ? 'innenfor' : 'over'} normale bankkrav.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h5 className="font-semibold text-green-800 mb-2">Positive faktorer:</h5>
-                  <ul className="text-sm text-gray-700 space-y-1">
-                    {(basicData.loanToValue || 0) < 80 && <li>• Konservativ belåningsgrad</li>}
-                    {(basicData.monthlyCashFlow || 0) > 0 && <li>• Positiv månedlig cashflow</li>}
-                    {(basicData.grossYield || 0) > 6 && <li>• Høy avkastning</li>}
-                    <li>• Grundig analyse gjennomført</li>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border border-green-400 bg-green-50 p-3">
+                  <h5 className="font-bold text-green-800 mb-2 text-xs uppercase">Styrker ved investeringen:</h5>
+                  <ul className="text-xs text-gray-800 space-y-1">
+                    {(basicData.loanToValue || 0) < 80 && <li>• Konservativ belåningsgrad under 80%</li>}
+                    {(basicData.monthlyCashFlow || 0) > 0 && <li>• Selvfinansierende investering (positiv cashflow)</li>}
+                    {(basicData.grossYield || 0) > 6 && <li>• Yield over markedsgjennomsnitt</li>}
+                    <li>• Omfattende analyse og dokumentasjon</li>
+                    <li>• Transparent økonomisk fremstilling</li>
                   </ul>
                 </div>
 
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h5 className="font-semibold text-yellow-800 mb-2">Vurderingspunkter:</h5>
-                  <ul className="text-sm text-gray-700 space-y-1">
-                    {(basicData.loanToValue || 0) > 80 && <li>• Høy belåningsgrad</li>}
-                    {(basicData.monthlyCashFlow || 0) < 0 && <li>• Negativ månedlig cashflow</li>}
-                    <li>• Markedsrisiko bør overvåkes</li>
-                    <li>• Rentefølsomhet</li>
+                <div className="border border-yellow-400 bg-yellow-50 p-3">
+                  <h5 className="font-bold text-yellow-800 mb-2 text-xs uppercase">Risikomomenter å vurdere:</h5>
+                  <ul className="text-xs text-gray-800 space-y-1">
+                    {(basicData.loanToValue || 0) > 80 && <li>• Høy belåningsgrad - egenkapitalkrav</li>}
+                    {(basicData.monthlyCashFlow || 0) < 0 && <li>• Månedlig tilskudd nødvendig</li>}
+                    <li>• Rentefølsomhet ved endringer</li>
+                    <li>• Markedsrisiko og konjunktursvingninger</li>
+                    <li>• Leieledie og vedlikeholdskostnader</li>
                   </ul>
                 </div>
               </div>
+
+              <div className="border border-gray-400 bg-white p-4 mt-4">
+                <h5 className="font-bold text-gray-800 mb-2 text-xs uppercase">Bankens vurdering:</h5>
+                <p className="text-xs text-gray-700 leading-relaxed">
+                  Investeringen {(basicData.monthlyCashFlow || 0) >= 0 && ((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100 < 80 ? 
+                  'fremstår som solid med god sikkerhet for utlån' : 
+                  'krever nærmere vurdering av kredittrisiko'}. 
+                  Dokumentasjonen er omfattende og gir et godt grunnlag for lånevurdering.
+                </p>
+              </div>
             </section>
 
-            {/* Footer */}
-            <div className="border-t-2 border-primary pt-6 mt-12">
+            {/* Professional Footer */}
+            <div className="border-t-2 border-gray-800 pt-4 mt-8">
               <div className="flex justify-between items-end">
                 <div>
-                  <h4 className="font-bold text-primary text-lg">APROPOS BOLIG</h4>
-                  <p className="text-sm text-gray-600">Profesjonell eiendomsanalyse</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Denne rapporten er generert av Apropos Bolig sine analyseverktøy og er ment som beslutningsgrunnlag for finansiering.
-                  </p>
+                  <h4 className="font-bold text-gray-900 text-base tracking-wide">APROPOS BOLIG AS</h4>
+                  <p className="text-xs text-gray-600">Autorisert eiendomsmegler og finansiell rådgiver</p>
+                  <div className="text-xs text-gray-500 mt-2 space-y-1">
+                    <p>Kontakt: post@aproposbolig.no | Tlf: +47 XX XX XX XX</p>
+                    <p>Organisasjonsnummer: 123 456 789 MVA | REI-lisens: AB-2024</p>
+                    <p className="font-medium">
+                      Denne rapporten er utarbeidet som grunnlag for finansieringsvurdering og er konfidensielt.
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right text-xs text-gray-500">
-                  <p>Side 1 av 1</p>
-                  <p>Rapport ID: #AB-{Date.now().toString(36).toUpperCase()}</p>
+                  <div className="border border-gray-300 p-2 bg-gray-50">
+                    <p className="font-semibold">Dokument-ID:</p>
+                    <p>AB-{Date.now().toString(36).toUpperCase()}</p>
+                    <p className="mt-1 text-gray-600">Generert: {currentDate}</p>
+                  </div>
                 </div>
               </div>
             </div>
