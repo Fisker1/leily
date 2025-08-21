@@ -1,49 +1,75 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Download, Calculator } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import jsPDF from 'jspdf';
 
 const CallToAction = () => {
   const { translations } = useLanguage();
+  const navigate = useNavigate();
   
   const handleDownloadExampleReport = () => {
-    const doc = new jsPDF();
-    
-    // Add content to the PDF
-    doc.setFontSize(20);
-    doc.text('Eiendomsinvestering - Eksempel Rapport', 20, 30);
-    
-    doc.setFontSize(14);
-    doc.text('Eiendom: Storgata 15, 0155 Oslo', 20, 50);
-    
-    doc.setFontSize(12);
-    doc.text('Kjøpesum: 4 500 000 kr', 20, 70);
-    doc.text('Månedlig leieinntekt: 25 000 kr', 20, 80);
-    doc.text('Årlig leieinntekt: 300 000 kr', 20, 90);
-    
-    doc.text('Kalkulerte nøkkeltall:', 20, 110);
-    doc.text('• Brutto yield: 6.7%', 30, 125);
-    doc.text('• Netto yield: 4.8%', 30, 135);
-    doc.text('• Månedlig cashflow: +2 200 kr', 30, 145);
-    doc.text('• Årlig cashflow: +26 400 kr', 30, 155);
-    
-    doc.text('Månedlige utgifter:', 20, 175);
-    doc.text('• Strøm: 800 kr', 30, 190);
-    doc.text('• Nettleie: 400 kr', 30, 200);
-    doc.text('• Fellesutgifter: 3 500 kr', 30, 210);
-    doc.text('• Kommunale avgifter: 1 200 kr', 30, 220);
-    doc.text('• Forsikring: 600 kr', 30, 230);
-    doc.text('• Totalt: 6 500 kr', 30, 240);
-    
-    doc.text('Lånekalkulator (3 600 000 kr lån):', 20, 260);
-    doc.text('• Rente: 4.5%', 30, 275);
-    doc.text('• Nedbetalingstid: 25 år', 30, 285);
-    doc.text('• Månedlig betaling: 20 045 kr', 30, 295);
-    
-    // Save the PDF
-    doc.save('eksempel-eiendomsrapport.pdf');
+    // Create example data that matches the report structure
+    const exampleReportData = {
+      basicData: {
+        propertyValue: 4500000,
+        monthlyRent: 25000,
+        loanAmount: 3600000,
+        expenses: 6500,
+        monthlyLoanPayment: 20045,
+        monthlyCashFlow: -1545, // 25000 - 6500 - 20045
+        grossYield: 6.67, // (25000 * 12) / 4500000 * 100
+        calculatorMode: 'investment',
+        loanToValue: 80 // 3600000 / 4500000 * 100
+      },
+      profitabilityData: {
+        score: 72,
+        grossYield: 6.67,
+        netYield: 4.89,
+        totalMonthlyIncome: 25000,
+        totalMonthlyExpenses: 6500,
+        cashFlowAnalysis: 'Negativ cashflow på kort sikt, men god potensiell verdiøkning'
+      },
+      advancedData: {
+        capRate: 4.89,
+        cashOnCashReturn: -2.06,
+        totalReturnPercentage: 2.83,
+        netOperatingIncome: 222000, // (25000 - 6500) * 12
+        annualAppreciation: 135000, // 3% av 4.5M
+        effectiveMonthlyRent: 25000
+      },
+      marketData: {
+        averageRentPsm: 294,
+        marketGrowth: 3.2,
+        localVacancyRate: 4.1,
+        competitiveAnalysis: 'Konkurransedyktig pris i området'
+      },
+      riskData: {
+        overallRisk: 'Middels',
+        marketRisk: 'Lav',
+        financialRisk: 'Middels',
+        liquidityRisk: 'Lav',
+        riskScore: 35
+      },
+      yieldData: {
+        currentYield: 6.67,
+        projectedYield: 7.2,
+        annualizedReturn: 8.5,
+        projectedRent: 32500
+      },
+      activatedModules: [
+        'Lønnsomhetsanalyse',
+        'Avanserte beregninger', 
+        'Markedsanalyse',
+        'Risikoevaluering',
+        'Avkastningsanalyse'
+      ]
+    };
+
+    // Navigate to bank report with example data
+    navigate('/bank-report', { 
+      state: exampleReportData
+    });
   };
   
   return (
