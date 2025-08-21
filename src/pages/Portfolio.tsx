@@ -61,6 +61,24 @@ const Portfolio = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
 
+  // Example property for logged in users with no properties
+  const exampleProperty = [
+    {
+      id: "example-1",
+      address: "Storgata 15",
+      city: "Oslo",
+      postal_code: "0155",
+      property_type: "Leilighet",
+      size_sqm: 85,
+      bedrooms: 2,
+      purchase_price: 2800000,
+      purchase_date: "2022-03-15",
+      current_value: 3200000,
+      monthly_rent: 25000,
+      owner_id: "example"
+    }
+  ];
+
   // Mock portfolio data for non-authenticated users
   const mockProperties = [
     {
@@ -183,8 +201,8 @@ const Portfolio = () => {
     }
   };
 
-  const isExamplePortfolio = !user || properties.length === 0;
-  const displayProperties = isExamplePortfolio ? mockProperties : properties;
+  const showExampleProperty = user && properties.length === 0;
+  const displayProperties = !user ? mockProperties : (showExampleProperty ? exampleProperty : properties);
 
   const totalInvestment = displayProperties.reduce((sum, prop) => sum + (prop.purchase_price || 0), 0);
   const currentPortfolioValue = displayProperties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price || 0), 0);
@@ -217,9 +235,9 @@ const Portfolio = () => {
                 </Button>
               </PropertyAddDialog>
             )}
-            {isExamplePortfolio && user && (
+            {showExampleProperty && (
               <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                Ingen eiendommer - Legg til din første eiendom
+                Eksempeleiendom - Legg til din første eiendom
               </Badge>
             )}
           </div>
@@ -235,9 +253,9 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">{displayProperties.length}</div>
-                {isExamplePortfolio && (
+                {(!user || showExampleProperty) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo eiendommer" : "Legg til dine eiendommer"}
+                    {!user ? "Demo eiendommer" : "Eksempeleiendom"}
                   </p>
                 )}
               </CardContent>
@@ -252,9 +270,9 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{totalInvestment.toLocaleString()} kr</div>
-                {isExamplePortfolio && (
+                {(!user || showExampleProperty) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo beløp" : "Legg til kjøpspriser"}
+                    {!user ? "Demo beløp" : "Eksempelverdi"}
                   </p>
                 )}
               </CardContent>
@@ -269,9 +287,9 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">{currentPortfolioValue.toLocaleString()} kr</div>
-                {isExamplePortfolio && (
+                {(!user || showExampleProperty) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo verdi" : "Oppdater verdivurderinger"}
+                    {!user ? "Demo verdi" : "Eksempelverdi"}
                   </p>
                 )}
               </CardContent>
@@ -291,9 +309,9 @@ const Portfolio = () => {
                 <div className="text-sm text-muted-foreground mt-1">
                   {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                 </div>
-                {isExamplePortfolio && (
+                {(!user || showExampleProperty) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo avkastning" : "Basert på dine tall"}
+                    {!user ? "Demo avkastning" : "Eksempelberegning"}
                   </p>
                 )}
               </CardContent>
@@ -551,7 +569,7 @@ const Portfolio = () => {
                       <p className="text-muted-foreground">
                         {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
                       </p>
-                      {isExamplePortfolio && (
+                      {(!user || showExampleProperty) && (
                         <p className="text-xs text-muted-foreground mt-2">
                           {!user ? "Demo tall" : "Legg til eiendommer for å se din faktiske utvikling"}
                         </p>
@@ -592,7 +610,7 @@ const Portfolio = () => {
                           <p className="text-sm text-muted-foreground">
                             Gevinst: +{bestReturn.toLocaleString()} kr
                           </p>
-                          {isExamplePortfolio && (
+                          {(!user || showExampleProperty) && (
                             <p className="text-xs text-muted-foreground mt-2">
                               {!user ? "Demo eiendom" : "Basert på dine eiendommer"}
                             </p>
@@ -627,7 +645,7 @@ const Portfolio = () => {
                       );
                     })}
                   </div>
-                  {isExamplePortfolio && (
+                  {(!user || showExampleProperty) && (
                     <p className="text-xs text-center text-muted-foreground mt-4">
                       {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
                     </p>
