@@ -41,8 +41,11 @@ const BankReport = () => {
     marketData = {},
     riskData = {},
     yieldData = {},
-    activatedModules = []
+    activatedModules: rawActivatedModules = []
   } = reportData;
+
+  // Ensure activatedModules is always an array
+  const activatedModules = Array.isArray(rawActivatedModules) ? rawActivatedModules : [];
 
   const saveReportToDatabase = async (fileName: string, fileSize: number) => {
     if (!user) return;
