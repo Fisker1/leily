@@ -222,7 +222,7 @@ const AdvancedCalculations = ({
               <h3 className="text-lg font-semibold text-foreground">10-års Kontantstrøm Analyse</h3>
               
               {/* Parameters */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
                 <div>
                   <Label htmlFor="kpi-inflation">KPI-regulering (%)</Label>
                   <Input
@@ -230,8 +230,9 @@ const AdvancedCalculations = ({
                     type="number"
                     step="0.1"
                     value={kpiInflation}
-                    onChange={(e) => setKpiInflation(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setKpiInflation(parseFloat(e.target.value) || 2)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Standard: 2%</p>
                 </div>
                 <div>
                   <Label htmlFor="appreciation">Verdiøkning (%)</Label>
@@ -240,8 +241,9 @@ const AdvancedCalculations = ({
                     type="number"
                     step="0.1"
                     value={appreciation}
-                    onChange={(e) => setAppreciation(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setAppreciation(parseFloat(e.target.value) || 3)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Standard: 3%</p>
                 </div>
                 <div>
                   <Label htmlFor="vacancy-rate">Leieledie (%)</Label>
@@ -250,8 +252,9 @@ const AdvancedCalculations = ({
                     type="number"
                     step="0.1"
                     value={vacancyRate}
-                    onChange={(e) => setVacancyRate(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setVacancyRate(parseFloat(e.target.value) || 5)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Standard: 5% per år</p>
                 </div>
                 <div>
                   <Label htmlFor="tax-rate">Skattesats (%)</Label>
@@ -259,14 +262,18 @@ const AdvancedCalculations = ({
                     id="tax-rate"
                     type="number"
                     value={taxRate}
-                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 22)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Standard: 22%</p>
                 </div>
               </div>
 
               {/* CapEx Planning */}
               <div className="p-4 bg-card-elevated rounded-lg">
-                <h4 className="font-semibold mb-3">CapEx-plan</h4>
+                <h4 className="font-semibold mb-3">CapEx-plan (Større vedlikehold/oppgraderinger)</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Planlegg større investeringer som nye kjøkken, bad, eller andre oppgraderinger
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>CapEx år (kommaseparert)</Label>
@@ -275,14 +282,20 @@ const AdvancedCalculations = ({
                       value={capExYears.join(', ')}
                       onChange={(e) => setCapExYears(e.target.value.split(',').map(v => parseInt(v.trim())).filter(Boolean))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel: År 3 (kjøkken), År 7 (bad)
+                    </p>
                   </div>
                   <div>
                     <Label>CapEx beløp (kommaseparert)</Label>
                     <Input
-                      placeholder="200000, 300000"
+                      placeholder="50000, 100000"
                       value={capExAmounts.join(', ')}
                       onChange={(e) => setCapExAmounts(e.target.value.split(',').map(v => parseInt(v.trim())).filter(Boolean))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Beløp i kroner for hvert CapEx-år
+                    </p>
                   </div>
                 </div>
               </div>
@@ -311,6 +324,25 @@ const AdvancedCalculations = ({
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+
+              {/* Break-even Summary */}
+              <div className="bg-primary-soft p-4 rounded-lg mt-4">
+                <h5 className="font-semibold text-foreground mb-2">📊 Break-even Analyse:</h5>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Leie (månedlig):</p>
+                    <p className="font-semibold text-primary">{breakEvenAnalysis.breakEvenRent.toLocaleString()} kr</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Rente (maks uten negativ CF):</p>
+                    <p className="font-semibold text-accent">{Math.min(breakEvenAnalysis.breakEvenRate, 15).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Beleggsprosent (minimum):</p>
+                    <p className="font-semibold text-secondary">{Math.max(100 - breakEvenAnalysis.breakEvenOccupancy, 0).toFixed(0)}%</p>
+                  </div>
+                </div>
+              </div>
 
               {/* Cash Flow Table */}
               <Card>
