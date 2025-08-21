@@ -49,12 +49,50 @@ interface Property {
   updated_at?: string;
 }
 
+interface Tenant {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  national_id?: string;
+  property_owner_id: string;
+}
+
+interface LeaseAgreement {
+  id: string;
+  property_id: string;
+  tenant_id: string;
+  monthly_rent: number;
+  start_date: string;
+  end_date?: string;
+  status: string;
+  deposit_amount?: number;
+  lease_terms?: string;
+  property_owner_id: string;
+}
+
+interface TenantDocument {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_type?: string;
+  file_size?: number;
+  document_category?: string;
+  description?: string;
+  uploaded_at: string;
+  tenant_id?: string;
+  lease_id?: string;
+}
+
 const Portfolio = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
+  const [propertyTenants, setPropertyTenants] = useState<Record<string, (Tenant & { leases: LeaseAgreement[] })[]>>({});
+  const [selectedTenant, setSelectedTenant] = useState<string | null>(null);
   
   // Dialog states
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -155,12 +193,65 @@ const Portfolio = () => {
     }
   }, [user]);
 
-  // Fetch documents for all user properties
+  // Fetch documents and tenants for all user properties
   useEffect(() => {
     if (user && properties.length > 0) {
       fetchAllPropertyDocuments();
+      fetchAllPropertyTenants();
     }
   }, [user, properties]);
+
+  const fetchAllPropertyTenants = async () => {
+    if (!user) return;
+    
+    try {
+      const tenantsByProperty: Record<string, (Tenant & { leases: LeaseAgreement[] })[]> = {};
+      
+      for (const property of properties) {
+        if (property.id !== 'example-1') {
+          // Fetch tenants for this property via lease agreements
+          const { data: leases, error: leasesError } = await supabase
+            .from('lease_agreements')
+            .select(`
+              *,
+              tenants (*)
+            `)
+            .eq('property_id', property.id)
+            .order('start_date', { ascending: false });
+
+          if (leasesError) {
+            console.error(`Error fetching tenants for property ${property.id}:`, leasesError);
+            tenantsByProperty[property.id] = [];
+            continue;
+          }
+
+          // Group leases by tenant
+          const tenantLeaseMap = new Map();
+          
+          leases?.forEach((lease: any) => {
+            if (lease.tenants) {
+              const tenantId = lease.tenants.id;
+              if (!tenantLeaseMap.has(tenantId)) {
+                tenantLeaseMap.set(tenantId, {
+                  ...lease.tenants,
+                  leases: []
+                });
+              }
+              tenantLeaseMap.get(tenantId).leases.push(lease);
+            }
+          });
+
+          tenantsByProperty[property.id] = Array.from(tenantLeaseMap.values());
+        } else {
+          tenantsByProperty[property.id] = [];
+        }
+      }
+      
+      setPropertyTenants(tenantsByProperty);
+    } catch (error) {
+      console.error('Error fetching property tenants:', error);
+    }
+  };
 
   const fetchAllPropertyDocuments = async () => {
     if (!user) return;
@@ -558,175 +649,382 @@ const Portfolio = () => {
 
           <TabsContent value="documents" className="space-y-6">
             <div className="space-y-6">
-              {displayProperties.map((property, index) => (
-                <Card key={property.id} className="shadow-medium">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {property.address}
-                      {property.postal_code && `, ${property.postal_code}`} {property.city}
-                    </CardTitle>
-                    <CardDescription>
-                      {user ? "Dine dokumenter tilknyttet denne eiendommen" : "Eksempel på dokumenthåndtering"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {user ? (
-                      (() => {
-                        const docs = propertyDocuments[property.id] || [];
-                        console.log(`Rendering documents for property ${property.id}:`, docs);
-                        
-                        if (docs.length === 0) {
-                          return (
-                            <div className="text-center py-6 text-muted-foreground">
-                              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>Ingen dokumenter lastet opp ennå</p>
-                              <p className="text-sm mt-2">Klikk på "Dokumenter" ved eiendommen for å laste opp filer</p>
-                            </div>
-                          );
-                        }
-                        
-                        return (
-                          <div className="space-y-3">
-                            {docs.map((document) => (
-                              <div key={document.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <FileText className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{document.file_name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {document.file_type?.split('/')[1]?.toUpperCase() || 'FILE'} • {document.document_category} 
-                                      {document.file_size && ` • ${(document.file_size / 1024).toFixed(1)} KB`}
-                                    </p>
-                                    {document.description && (
-                                      <p className="text-xs text-muted-foreground mt-1">{document.description}</p>
-                                    )}
+              {displayProperties.map((property, index) => {
+                const tenants = user ? (propertyTenants[property.id] || []) : [];
+                const docs = user ? (propertyDocuments[property.id] || []) : [];
+                
+                // Separate global documents from tenant-specific ones
+                const globalDocs = docs.filter(doc => 
+                  !doc.tenant_id && 
+                  !doc.lease_id &&
+                  ['purchase_contract', 'valuation_report', 'insurance', 'other'].includes(doc.document_category || 'other')
+                );
+                
+                return (
+                  <Card key={property.id} className="shadow-medium">
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {property.address}
+                        {property.postal_code && `, ${property.postal_code}`} {property.city}
+                      </CardTitle>
+                      <CardDescription>
+                        {user ? "Dokumenter og leiehistorikk for denne eiendommen" : "Eksempel på dokumenthåndtering"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Global Documents Section */}
+                      <div>
+                        <h4 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wide">
+                          Eiendomsdokumenter
+                        </h4>
+                        {user ? (
+                          globalDocs.length > 0 ? (
+                            <div className="space-y-2">
+                              {globalDocs.map((document) => (
+                                <div key={document.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <FileText className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="font-medium">{document.file_name}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {document.file_type?.split('/')[1]?.toUpperCase() || 'FILE'} • {document.document_category}
+                                        {document.file_size && ` • ${(document.file_size / 1024).toFixed(1)} KB`}
+                                      </p>
+                                      {document.description && (
+                                        <p className="text-xs text-muted-foreground mt-1">{document.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          const { data } = await supabase.storage
+                                            .from('property-documents')
+                                            .createSignedUrl(document.file_path, 3600);
+                                          
+                                          if (data?.signedUrl) {
+                                            window.open(data.signedUrl, '_blank');
+                                          }
+                                        } catch (error) {
+                                          console.error('Error viewing document:', error);
+                                          toast({
+                                            title: "Feil",
+                                            description: "Kunne ikke åpne dokumentet",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          const { data } = await supabase.storage
+                                            .from('property-documents')
+                                            .download(document.file_path);
+                                          
+                                          if (data) {
+                                            const url = URL.createObjectURL(data);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = document.file_name;
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                          }
+                                        } catch (error) {
+                                          console.error('Error downloading document:', error);
+                                          toast({
+                                            title: "Feil", 
+                                            description: "Kunne ikke laste ned dokumentet",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={async () => {
-                                      try {
-                                        const { data } = await supabase.storage
-                                          .from('property-documents')
-                                          .createSignedUrl(document.file_path, 3600);
-                                        
-                                        if (data?.signedUrl) {
-                                          window.open(data.signedUrl, '_blank');
-                                        }
-                                      } catch (error) {
-                                        console.error('Error viewing document:', error);
-                                        toast({
-                                          title: "Feil",
-                                          description: "Kunne ikke åpne dokumentet",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={async () => {
-                                      try {
-                                        const { data } = await supabase.storage
-                                          .from('property-documents')
-                                          .download(document.file_path);
-                                        
-                                        if (data) {
-                                          const url = URL.createObjectURL(data);
-                                          const a = document.createElement('a');
-                                          a.href = url;
-                                          a.download = document.file_name;
-                                          a.click();
-                                          URL.revokeObjectURL(url);
-                                        }
-                                      } catch (error) {
-                                        console.error('Error downloading document:', error);
-                                        toast({
-                                          title: "Feil", 
-                                          description: "Kunne ikke laste ned dokumentet",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4 text-muted-foreground bg-muted/50 rounded-lg">
+                              <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Ingen globale dokumenter ennå</p>
+                            </div>
+                          )
+                        ) : (
+                          // Demo global documents for non-authenticated users
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">Kjøpekontrakt</p>
+                                  <p className="text-sm text-muted-foreground">PDF • Demo dokument</p>
                                 </div>
                               </div>
-                            ))}
-                            <Button 
-                              variant="outline" 
-                              className="w-full mt-4"
-                              onClick={() => {
-                                setSelectedProperty(property);
-                                setDocumentsDialogOpen(true);
-                              }}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Last opp nytt dokument
-                            </Button>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Kjøpekontrakt</p>
-                              <p className="text-sm text-muted-foreground">
-                                PDF • Demo dokument
-                              </p>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm" disabled>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" disabled>
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">Takstrapport</p>
+                                  <p className="text-sm text-muted-foreground">PDF • Demo dokument</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm" disabled>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" disabled>
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" disabled>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" disabled>
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Takstrapport</p>
-                              <p className="text-sm text-muted-foreground">
-                                PDF • Demo dokument
-                              </p>
+                        )}
+                      </div>
+
+                      {/* Tenant Documents Section */}
+                      <div>
+                        <h4 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wide">
+                          Leiehistorikk og dokumenter
+                        </h4>
+                        {user ? (
+                          tenants.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {tenants.map((tenant) => {
+                                const tenantDocs = docs.filter(doc => doc.tenant_id === tenant.id || 
+                                  tenant.leases.some(lease => lease.id === doc.lease_id));
+                                const activeLease = tenant.leases.find(lease => lease.status === 'active');
+                                const latestLease = tenant.leases[0]; // Already sorted by start_date desc
+                                
+                                return (
+                                  <Card 
+                                    key={tenant.id} 
+                                    className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                                      selectedTenant === tenant.id 
+                                        ? 'border-primary shadow-primary/20' 
+                                        : 'border-border hover:border-primary/50'
+                                    }`}
+                                    onClick={() => setSelectedTenant(selectedTenant === tenant.id ? null : tenant.id)}
+                                  >
+                                    <CardHeader className="pb-3">
+                                      <div className="flex items-center justify-between">
+                                        <CardTitle className="text-base">
+                                          {tenant.first_name} {tenant.last_name}
+                                        </CardTitle>
+                                        <Badge variant={activeLease ? "default" : "secondary"}>
+                                          {activeLease ? "Aktiv" : "Tidligere"}
+                                        </Badge>
+                                      </div>
+                                      {latestLease && (
+                                        <CardDescription>
+                                          {latestLease.start_date} - {latestLease.end_date || "Pågående"}
+                                          {latestLease.monthly_rent && ` • ${latestLease.monthly_rent.toLocaleString()} kr/mnd`}
+                                        </CardDescription>
+                                      )}
+                                    </CardHeader>
+                                    <CardContent>
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-sm text-muted-foreground">
+                                          {tenantDocs.length} dokument{tenantDocs.length !== 1 ? 'er' : ''}
+                                        </p>
+                                        <div className="text-xs text-muted-foreground">
+                                          {tenant.leases.length} leieperiode{tenant.leases.length !== 1 ? 'r' : ''}
+                                        </div>
+                                      </div>
+                                      
+                                      {selectedTenant === tenant.id && (
+                                        <div className="mt-4 pt-4 border-t space-y-3">
+                                          <h5 className="text-sm font-medium">Dokumenter:</h5>
+                                          {tenantDocs.length > 0 ? (
+                                            <div className="space-y-2">
+                                              {tenantDocs.map((document) => (
+                                                <div key={document.id} className="flex items-center justify-between p-2 bg-background rounded">
+                                                  <div className="flex items-center gap-2">
+                                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                                    <div>
+                                                      <p className="text-sm font-medium">{document.file_name}</p>
+                                                      <p className="text-xs text-muted-foreground">
+                                                        {document.document_category} • {document.uploaded_at ? new Date(document.uploaded_at).toLocaleDateString('no-NO') : ''}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex gap-1">
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                          const { data } = await supabase.storage
+                                                            .from('property-documents')
+                                                            .createSignedUrl(document.file_path, 3600);
+                                                          
+                                                          if (data?.signedUrl) {
+                                                            window.open(data.signedUrl, '_blank');
+                                                          }
+                                                        } catch (error) {
+                                                          console.error('Error viewing document:', error);
+                                                          toast({
+                                                            title: "Feil",
+                                                            description: "Kunne ikke åpne dokumentet",
+                                                            variant: "destructive",
+                                                          });
+                                                        }
+                                                      }}
+                                                    >
+                                                      <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button 
+                                                      variant="ghost" 
+                                                      size="sm"
+                                                      onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                          const { data } = await supabase.storage
+                                                            .from('property-documents')
+                                                            .download(document.file_path);
+                                                          
+                                                          if (data) {
+                                                            const url = URL.createObjectURL(data);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = document.file_name;
+                                                            a.click();
+                                                            URL.revokeObjectURL(url);
+                                                          }
+                                                        } catch (error) {
+                                                          console.error('Error downloading document:', error);
+                                                          toast({
+                                                            title: "Feil", 
+                                                            description: "Kunne ikke laste ned dokumentet",
+                                                            variant: "destructive",
+                                                          });
+                                                        }
+                                                      }}
+                                                    >
+                                                      <Download className="h-3 w-3" />
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <p className="text-xs text-muted-foreground">Ingen dokumenter tilknyttet denne leietakeren ennå</p>
+                                          )}
+                                          
+                                          {tenant.leases.length > 1 && (
+                                            <div className="mt-3">
+                                              <h5 className="text-sm font-medium mb-2">Leieperioder:</h5>
+                                              <div className="space-y-1">
+                                                {tenant.leases.map((lease) => (
+                                                  <div key={lease.id} className="text-xs text-muted-foreground flex justify-between">
+                                                    <span>{lease.start_date} - {lease.end_date || "Pågående"}</span>
+                                                    <Badge variant="outline" className="text-xs">
+                                                      {lease.status}
+                                                    </Badge>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </CardContent>
+                                  </Card>
+                                );
+                              })}
                             </div>
+                          ) : (
+                            <div className="text-center py-6 text-muted-foreground">
+                              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p>Ingen leiehistorikk ennå</p>
+                              <p className="text-sm mt-2">Opprett leieavtaler i utleie-seksjonen for å se leietakerdokumenter her</p>
+                            </div>
+                          )
+                        ) : (
+                          // Demo tenant tiles for non-authenticated users
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Card className="border-2 border-border">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="text-base">Lavik Brygge</CardTitle>
+                                  <Badge variant="secondary">Tidligere</Badge>
+                                </div>
+                                <CardDescription>
+                                  2022-03-01 - 2023-02-28 • 25.000 kr/mnd
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm text-muted-foreground">3 dokumenter</p>
+                                  <p className="text-xs text-muted-foreground">1 leieperiode</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="border-2 border-primary shadow-primary/20">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="text-base">Kari Nordmann</CardTitle>
+                                  <Badge variant="default">Aktiv</Badge>
+                                </div>
+                                <CardDescription>
+                                  2023-03-01 - Pågående • 27.000 kr/mnd
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm text-muted-foreground">5 dokumenter</p>
+                                  <p className="text-xs text-muted-foreground">1 leieperiode</p>
+                                </div>
+                              </CardContent>
+                            </Card>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" disabled>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" disabled>
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <Button variant="outline" className="w-full mt-4" disabled>
+                        )}
+                      </div>
+
+                      {/* Upload Button */}
+                      <div className="pt-4 border-t">
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedProperty(property);
+                            setDocumentsDialogOpen(true);
+                          }}
+                          disabled={!user}
+                        >
                           <Upload className="h-4 w-4 mr-2" />
                           Last opp nytt dokument
                         </Button>
-                        {index === 0 && (
-                          <p className="text-xs text-center text-muted-foreground">
+                        {!user && index === 0 && (
+                          <p className="text-xs text-center text-muted-foreground mt-2">
                             Logg inn for å laste opp dokumenter
                           </p>
                         )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
