@@ -204,6 +204,7 @@ export type Database = {
           created_at: string
           current_value: number | null
           id: string
+          image_url: string | null
           interest_rate: number | null
           last_valuation_date: string | null
           loan_amount: number | null
@@ -223,6 +224,7 @@ export type Database = {
           created_at?: string
           current_value?: number | null
           id?: string
+          image_url?: string | null
           interest_rate?: number | null
           last_valuation_date?: string | null
           loan_amount?: number | null
@@ -242,6 +244,7 @@ export type Database = {
           created_at?: string
           current_value?: number | null
           id?: string
+          image_url?: string | null
           interest_rate?: number | null
           last_valuation_date?: string | null
           loan_amount?: number | null
