@@ -209,8 +209,10 @@ export type Database = {
           last_valuation_date: string | null
           loan_amount: number | null
           loan_duration_years: number | null
+          monthly_rent: number | null
           owner_id: string
           postal_code: string | null
+          primary_residence: boolean | null
           property_type: string | null
           purchase_date: string | null
           purchase_price: number | null
@@ -229,8 +231,10 @@ export type Database = {
           last_valuation_date?: string | null
           loan_amount?: number | null
           loan_duration_years?: number | null
+          monthly_rent?: number | null
           owner_id: string
           postal_code?: string | null
+          primary_residence?: boolean | null
           property_type?: string | null
           purchase_date?: string | null
           purchase_price?: number | null
@@ -249,8 +253,10 @@ export type Database = {
           last_valuation_date?: string | null
           loan_amount?: number | null
           loan_duration_years?: number | null
+          monthly_rent?: number | null
           owner_id?: string
           postal_code?: string | null
+          primary_residence?: boolean | null
           property_type?: string | null
           purchase_date?: string | null
           purchase_price?: number | null

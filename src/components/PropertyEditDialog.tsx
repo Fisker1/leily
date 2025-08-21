@@ -117,7 +117,7 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
           monthly_rent: formData.monthly_rent ? parseFloat(formData.monthly_rent) : null,
           primary_residence: formData.primary_residence,
           image_url: imageUrl,
-        })
+        } as any)
         .eq('id', property.id);
 
       if (error) throw error;
