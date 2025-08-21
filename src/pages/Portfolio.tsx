@@ -54,6 +54,7 @@ const Portfolio = () => {
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
   
   // Dialog states
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -127,11 +128,77 @@ const Portfolio = () => {
   useEffect(() => {
     if (user) {
       fetchUserProperties();
+      // Set up real-time subscription for property updates
+      const channel = supabase
+        .channel('properties-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'properties',
+            filter: `owner_id=eq.${user.id}`
+          },
+          () => {
+            fetchUserProperties();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
+      // Not logged in - show mock data
       setProperties(mockProperties);
       setLoading(false);
     }
   }, [user]);
+
+  // Fetch documents for all user properties
+  useEffect(() => {
+    if (user && properties.length > 0) {
+      fetchAllPropertyDocuments();
+    }
+  }, [user, properties]);
+
+  const fetchAllPropertyDocuments = async () => {
+    if (!user) return;
+    
+    console.log('Fetching documents for all properties:', properties);
+    
+    try {
+      const documentsByProperty: Record<string, any[]> = {};
+      
+      for (const property of properties) {
+        if (property.id !== 'example-1') { // Skip example properties
+          console.log(`Fetching documents for property ${property.id}:`, property.address);
+          
+          const { data, error } = await supabase
+            .from('property_documents')
+            .select('*')
+            .eq('property_id', property.id)
+            .order('uploaded_at', { ascending: false });
+
+          console.log(`Documents for property ${property.id}:`, { data, error });
+          
+          if (error) {
+            console.error(`Error fetching documents for property ${property.id}:`, error);
+            documentsByProperty[property.id] = [];
+          } else {
+            documentsByProperty[property.id] = data || [];
+          }
+        } else {
+          documentsByProperty[property.id] = [];
+        }
+      }
+      
+      console.log('All property documents:', documentsByProperty);
+      setPropertyDocuments(documentsByProperty);
+    } catch (error) {
+      console.error('Error fetching property documents:', error);
+    }
+  };
 
   const handleDeleteProperty = async (propertyId: string) => {
     if (!confirm("Er du sikker på at du vil slette denne eiendommen? Dette kan ikke angres.")) {
@@ -504,10 +571,108 @@ const Portfolio = () => {
                   </CardHeader>
                   <CardContent>
                     {user ? (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Klikk på "Dokumenter" ved eiendommen for å administrere filer</p>
-                      </div>
+                      (() => {
+                        const docs = propertyDocuments[property.id] || [];
+                        console.log(`Rendering documents for property ${property.id}:`, docs);
+                        
+                        if (docs.length === 0) {
+                          return (
+                            <div className="text-center py-6 text-muted-foreground">
+                              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p>Ingen dokumenter lastet opp ennå</p>
+                              <p className="text-sm mt-2">Klikk på "Dokumenter" ved eiendommen for å laste opp filer</p>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-3">
+                            {docs.map((document) => (
+                              <div key={document.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <FileText className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="font-medium">{document.file_name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {document.file_type?.split('/')[1]?.toUpperCase() || 'FILE'} • {document.document_category} 
+                                      {document.file_size && ` • ${(document.file_size / 1024).toFixed(1)} KB`}
+                                    </p>
+                                    {document.description && (
+                                      <p className="text-xs text-muted-foreground mt-1">{document.description}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        const { data } = await supabase.storage
+                                          .from('property-documents')
+                                          .createSignedUrl(document.file_path, 3600);
+                                        
+                                        if (data?.signedUrl) {
+                                          window.open(data.signedUrl, '_blank');
+                                        }
+                                      } catch (error) {
+                                        console.error('Error viewing document:', error);
+                                        toast({
+                                          title: "Feil",
+                                          description: "Kunne ikke åpne dokumentet",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        const { data } = await supabase.storage
+                                          .from('property-documents')
+                                          .download(document.file_path);
+                                        
+                                        if (data) {
+                                          const url = URL.createObjectURL(data);
+                                          const a = document.createElement('a');
+                                          a.href = url;
+                                          a.download = document.file_name;
+                                          a.click();
+                                          URL.revokeObjectURL(url);
+                                        }
+                                      } catch (error) {
+                                        console.error('Error downloading document:', error);
+                                        toast({
+                                          title: "Feil", 
+                                          description: "Kunne ikke laste ned dokumentet",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <Button 
+                              variant="outline" 
+                              className="w-full mt-4"
+                              onClick={() => {
+                                setSelectedProperty(property);
+                                setDocumentsDialogOpen(true);
+                              }}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Last opp nytt dokument
+                            </Button>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -741,7 +906,13 @@ const Portfolio = () => {
           <PropertyDocumentsDialog
             property={selectedProperty}
             open={documentsDialogOpen}
-            onOpenChange={setDocumentsDialogOpen}
+            onOpenChange={(open) => {
+              setDocumentsDialogOpen(open);
+              // Refresh documents when dialog closes
+              if (!open) {
+                fetchAllPropertyDocuments();
+              }
+            }}
           />
         </>
       )}
