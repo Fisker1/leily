@@ -15,6 +15,9 @@ const ExtendedPropertyDetails = () => {
   const location = useLocation();
   const initialData = location.state || {};
 
+  // Get selected module to customize the form
+  const selectedModule = initialData.selectedModule || "Utvidet bankrapport";
+
   const [propertyDetails, setPropertyDetails] = useState({
     // Basic property data from previous step
     propertyValue: initialData.propertyValue || 2500000,
@@ -23,8 +26,8 @@ const ExtendedPropertyDetails = () => {
     interestRate: initialData.interestRate || 5.0,
     loanPeriod: initialData.loanPeriod || 25,
     
-    // Extended property details
-    monthlyExpenses: 4000,
+    // Extended property details based on selected module
+    monthlyExpenses: initialData.expenses || 4000,
     annualKpiGrowthRent: 2,
     vacancyRate: 5,
     capExPlan: [
@@ -64,6 +67,68 @@ const ExtendedPropertyDetails = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Get display information based on selected module
+  const getModuleInfo = () => {
+    switch(selectedModule) {
+      case "Lönnsomhetsanalyse":
+        return {
+          title: "Lønnsomhetsanalyse - Detaljer",
+          description: "Legg til detaljer for å få en grundig lønnsomhetsanalyse",
+          badge: "Grunnleggende"
+        };
+      case "Avanserte beregninger":
+        return {
+          title: "Avanserte Beregninger - Detaljer",
+          description: "10-års cashflow, DSCR og break-even analyse med dine spesifikke parametere",
+          badge: "Premium"
+        };
+      case "Markedsanalyse":
+        return {
+          title: "Markedsanalyse - Detaljer", 
+          description: "Komparative markedsdata for området",
+          badge: "Premium"
+        };
+      case "Risikoevaluering":
+        return {
+          title: "Risikovurdering - Detaljer",
+          description: "Detaljert risikoanalyse med dine parametere",
+          badge: "Standard"
+        };
+      case "Avkastningsanalyse":
+        return {
+          title: "Avkastningskalkulator - Detaljer",
+          description: "Månedlig og årlig avkastning med fremskrivninger",
+          badge: "Premium"
+        };
+      default:
+        return {
+          title: "Utvidede Eiendomsdetaljer",
+          description: "Fyll inn detaljerte opplysninger for en komplett bankanalyse",
+          badge: "Premium"
+        };
+    }
+  };
+
+  const moduleInfo = getModuleInfo();
+
+  // Show relevant sections based on selected module
+  const shouldShowSection = (section: string) => {
+    switch(selectedModule) {
+      case "Lönnsomhetsanalyse":
+        return ["basic", "simple"].includes(section);
+      case "Avanserte beregninger":
+        return ["basic", "advanced", "breakeven"].includes(section);
+      case "Markedsanalyse":
+        return ["basic", "market", "breakeven"].includes(section);
+      case "Risikoevaluering":
+        return ["basic", "advanced", "risk", "breakeven"].includes(section);
+      case "Avkastningsanalyse":
+        return ["basic", "advanced", "breakeven"].includes(section);
+      default:
+        return true; // Show all sections for full report
+    }
   };
 
   const handleCapExChange = (index: number, field: string, value: string) => {
@@ -125,23 +190,60 @@ const ExtendedPropertyDetails = () => {
           </Button>
           
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground">Utvidede Eiendomsdetaljer</h1>
+            <h1 className="text-4xl font-bold text-foreground">{moduleInfo.title}</h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Fyll inn detaljerte opplysninger for en komplett bankanalyse med avanserte beregninger
+              {moduleInfo.description}
             </p>
-            <Badge variant="default" className="text-sm px-4 py-2">
-              Premium Analyse
+            <Badge variant={moduleInfo.badge === "Premium" ? "default" : moduleInfo.badge === "Grunnleggende" ? "secondary" : "outline"} className="text-sm px-4 py-2">
+              {moduleInfo.badge}
             </Badge>
           </div>
         </div>
 
         <div className="grid gap-8 max-w-6xl mx-auto">
+          {/* Simple Profitability Section */}
+          {shouldShowSection("simple") && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary">Enkel Lønnsomhetsanalyse</CardTitle>
+                <CardDescription>Grunnleggende beregninger for investeringen</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="text-center p-6 bg-primary/10 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">Brutto yield</p>
+                    <p className="text-3xl font-bold text-primary">
+                      {((propertyDetails.monthlyRent * 12) / propertyDetails.propertyValue * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                  <div className="text-center p-6 bg-accent/10 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">Månedlig cashflow</p>
+                    <p className={`text-3xl font-bold ${(propertyDetails.monthlyRent - propertyDetails.monthlyExpenses - (propertyDetails.loanAmount * propertyDetails.interestRate / 100 / 12)) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                      {Math.round(propertyDetails.monthlyRent - propertyDetails.monthlyExpenses - (propertyDetails.loanAmount * propertyDetails.interestRate / 100 / 12)).toLocaleString()} kr
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-muted p-4 rounded-lg">
+                  <h5 className="font-semibold mb-2">Sammendrag:</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Månedlige inntekter: {propertyDetails.monthlyRent.toLocaleString()} kr</li>
+                    <li>• Månedlige utgifter: {propertyDetails.monthlyExpenses.toLocaleString()} kr</li>
+                    <li>• Estimerte rentekostnader: {Math.round(propertyDetails.loanAmount * propertyDetails.interestRate / 100 / 12).toLocaleString()} kr</li>
+                    <li>• Belåningsgrad: {((propertyDetails.loanAmount / propertyDetails.propertyValue) * 100).toFixed(1)}%</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Basic Financial Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary">Grunnleggende Finansielle Data</CardTitle>
-              <CardDescription>Hovedparametere for investeringen</CardDescription>
-            </CardHeader>
+          {shouldShowSection("basic") && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary">Grunnleggende Finansielle Data</CardTitle>
+                <CardDescription>Hovedparametere for investeringen</CardDescription>
+              </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
@@ -201,10 +303,12 @@ const ExtendedPropertyDetails = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Advanced Parameters */}
-          <Card>
+          {shouldShowSection("advanced") && (
+            <Card>
             <CardHeader>
               <CardTitle className="text-primary">Avanserte Parametere</CardTitle>
               <CardDescription>Detaljerte beregningsparametere for 10-års analyse</CardDescription>
@@ -272,10 +376,12 @@ const ExtendedPropertyDetails = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Market Analysis Data */}
-          <Card>
+          {shouldShowSection("market") && (
+            <Card>
             <CardHeader>
               <CardTitle className="text-primary">📈 Markedsanalyse Data</CardTitle>
               <CardDescription>Komparative data for området</CardDescription>
@@ -361,10 +467,12 @@ const ExtendedPropertyDetails = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Risk Assessment Preview */}
-          <Card>
+          {shouldShowSection("risk") && (
+            <Card>
             <CardHeader>
               <CardTitle className="text-primary">⚠️ Risikovurdering</CardTitle>
               <CardDescription>Enkel risikotabell</CardDescription>
@@ -415,10 +523,12 @@ const ExtendedPropertyDetails = () => {
                 </table>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Break-even Analysis Preview */}
-          <Card>
+          {shouldShowSection("breakeven") && (
+            <Card>
             <CardHeader>
               <CardTitle className="text-primary">Break-even Analyse</CardTitle>
               <CardDescription>Kritiske terskelverdier for prosjektet</CardDescription>
@@ -439,16 +549,27 @@ const ExtendedPropertyDetails = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Generate Report */}
           <Card className="bg-gradient-soft border-primary/20">
             <CardContent className="p-8 text-center">
               <h3 className="text-xl font-bold text-foreground mb-4">
-                Generer Utvidet Bankrapport
+                Generer {moduleInfo.title.split(' - ')[0]} Rapport
               </h3>
               <p className="text-muted-foreground mb-6">
-                Rapporten vil inneholde alle detaljerte beregninger, markedsanalyse og risikovurdering
+                {selectedModule === "Lönnsomhetsanalyse" 
+                  ? "Rapporten vil inneholde grundig lønnsomhetsanalyse basert på dine parametere"
+                  : selectedModule === "Avanserte beregninger"
+                  ? "Rapporten vil inneholde 10-års cashflow, DSCR og break-even analyse"
+                  : selectedModule === "Markedsanalyse" 
+                  ? "Rapporten vil inneholde detaljert markedsanalyse og sammenligning"
+                  : selectedModule === "Risikoevaluering"
+                  ? "Rapporten vil inneholde omfattende risikovurdering og anbefalinger"
+                  : selectedModule === "Avkastningsanalyse"
+                  ? "Rapporten vil inneholde detaljerte avkastningsberegninger og prognoser"
+                  : "Rapporten vil inneholde alle detaljerte beregninger, markedsanalyse og risikovurdering"}
               </p>
               <Button 
                 size="lg" 
@@ -456,7 +577,7 @@ const ExtendedPropertyDetails = () => {
                 onClick={handleGenerateReport}
               >
                 <FileText className="h-5 w-5 mr-2" />
-                Generer Utvidet Bankrapport
+                Generer {moduleInfo.title.split(' - ')[0]} Rapport
               </Button>
             </CardContent>
           </Card>

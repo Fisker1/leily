@@ -116,24 +116,19 @@ const CalculatorModules = ({
   ];
 
   const handleModuleSelection = (moduleId: string) => {
-    if (moduleId === "Utvidet bankrapport") {
-      // Navigate to extended property details page
-      navigate('/calculator/extended-details', { 
-        state: { 
-          propertyValue, 
-          monthlyRent, 
-          expenses, 
-          loanAmount, 
-          interestRate, 
-          loanPeriod,
-          calculatorMode 
-        } 
-      });
-      return;
-    }
-    
-    onModuleActivate(moduleId);
-    handleGenerateReport();
+    // All modules navigate to extended property details page with module context
+    navigate('/calculator/extended-details', { 
+      state: { 
+        propertyValue, 
+        monthlyRent, 
+        expenses, 
+        loanAmount, 
+        interestRate, 
+        loanPeriod,
+        calculatorMode,
+        selectedModule: moduleId
+      } 
+    });
   };
 
   return (
