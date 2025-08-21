@@ -14,19 +14,24 @@ const Pricing = () => {
 
   const features = {
     free: [
-      translations.pricing.unlimitedAnalysis,
-      translations.pricing.basicReports,
-      translations.pricing.communitySupport,
+      "Grunnleggende boliganalyse",
+      "Enkel lønnsomhetsberegning", 
+      "Gratis støtte via community"
+    ],
+    payPerUse: [
+      "Avanserte bankkalkyler - 10 kr per rapport",
+      "Forvaltning av 1 leieforhold - 99 kr",
+      "Alle avanserte moduler inkludert",
+      "PDF-eksport av rapporter"
     ],
     pro: [
-      translations.pricing.unlimitedAnalysis,
-      translations.pricing.pdfExports,
-      translations.pricing.rentalManagement,
-      translations.pricing.tenantTracking,
-      translations.pricing.leaseDocuments,
-      translations.pricing.depositTracking,
-      translations.pricing.prioritySupport,
-      translations.pricing.advancedReports,
+      "Ubegrensede avanserte kalkyler",
+      "Fullt boligforvaltningsdashbord",
+      "Ubegrenset leieforholdshåndtering",
+      "Leietakersporing og dokumenter",
+      "Depositumhåndtering",
+      "Prioritert kundeservice",
+      "Avanserte rapporter og analyser"
     ],
   };
 
@@ -63,19 +68,19 @@ const Pricing = () => {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+        <div className="grid gap-6 lg:grid-cols-3 max-w-6xl mx-auto">
           {/* Free Plan */}
           <Card className="relative shadow-medium hover:shadow-large transition-shadow">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">
-                {translations.pricing.freePlan}
+                Gratis
               </CardTitle>
               <CardDescription className="text-lg">
-                {translations.pricing.freeDescription}
+                Kom i gang med grunnleggende analyser
               </CardDescription>
               <div className="py-4">
                 <span className="text-4xl font-bold text-foreground">0 kr</span>
-                <span className="text-muted-foreground">/{translations.pricing.month}</span>
+                <span className="text-muted-foreground">/måned</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -83,7 +88,7 @@ const Pricing = () => {
                 {features.free.map((feature, index) => (
                   <li key={index} className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">{feature}</span>
+                    <span className="text-foreground text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -95,15 +100,51 @@ const Pricing = () => {
                   className="w-full"
                   size="lg"
                 >
-                  {translations.pricing.getStarted}
+                  Kom i gang
                 </Button>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground text-center">
-                  <strong>{translations.pricing.pdfExportNote}</strong><br />
-                  {translations.pricing.pdfExportPrice}
-                </p>
+          {/* Pay Per Use Plan */}
+          <Card className="relative shadow-large border-secondary/20 hover:border-secondary/40 transition-all">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl text-secondary">
+                Betal per bruk
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Betal kun for det du trenger
+              </CardDescription>
+              <div className="py-4 space-y-2">
+                <div>
+                  <span className="text-2xl font-bold text-foreground">10 kr</span>
+                  <span className="text-muted-foreground text-sm">/avansert kalkyle</span>
+                </div>
+                <div>
+                  <span className="text-2xl font-bold text-foreground">99 kr</span>
+                  <span className="text-muted-foreground text-sm">/leieforhold</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ul className="space-y-3">
+                {features.payPerUse.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-secondary flex-shrink-0" />
+                    <span className="text-foreground text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="pt-4">
+                <Button 
+                  onClick={handleGetStarted}
+                  variant="secondary"
+                  className="w-full"
+                  size="lg"
+                >
+                  Velg tjenester
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -113,20 +154,20 @@ const Pricing = () => {
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <Badge className="px-4 py-1 bg-primary text-primary-foreground">
                 <Star className="w-4 h-4 mr-1" />
-                {translations.pricing.mostPopular}
+                Mest populær
               </Badge>
             </div>
             
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-primary">
-                {translations.pricing.proPlan}
+                Pro
               </CardTitle>
               <CardDescription className="text-lg">
-                {translations.pricing.proDescription}
+                Alt du trenger for profesjonell forvaltning
               </CardDescription>
               <div className="py-4">
                 <span className="text-4xl font-bold text-foreground">49 kr</span>
-                <span className="text-muted-foreground">/{translations.pricing.month}</span>
+                <span className="text-muted-foreground">/måned</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -134,7 +175,7 @@ const Pricing = () => {
                 {features.pro.map((feature, index) => (
                   <li key={index} className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">{feature}</span>
+                    <span className="text-foreground text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -142,7 +183,7 @@ const Pricing = () => {
               <div className="pt-4">
                 {profile?.subscription_tier === 'pro' ? (
                   <Button className="w-full" size="lg" disabled>
-                    {translations.pricing.currentPlan}
+                    Nåværende plan
                   </Button>
                 ) : (
                   <Button 
@@ -150,7 +191,7 @@ const Pricing = () => {
                     className="w-full" 
                     size="lg"
                   >
-                    {translations.pricing.upgradeToPro}
+                    Oppgrader til Pro
                   </Button>
                 )}
               </div>
