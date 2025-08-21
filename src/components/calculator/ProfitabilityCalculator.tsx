@@ -9,6 +9,7 @@ interface ProfitabilityCalculatorProps {
   loanAmount: number;
   monthlyLoanPayment: number;
   calculatorMode: 'investment' | 'private';
+  compact?: boolean;
 }
 
 const ProfitabilityCalculator = ({
@@ -17,7 +18,8 @@ const ProfitabilityCalculator = ({
   expenses,
   loanAmount,
   monthlyLoanPayment,
-  calculatorMode
+  calculatorMode,
+  compact = false
 }: ProfitabilityCalculatorProps) => {
   
   const initialInvestment = propertyValue - loanAmount;
@@ -53,6 +55,48 @@ const ProfitabilityCalculator = ({
   };
 
   const profitLevel = getProfitabilityLevel(profitabilityScore);
+
+  // Compact version for preview
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        {/* Profitability Score */}
+        <div className={`text-center p-3 rounded-lg ${profitLevel.bgColor}`}>
+          <div className="flex items-center justify-center gap-2">
+            <div className={`text-2xl font-bold ${profitLevel.color}`}>
+              {profitabilityScore.toFixed(0)}
+            </div>
+            <div className="text-left">
+              <div className="text-xs text-muted-foreground">av 100</div>
+              <Badge variant={profitabilityScore >= 60 ? "default" : "secondary"} className="text-xs">
+                {profitLevel.level}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Key metrics compact */}
+        <div className="space-y-2">
+          {calculatorMode === 'investment' && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Netto Yield:</span>
+              <span className="font-semibold text-accent">{netYield.toFixed(1)}%</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Måned. Cashflow:</span>
+            <span className={`font-semibold ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`}>
+              {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Egenkapital:</span>
+            <span className="font-semibold">{initialInvestment.toLocaleString()} kr</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="shadow-medium">
