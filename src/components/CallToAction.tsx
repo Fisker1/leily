@@ -3,9 +3,48 @@ import { Card } from "@/components/ui/card";
 import { ArrowRight, Download, Calculator } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import jsPDF from 'jspdf';
 
 const CallToAction = () => {
   const { translations } = useLanguage();
+  
+  const handleDownloadExampleReport = () => {
+    const doc = new jsPDF();
+    
+    // Add content to the PDF
+    doc.setFontSize(20);
+    doc.text('Eiendomsinvestering - Eksempel Rapport', 20, 30);
+    
+    doc.setFontSize(14);
+    doc.text('Eiendom: Storgata 15, 0155 Oslo', 20, 50);
+    
+    doc.setFontSize(12);
+    doc.text('Kjøpesum: 4 500 000 kr', 20, 70);
+    doc.text('Månedlig leieinntekt: 25 000 kr', 20, 80);
+    doc.text('Årlig leieinntekt: 300 000 kr', 20, 90);
+    
+    doc.text('Kalkulerte nøkkeltall:', 20, 110);
+    doc.text('• Brutto yield: 6.7%', 30, 125);
+    doc.text('• Netto yield: 4.8%', 30, 135);
+    doc.text('• Månedlig cashflow: +2 200 kr', 30, 145);
+    doc.text('• Årlig cashflow: +26 400 kr', 30, 155);
+    
+    doc.text('Månedlige utgifter:', 20, 175);
+    doc.text('• Strøm: 800 kr', 30, 190);
+    doc.text('• Nettleie: 400 kr', 30, 200);
+    doc.text('• Fellesutgifter: 3 500 kr', 30, 210);
+    doc.text('• Kommunale avgifter: 1 200 kr', 30, 220);
+    doc.text('• Forsikring: 600 kr', 30, 230);
+    doc.text('• Totalt: 6 500 kr', 30, 240);
+    
+    doc.text('Lånekalkulator (3 600 000 kr lån):', 20, 260);
+    doc.text('• Rente: 4.5%', 30, 275);
+    doc.text('• Nedbetalingstid: 25 år', 30, 285);
+    doc.text('• Månedlig betaling: 20 045 kr', 30, 295);
+    
+    // Save the PDF
+    doc.save('eksempel-eiendomsrapport.pdf');
+  };
   
   return (
     <section className="py-20 lg:py-32 bg-gradient-hero">
@@ -27,7 +66,12 @@ const CallToAction = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="shadow-soft">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="shadow-soft"
+                onClick={handleDownloadExampleReport}
+              >
                 <Download className="mr-2 h-5 w-5" />
                 Last ned eksempel rapport
               </Button>
