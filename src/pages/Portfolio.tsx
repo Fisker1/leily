@@ -114,6 +114,7 @@ const Portfolio = () => {
       purchase_date: "2022-03-15",
       current_value: 3200000,
       monthly_rent: 25000,
+      demo_cashflow: 2200,
       owner_id: "example"
     }
   ];
@@ -132,6 +133,7 @@ const Portfolio = () => {
       purchase_date: "2022-03-15",
       current_value: 3200000,
       monthly_rent: 25000,
+      demo_cashflow: 2800,
       owner_id: "mock"
     },
     {
@@ -146,6 +148,7 @@ const Portfolio = () => {
       purchase_date: "2021-11-20",
       current_value: 2650000,
       monthly_rent: 22000,
+      demo_cashflow: -1200,
       owner_id: "mock"
     },
     {
@@ -159,6 +162,7 @@ const Portfolio = () => {
       purchase_price: 3100000,
       purchase_date: "2023-01-10",
       current_value: 3350000,
+      demo_cashflow: 300,
       owner_id: "mock"
     }
   ];

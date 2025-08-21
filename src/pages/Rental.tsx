@@ -73,6 +73,7 @@ const Rental = () => {
     purchase_price: 4500000,
     current_value: 4500000,
     monthly_rent: 25000,
+    demo_cashflow: 2200, // Realistisk cashflow for eksempel
     owner_id: 'example'
   };
 
@@ -89,6 +90,7 @@ const Rental = () => {
       purchase_price: 4500000,
       current_value: 4500000,
       monthly_rent: 25000,
+      demo_cashflow: 2800, // Realistisk cashflow
       owner_id: 'demo'
     },
     {
@@ -102,6 +104,7 @@ const Rental = () => {
       purchase_price: 3800000,
       current_value: 3800000,
       monthly_rent: 22000,
+      demo_cashflow: -1200, // Negativ cashflow
       owner_id: 'demo'
     },
     {
@@ -115,6 +118,7 @@ const Rental = () => {
       purchase_price: 5200000,
       current_value: 5200000,
       monthly_rent: 28000,
+      demo_cashflow: 300, // Oransje cashflow (mellom -500 og +500)
       owner_id: 'demo'
     }
   ];
@@ -245,7 +249,28 @@ const Rental = () => {
   const hasUserProperties = user && properties.length > 0 && properties[0].id !== 'example';
   const isExampleProperty = user && properties.length === 1 && properties[0].id === 'example';
 
+  // Cashflow beregninger med fargekoding
+  const getCashflowColor = (cashflow: number) => {
+    if (cashflow >= -500 && cashflow <= 500) {
+      return 'text-orange'; // Oransje for mellom -500 og +500
+    } else if (cashflow > 0) {
+      return 'text-primary'; // Grønn for positiv
+    } else {
+      return 'text-destructive'; // Rød for negativ
+    }
+  };
+
+  const getCashflowValue = (property: any) => {
+    // For demo properties, bruk realistisk demo_cashflow
+    if (property.demo_cashflow !== undefined) {
+      return property.demo_cashflow;
+    }
+    // For ekte eiendommer, bruk eksisterende beregning
+    return property.monthly_rent ? Math.round(property.monthly_rent * 0.1) : 0;
+  };
+
   const totalRent = properties.reduce((sum, prop) => sum + (prop.monthly_rent || 0), 0);
+  const totalCashflow = properties.reduce((sum, prop) => sum + getCashflowValue(prop), 0);
   const occupancyRate = 100; // Simplified for now
   const averageYield = properties.length > 0 ? 
     (totalRent * 12) / properties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0) * 100 : 0;
@@ -379,8 +404,8 @@ const Rental = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-secondary">
-                  {(totalRent * 0.75).toLocaleString()} kr
+                <div className={`text-2xl font-bold ${getCashflowColor(totalCashflow)}`}>
+                  {totalCashflow >= 0 ? '+' : ''}{totalCashflow.toLocaleString()} kr
                 </div>
                 {isExampleProperty && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -462,11 +487,8 @@ const Rental = () => {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Cashflow</p>
-                          <p className="font-semibold text-secondary">
-                            {property.monthly_rent ? 
-                              Math.round(property.monthly_rent * 0.75).toLocaleString()
-                              : "0"
-                            } kr
+                          <p className={`font-semibold ${getCashflowColor(getCashflowValue(property))}`}>
+                            {getCashflowValue(property) >= 0 ? '+' : ''}{getCashflowValue(property).toLocaleString()} kr
                           </p>
                         </div>
                         <div>
