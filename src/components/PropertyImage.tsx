@@ -2,6 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import demoProperty1 from '@/assets/demo-property-1.jpg';
+import demoProperty2 from '@/assets/demo-property-2.jpg';
+import demoProperty3 from '@/assets/demo-property-3.jpg';
 
 interface PropertyImageProps {
   imageUrl?: string;
@@ -11,15 +15,27 @@ interface PropertyImageProps {
   alt?: string;
 }
 
+// Demo addresses that should show static images instead of satellite
+const DEMO_ADDRESSES = {
+  'Storgata 15': demoProperty1,
+  'Bogstadveien 42': demoProperty2,
+  'Grünerløkka 8': demoProperty3,
+};
+
 const PropertyImage = ({ imageUrl, address, city, className = "", alt }: PropertyImageProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showMap, setShowMap] = useState(!imageUrl);
+  const [showMap, setShowMap] = useState(false);
+  const { user } = useAuth();
+
+  // Check if this is a demo address
+  const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
+  const shouldShowSatellite = user && !imageUrl && !isDemoAddress;
 
   useEffect(() => {
-    // Fetch Mapbox token for all real addresses (including demo addresses now)
-    if (!imageUrl) {
+    // Only fetch Mapbox token if we need to show satellite for logged in users
+    if (shouldShowSatellite) {
       const fetchMapboxToken = async () => {
         try {
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
@@ -40,7 +56,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       fetchMapboxToken();
       setShowMap(true);
     }
-  }, [imageUrl]);
+  }, [shouldShowSatellite]);
 
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
@@ -98,21 +114,37 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         src={imageUrl} 
         alt={alt || `Eiendom på ${address}`}
         className={`object-cover ${className}`}
-        onError={() => {
-          // If custom image fails, try to show map
-          setShowMap(true);
-        }}
       />
     );
   }
 
-  // Show satellite map for all addresses (including demo addresses)
-  return (
-    <div className={`relative ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
-      <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
-        Satellittbilde
+  // Handle demo addresses with actual property images
+  if (isDemoAddress) {
+    return (
+      <img 
+        src={isDemoAddress} 
+        alt={alt || `Eiendom på ${address}`}
+        className={`object-cover ${className}`}
+      />
+    );
+  }
+
+  // Show satellite map only for logged in users with real addresses
+  if (shouldShowSatellite) {
+    return (
+      <div className={`relative ${className}`}>
+        <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
+        <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
+          Satellittbilde
+        </div>
       </div>
+    );
+  }
+
+  // Fallback for non-logged in users with real addresses
+  return (
+    <div className={`relative ${className} bg-muted flex items-center justify-center`}>
+      <p className="text-muted-foreground text-sm">Logg inn for satellittbilde</p>
     </div>
   );
 };
