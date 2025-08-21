@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
+import { PropertyEditDialog } from "@/components/PropertyEditDialog";
+import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
+import { PropertyDocumentsDialog } from "@/components/PropertyDocumentsDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -49,6 +52,12 @@ const Rental = () => {
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Dialog states
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
 
   // Eksempel eiendom for innloggede brukere uten egne eiendommer
   const exampleProperty = {
@@ -446,15 +455,39 @@ const Rental = () => {
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
-                          <Button variant="outline" size="sm" className="w-full">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => {
+                              setSelectedProperty(property);
+                              setDetailsDialogOpen(true);
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             Se detaljer
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => {
+                              setSelectedProperty(property);
+                              setEditDialogOpen(true);
+                            }}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Rediger
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => {
+                              setSelectedProperty(property);
+                              setDocumentsDialogOpen(true);
+                            }}
+                          >
                             <FileText className="h-4 w-4 mr-2" />
                             Dokumenter
                           </Button>
@@ -529,6 +562,28 @@ const Rental = () => {
           </Card>
         </div>
       </div>
+
+      {/* Dialogs */}
+      {selectedProperty && (
+        <>
+          <PropertyEditDialog
+            property={selectedProperty}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onPropertyUpdated={fetchUserProperties}
+          />
+          <PropertyDetailsDialog
+            property={selectedProperty}
+            open={detailsDialogOpen}
+            onOpenChange={setDetailsDialogOpen}
+          />
+          <PropertyDocumentsDialog
+            property={selectedProperty}
+            open={documentsDialogOpen}
+            onOpenChange={setDocumentsDialogOpen}
+          />
+        </>
+      )}
     </div>
   );
 };
