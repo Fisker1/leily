@@ -96,36 +96,90 @@ const BankReport = () => {
       const navDisplay = nav?.style.display;
       if (nav) nav.style.display = 'none';
 
-      // Create canvas from the report
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff'
-      });
+      // Add print styles temporarily
+      const style = document.createElement('style');
+      style.textContent = `
+        @media print {
+          .report-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .page-break-before {
+            page-break-before: always;
+            break-before: page;
+          }
+          .page-break-after {
+            page-break-after: always;
+            break-after: page;
+          }
+          .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+        }
+      `;
+      document.head.appendChild(style);
 
-      // Restore navigation
-      if (nav && navDisplay) nav.style.display = navDisplay;
-
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
+      // Create multiple smaller canvases for each section to ensure better page breaks
+      const sections = reportRef.current.querySelectorAll('.report-section');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
       const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      
+      let isFirstSection = true;
 
-      let position = 0;
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i] as HTMLElement;
+        
+        const canvas = await html2canvas(section, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          height: section.scrollHeight,
+          width: section.scrollWidth
+        });
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        const imgData = canvas.toDataURL('image/png');
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Add new page if not first section and content is too tall
+        if (!isFirstSection && imgHeight > pageHeight * 0.8) {
+          pdf.addPage();
+        }
+        
+        // If section is taller than one page, split it
+        if (imgHeight > pageHeight) {
+          let heightLeft = imgHeight;
+          let position = 0;
+          
+          if (!isFirstSection) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+        } else {
+          // Section fits on one page
+          if (!isFirstSection) {
+            pdf.addPage();
+          }
+          
+          pdf.addImage(imgData, 'PNG', 0, isFirstSection ? 0 : 10, imgWidth, imgHeight);
+        }
+        
+        isFirstSection = false;
       }
+
+      // Remove temporary styles
+      document.head.removeChild(style);
+
+      // Restore navigation
+      if (nav && navDisplay) nav.style.display = navDisplay;
 
       // Save the PDF
       const reportId = `AB-${Date.now().toString(36).toUpperCase()}`;
@@ -213,7 +267,7 @@ const BankReport = () => {
             </div>
 
             {/* Executive Summary */}
-            <section className="mb-8">
+            <section className="mb-8 report-section avoid-break">
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                 1. SAMMENDRAG AV ANALYSE
               </h3>
@@ -285,7 +339,7 @@ const BankReport = () => {
 
             {/* Profitability Analysis */}
             {activatedModules.includes('Lønnsomhetsanalyse') && (
-              <section className="mb-8">
+              <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   2. LØNNSOMHETSANALYSE
                 </h3>
@@ -361,7 +415,7 @@ const BankReport = () => {
 
             {/* Advanced Calculations */}
             {activatedModules.includes('Avanserte beregninger') && (
-              <section className="mb-8">
+              <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   3. AVANSERTE BEREGNINGER
                 </h3>
@@ -420,7 +474,7 @@ const BankReport = () => {
 
             {/* Market Analysis */}
             {activatedModules.includes('Markedsanalyse') && (
-              <section className="mb-8">
+              <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   4. MARKEDSANALYSE
                 </h3>
@@ -478,7 +532,7 @@ const BankReport = () => {
 
             {/* Risk Evaluation */}
             {activatedModules.includes('Risikoevaluering') && (
-              <section className="mb-8">
+              <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   5. RISIKOEVALUERING
                 </h3>
@@ -542,7 +596,7 @@ const BankReport = () => {
 
             {/* Yield Analysis */}
             {activatedModules.includes('Avkastningsanalyse') && (
-              <section className="mb-8">
+              <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   6. AVKASTNINGSANALYSE
                 </h3>
@@ -600,7 +654,7 @@ const BankReport = () => {
             )}
 
             {/* Conclusion */}
-            <section className="mb-8">
+            <section className="mb-8 report-section page-break-before avoid-break">
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                 {activatedModules.length + 1}. KONKLUSJON OG ANBEFALINGER
               </h3>
