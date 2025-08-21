@@ -21,19 +21,27 @@ import {
   Trash,
   Calculator
 } from "lucide-react";
+import PropertyImage from "@/components/PropertyImage";
 
 interface Property {
   id: string;
   address: string;
-  city: string;
-  postal_code: string;
-  property_type: string;
-  size_sqm: number;
-  bedrooms: number;
-  purchase_price: number;
-  current_value: number;
+  city?: string;
+  postal_code?: string;
+  property_type?: string;
+  size_sqm?: number;
+  bedrooms?: number;
+  purchase_price?: number;
+  purchase_date?: string;
+  loan_amount?: number;
+  interest_rate?: number;
+  loan_duration_years?: number;
+  current_value?: number;
+  image_url?: string;
   monthly_rent?: number;
   owner_id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const Rental = () => {
@@ -358,9 +366,13 @@ const Rental = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Property Image */}
                     <div className="lg:col-span-1">
-                      <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                        <Building2 className="h-8 w-8 text-muted-foreground" />
-                      </div>
+                      <PropertyImage
+                        imageUrl={property.image_url}
+                        address={property.address}
+                        city={property.city}
+                        className="w-full h-32 rounded-lg"
+                        alt={`Eiendom på ${property.address}`}
+                      />
                     </div>
 
                     {/* Property Details */}

@@ -33,7 +33,8 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
     loan_amount: "",
     interest_rate: "",
     loan_duration_years: "",
-    current_value: ""
+    current_value: "",
+    image: null as File | null
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +53,28 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
         return;
       }
 
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (formData.image) {
+        const fileExt = formData.image.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('property-images')
+          .upload(fileName, formData.image);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('property-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('properties')
         .insert([
@@ -68,6 +91,7 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
             interest_rate: formData.interest_rate ? parseFloat(formData.interest_rate) : null,
             loan_duration_years: formData.loan_duration_years ? parseInt(formData.loan_duration_years) : null,
             current_value: formData.current_value ? parseFloat(formData.current_value) : null,
+            image_url: imageUrl,
             owner_id: user.id
           }
         ]);
@@ -96,7 +120,8 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
           loan_amount: "",
           interest_rate: "",
           loan_duration_years: "",
-          current_value: ""
+          current_value: "",
+          image: null
         });
       }
       
@@ -130,7 +155,8 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
       loan_amount: "",
       interest_rate: "",
       loan_duration_years: "",
-      current_value: ""
+      current_value: "",
+      image: null
     });
     setShowChart(false);
     setOpen(false);
@@ -228,6 +254,23 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
                   </Select>
                 </div>
 
+                <div>
+                  <Label htmlFor="property_image">Bilde av eiendom</Label>
+                  <Input
+                    id="property_image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFormData(prev => ({ ...prev, image: file }));
+                    }}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Hvis inget bilde lastes opp, vises satellittbilde av adressen
+                  </p>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="size_sqm">Størrelse (m²)</Label>
