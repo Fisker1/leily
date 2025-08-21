@@ -491,7 +491,7 @@ const Portfolio = () => {
 
           <TabsContent value="documents" className="space-y-6">
             <div className="space-y-6">
-              {displayProperties.map((property) => (
+              {displayProperties.map((property, index) => (
                 <Card key={property.id} className="shadow-medium">
                   <CardHeader>
                     <CardTitle className="text-lg">
@@ -552,9 +552,11 @@ const Portfolio = () => {
                           <Upload className="h-4 w-4 mr-2" />
                           Last opp nytt dokument
                         </Button>
-                        <p className="text-xs text-center text-muted-foreground">
-                          Logg inn for å laste opp dokumenter
-                        </p>
+                        {index === 0 && (
+                          <p className="text-xs text-center text-muted-foreground">
+                            Logg inn for å laste opp dokumenter
+                          </p>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -590,7 +592,7 @@ const Portfolio = () => {
                       {user && !showExampleProperty ? "Din faktiske utvikling" : "Eksempel på porteføljeanalyse"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                   <CardContent className="space-y-4">
                       <div className="text-center p-6 bg-gradient-soft rounded-lg">
                         <h4 className="text-lg font-semibold mb-2">Total verdiøkning</h4>
                         <p className="text-3xl font-bold text-primary">
@@ -605,6 +607,34 @@ const Portfolio = () => {
                           </p>
                         )}
                       </div>
+                      {(() => {
+                        const totalRentalIncome = displayProperties
+                          .filter(p => p.monthly_rent)
+                          .reduce((sum, p) => sum + (p.monthly_rent || 0), 0);
+                        const monthsSinceStart = displayProperties.length > 0 ? 
+                          Math.max(1, Math.floor((new Date().getTime() - new Date(displayProperties[0].purchase_date || '2022-03-15').getTime()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                        const totalRentalEarned = totalRentalIncome * monthsSinceStart;
+                        
+                        if (totalRentalIncome > 0) {
+                          return (
+                            <div className="text-center p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                              <h4 className="text-lg font-semibold mb-2 text-emerald-800 dark:text-emerald-200">Total leieinntekt siden oppstart</h4>
+                              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                                +{totalRentalEarned.toLocaleString()} kr
+                              </p>
+                              <p className="text-muted-foreground">
+                                {totalRentalIncome.toLocaleString()} kr/måned fra {displayProperties.filter(p => p.monthly_rent).length} utleieobjekt{displayProperties.filter(p => p.monthly_rent).length !== 1 ? 'er' : ''}
+                              </p>
+                              {(!user || showExampleProperty) && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  {!user ? "Demo leieinntekt" : "Basert på dine utleieeiendommer"}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                   </CardContent>
                 </Card>
 
