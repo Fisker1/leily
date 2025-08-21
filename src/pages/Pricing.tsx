@@ -18,21 +18,20 @@ const Pricing = () => {
       "Enkel lønnsomhetsberegning", 
       "Gratis støtte via community"
     ],
-    payPerUse: [
-      "Avanserte bankkalkyler - 10 kr per rapport",
-      "Forvaltning av 1 leieforhold - 99 kr",
-      "Alle avanserte moduler inkludert",
-      "PDF-eksport av rapporter"
-    ],
     pro: [
       "Ubegrensede avanserte kalkyler",
-      "Fullt boligforvaltningsdashbord",
-      "Ubegrenset leieforholdshåndtering",
-      "Leietakersporing og dokumenter",
-      "Depositumhåndtering",
-      "Prioritert kundeservice",
-      "Avanserte rapporter og analyser"
+      "Komplett dashboard og analyser",
+      "Avanserte bankrapporter", 
+      "PDF-eksport av alle rapporter",
+      "Prioritert kundeservice"
     ],
+    rental: [
+      "Komplett leieforholdshåndtering",
+      "Leietakersporing og dokumenter",
+      "Leieavtaler og depositum",
+      "Overleveringsprotokoller",
+      "Husleieoppfølging"
+    ]
   };
 
   const handleGetStarted = () => {
@@ -106,50 +105,7 @@ const Pricing = () => {
             </CardContent>
           </Card>
 
-          {/* Pay Per Use Plan */}
-          <Card className="relative shadow-large border-secondary/20 hover:border-secondary/40 transition-all">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-secondary">
-                Betal per bruk
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Betal kun for det du trenger
-              </CardDescription>
-              <div className="py-4 space-y-2">
-                <div>
-                  <span className="text-2xl font-bold text-foreground">10 kr</span>
-                  <span className="text-muted-foreground text-sm">/avansert kalkyle</span>
-                </div>
-                <div>
-                  <span className="text-2xl font-bold text-foreground">99 kr</span>
-                  <span className="text-muted-foreground text-sm">/leieforhold</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ul className="space-y-3">
-                {features.payPerUse.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-secondary flex-shrink-0" />
-                    <span className="text-foreground text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={handleGetStarted}
-                  variant="secondary"
-                  className="w-full"
-                  size="lg"
-                >
-                  Velg tjenester
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pro Plan */}
+          {/* Pro Plan - Kalkyler og Dashboard */}
           <Card className="relative shadow-large border-primary/20 hover:border-primary/40 transition-all">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <Badge className="px-4 py-1 bg-primary text-primary-foreground">
@@ -163,7 +119,7 @@ const Pricing = () => {
                 Pro
               </CardTitle>
               <CardDescription className="text-lg">
-                Alt du trenger for profesjonell forvaltning
+                Kalkyler og dashboard
               </CardDescription>
               <div className="py-4">
                 <span className="text-4xl font-bold text-foreground">49 kr</span>
@@ -194,6 +150,49 @@ const Pricing = () => {
                     Oppgrader til Pro
                   </Button>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rental Management Plan */}
+          <Card className="relative shadow-large border-secondary/20 hover:border-secondary/40 transition-all">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl text-secondary">
+                Utleieforvaltning
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Per leieforhold
+              </CardDescription>
+              <div className="py-4">
+                <span className="text-4xl font-bold text-foreground">99 kr</span>
+                <span className="text-muted-foreground">/leieforhold</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ul className="space-y-3">
+                {features.rental.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-secondary flex-shrink-0" />
+                    <span className="text-foreground text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <div className="pt-4">
+                <Button 
+                  onClick={handleGetStarted}
+                  variant="secondary"
+                  className="w-full"
+                  size="lg"
+                >
+                  Legg til leieforhold
+                </Button>
+              </div>
+
+              <div className="bg-muted/50 p-3 rounded-lg mt-4">
+                <p className="text-xs text-muted-foreground text-center">
+                  Betales kun når du legger til et nytt leieforhold
+                </p>
               </div>
             </CardContent>
           </Card>
