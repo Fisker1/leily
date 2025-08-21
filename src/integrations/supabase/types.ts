@@ -256,6 +256,50 @@ export type Database = {
         }
         Relationships: []
       }
+      property_valuations: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string
+          source: string | null
+          updated_at: string
+          valuation_amount: number
+          valuation_date: string
+          valuation_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id: string
+          source?: string | null
+          updated_at?: string
+          valuation_amount: number
+          valuation_date?: string
+          valuation_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string
+          source?: string | null
+          updated_at?: string
+          valuation_amount?: number
+          valuation_date?: string
+          valuation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_valuations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           calculations: Json
