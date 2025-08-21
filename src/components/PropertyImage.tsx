@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import demoHouse1 from '@/assets/demo-house-1.jpg';
+import demoHouse2 from '@/assets/demo-house-2.jpg';
+import demoHouse3 from '@/assets/demo-house-3.jpg';
 
 interface PropertyImageProps {
   imageUrl?: string;
@@ -11,32 +14,47 @@ interface PropertyImageProps {
   alt?: string;
 }
 
+// Demo addresses that should show static images instead of satellite
+const DEMO_ADDRESSES = {
+  'Storgata 15': demoHouse1,
+  'Bogstadveien 42': demoHouse2,
+  'Grünerløkka 8': demoHouse3,
+};
+
 const PropertyImage = ({ imageUrl, address, city, className = "", alt }: PropertyImageProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showMap, setShowMap] = useState(!imageUrl);
+  const [showMap, setShowMap] = useState(false);
+
+  // Check if this is a demo address
+  const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
+  const shouldUseStaticImage = imageUrl || isDemoAddress;
 
   useEffect(() => {
-    const fetchMapboxToken = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        
-        if (error) {
+    // Only fetch Mapbox token if we need to show a map (not for demo addresses or custom images)
+    if (!shouldUseStaticImage) {
+      const fetchMapboxToken = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+          
+          if (error) {
+            console.error('Error fetching Mapbox token:', error);
+            return;
+          }
+
+          if (data?.token) {
+            setMapboxToken(data.token);
+          }
+        } catch (error) {
           console.error('Error fetching Mapbox token:', error);
-          return;
         }
+      };
 
-        if (data?.token) {
-          setMapboxToken(data.token);
-        }
-      } catch (error) {
-        console.error('Error fetching Mapbox token:', error);
-      }
-    };
-
-    fetchMapboxToken();
-  }, []);
+      fetchMapboxToken();
+      setShowMap(true);
+    }
+  }, [shouldUseStaticImage]);
 
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
@@ -87,17 +105,35 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     };
   }, [showMap, mapboxToken, address, city]);
 
+  // Handle custom uploaded images
   if (imageUrl) {
     return (
       <img 
         src={imageUrl} 
         alt={alt || `Eiendom på ${address}`}
         className={`object-cover ${className}`}
-        onError={() => setShowMap(true)}
+        onError={() => {
+          // If custom image fails and it's not a demo address, try to show map
+          if (!isDemoAddress) {
+            setShowMap(true);
+          }
+        }}
       />
     );
   }
 
+  // Handle demo addresses with static images
+  if (isDemoAddress) {
+    return (
+      <img 
+        src={isDemoAddress} 
+        alt={alt || `Eiendom på ${address}`}
+        className={`object-cover ${className}`}
+      />
+    );
+  }
+
+  // Handle real addresses with satellite maps
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
