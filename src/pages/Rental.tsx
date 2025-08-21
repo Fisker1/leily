@@ -251,9 +251,7 @@ const Rental = () => {
 
   // Cashflow beregninger med fargekoding
   const getCashflowColor = (cashflow: number) => {
-    if (cashflow >= -500 && cashflow <= 500) {
-      return 'text-orange'; // Oransje for mellom -500 og +500
-    } else if (cashflow > 0) {
+    if (cashflow > 0) {
       return 'text-primary'; // Grønn for positiv
     } else {
       return 'text-destructive'; // Rød for negativ

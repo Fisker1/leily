@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
-import demoHouse1 from '@/assets/demo-house-1.jpg';
-import demoHouse2 from '@/assets/demo-house-2.jpg';
-import demoHouse3 from '@/assets/demo-house-3.jpg';
 
 interface PropertyImageProps {
   imageUrl?: string;
@@ -14,26 +11,15 @@ interface PropertyImageProps {
   alt?: string;
 }
 
-// Demo addresses that should show static images instead of satellite
-const DEMO_ADDRESSES = {
-  'Storgata 15': demoHouse1,
-  'Bogstadveien 42': demoHouse2,
-  'Grünerløkka 8': demoHouse3,
-};
-
 const PropertyImage = ({ imageUrl, address, city, className = "", alt }: PropertyImageProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showMap, setShowMap] = useState(false);
-
-  // Check if this is a demo address
-  const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
-  const shouldUseStaticImage = imageUrl || isDemoAddress;
+  const [showMap, setShowMap] = useState(!imageUrl);
 
   useEffect(() => {
-    // Only fetch Mapbox token if we need to show a map (not for demo addresses or custom images)
-    if (!shouldUseStaticImage) {
+    // Fetch Mapbox token for all real addresses (including demo addresses now)
+    if (!imageUrl) {
       const fetchMapboxToken = async () => {
         try {
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
@@ -54,7 +40,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       fetchMapboxToken();
       setShowMap(true);
     }
-  }, [shouldUseStaticImage]);
+  }, [imageUrl]);
 
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
@@ -113,27 +99,14 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         alt={alt || `Eiendom på ${address}`}
         className={`object-cover ${className}`}
         onError={() => {
-          // If custom image fails and it's not a demo address, try to show map
-          if (!isDemoAddress) {
-            setShowMap(true);
-          }
+          // If custom image fails, try to show map
+          setShowMap(true);
         }}
       />
     );
   }
 
-  // Handle demo addresses with static images
-  if (isDemoAddress) {
-    return (
-      <img 
-        src={isDemoAddress} 
-        alt={alt || `Eiendom på ${address}`}
-        className={`object-cover ${className}`}
-      />
-    );
-  }
-
-  // Handle real addresses with satellite maps
+  // Show satellite map for all addresses (including demo addresses)
   return (
     <div className={`relative ${className}`}>
       <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
