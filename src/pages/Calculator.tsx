@@ -165,13 +165,18 @@ const Calculator = () => {
         {/* Module Selection Section */}
         {canShowResults && (
           <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">
-                Bygg på rapporten ytterligere med flere analysemoduler
+            <div className="text-center space-y-3">
+              <h2 className="text-3xl font-bold text-foreground">
+                Bygg videre på rapporten
               </h2>
-              <p className="text-muted-foreground">
-                Velg analysemodul for å utdype rapporten
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Velg fra analysemodulene nedenfor for å utvide rapporten med mer detaljerte beregninger og analyser som banker ønsker å se
               </p>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto">
+                <p className="text-sm text-primary font-medium">
+                  💡 Tip: Jo flere moduler du bruker, desto mer omfattende og profesjonell blir din bankrapport
+                </p>
+              </div>
             </div>
             
             <CalculatorModules

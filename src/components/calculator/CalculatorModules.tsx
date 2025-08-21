@@ -133,14 +133,7 @@ const CalculatorModules = ({
 
   return (
     <div className="space-y-8">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-foreground mb-2">Velg analysemodul</h3>
-        <p className="text-muted-foreground">
-          Jo flere moduler du bruker, desto mer detaljert blir din bankerapp
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {modules.map((module) => (
           <Card 
             key={module.id}
@@ -150,13 +143,13 @@ const CalculatorModules = ({
               if (tabsTrigger) tabsTrigger.click();
             }}
           >
-            <div className="p-6 text-center space-y-4">
-              <div className="p-3 bg-primary-soft rounded-lg mx-auto w-fit group-hover:scale-110 transition-transform">
-                <module.icon className="h-8 w-8 text-primary" />
+            <div className="p-4 text-center space-y-3">
+              <div className="p-2 bg-primary-soft rounded-lg mx-auto w-fit group-hover:scale-110 transition-transform">
+                <module.icon className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground mb-2">{module.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                <h3 className="font-medium text-foreground text-sm leading-tight">{module.title}</h3>
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{module.description}</p>
                 <Badge 
                   variant={module.badge === "Premium" ? "default" : "secondary"}
                   className="text-xs"
