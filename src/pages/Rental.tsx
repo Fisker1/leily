@@ -266,7 +266,7 @@ const Rental = () => {
           </div>
 
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card className="shadow-medium">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -338,6 +338,25 @@ const Rental = () => {
                 {isExampleProperty && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Eksempel yield
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-medium">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Månedlig cashflow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-secondary">
+                  {(totalRent * 0.75).toLocaleString()} kr
+                </div>
+                {isExampleProperty && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Eksempel cashflow
                   </p>
                 )}
               </CardContent>
