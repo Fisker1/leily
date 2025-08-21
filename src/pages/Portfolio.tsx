@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/Navigation";
+import { PropertyAddDialog } from "@/components/PropertyAddDialog";
+import { PropertyEditDialog } from "@/components/PropertyEditDialog";
+import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
+import { PropertyDocumentsDialog } from "@/components/PropertyDocumentsDialog";
+import PropertyImage from "@/components/PropertyImage";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
   DollarSign, 
@@ -14,66 +23,173 @@ import {
   Calendar,
   Upload,
   Eye,
+  Edit,
+  Trash,
   Download
 } from "lucide-react";
 
+interface Property {
+  id: string;
+  address: string;
+  city?: string;
+  postal_code?: string;
+  property_type?: string;
+  size_sqm?: number;
+  bedrooms?: number;
+  purchase_price?: number;
+  purchase_date?: string;
+  loan_amount?: number;
+  interest_rate?: number;
+  loan_duration_years?: number;
+  current_value?: number;
+  image_url?: string;
+  monthly_rent?: number;
+  owner_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 const Portfolio = () => {
-  // Mock portfolio data
-  const properties = [
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Dialog states
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+
+  // Mock portfolio data for non-authenticated users
+  const mockProperties = [
     {
-      id: 1,
-      address: "Storgata 15, 0155 Oslo",
-      purchasePrice: 2800000,
-      purchaseDate: "2022-03-15",
-      currentValue: 3200000,
-      type: "Leilighet",
-      size: "85m²",
-      roi: 14.3,
-      totalReturn: 400000,
-      documents: [
-        { name: "Kjøpekontrakt", type: "PDF", date: "2022-03-15" },
-        { name: "Takstrapport", type: "PDF", date: "2022-03-10" },
-        { name: "Forsikringspolise", type: "PDF", date: "2022-03-20" }
-      ]
+      id: "mock-1",
+      address: "Storgata 15",
+      city: "Oslo",
+      postal_code: "0155",
+      property_type: "Leilighet",
+      size_sqm: 85,
+      bedrooms: 2,
+      purchase_price: 2800000,
+      purchase_date: "2022-03-15",
+      current_value: 3200000,
+      monthly_rent: 25000,
+      owner_id: "mock"
     },
     {
-      id: 2,
-      address: "Bogstadveien 42, 0366 Oslo", 
-      purchasePrice: 2200000,
-      purchaseDate: "2021-11-20",
-      currentValue: 2650000,
-      type: "Leilighet",
-      size: "65m²",
-      roi: 20.5,
-      totalReturn: 450000,
-      documents: [
-        { name: "Kjøpekontrakt", type: "PDF", date: "2021-11-20" },
-        { name: "Takstrapport", type: "PDF", date: "2021-11-15" }
-      ]
+      id: "mock-2", 
+      address: "Bogstadveien 42",
+      city: "Oslo",
+      postal_code: "0366",
+      property_type: "Leilighet",
+      size_sqm: 65,
+      bedrooms: 1,
+      purchase_price: 2200000,
+      purchase_date: "2021-11-20",
+      current_value: 2650000,
+      monthly_rent: 22000,
+      owner_id: "mock"
     },
     {
-      id: 3,
-      address: "Grünerløkka 8, 0554 Oslo",
-      purchasePrice: 3100000,
-      purchaseDate: "2023-01-10",
-      currentValue: 3350000,
-      type: "Leilighet", 
-      size: "95m²",
-      roi: 8.1,
-      totalReturn: 250000,
-      documents: [
-        { name: "Kjøpekontrakt", type: "PDF", date: "2023-01-10" },
-        { name: "Takstrapport", type: "PDF", date: "2023-01-05" },
-        { name: "Forsikringspolise", type: "PDF", date: "2023-01-15" },
-        { name: "Renoveringsregninger", type: "PDF", date: "2023-03-20" }
-      ]
+      id: "mock-3",
+      address: "Grünerløkka 8",
+      city: "Oslo", 
+      postal_code: "0554",
+      property_type: "Leilighet",
+      size_sqm: 95,
+      bedrooms: 3,
+      purchase_price: 3100000,
+      purchase_date: "2023-01-10",
+      current_value: 3350000,
+      owner_id: "mock"
     }
   ];
 
-  const totalInvestment = properties.reduce((sum, prop) => sum + prop.purchasePrice, 0);
-  const currentPortfolioValue = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
+  useEffect(() => {
+    if (user) {
+      fetchUserProperties();
+    } else {
+      setProperties(mockProperties);
+      setLoading(false);
+    }
+  }, [user]);
+
+  const handleDeleteProperty = async (propertyId: string) => {
+    if (!confirm("Er du sikker på at du vil slette denne eiendommen? Dette kan ikke angres.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Eiendom slettet",
+        description: "Eiendommen er permanent fjernet fra systemet",
+      });
+
+      fetchUserProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke slette eiendommen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchUserProperties = async () => {
+    setLoading(true);
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        setProperties([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching properties:', error);
+        toast({
+          title: "Feil",
+          description: "Feil ved henting av eiendommer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setProperties(data || []);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      toast({
+        title: "Feil",
+        description: "Feil ved henting av eiendommer",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isExamplePortfolio = !user || properties.length === 0;
+  const displayProperties = isExamplePortfolio ? mockProperties : properties;
+
+  const totalInvestment = displayProperties.reduce((sum, prop) => sum + (prop.purchase_price || 0), 0);
+  const currentPortfolioValue = displayProperties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price || 0), 0);
   const totalReturn = currentPortfolioValue - totalInvestment;
-  const averageROI = (totalReturn / totalInvestment) * 100;
+  const averageROI = totalInvestment > 0 ? (totalReturn / totalInvestment) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,13 +199,29 @@ const Portfolio = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Min Portefølje</h1>
-              <p className="text-muted-foreground">Oversikt over dine eiendomsinvesteringer og dokumenter</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                {!user ? "Demo Portefølje" : "Min Portefølje"}
+              </h1>
+              <p className="text-muted-foreground">
+                {!user 
+                  ? "Eksempel på hvordan din portefølje vil se ut" 
+                  : "Oversikt over dine eiendomsinvesteringer og dokumenter"
+                }
+              </p>
             </div>
-            <Button className="bg-gradient-primary hover:opacity-90">
-              <Plus className="h-4 w-4 mr-2" />
-              Legg til eiendom
-            </Button>
+            {user && (
+              <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
+                <Button className="bg-gradient-primary hover:opacity-90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Legg til eiendom
+                </Button>
+              </PropertyAddDialog>
+            )}
+            {isExamplePortfolio && user && (
+              <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                Ingen eiendommer - Legg til din første eiendom
+              </Badge>
+            )}
           </div>
 
           {/* Portfolio Summary */}
@@ -102,7 +234,12 @@ const Portfolio = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">{properties.length}</div>
+                <div className="text-2xl font-bold text-primary">{displayProperties.length}</div>
+                {isExamplePortfolio && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!user ? "Demo eiendommer" : "Legg til dine eiendommer"}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -115,6 +252,11 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{totalInvestment.toLocaleString()} kr</div>
+                {isExamplePortfolio && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!user ? "Demo beløp" : "Legg til kjøpspriser"}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -127,6 +269,11 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">{currentPortfolioValue.toLocaleString()} kr</div>
+                {isExamplePortfolio && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!user ? "Demo verdi" : "Oppdater verdivurderinger"}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -144,6 +291,11 @@ const Portfolio = () => {
                 <div className="text-sm text-muted-foreground mt-1">
                   {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                 </div>
+                {isExamplePortfolio && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!user ? "Demo avkastning" : "Basert på dine tall"}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -168,50 +320,69 @@ const Portfolio = () => {
 
           <TabsContent value="properties" className="space-y-6">
             <div className="grid gap-6">
-              {properties.map((property) => (
+              {displayProperties.map((property) => (
                 <Card key={property.id} className="shadow-medium">
                   <CardContent className="p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                      {/* Property Image */}
+                      <div className="lg:col-span-1">
+                        <PropertyImage
+                          imageUrl={property.image_url}
+                          address={property.address}
+                          city={property.city}
+                          className="w-full h-32 rounded-lg"
+                          alt={`Eiendom på ${property.address}`}
+                        />
+                      </div>
+
                       {/* Property Info */}
                       <div className="lg:col-span-2">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">{property.address}</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          {property.address}
+                          {property.postal_code && `, ${property.postal_code}`} {property.city}
+                        </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Type:</span>
-                            <span>{property.type}</span>
+                            <span>{property.property_type || 'Ikke oppgitt'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Størrelse:</span>
-                            <span>{property.size}</span>
+                            <span>{property.size_sqm ? `${property.size_sqm}m²` : 'Ikke oppgitt'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Kjøpsdato:</span>
-                            <span>{property.purchaseDate}</span>
+                            <span>{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : 'Ikke oppgitt'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <Badge variant={property.monthly_rent ? "default" : "secondary"}>
+                              {property.monthly_rent ? "Utleid" : "Primærbolig/Ledig"}
+                            </Badge>
                           </div>
                         </div>
                       </div>
 
                       {/* Financial Info */}
-                      <div className="lg:col-span-2">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="lg:col-span-1">
+                        <div className="space-y-3 text-sm">
                           <div className="text-center p-3 bg-muted rounded-lg">
                             <p className="text-muted-foreground">Kjøpspris</p>
-                            <p className="font-semibold">{property.purchasePrice.toLocaleString()} kr</p>
+                            <p className="font-semibold">{property.purchase_price?.toLocaleString() || 'Ikke oppgitt'} kr</p>
                           </div>
                           <div className="text-center p-3 bg-muted rounded-lg">
                             <p className="text-muted-foreground">Nåverdi</p>
-                            <p className="font-semibold text-primary">{property.currentValue.toLocaleString()} kr</p>
-                          </div>
-                          <div className="text-center p-3 bg-primary-soft rounded-lg">
-                            <p className="text-muted-foreground">Total avkastning</p>
                             <p className="font-semibold text-primary">
-                              {property.roi >= 0 ? '+' : ''}{property.roi}%
+                              {(property.current_value || property.purchase_price)?.toLocaleString() || 'Ikke oppgitt'} kr
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-accent/10 rounded-lg">
-                            <p className="text-muted-foreground">Gevinst</p>
-                            <p className="font-semibold text-accent">
-                              {property.totalReturn >= 0 ? '+' : ''}{property.totalReturn.toLocaleString()} kr
+                          <div className="text-center p-3 bg-primary-soft rounded-lg">
+                            <p className="text-muted-foreground">Avkastning</p>
+                            <p className="font-semibold text-primary">
+                              {property.purchase_price && property.current_value ? 
+                                `${(((property.current_value - property.purchase_price) / property.purchase_price) * 100).toFixed(1)}%`
+                                : '0%'
+                              }
                             </p>
                           </div>
                         </div>
@@ -219,14 +390,69 @@ const Portfolio = () => {
 
                       {/* Actions */}
                       <div className="lg:col-span-1 flex flex-col gap-2">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Detaljer
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dokumenter ({property.documents.length})
-                        </Button>
+                        {user ? (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setSelectedProperty(property);
+                                setDetailsDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detaljer
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setSelectedProperty(property);
+                                setDocumentsDialogOpen(true);
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Dokumenter
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setSelectedProperty(property);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Rediger
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => handleDeleteProperty(property.id)}
+                            >
+                              <Trash className="h-4 w-4 mr-2" />
+                              Slett
+                            </Button>
+                          </>
+                        ) : (
+                          <div className="space-y-2">
+                            <Button variant="outline" size="sm" className="w-full" disabled>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detaljer
+                            </Button>
+                            <Button variant="outline" size="sm" className="w-full" disabled>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Dokumenter
+                            </Button>
+                            <p className="text-xs text-center text-muted-foreground">
+                              Logg inn for full funksjonalitet
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -237,40 +463,72 @@ const Portfolio = () => {
 
           <TabsContent value="documents" className="space-y-6">
             <div className="space-y-6">
-              {properties.map((property) => (
+              {displayProperties.map((property) => (
                 <Card key={property.id} className="shadow-medium">
                   <CardHeader>
-                    <CardTitle className="text-lg">{property.address}</CardTitle>
-                    <CardDescription>Dokumenter tilknyttet denne eiendommen</CardDescription>
+                    <CardTitle className="text-lg">
+                      {property.address}
+                      {property.postal_code && `, ${property.postal_code}`} {property.city}
+                    </CardTitle>
+                    <CardDescription>
+                      {user ? "Dine dokumenter tilknyttet denne eiendommen" : "Eksempel på dokumenthåndtering"}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {property.documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    {user ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Klikk på "Dokumenter" ved eiendommen for å administrere filer</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <div className="flex items-center gap-3">
                             <FileText className="h-5 w-5 text-muted-foreground" />
                             <div>
-                              <p className="font-medium">{doc.name}</p>
+                              <p className="font-medium">Kjøpekontrakt</p>
                               <p className="text-sm text-muted-foreground">
-                                {doc.type} • Lastet opp {doc.date}
+                                PDF • Demo dokument
                               </p>
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" disabled>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" disabled>
                               <Download className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                      ))}
-                      <Button variant="outline" className="w-full mt-4">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Last opp nytt dokument
-                      </Button>
-                    </div>
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Takstrapport</p>
+                              <p className="text-sm text-muted-foreground">
+                                PDF • Demo dokument
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" disabled>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" disabled>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Button variant="outline" className="w-full mt-4" disabled>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Last opp nytt dokument
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Logg inn for å laste opp dokumenter
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -285,15 +543,20 @@ const Portfolio = () => {
                   <CardDescription>Utvikling over tid</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-center p-6 bg-gradient-soft rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2">Total verdiøkning</h4>
-                    <p className="text-3xl font-bold text-primary">
-                      {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
-                    </p>
-                    <p className="text-muted-foreground">
-                      {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
-                    </p>
-                  </div>
+                    <div className="text-center p-6 bg-gradient-soft rounded-lg">
+                      <h4 className="text-lg font-semibold mb-2">Total verdiøkning</h4>
+                      <p className="text-3xl font-bold text-primary">
+                        {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
+                      </p>
+                      <p className="text-muted-foreground">
+                        {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
+                      </p>
+                      {isExamplePortfolio && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {!user ? "Demo tall" : "Legg til eiendommer for å se din faktiske utvikling"}
+                        </p>
+                      )}
+                    </div>
                 </CardContent>
               </Card>
 
@@ -304,19 +567,36 @@ const Portfolio = () => {
                 </CardHeader>
                 <CardContent>
                   {(() => {
-                    const bestProperty = properties.reduce((best, current) => 
-                      current.roi > best.roi ? current : best
-                    );
+                    const bestProperty = displayProperties.reduce((best, current) => {
+                      const currentROI = current.purchase_price && current.current_value ? 
+                        ((current.current_value - current.purchase_price) / current.purchase_price) * 100 : 0;
+                      const bestROI = best.purchase_price && best.current_value ? 
+                        ((best.current_value - best.purchase_price) / best.purchase_price) * 100 : 0;
+                      return currentROI > bestROI ? current : best;
+                    });
+                    const bestROI = bestProperty.purchase_price && bestProperty.current_value ? 
+                      ((bestProperty.current_value - bestProperty.purchase_price) / bestProperty.purchase_price) * 100 : 0;
+                    const bestReturn = bestProperty.current_value && bestProperty.purchase_price ? 
+                      bestProperty.current_value - bestProperty.purchase_price : 0;
+                    
                     return (
                       <div className="space-y-3">
                         <div className="p-4 bg-primary-soft rounded-lg">
-                          <h4 className="font-semibold text-primary">{bestProperty.address}</h4>
+                          <h4 className="font-semibold text-primary">
+                            {bestProperty.address}
+                            {bestProperty.postal_code && `, ${bestProperty.postal_code}`} {bestProperty.city}
+                          </h4>
                           <p className="text-2xl font-bold text-primary mt-2">
-                            +{bestProperty.roi}% avkastning
+                            +{bestROI.toFixed(1)}% avkastning
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Gevinst: +{bestProperty.totalReturn.toLocaleString()} kr
+                            Gevinst: +{bestReturn.toLocaleString()} kr
                           </p>
+                          {isExamplePortfolio && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {!user ? "Demo eiendom" : "Basert på dine eiendommer"}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );
@@ -330,24 +610,55 @@ const Portfolio = () => {
                 <CardTitle>Portefølje diversifisering</CardTitle>
                 <CardDescription>Fordeling av investeringer</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {properties.map((property) => {
-                    const percentage = (property.purchasePrice / totalInvestment) * 100;
-                    return (
-                      <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
-                        <h5 className="font-semibold text-sm mb-2">{property.address}</h5>
-                        <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground">av portefølje</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {displayProperties.map((property) => {
+                      const percentage = property.purchase_price && totalInvestment > 0 ? 
+                        (property.purchase_price / totalInvestment) * 100 : 0;
+                      return (
+                        <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
+                          <h5 className="font-semibold text-sm mb-2">
+                            {property.address}
+                            {property.postal_code && `, ${property.postal_code}`}
+                          </h5>
+                          <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
+                          <p className="text-xs text-muted-foreground">av portefølje</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {isExamplePortfolio && (
+                    <p className="text-xs text-center text-muted-foreground mt-4">
+                      {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
+                    </p>
+                  )}
+                </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialogs */}
+      {selectedProperty && (
+        <>
+          <PropertyEditDialog
+            property={selectedProperty}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onPropertyUpdated={fetchUserProperties}
+          />
+          <PropertyDetailsDialog
+            property={selectedProperty}
+            open={detailsDialogOpen}
+            onOpenChange={setDetailsDialogOpen}
+          />
+          <PropertyDocumentsDialog
+            property={selectedProperty}
+            open={documentsDialogOpen}
+            onOpenChange={setDocumentsDialogOpen}
+          />
+        </>
+      )}
     </div>
   );
 };
