@@ -260,17 +260,17 @@ const Calculator = () => {
               
               <div className="text-center space-y-3">
                 <h2 className="text-3xl font-bold text-foreground">
-                  {selectedModules.length > 0 ? 'Legg til flere moduler' : 'Bygg videre på rapporten'}
+                  {selectedModules.length > 0 ? 'Utvid fullstendig bankrapport' : 'Utvid fullstendig bankrapport'}
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                   {selectedModules.length > 0 
-                    ? 'Velg ytterligere analysemodulere for å utvide rapporten, eller generer den komplette rapporten nå'
-                    : 'Velg fra analysemodulene nedenfor for å utvide rapporten med mer detaljerte beregninger og analyser som banker ønsker å se'
+                    ? 'Fyll ut alle modulene nedenfor eller fjern de du ikke ønsker i rapporten'
+                    : 'Klikk nedenfor for å få tilgang til alle analysemodulene og fylle dem ut i sekvens'
                   }
                 </p>
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto">
                   <p className="text-sm text-primary font-medium">
-                    💡 Tip: Jo flere moduler du bruker, desto mer omfattende og profesjonell blir din bankrapport
+                    💡 Tip: Jo flere moduler du fyller ut, desto mer omfattende og profesjonell blir din bankrapport
                   </p>
                 </div>
               </div>
@@ -291,6 +291,7 @@ const Calculator = () => {
                 onGenerateReport={handleGenerateReport}
                 selectedModules={selectedModules}
                 calculatorData={calculatorData}
+                onDataChange={handleInputChange}
               />
 
               {/* Generate Final Report Button */}
