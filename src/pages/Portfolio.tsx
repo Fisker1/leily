@@ -708,63 +708,6 @@ const Portfolio = () => {
                 );
                })}
              </div>
-             
-             {/* Price Development Chart */}
-             <Card className="shadow-medium">
-               <CardHeader>
-                 <CardTitle className="text-xl flex items-center gap-2">
-                   <TrendingUp className="h-5 w-5" />
-                   Prisutvikling
-                 </CardTitle>
-                 <CardDescription>
-                   {!user ? "Demo prisutvikling for eksempeleiendommene" : "Verdiutvikling for dine eiendommer"}
-                 </CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <div className="h-80">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <LineChart data={priceChartData}>
-                       <CartesianGrid strokeDasharray="3 3" />
-                       <XAxis dataKey="month" />
-                       <YAxis 
-                         tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
-                       />
-                       <Tooltip 
-                         formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
-                         labelFormatter={(label) => `Måned: ${label}`}
-                       />
-                       <Legend />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Storgata 15" 
-                         stroke="hsl(var(--primary))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--primary))' }}
-                       />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Bogstadveien 42" 
-                         stroke="hsl(var(--orange))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--orange))' }}
-                       />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Grünerløkka 8" 
-                         stroke="hsl(var(--accent))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--accent))' }}
-                       />
-                     </LineChart>
-                   </ResponsiveContainer>
-                 </div>
-                 {(!user || showExampleProperty) && (
-                   <p className="text-xs text-center text-muted-foreground mt-4">
-                     {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
-                   </p>
-                 )}
-               </CardContent>
-             </Card>
            </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
@@ -1300,10 +1243,67 @@ const Portfolio = () => {
                         {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
                       </p>
                     )}
-                  </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                   </CardContent>
+               </Card>
+             )}
+                
+             {/* Price Development Chart */}
+             <Card className="shadow-medium">
+               <CardHeader>
+                 <CardTitle className="text-xl flex items-center gap-2">
+                   <TrendingUp className="h-5 w-5" />
+                   Prisutvikling
+                 </CardTitle>
+                 <CardDescription>
+                   {!user ? "Demo prisutvikling for eksempeleiendommene" : "Verdiutvikling for dine eiendommer"}
+                 </CardDescription>
+               </CardHeader>
+               <CardContent>
+                 <div className="h-80">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <LineChart data={priceChartData}>
+                       <CartesianGrid strokeDasharray="3 3" />
+                       <XAxis dataKey="month" />
+                       <YAxis 
+                         tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                       />
+                       <Tooltip 
+                         formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
+                         labelFormatter={(label) => `Måned: ${label}`}
+                       />
+                       <Legend />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Storgata 15" 
+                         stroke="hsl(var(--primary))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--primary))' }}
+                       />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Bogstadveien 42" 
+                         stroke="hsl(var(--orange))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--orange))' }}
+                       />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Grünerløkka 8" 
+                         stroke="hsl(var(--accent))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--accent))' }}
+                       />
+                     </LineChart>
+                   </ResponsiveContainer>
+                 </div>
+                 {(!user || showExampleProperty) && (
+                   <p className="text-xs text-center text-muted-foreground mt-4">
+                     {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
+                   </p>
+                 )}
+               </CardContent>
+             </Card>
+           </TabsContent>
         </Tabs>
       </div>
 
