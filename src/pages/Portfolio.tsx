@@ -27,6 +27,7 @@ import {
   Trash,
   Download
 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface Property {
   id: string;
@@ -371,6 +372,64 @@ const Portfolio = () => {
   const totalReturn = currentPortfolioValue - totalInvestment;
   const averageROI = totalInvestment > 0 ? (totalReturn / totalInvestment) * 100 : 0;
 
+  // Mock data for price development chart (for demo purposes)
+  const priceChartData = [
+    { 
+      month: 'Jan 2022', 
+      'Storgata 15': 2800000, 
+      'Bogstadveien 42': 2200000, 
+      'Grünerløkka 8': 3100000 
+    },
+    { 
+      month: 'Apr 2022', 
+      'Storgata 15': 2850000, 
+      'Bogstadveien 42': 2180000, 
+      'Grünerløkka 8': 3120000 
+    },
+    { 
+      month: 'Jul 2022', 
+      'Storgata 15': 2920000, 
+      'Bogstadveien 42': 2250000, 
+      'Grünerløkka 8': 3150000 
+    },
+    { 
+      month: 'Okt 2022', 
+      'Storgata 15': 2980000, 
+      'Bogstadveien 42': 2300000, 
+      'Grünerløkka 8': 3200000 
+    },
+    { 
+      month: 'Jan 2023', 
+      'Storgata 15': 3050000, 
+      'Bogstadveien 42': 2450000, 
+      'Grünerløkka 8': 3280000 
+    },
+    { 
+      month: 'Apr 2023', 
+      'Storgata 15': 3100000, 
+      'Bogstadveien 42': 2520000, 
+      'Grünerløkka 8': 3320000 
+    },
+    { 
+      month: 'Jul 2023', 
+      'Storgata 15': 3150000, 
+      'Bogstadveien 42': 2580000, 
+      'Grünerløkka 8': 3340000 
+    },
+    { 
+      month: 'Okt 2023', 
+      'Storgata 15': 3180000, 
+      'Bogstadveien 42': 2620000, 
+      'Grünerløkka 8': 3350000 
+    },
+    { 
+      month: 'Jan 2024', 
+      'Storgata 15': 3200000, 
+      'Bogstadveien 42': 2650000, 
+      'Grünerløkka 8': 3350000 
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -647,9 +706,66 @@ const Portfolio = () => {
                     </CardContent>
                   </Card>
                 );
-              })}
-            </div>
-          </TabsContent>
+               })}
+             </div>
+             
+             {/* Price Development Chart */}
+             <Card className="shadow-medium">
+               <CardHeader>
+                 <CardTitle className="text-xl flex items-center gap-2">
+                   <TrendingUp className="h-5 w-5" />
+                   Prisutvikling
+                 </CardTitle>
+                 <CardDescription>
+                   {!user ? "Demo prisutvikling for eksempeleiendommene" : "Verdiutvikling for dine eiendommer"}
+                 </CardDescription>
+               </CardHeader>
+               <CardContent>
+                 <div className="h-80">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <LineChart data={priceChartData}>
+                       <CartesianGrid strokeDasharray="3 3" />
+                       <XAxis dataKey="month" />
+                       <YAxis 
+                         tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                       />
+                       <Tooltip 
+                         formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
+                         labelFormatter={(label) => `Måned: ${label}`}
+                       />
+                       <Legend />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Storgata 15" 
+                         stroke="hsl(var(--primary))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--primary))' }}
+                       />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Bogstadveien 42" 
+                         stroke="hsl(var(--orange))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--orange))' }}
+                       />
+                       <Line 
+                         type="monotone" 
+                         dataKey="Grünerløkka 8" 
+                         stroke="hsl(var(--accent))" 
+                         strokeWidth={3}
+                         dot={{ fill: 'hsl(var(--accent))' }}
+                       />
+                     </LineChart>
+                   </ResponsiveContainer>
+                 </div>
+                 {(!user || showExampleProperty) && (
+                   <p className="text-xs text-center text-muted-foreground mt-4">
+                     {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
+                   </p>
+                 )}
+               </CardContent>
+             </Card>
+           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
             <div className="space-y-6">
