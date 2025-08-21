@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Calculator } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { PropertyProfitabilityChart } from "./PropertyProfitabilityChart";
 
 interface PropertyAddDialogProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ interface PropertyAddDialogProps {
 export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -77,21 +79,26 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
         description: "Eiendom lagt til successfully",
       });
 
-      setOpen(false);
-      setFormData({
-        address: "",
-        city: "",
-        postal_code: "",
-        property_type: "",
-        size_sqm: "",
-        bedrooms: "",
-        purchase_price: "",
-        purchase_date: "",
-        loan_amount: "",
-        interest_rate: "",
-        loan_duration_years: "",
-        current_value: ""
-      });
+      // Show chart if we have required data
+      if (formData.purchase_price && formData.loan_amount && formData.interest_rate && formData.loan_duration_years) {
+        setShowChart(true);
+      } else {
+        setOpen(false);
+        setFormData({
+          address: "",
+          city: "",
+          postal_code: "",
+          property_type: "",
+          size_sqm: "",
+          bedrooms: "",
+          purchase_price: "",
+          purchase_date: "",
+          loan_amount: "",
+          interest_rate: "",
+          loan_duration_years: "",
+          current_value: ""
+        });
+      }
       
       onPropertyAdded?.();
     } catch (error) {
@@ -110,6 +117,25 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const resetForm = () => {
+    setFormData({
+      address: "",
+      city: "",
+      postal_code: "",
+      property_type: "",
+      size_sqm: "",
+      bedrooms: "",
+      purchase_price: "",
+      purchase_date: "",
+      loan_amount: "",
+      interest_rate: "",
+      loan_duration_years: "",
+      current_value: ""
+    });
+    setShowChart(false);
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -126,7 +152,26 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {showChart ? (
+          <div className="space-y-6">
+            <PropertyProfitabilityChart
+              purchasePrice={parseFloat(formData.purchase_price)}
+              loanAmount={parseFloat(formData.loan_amount)}
+              interestRate={parseFloat(formData.interest_rate)}
+              loanDurationYears={parseInt(formData.loan_duration_years)}
+              currentValue={formData.current_value ? parseFloat(formData.current_value) : undefined}
+            />
+            <div className="flex justify-end gap-4">
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Legg til ny eiendom
+              </Button>
+              <Button type="button" onClick={resetForm}>
+                Ferdig
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Property Details */}
             <Card>
@@ -285,15 +330,16 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
             </Card>
           </div>
 
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Avbryt
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Lagrer..." : "Legg til eiendom"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-4">
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Avbryt
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Lagrer..." : "Legg til eiendom"}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

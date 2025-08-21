@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X, Calculator, Building2, Briefcase, PieChart } from "lucide-react";
+import { Menu, X, Calculator, Building2, Briefcase, PieChart, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import LanguageToggle from "./LanguageToggle";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { translations } = useLanguage();
+  const { user, signOut } = useAuth();
 
   return (
     <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border">
@@ -44,12 +46,26 @@ const Navigation = () => {
 
           <div className="flex items-center space-x-4">
             <LanguageToggle />
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/auth">{translations.nav.signIn}</Link>
-            </Button>
-            <Button size="sm" className="bg-gradient-primary hover:opacity-90" asChild>
-              <Link to="/auth">{translations.nav.startAnalysis}</Link>
-            </Button>
+            {user ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => signOut()}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logg ut
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/auth">{translations.nav.signIn}</Link>
+                </Button>
+                <Button size="sm" className="bg-gradient-primary hover:opacity-90" asChild>
+                  <Link to="/auth">{translations.nav.startAnalysis}</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -76,9 +92,21 @@ const Navigation = () => {
               </nav>
               <div className="space-y-4">
                 <LanguageToggle />
-                <Button className="w-full" size="lg" asChild>
-                  <Link to="/auth">{translations.nav.startAnalysis}</Link>
-                </Button>
+                {user ? (
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={() => signOut()}
+                    variant="outline"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logg ut
+                  </Button>
+                ) : (
+                  <Button className="w-full" size="lg" asChild>
+                    <Link to="/auth">{translations.nav.startAnalysis}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
