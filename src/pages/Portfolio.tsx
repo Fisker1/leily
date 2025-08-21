@@ -337,10 +337,14 @@ const Portfolio = () => {
           </TabsList>
 
           <TabsContent value="properties" className="space-y-6">
-            <div className="grid gap-6">
+            <div className="grid gap-4">
               {displayProperties.map((property) => {
                 const isPrimaryHome = !property.monthly_rent;
                 const isUserProperty = user && !showExampleProperty;
+                const totalReturn = property.current_value && property.purchase_price ? 
+                  property.current_value - property.purchase_price : 0;
+                const roiPercentage = property.purchase_price && property.current_value ? 
+                  ((property.current_value - property.purchase_price) / property.purchase_price) * 100 : 0;
                 
                 return (
                   <Card 
@@ -351,144 +355,106 @@ const Portfolio = () => {
                         : ''
                     }`}
                   >
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        {/* Property Image */}
-                        <div className="lg:col-span-1 relative">
-                          <PropertyImage
-                            imageUrl={property.image_url}
-                            address={property.address}
-                            city={property.city}
-                            className="w-full h-32 rounded-lg"
-                            alt={`Eiendom på ${property.address}`}
-                          />
-                          {isPrimaryHome && isUserProperty && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 rounded-full animate-pulse shadow-lg shadow-orange-400/50"></div>
+                    <CardContent className="p-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        {/* Property Image and Basic Info */}
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className="relative">
+                            <PropertyImage
+                              imageUrl={property.image_url}
+                              address={property.address}
+                              city={property.city}
+                              className="w-16 h-16 rounded-lg flex-shrink-0"
+                              alt={`Eiendom på ${property.address}`}
+                            />
+                            {isPrimaryHome && isUserProperty && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-pulse shadow-lg shadow-orange-400/50"></div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-foreground text-base mb-1">
+                              {property.address}, {property.postal_code} {property.city}
+                            </h3>
+                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                              <span>Type: <span className="text-foreground">{property.property_type || 'Leilighet'}</span></span>
+                              <span>Størrelse: <span className="text-foreground">{property.size_sqm ? `${property.size_sqm}m²` : '85m²'}</span></span>
+                              <span>Kjøpsdato: <span className="text-foreground">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '2022-03-15'}</span></span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Financial Tiles */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
+                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[120px]">
+                            <p className="text-xs text-muted-foreground mb-1">Kjøpspris</p>
+                            <p className="font-semibold text-sm">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
+                          </div>
+                          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[120px]">
+                            <p className="text-xs text-muted-foreground mb-1">Nåverdi</p>
+                            <p className="font-semibold text-sm text-blue-600 dark:text-blue-400">
+                              {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
+                            </p>
+                          </div>
+                          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[120px]">
+                            <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
+                            <p className="font-semibold text-sm text-green-600 dark:text-green-400">
+                              +{roiPercentage.toFixed(1)}%
+                            </p>
+                          </div>
+                          <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[120px]">
+                            <p className="text-xs text-muted-foreground mb-1">Gevinst</p>
+                            <p className="font-semibold text-sm text-emerald-600 dark:text-emerald-400">
+                              +{totalReturn.toLocaleString()} kr
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex lg:flex-col gap-2 flex-shrink-0">
+                          {user && !showExampleProperty ? (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 lg:flex-none lg:w-32"
+                                onClick={() => {
+                                  setSelectedProperty(property);
+                                  setDetailsDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Detaljer
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 lg:flex-none lg:w-32"
+                                onClick={() => {
+                                  console.log('Opening documents for property:', property.id);
+                                  setSelectedProperty(property);
+                                  setDocumentsDialogOpen(true);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Dokumenter
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Detaljer
+                              </Button>
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
+                                <FileText className="h-4 w-4 mr-2" />
+                                Dokumenter
+                              </Button>
+                            </>
                           )}
                         </div>
-
-                      {/* Property Info */}
-                      <div className="lg:col-span-2">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">
-                          {property.address}
-                          {property.postal_code && `, ${property.postal_code}`} {property.city}
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Type:</span>
-                            <span>{property.property_type || 'Ikke oppgitt'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Størrelse:</span>
-                            <span>{property.size_sqm ? `${property.size_sqm}m²` : 'Ikke oppgitt'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Kjøpsdato:</span>
-                            <span>{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : 'Ikke oppgitt'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status:</span>
-                            <Badge variant={property.monthly_rent ? "default" : "secondary"}>
-                              {property.monthly_rent ? "Utleid" : "Primærbolig/Ledig"}
-                            </Badge>
-                          </div>
-                        </div>
                       </div>
-
-                      {/* Financial Info */}
-                      <div className="lg:col-span-1">
-                        <div className="space-y-3 text-sm">
-                          <div className="text-center p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground">Kjøpspris</p>
-                            <p className="font-semibold">{property.purchase_price?.toLocaleString() || 'Ikke oppgitt'} kr</p>
-                          </div>
-                          <div className="text-center p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground">Nåverdi</p>
-                            <p className="font-semibold text-primary">
-                              {(property.current_value || property.purchase_price)?.toLocaleString() || 'Ikke oppgitt'} kr
-                            </p>
-                          </div>
-                          <div className="text-center p-3 bg-primary-soft rounded-lg">
-                            <p className="text-muted-foreground">Avkastning</p>
-                            <p className="font-semibold text-primary">
-                              {property.purchase_price && property.current_value ? 
-                                `${(((property.current_value - property.purchase_price) / property.purchase_price) * 100).toFixed(1)}%`
-                                : '0%'
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="lg:col-span-1 flex flex-col gap-2">
-                        {user && !showExampleProperty ? (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full"
-                              onClick={() => {
-                                setSelectedProperty(property);
-                                setDetailsDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Detaljer
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full"
-                              onClick={() => {
-                                setSelectedProperty(property);
-                                setDocumentsDialogOpen(true);
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Dokumenter
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full"
-                              onClick={() => {
-                                setSelectedProperty(property);
-                                setEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Rediger
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm" 
-                              className="w-full"
-                              onClick={() => handleDeleteProperty(property.id)}
-                            >
-                              <Trash className="h-4 w-4 mr-2" />
-                              Slett
-                            </Button>
-                          </>
-                        ) : (
-                          <div className="space-y-2">
-                            <Button variant="outline" size="sm" className="w-full" disabled>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Detaljer
-                            </Button>
-                            <Button variant="outline" size="sm" className="w-full" disabled>
-                              <FileText className="h-4 w-4 mr-2" />
-                              Dokumenter
-                            </Button>
-                            <p className="text-xs text-center text-muted-foreground">
-                              Logg inn for full funksjonalitet
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>

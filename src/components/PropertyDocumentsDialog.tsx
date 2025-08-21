@@ -50,12 +50,14 @@ export const PropertyDocumentsDialog = ({ property, open, onOpenChange }: Proper
 
   const fetchDocuments = async () => {
     try {
+      console.log('Fetching documents for property:', property.id);
       const { data, error } = await supabase
         .from('property_documents')
         .select('*')
         .eq('property_id', property.id)
         .order('uploaded_at', { ascending: false });
 
+      console.log('Documents fetch result:', { data, error });
       if (error) throw error;
       setDocuments(data || []);
     } catch (error) {
@@ -102,6 +104,7 @@ export const PropertyDocumentsDialog = ({ property, open, onOpenChange }: Proper
 
       if (dbError) throw dbError;
 
+      console.log('Uploading file for property:', property.id);
       toast({
         title: "Suksess",
         description: "Dokument lastet opp successfully",
