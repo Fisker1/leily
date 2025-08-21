@@ -416,11 +416,11 @@ const Rental = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Månedlig leie</p>
                           <p className="font-semibold text-primary">
-                            {property.monthly_rent?.toLocaleString() || 'Ikke oppgitt'} kr
+                            {property.monthly_rent?.toLocaleString() || "Ikke oppgitt"} kr
                           </p>
                         </div>
                         <div>
@@ -428,14 +428,17 @@ const Rental = () => {
                           <p className="font-semibold text-accent">
                             {property.monthly_rent ? 
                               (((property.monthly_rent * 12) / (property.current_value || property.purchase_price)) * 100).toFixed(1) 
-                              : '0'
+                              : "0"
                             }%
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Eiendomsverdi</p>
-                          <p className="font-medium">
-                            {(property.current_value || property.purchase_price).toLocaleString()} kr
+                          <p className="text-muted-foreground">Cashflow</p>
+                          <p className="font-semibold text-secondary">
+                            {property.monthly_rent ? 
+                              Math.round(property.monthly_rent * 0.75).toLocaleString()
+                              : "0"
+                            } kr
                           </p>
                         </div>
                         <div>
