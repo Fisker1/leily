@@ -338,9 +338,9 @@ const Portfolio = () => {
 
           <TabsContent value="properties" className="space-y-6">
             <div className="grid gap-4">
-              {displayProperties.map((property) => {
-                const isPrimaryHome = !property.monthly_rent;
-                const isUserProperty = user && !showExampleProperty;
+               {displayProperties.map((property) => {
+                 const isPrimaryHome = property.primary_residence;
+                 const isUserProperty = user && !showExampleProperty;
                 const totalReturn = property.current_value && property.purchase_price ? 
                   property.current_value - property.purchase_price : 0;
                 const roiPercentage = property.purchase_price && property.current_value ? 

@@ -236,9 +236,18 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
                       placeholder="3"
                     />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                 </div>
+
+                 <div className="flex items-center space-x-2">
+                   <Switch
+                     id="primary_residence"
+                     checked={formData.primary_residence}
+                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, primary_residence: checked }))}
+                   />
+                   <Label htmlFor="primary_residence">Primærbolig</Label>
+                 </div>
+               </CardContent>
+             </Card>
 
             {/* Financial Details */}
             <Card>
@@ -328,27 +337,18 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="monthly_rent">Månedsleie (kr)</Label>
-                  <Input
-                    id="monthly_rent"
-                    type="number"
-                    value={formData.monthly_rent}
-                    onChange={(e) => updateField("monthly_rent", e.target.value)}
-                    placeholder="25000"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="primary_residence"
-                    checked={formData.primary_residence}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, primary_residence: checked }))}
-                  />
-                  <Label htmlFor="primary_residence">Primærbolig</Label>
-                </div>
-              </CardContent>
-            </Card>
+                 <div>
+                   <Label htmlFor="monthly_rent">Månedsleie (kr)</Label>
+                   <Input
+                     id="monthly_rent"
+                     type="number"
+                     value={formData.monthly_rent}
+                     onChange={(e) => updateField("monthly_rent", e.target.value)}
+                     placeholder="25000"
+                   />
+                 </div>
+               </CardContent>
+             </Card>
           </div>
 
           <div className="flex justify-end gap-4">
