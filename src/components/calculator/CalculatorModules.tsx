@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Calculator, 
   TrendingUp, 
@@ -11,9 +13,12 @@ import {
   BarChart3,
   FileText,
   Settings,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import AdvancedCalculations from "./AdvancedCalculations";
 import MarketAnalysis from "./MarketAnalysis";
 import RiskEvaluation from "./RiskEvaluation";
@@ -31,6 +36,8 @@ interface CalculatorModulesProps {
   monthlyLoanPayment: number;
   calculatorMode: 'investment' | 'private';
   monthlyCashFlow: number;
+  onModuleActivate: (moduleId: string) => void;
+  onGenerateReport: () => void;
 }
 
 const CalculatorModules = ({
@@ -42,19 +49,30 @@ const CalculatorModules = ({
   loanPeriod,
   monthlyLoanPayment,
   calculatorMode,
-  monthlyCashFlow
+  monthlyCashFlow,
+  onModuleActivate,
+  onGenerateReport
 }: CalculatorModulesProps) => {
   const navigate = useNavigate();
-  const { getReportData } = useCalculatorData();
+  const { isModuleActivated, updateField } = useCalculatorData();
+  const [activeModule, setActiveModule] = useState<string | null>(null);
 
   const handleGenerateReport = () => {
-    const reportData = getReportData();
-    navigate('/bank-report', { state: reportData });
+    onGenerateReport();
+  };
+
+  const handleModuleClick = (moduleId: string) => {
+    if (activeModule === moduleId) {
+      setActiveModule(null);
+    } else {
+      setActiveModule(moduleId);
+      onModuleActivate(moduleId);
+    }
   };
 
   const modules = [
     {
-      id: "profitability",
+      id: "Lönnsomhetsanalyse",
       title: "Beregn lønnsomhet",
       description: "Få en rask oversikt over investeringens potensial",
       icon: Target,
@@ -68,10 +86,11 @@ const CalculatorModules = ({
           monthlyLoanPayment={monthlyLoanPayment}
           calculatorMode={calculatorMode}
         />
-      )
+      ),
+      inputs: null
     },
     {
-      id: "advanced",
+      id: "Avanserte beregninger",
       title: "Avanserte beregninger",
       description: "Detaljerte analyser av cash flow, avkastning og finansieringskostnader",
       icon: Calculator,
@@ -85,10 +104,40 @@ const CalculatorModules = ({
           interestRate={interestRate}
           loanPeriod={loanPeriod}
         />
+      ),
+      inputs: (
+        <Card className="mt-4 border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Tilleggsinformasjon for avanserte beregninger</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="renovationBudget">Oppussingskostnader</Label>
+                <Input
+                  id="renovationBudget"
+                  type="number"
+                  placeholder="200000"
+                  onChange={(e) => updateField('renovationCost', e.target.value, 'Avanserte beregninger')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="marketAppreciation">Forventet årlig verdistigning (%)</Label>
+                <Input
+                  id="marketAppreciation"
+                  type="number"
+                  placeholder="3"
+                  step="0.1"
+                  onChange={(e) => updateField('marketAppreciation', e.target.value, 'Avanserte beregninger')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )
     },
     {
-      id: "market",
+      id: "Markedsanalyse",
       title: "Markedsanalyse",
       description: "Sammenlign priser og leieinntekter i området for å forstå markedspotensialet",
       icon: TrendingUp,
@@ -98,10 +147,37 @@ const CalculatorModules = ({
           propertyValue={propertyValue}
           monthlyRent={monthlyRent}
         />
+      ),
+      inputs: (
+        <Card className="mt-4 border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Markedsdata for området</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="areaCode">Postnummer/område</Label>
+                <Input
+                  id="areaCode"
+                  placeholder="0250"
+                  onChange={(e) => updateField('areaCode', e.target.value, 'Markedsanalyse')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="propertyType">Boligtype</Label>
+                <Input
+                  id="propertyType"
+                  placeholder="3-roms leilighet"
+                  onChange={(e) => updateField('propertyType', e.target.value, 'Markedsanalyse')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )
     },
     {
-      id: "risk",
+      id: "Risikoevaluering",
       title: "Risikoevaluering",
       description: "Identifiser potensielle risikoer og få anbefalinger for å optimalisere investeringsstrategien",
       icon: Shield,
@@ -113,10 +189,40 @@ const CalculatorModules = ({
           loanAmount={loanAmount}
           cashFlow={monthlyCashFlow}
         />
+      ),
+      inputs: (
+        <Card className="mt-4 border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Risikofaktorer</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="vacancyRate">Forventet leieledie (%)</Label>
+                <Input
+                  id="vacancyRate"
+                  type="number"
+                  placeholder="5"
+                  step="0.1"
+                  onChange={(e) => updateField('vacancyRate', e.target.value, 'Risikoevaluering')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maintenanceReserve">Vedlikeholdsbuffer (kr/år)</Label>
+                <Input
+                  id="maintenanceReserve"
+                  type="number"
+                  placeholder="20000"
+                  onChange={(e) => updateField('maintenanceReserve', e.target.value, 'Risikoevaluering')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )
     },
     {
-      id: "yields",
+      id: "Avkastningsanalyse",
       title: "Avkastningskalkulatorer",
       description: "Månedlig og årlig avkastning med fremskrivninger",
       icon: BarChart3,
@@ -127,96 +233,140 @@ const CalculatorModules = ({
           monthlyRent={monthlyRent}
           expenses={expenses}
         />
+      ),
+      inputs: (
+        <Card className="mt-4 border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Fremskrivningsparametere</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="projectionYears">Fremskrivingsperiode (år)</Label>
+                <Input
+                  id="projectionYears"
+                  type="number"
+                  placeholder="10"
+                  onChange={(e) => updateField('projectionYears', e.target.value, 'Avkastningsanalyse')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rentGrowth">Forventet leievekst (% per år)</Label>
+                <Input
+                  id="rentGrowth"
+                  type="number"
+                  placeholder="3"
+                  step="0.1"
+                  onChange={(e) => updateField('rentGrowth', e.target.value, 'Avkastningsanalyse')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )
     }
   ];
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="space-y-4">
         {modules.map((module) => (
-          <Card 
-            key={module.id}
-            className="cursor-pointer hover:shadow-medium transition-shadow border-primary/20 group"
-            onClick={() => {
-              const tabsTrigger = document.querySelector(`[data-state="inactive"][value="${module.id}"]`) as HTMLButtonElement;
-              if (tabsTrigger) tabsTrigger.click();
-            }}
-          >
-            <div className="p-4 text-center space-y-3">
-              <div className="p-2 bg-primary-soft rounded-lg mx-auto w-fit group-hover:scale-110 transition-transform">
-                <module.icon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-medium text-foreground text-sm leading-tight">{module.title}</h3>
-                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{module.description}</p>
-                <Badge 
-                  variant={module.badge === "Premium" ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {module.badge}
-                </Badge>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <Tabs defaultValue="profitability" className="space-y-6 mt-8">
-        <TabsList className="hidden">
-          {modules.map((module) => (
-            <TabsTrigger key={module.id} value={module.id}>
-              {module.title}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {modules.map((module) => (
-          <TabsContent key={module.id} value={module.id} className="space-y-6">
-            <Card className="shadow-soft border-primary/20">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-soft rounded-lg">
-                      <module.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-foreground">{module.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        {module.description}
-                      </CardDescription>
-                    </div>
+          <div key={module.id}>
+            <Card 
+              className={`cursor-pointer hover:shadow-medium transition-all border-primary/20 group ${
+                isModuleActivated(module.id) || activeModule === module.id ? 'ring-2 ring-primary/50 shadow-medium' : ''
+              }`}
+              onClick={() => handleModuleClick(module.id)}
+            >
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-primary-soft rounded-lg group-hover:scale-110 transition-transform">
+                    <module.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex gap-2">
-                    <Badge variant={module.badge === "Premium" ? "default" : "secondary"}>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-foreground text-sm leading-tight">{module.title}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{module.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={module.badge === "Premium" ? "default" : "secondary"}
+                      className="text-xs"
+                    >
                       {module.badge}
                     </Badge>
-                    {module.id === "risk" && (
-                      <Link to="/calculator/risk-analysis">
-                        <Badge variant="outline" className="cursor-pointer hover:bg-muted">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Detaljert analyse
-                        </Badge>
-                      </Link>
+                    {isModuleActivated(module.id) && (
+                      <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                        ✓ Aktivert
+                      </Badge>
+                    )}
+                    {activeModule === module.id ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                 </div>
-              </CardHeader>
+              </div>
             </Card>
             
-            {module.component}
-          </TabsContent>
+            {/* Module Input Form */}
+            {activeModule === module.id && module.inputs && (
+              <div className="ml-4">
+                {module.inputs}
+              </div>
+            )}
+            
+            {/* Module Component Display */}
+            {isModuleActivated(module.id) && activeModule === module.id && (
+              <div className="ml-4 mt-4">
+                <Card className="shadow-soft border-primary/20">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary-soft rounded-lg">
+                          <module.icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-foreground">{module.title}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {module.description}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant={module.badge === "Premium" ? "default" : "secondary"}>
+                          {module.badge}
+                        </Badge>
+                        {module.id === "Risikoevaluering" && (
+                          <Link to="/calculator/risk-analysis">
+                            <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Detaljert analyse
+                            </Badge>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+                
+                {module.component}
+              </div>
+            )}
+          </div>
         ))}
-      </Tabs>
+      </div>
 
-      <Card className="shadow-medium bg-gradient-soft border-primary/20">
+      {/* Generate Report Section */}
+      <Card className="shadow-medium bg-gradient-soft border-primary/20 mt-8">
         <CardHeader>
           <CardTitle className="text-primary flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Generer bankerapp
+            Generer bankrapport
           </CardTitle>
           <CardDescription>
-            Basert på de modulene du har brukt, generer en profesjonell rapport for banken
+            Basert på grunnleggende data{Array.from(new Set(modules.filter(m => isModuleActivated(m.id)).map(m => m.id))).length > 0 && 
+              ` og ${Array.from(new Set(modules.filter(m => isModuleActivated(m.id)).map(m => m.id))).length} valgte analysemoduler`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -227,7 +377,7 @@ const CalculatorModules = ({
               onClick={handleGenerateReport}
             >
               <FileText className="h-4 w-4 mr-2" />
-              Generer fullstendig bankerapp
+              Generer fullstendig bankrapport
             </Button>
             <Button 
               variant="outline" 

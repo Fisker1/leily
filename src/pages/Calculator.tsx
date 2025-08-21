@@ -4,16 +4,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calculator as CalcIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 
 const Calculator = () => {
-  const { data, updateField } = useCalculatorData();
+  const { data, updateField, isModuleActivated, getReportData } = useCalculatorData();
+  const navigate = useNavigate();
 
   const handleInputChange = (field: string, value: any) => {
     updateField(field, value);
+  };
+
+  const handleModuleActivation = (moduleId: string) => {
+    // Activate the module by adding some data to it
+    updateField('activated', true, moduleId);
+  };
+
+  const handleGenerateReport = () => {
+    const reportData = getReportData();
+    // Always activate basic profitability analysis if it's not already activated
+    if (!isModuleActivated('Lönnsomhetsanalyse')) {
+      updateField('activated', true, 'Lönnsomhetsanalyse');
+    }
+    
+    // Navigate to bank report with current data
+    navigate('/bank-report', { state: reportData });
   };
 
   const loanAmount = parseFloat(data.loanAmount) || 0;
@@ -155,7 +173,7 @@ const Calculator = () => {
           {/* Generate Report Button */}
           {canShowResults && (
             <div className="mt-6 text-center">
-              <Button size="lg" className="px-8">
+              <Button size="lg" className="px-8" onClick={handleGenerateReport}>
                 Generer fullstendig bankrapport
               </Button>
             </div>
@@ -191,6 +209,8 @@ const Calculator = () => {
               monthlyCashFlow={data.calculatorMode === 'investment' 
                 ? monthlyRent - totalExpenses - monthlyLoanPayment
                 : -totalExpenses - monthlyLoanPayment}
+              onModuleActivate={handleModuleActivation}
+              onGenerateReport={handleGenerateReport}
             />
           </div>
         )}

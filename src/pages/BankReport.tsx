@@ -17,6 +17,9 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { useRef } from "react";
 
 interface ModuleData {
   [key: string]: any;
@@ -24,6 +27,7 @@ interface ModuleData {
 
 const BankReport = () => {
   const location = useLocation();
+  const reportRef = useRef<HTMLDivElement>(null);
   const reportData = location.state || {};
   
   const {
@@ -35,6 +39,54 @@ const BankReport = () => {
     yieldData = {},
     activatedModules = []
   } = reportData;
+
+  const generatePDF = async () => {
+    if (!reportRef.current) return;
+
+    try {
+      // Hide navigation temporarily
+      const nav = document.querySelector('nav');
+      const navDisplay = nav?.style.display;
+      if (nav) nav.style.display = 'none';
+
+      // Create canvas from the report
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff'
+      });
+
+      // Restore navigation
+      if (nav && navDisplay) nav.style.display = navDisplay;
+
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Save the PDF
+      const reportId = `AB-${Date.now().toString(36).toUpperCase()}`;
+      pdf.save(`bankrapport-${reportId}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+  };
 
   const currentDate = new Date().toLocaleDateString('no-NO', {
     year: 'numeric',
@@ -66,11 +118,11 @@ const BankReport = () => {
             Tilbake til kalkulator
           </Link>
           <div className="flex gap-4">
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => window.print()}>
               <Printer className="h-4 w-4 mr-2" />
               Skriv ut
             </Button>
-            <Button className="bg-gradient-primary hover:opacity-90">
+            <Button className="bg-gradient-primary hover:opacity-90" onClick={generatePDF}>
               <Download className="h-4 w-4 mr-2" />
               Last ned PDF
             </Button>
@@ -78,7 +130,7 @@ const BankReport = () => {
         </div>
 
         {/* Report Container */}
-        <div className="max-w-4xl mx-auto bg-white text-black shadow-large rounded-lg overflow-hidden relative">
+        <div ref={reportRef} className="max-w-4xl mx-auto bg-white text-black shadow-large rounded-lg overflow-hidden relative">
           {/* Watermark */}
           <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-5">
             <div className="text-6xl font-bold transform rotate-45 text-primary">

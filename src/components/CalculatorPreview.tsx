@@ -21,6 +21,12 @@ const CalculatorPreview = () => {
     navigate('/bank-report', { state: reportData });
   };
 
+  // Handle module activation (for compatibility)
+  const handleModuleActivation = (moduleId: string) => {
+    // This could trigger some preview logic if needed
+    console.log('Module activated:', moduleId);
+  };
+
   // Calculations
   const totalMonthlyExpenses = 
     parseFloat(data.electricity) + 
@@ -295,6 +301,8 @@ const CalculatorPreview = () => {
                 monthlyLoanPayment={monthlyLoanPayment}
                 calculatorMode={data.calculatorMode}
                 monthlyCashFlow={monthlyCashFlow}
+                onModuleActivate={handleModuleActivation}
+                onGenerateReport={handleGenerateBankReport}
               />
             </div>
           </div>
