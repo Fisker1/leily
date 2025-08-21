@@ -38,6 +38,8 @@ interface CalculatorModulesProps {
   monthlyCashFlow: number;
   onModuleActivate: (moduleId: string) => void;
   onGenerateReport: () => void;
+  selectedModules?: any[];
+  calculatorData?: any;
 }
 
 const CalculatorModules = ({
@@ -51,7 +53,9 @@ const CalculatorModules = ({
   calculatorMode,
   monthlyCashFlow,
   onModuleActivate,
-  onGenerateReport
+  onGenerateReport,
+  selectedModules = [],
+  calculatorData = {}
 }: CalculatorModulesProps) => {
   const navigate = useNavigate();
   const { isModuleActivated, updateField } = useCalculatorData();
@@ -126,7 +130,9 @@ const CalculatorModules = ({
         interestRate, 
         loanPeriod,
         calculatorMode,
-        selectedModule: moduleId
+        selectedModule: moduleId,
+        selectedModules,
+        ...calculatorData
       } 
     });
   };

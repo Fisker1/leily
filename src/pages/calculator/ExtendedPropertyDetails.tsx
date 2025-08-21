@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FileText, Calculator } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, FileText, Calculator, Plus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 
@@ -17,6 +18,9 @@ const ExtendedPropertyDetails = () => {
 
   // Get selected module to customize the form
   const selectedModule = initialData.selectedModule || "Utvidet bankrapport";
+  const existingModules = initialData.selectedModules || [];
+
+  const [addAsAttachment, setAddAsAttachment] = useState(false);
 
   const [propertyDetails, setPropertyDetails] = useState({
     // Basic property data from previous step
@@ -162,16 +166,42 @@ const ExtendedPropertyDetails = () => {
   const avgPricePerSqm = propertyDetails.comparativePrices.reduce((sum, price) => sum + price.pricePerSqm, 0) / propertyDetails.comparativePrices.length;
 
   const handleGenerateReport = () => {
-    // Generate comprehensive report with all extended data
-    navigate('/bank-report', { 
-      state: { 
-        ...propertyDetails,
-        reportType: 'extended',
-        breakEvenAnalysis: breakEven,
-        medianMarketRent,
-        avgPricePerSqm
+    if (addAsAttachment && selectedModule !== "Utvidet bankrapport") {
+      // Add this module as attachment and return to calculator
+      const updatedModules = [...existingModules];
+      const moduleExists = updatedModules.find(m => m.id === selectedModule);
+      
+      if (!moduleExists) {
+        updatedModules.push({
+          id: selectedModule,
+          title: moduleInfo.title,
+          data: propertyDetails,
+          timestamp: new Date().toISOString()
+        });
       }
-    });
+
+      navigate('/calculator', { 
+        state: { 
+          ...initialData,
+          selectedModules: updatedModules,
+          showModuleAdded: true,
+          addedModuleName: moduleInfo.title
+        }
+      });
+    } else {
+      // Generate final comprehensive report with all attached modules
+      navigate('/bank-report', { 
+        state: { 
+          ...propertyDetails,
+          reportType: selectedModule === "Utvidet bankrapport" ? 'extended' : 'module',
+          selectedModule,
+          attachedModules: existingModules,
+          breakEvenAnalysis: breakEven,
+          medianMarketRent,
+          avgPricePerSqm
+        }
+      });
+    }
   };
 
   return (
@@ -554,31 +584,86 @@ const ExtendedPropertyDetails = () => {
 
           {/* Generate Report */}
           <Card className="bg-gradient-soft border-primary/20">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-xl font-bold text-foreground mb-4">
-                Generer {moduleInfo.title.split(' - ')[0]} Rapport
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                {selectedModule === "Lönnsomhetsanalyse" 
-                  ? "Rapporten vil inneholde grundig lønnsomhetsanalyse basert på dine parametere"
-                  : selectedModule === "Avanserte beregninger"
-                  ? "Rapporten vil inneholde 10-års cashflow, DSCR og break-even analyse"
-                  : selectedModule === "Markedsanalyse" 
-                  ? "Rapporten vil inneholde detaljert markedsanalyse og sammenligning"
-                  : selectedModule === "Risikoevaluering"
-                  ? "Rapporten vil inneholde omfattende risikovurdering og anbefalinger"
-                  : selectedModule === "Avkastningsanalyse"
-                  ? "Rapporten vil inneholde detaljerte avkastningsberegninger og prognoser"
-                  : "Rapporten vil inneholde alle detaljerte beregninger, markedsanalyse og risikovurdering"}
-              </p>
-              <Button 
-                size="lg" 
-                className="bg-gradient-primary hover:opacity-90 px-8"
-                onClick={handleGenerateReport}
-              >
-                <FileText className="h-5 w-5 mr-2" />
-                Generer {moduleInfo.title.split(' - ')[0]} Rapport
-              </Button>
+            <CardContent className="p-8">
+              <div className="text-center space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">
+                    Generer {moduleInfo.title.split(' - ')[0]} Rapport
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {selectedModule === "Lönnsomhetsanalyse" 
+                      ? "Rapporten vil inneholde grundig lønnsomhetsanalyse basert på dine parametere"
+                      : selectedModule === "Avanserte beregninger"
+                      ? "Rapporten vil inneholde 10-års cashflow, DSCR og break-even analyse"
+                      : selectedModule === "Markedsanalyse" 
+                      ? "Rapporten vil inneholde detaljert markedsanalyse og sammenligning"
+                      : selectedModule === "Risikoevaluering"
+                      ? "Rapporten vil inneholde omfattende risikovurdering og anbefalinger"
+                      : selectedModule === "Avkastningsanalyse"
+                      ? "Rapporten vil inneholde detaljerte avkastningsberegninger og prognoser"
+                      : "Rapporten vil inneholde alle detaljerte beregninger, markedsanalyse og risikovurdering"}
+                  </p>
+                </div>
+
+                {/* Add as attachment option for specific modules */}
+                {selectedModule !== "Utvidet bankrapport" && (
+                  <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                    <div className="flex items-center space-x-3 justify-center">
+                      <Checkbox
+                        id="add-attachment"
+                        checked={addAsAttachment}
+                        onCheckedChange={(checked) => setAddAsAttachment(checked === true)}
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Plus className="h-4 w-4 text-primary" />
+                        <Label 
+                          htmlFor="add-attachment"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Legg til som vedlegg i eiendomskalkylen
+                        </Label>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      {addAsAttachment 
+                        ? "Denne modulen blir lagt til som vedlegg. Du kan deretter velge flere moduler."
+                        : "Generer kun denne modulen som separat rapport."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Show existing attachments */}
+                {existingModules.length > 0 && (
+                  <div className="bg-accent/10 p-4 rounded-lg">
+                    <h4 className="font-semibold text-sm mb-2">Allerede lagt til som vedlegg:</h4>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {existingModules.map((module, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          ✓ {module.title.split(' - ')[0]}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-primary hover:opacity-90 px-8"
+                  onClick={handleGenerateReport}
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  {addAsAttachment 
+                    ? `Legg til ${moduleInfo.title.split(' - ')[0]} som vedlegg`
+                    : `Generer ${moduleInfo.title.split(' - ')[0]} Rapport`
+                  }
+                </Button>
+
+                {addAsAttachment && (
+                  <p className="text-xs text-muted-foreground">
+                    Etter å ha lagt til vedlegget, kan du velge flere moduler på kalkulatorsiden
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
