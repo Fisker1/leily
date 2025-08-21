@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { 
   Building2, 
   MapPin, 
@@ -17,53 +21,163 @@ import {
   Calculator
 } from "lucide-react";
 
+interface Property {
+  id: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  property_type: string;
+  size_sqm: number;
+  bedrooms: number;
+  purchase_price: number;
+  current_value: number;
+  monthly_rent?: number;
+  owner_id: string;
+}
+
 const Rental = () => {
-  // Mock data for rental properties
-  const properties = [
+  const { user } = useAuth();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Eksempel eiendom for innloggede brukere uten egne eiendommer
+  const exampleProperty = {
+    id: 'example',
+    address: 'Storgata 15',
+    city: 'Oslo',
+    postal_code: '0155',
+    property_type: 'Leilighet',
+    size_sqm: 85,
+    bedrooms: 3,
+    purchase_price: 4500000,
+    current_value: 4500000,
+    monthly_rent: 25000,
+    owner_id: 'example'
+  };
+
+  // Mock data for uinnloggede brukere (demo-formål)
+  const demoProperties = [
     {
-      id: 1,
-      address: "Storgata 15, 0155 Oslo",
-      type: "Leilighet",
-      size: "85m²",
+      id: 'demo1',
+      address: 'Storgata 15',
+      city: 'Oslo', 
+      postal_code: '0155',
+      property_type: 'Leilighet',
+      size_sqm: 85,
       bedrooms: 3,
-      rent: 25000,
-      tenant: "Aktiv leietaker",
-      leaseEnd: "2025-06-30",
-      status: "Utleid",
-      yield: 6.2,
-      image: "/api/placeholder/400/300"
+      purchase_price: 4500000,
+      current_value: 4500000,
+      monthly_rent: 25000,
+      owner_id: 'demo'
     },
     {
-      id: 2,
-      address: "Bogstadveien 42, 0366 Oslo",
-      type: "Leilighet", 
-      size: "65m²",
+      id: 'demo2', 
+      address: 'Bogstadveien 42',
+      city: 'Oslo',
+      postal_code: '0366',
+      property_type: 'Leilighet',
+      size_sqm: 65,
       bedrooms: 2,
-      rent: 22000,
-      tenant: "Ledig",
-      leaseEnd: null,
-      status: "Ledig",
-      yield: 5.8,
-      image: "/api/placeholder/400/300"
+      purchase_price: 3800000,
+      current_value: 3800000,
+      monthly_rent: 22000,
+      owner_id: 'demo'
     },
     {
-      id: 3,
-      address: "Grünerløkka 8, 0554 Oslo",
-      type: "Leilighet",
-      size: "95m²", 
+      id: 'demo3',
+      address: 'Grünerløkka 8',
+      city: 'Oslo',
+      postal_code: '0554', 
+      property_type: 'Leilighet',
+      size_sqm: 95,
       bedrooms: 4,
-      rent: 28000,
-      tenant: "Aktiv leietaker",
-      leaseEnd: "2024-12-31",
-      status: "Utleid",
-      yield: 7.1,
-      image: "/api/placeholder/400/300"
+      purchase_price: 5200000,
+      current_value: 5200000,
+      monthly_rent: 28000,
+      owner_id: 'demo'
     }
   ];
 
-  const totalRent = properties.reduce((sum, prop) => sum + (prop.status === "Utleid" ? prop.rent : 0), 0);
-  const occupancyRate = (properties.filter(p => p.status === "Utleid").length / properties.length) * 100;
-  const averageYield = properties.reduce((sum, prop) => sum + prop.yield, 0) / properties.length;
+  useEffect(() => {
+    if (user) {
+      fetchUserProperties();
+      // Set up real-time subscription for property updates
+      const channel = supabase
+        .channel('properties-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'properties',
+            filter: `owner_id=eq.${user.id}`
+          },
+          () => {
+            fetchUserProperties();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // Ikke innlogget - vis demo data
+      setProperties(demoProperties);
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchUserProperties = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching properties:', error);
+        toast.error('Feil ved henting av eiendommer');
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setProperties(data);
+      } else {
+        // Ingen egne eiendommer - vis eksempel
+        setProperties([exampleProperty]);
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      toast.error('Feil ved henting av eiendommer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hasUserProperties = user && properties.length > 0 && properties[0].id !== 'example';
+  const isExampleProperty = user && properties.length === 1 && properties[0].id === 'example';
+
+  const totalRent = properties.reduce((sum, prop) => sum + (prop.monthly_rent || 0), 0);
+  const occupancyRate = 100; // Simplified for now
+  const averageYield = properties.length > 0 ? 
+    (totalRent * 12) / properties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0) * 100 : 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <p>Laster eiendommer...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,15 +187,26 @@ const Rental = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Utleieoversikt</h1>
-              <p className="text-muted-foreground">Administrer og få oversikt over dine utleieeiendommer</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                {!user ? "Utleieoversikt - Demo" : "Utleieoversikt"}
+              </h1>
+              <p className="text-muted-foreground">
+                {!user 
+                  ? "Se hvordan du kan administrere dine utleieeiendommer"
+                  : isExampleProperty
+                    ? "Legg til din første eiendom for å komme i gang"
+                    : "Administrer og få oversikt over dine utleieeiendommer"
+                }
+              </p>
             </div>
-            <PropertyAddDialog>
-              <Button className="bg-gradient-primary hover:opacity-90">
-                <Plus className="h-4 w-4 mr-2" />
-                Legg til eiendom
-              </Button>
-            </PropertyAddDialog>
+            {user && (
+              <PropertyAddDialog>
+                <Button className="bg-gradient-primary hover:opacity-90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Legg til eiendom
+                </Button>
+              </PropertyAddDialog>
+            )}
           </div>
 
           {/* Key Metrics */}
@@ -94,7 +219,14 @@ const Rental = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">{properties.length}</div>
+                <div className="text-2xl font-bold text-primary">
+                  {isExampleProperty ? 1 : properties.length}
+                </div>
+                {isExampleProperty && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Eksempel eiendom
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -106,7 +238,14 @@ const Rental = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">{totalRent.toLocaleString()} kr</div>
+                <div className="text-2xl font-bold text-primary">
+                  {totalRent.toLocaleString()} kr
+                </div>
+                {isExampleProperty && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Eksempel beløp
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -118,7 +257,14 @@ const Rental = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-accent">{occupancyRate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold text-accent">
+                  {occupancyRate.toFixed(1)}%
+                </div>
+                {isExampleProperty && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Eksempel verdi
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -130,7 +276,14 @@ const Rental = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-accent">{averageYield.toFixed(1)}%</div>
+                <div className="text-2xl font-bold text-accent">
+                  {averageYield.toFixed(1)}%
+                </div>
+                {isExampleProperty && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Eksempel yield
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -138,11 +291,30 @@ const Rental = () => {
 
         {/* Properties List */}
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-foreground">Mine eiendommer</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-foreground">
+              {!user 
+                ? "Demo eiendommer" 
+                : isExampleProperty 
+                  ? "Eksempel eiendom"
+                  : "Mine eiendommer"
+              }
+            </h2>
+            {isExampleProperty && (
+              <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                Eksempel - Legg til din egen eiendom
+              </Badge>
+            )}
+          </div>
           
           <div className="grid gap-6">
             {properties.map((property) => (
-              <Card key={property.id} className="shadow-medium hover:shadow-large transition-shadow">
+              <Card 
+                key={property.id} 
+                className={`shadow-medium hover:shadow-large transition-shadow ${
+                  isExampleProperty ? 'border-yellow-200 bg-yellow-50/30' : ''
+                }`}
+              >
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Property Image */}
@@ -155,10 +327,12 @@ const Rental = () => {
                     {/* Property Details */}
                     <div className="lg:col-span-2 space-y-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground">{property.address}</h3>
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {property.address}{property.postal_code && `, ${property.postal_code}`} {property.city}
+                        </h3>
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>{property.type}</span>
-                          <span>{property.size}</span>
+                          <span>{property.property_type}</span>
+                          <span>{property.size_sqm}m²</span>
                           <span>{property.bedrooms} soverom</span>
                         </div>
                       </div>
@@ -166,50 +340,75 @@ const Rental = () => {
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Månedlig leie</p>
-                          <p className="font-semibold text-primary">{property.rent.toLocaleString()} kr</p>
+                          <p className="font-semibold text-primary">
+                            {property.monthly_rent?.toLocaleString() || 'Ikke oppgitt'} kr
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Yield</p>
-                          <p className="font-semibold text-accent">{property.yield}%</p>
+                          <p className="font-semibold text-accent">
+                            {property.monthly_rent ? 
+                              (((property.monthly_rent * 12) / (property.current_value || property.purchase_price)) * 100).toFixed(1) 
+                              : '0'
+                            }%
+                          </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Leietaker</p>
-                          <p className="font-medium">{property.tenant}</p>
+                          <p className="text-muted-foreground">Eiendomsverdi</p>
+                          <p className="font-medium">
+                            {(property.current_value || property.purchase_price).toLocaleString()} kr
+                          </p>
                         </div>
-                        {property.leaseEnd && (
-                          <div>
-                            <p className="text-muted-foreground">Leiekontrakt utløp</p>
-                            <p className="font-medium">{property.leaseEnd}</p>
-                          </div>
-                        )}
+                        <div>
+                          <p className="text-muted-foreground">Status</p>
+                          <Badge 
+                            variant={property.monthly_rent ? "default" : "secondary"}
+                          >
+                            {property.monthly_rent ? "Utleid" : "Ledig"}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Status and Actions */}
+                    {/* Actions */}
                     <div className="lg:col-span-1 flex flex-col justify-between">
-                      <div className="flex justify-end">
-                        <Badge 
-                          variant={property.status === "Utleid" ? "default" : "secondary"}
-                          className="mb-4"
-                        >
-                          {property.status}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex flex-col gap-2">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Se detaljer
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Rediger
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dokumenter
-                        </Button>
-                      </div>
+                      {!user ? (
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Logg inn for å administrere eiendommer
+                          </p>
+                          <Button variant="outline" size="sm" className="w-full">
+                            Logg inn
+                          </Button>
+                        </div>
+                      ) : isExampleProperty ? (
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Dette er en eksempel eiendom
+                          </p>
+                          <PropertyAddDialog>
+                            <Button size="sm" className="w-full bg-gradient-primary hover:opacity-90">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Legg til din eiendom
+                            </Button>
+                          </PropertyAddDialog>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Se detaljer
+                          </Button>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Rediger
+                          </Button>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Dokumenter
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
