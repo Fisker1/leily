@@ -204,6 +204,8 @@ const Portfolio = () => {
   const showExampleProperty = user && properties.length === 0;
   const displayProperties = !user ? mockProperties : (showExampleProperty ? exampleProperty : properties);
 
+  console.log('Debug - user:', !!user, 'properties.length:', properties.length, 'showExampleProperty:', showExampleProperty);
+
   const totalInvestment = displayProperties.reduce((sum, prop) => sum + (prop.purchase_price || 0), 0);
   const currentPortfolioValue = displayProperties.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price || 0), 0);
   const totalReturn = currentPortfolioValue - totalInvestment;
