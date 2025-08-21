@@ -438,6 +438,27 @@ const Portfolio = () => {
                                 <FileText className="h-4 w-4 mr-2" />
                                 Dokumenter
                               </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 lg:flex-none lg:w-32"
+                                onClick={() => {
+                                  setSelectedProperty(property);
+                                  setEditDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Rediger
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                className="flex-1 lg:flex-none lg:w-32"
+                                onClick={() => handleDeleteProperty(property.id)}
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Slett
+                              </Button>
                             </>
                           ) : (
                             <>
@@ -448,6 +469,14 @@ const Portfolio = () => {
                               <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
                                 <FileText className="h-4 w-4 mr-2" />
                                 Dokumenter
+                              </Button>
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Rediger
+                              </Button>
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
+                                <Trash className="h-4 w-4 mr-2" />
+                                Slett
                               </Button>
                             </>
                           )}
