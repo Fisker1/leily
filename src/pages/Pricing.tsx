@@ -156,9 +156,15 @@ const Pricing = () => {
           </Card>
 
           {/* Rental Management Plan */}
-          <Card className="relative shadow-large border-secondary/20 hover:border-secondary/40 transition-all">
+          <Card className="relative border-orange-border border-2 bg-orange-muted/10 shadow-large hover:shadow-large transition-all">
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <Badge className="px-4 py-1 bg-orange text-orange-foreground">
+                Populær for utleiere
+              </Badge>
+            </div>
+            
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-secondary">
+              <CardTitle className="text-2xl text-orange">
                 Utleieforvaltning
               </CardTitle>
               <CardDescription className="text-lg">
@@ -173,7 +179,7 @@ const Pricing = () => {
               <ul className="space-y-3">
                 {features.rental.map((feature, index) => (
                   <li key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-secondary flex-shrink-0" />
+                    <Check className="w-5 h-5 text-orange flex-shrink-0" />
                     <span className="text-foreground text-sm">{feature}</span>
                   </li>
                 ))}
@@ -182,15 +188,14 @@ const Pricing = () => {
               <div className="pt-4">
                 <Button 
                   onClick={handleGetStarted}
-                  variant="secondary"
-                  className="w-full"
+                  className="w-full bg-orange hover:bg-orange/90 text-orange-foreground"
                   size="lg"
                 >
                   Legg til leieforhold
                 </Button>
               </div>
 
-              <div className="bg-muted/50 p-3 rounded-lg mt-4">
+              <div className="bg-orange-muted/20 border border-orange-border/30 p-3 rounded-lg mt-4">
                 <p className="text-xs text-muted-foreground text-center">
                   <strong>Inkluderer automatisk Pro-abonnement</strong><br />
                   Betales kun når du legger til et nytt leieforhold

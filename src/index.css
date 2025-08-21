@@ -37,6 +37,12 @@
     --accent: 142 80% 52%;
     --accent-foreground: 0 0% 100%;
 
+    /* Orange highlight system for featured plans */
+    --orange: 25 95% 53%;
+    --orange-foreground: 0 0% 100%;
+    --orange-muted: 25 80% 95%;
+    --orange-border: 25 85% 60%;
+
     /* Error states */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -98,6 +104,12 @@
 
     --accent: 142 80% 52%;
     --accent-foreground: 0 0% 100%;
+
+    /* Orange highlight system for featured plans */
+    --orange: 25 95% 53%;
+    --orange-foreground: 0 0% 100%;
+    --orange-muted: 25 60% 20%;
+    --orange-border: 25 85% 60%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 210 20% 98%;
