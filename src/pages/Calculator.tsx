@@ -52,140 +52,114 @@ const Calculator = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Property Details - Center */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-medium">
-              <CardHeader>
-                <CardTitle className="text-primary">Eiendomsdetaljer</CardTitle>
-                <CardDescription>
-                  Fyll inn informasjon om eiendommen du vurderer
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Calculator Mode */}
-                <div className="space-y-2">
-                  <Label htmlFor="calculatorMode">Type investering</Label>
-                  <Select value={data.calculatorMode} onValueChange={(value) => handleInputChange('calculatorMode', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Velg type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="investment">Utleieeiendom</SelectItem>
-                      <SelectItem value="private">Privat bolig</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Centered Property Details */}
+        <div className="max-w-2xl mx-auto">
+          <Card className="shadow-medium">
+            <CardHeader>
+              <CardTitle className="text-primary">Eiendomsdetaljer</CardTitle>
+              <CardDescription>
+                Fyll inn informasjon om eiendommen du vurderer
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Calculator Mode */}
+              <div className="space-y-2">
+                <Label htmlFor="calculatorMode">Type investering</Label>
+                <Select value={data.calculatorMode} onValueChange={(value) => handleInputChange('calculatorMode', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Velg type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="investment">Utleieeiendom</SelectItem>
+                    <SelectItem value="private">Privat bolig</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Property Value */}
+              {/* Property Value */}
+              <div className="space-y-2">
+                <Label htmlFor="propertyValue">Kjøpesum (NOK)</Label>
+                <Input
+                  id="propertyValue"
+                  type="number"
+                  value={data.propertyValue}
+                  onChange={(e) => handleInputChange('propertyValue', e.target.value)}
+                  placeholder="5000000"
+                />
+              </div>
+
+              {/* Monthly Rent - only for investment */}
+              {data.calculatorMode === 'investment' && (
                 <div className="space-y-2">
-                  <Label htmlFor="propertyValue">Kjøpesum (NOK)</Label>
+                  <Label htmlFor="monthlyRent">Månedlig leieinntekt (NOK)</Label>
                   <Input
-                    id="propertyValue"
+                    id="monthlyRent"
                     type="number"
-                    value={data.propertyValue}
-                    onChange={(e) => handleInputChange('propertyValue', e.target.value)}
-                    placeholder="5000000"
+                    value={data.monthlyRent}
+                    onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
+                    placeholder="25000"
                   />
                 </div>
+              )}
 
-                {/* Monthly Rent - only for investment */}
-                {data.calculatorMode === 'investment' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="monthlyRent">Månedlig leieinntekt (NOK)</Label>
-                    <Input
-                      id="monthlyRent"
-                      type="number"
-                      value={data.monthlyRent}
-                      onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
-                      placeholder="25000"
-                    />
-                  </div>
-                )}
-
-                {/* Total Expenses Display */}
-                <div className="space-y-2">
-                  <Label>Totale månedlige utgifter</Label>
-                  <div className="p-3 bg-muted rounded-md">
-                    <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Basert på strøm, nettleie, felleskostnader, kommunale avgifter, internett og andre utgifter
-                    </p>
-                  </div>
+              {/* Total Expenses Display */}
+              <div className="space-y-2">
+                <Label>Totale månedlige utgifter</Label>
+                <div className="p-3 bg-muted rounded-md">
+                  <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Basert på strøm, nettleie, felleskostnader, kommunale avgifter, internett og andre utgifter
+                  </p>
                 </div>
+              </div>
 
-                {/* Loan Amount */}
-                <div className="space-y-2">
-                  <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
-                  <Input
-                    id="loanAmount"
-                    type="number"
-                    value={data.loanAmount}
-                    onChange={(e) => handleInputChange('loanAmount', e.target.value)}
-                    placeholder="4000000"
-                  />
-                </div>
+              {/* Loan Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
+                <Input
+                  id="loanAmount"
+                  type="number"
+                  value={data.loanAmount}
+                  onChange={(e) => handleInputChange('loanAmount', e.target.value)}
+                  placeholder="4000000"
+                />
+              </div>
 
-                {/* Interest Rate */}
-                <div className="space-y-2">
-                  <Label htmlFor="interestRate">Rente (%)</Label>
-                  <Input
-                    id="interestRate"
-                    type="number"
-                    step="0.1"
-                    value={data.interestRate}
-                    onChange={(e) => handleInputChange('interestRate', e.target.value)}
-                    placeholder="4.5"
-                  />
-                </div>
+              {/* Interest Rate */}
+              <div className="space-y-2">
+                <Label htmlFor="interestRate">Rente (%)</Label>
+                <Input
+                  id="interestRate"
+                  type="number"
+                  step="0.1"
+                  value={data.interestRate}
+                  onChange={(e) => handleInputChange('interestRate', e.target.value)}
+                  placeholder="4.5"
+                />
+              </div>
 
-                {/* Loan Period */}
-                <div className="space-y-2">
-                  <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
-                  <Input
-                    id="loanPeriod"
-                    type="number"
-                    value={data.loanPeriod}
-                    onChange={(e) => handleInputChange('loanPeriod', e.target.value)}
-                    placeholder="30"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              {/* Loan Period */}
+              <div className="space-y-2">
+                <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
+                <Input
+                  id="loanPeriod"
+                  type="number"
+                  value={data.loanPeriod}
+                  onChange={(e) => handleInputChange('loanPeriod', e.target.value)}
+                  placeholder="30"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Small Profitability Preview - Right Side */}
-          <div className="lg:col-span-1">
-            {canShowResults ? (
-              <Card className="shadow-medium h-fit">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg">Lønnsomhet</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <ProfitabilityCalculator
-                    propertyValue={propertyValue}
-                    monthlyRent={monthlyRent}
-                    expenses={totalExpenses}
-                    loanAmount={loanAmount}
-                    monthlyLoanPayment={monthlyLoanPayment}
-                    calculatorMode={data.calculatorMode}
-                    compact={true}
-                  />
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-medium h-fit">
-                <CardContent className="flex items-center justify-center py-8">
-                  <div className="text-center space-y-2">
-                    <CalcIcon className="h-8 w-8 text-muted-foreground mx-auto" />
-                    <p className="text-sm text-muted-foreground">
-                      Fyll inn eiendomsdetaljene for å se preview
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Generate Report Button */}
+          {canShowResults && (
+            <div className="mt-6 text-center">
+              <Button size="lg" className="px-8">
+                Generer fullstendig bankrapport
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Module Selection Section */}
