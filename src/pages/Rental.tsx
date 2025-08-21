@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import PropertyImage from "@/components/PropertyImage";
 import { useNavigate } from "react-router-dom";
+import RentalAgreementDialog from "@/components/RentalAgreementDialog";
 
 interface Property {
   id: string;
@@ -64,6 +65,7 @@ const Rental = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [rentalAgreementDialogOpen, setRentalAgreementDialogOpen] = useState(false);
 
   // Eksempel eiendom for innloggede brukere uten egne eiendommer
   const exampleProperty = {
@@ -287,10 +289,18 @@ const Rental = () => {
       return;
     }
 
-    toast({
-      title: "Kommer snart",
-      description: "Leieavtale-funksjonen er under utvikling og kommer snart!",
-    });
+    // Check if user has properties (not just example properties)
+    const realProperties = properties.filter(p => p.id !== 'example');
+    if (realProperties.length === 0) {
+      toast({
+        title: "Ingen eiendommer",
+        description: "Du må legge til minst én eiendom før du kan opprette leieavtaler",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRentalAgreementDialogOpen(true);
   };
 
   const handleGenerateMonthlyReport = () => {
@@ -365,12 +375,10 @@ const Rental = () => {
               </p>
             </div>
             {user && (
-              <PropertyAddDialog>
-                <Button className="bg-gradient-primary hover:opacity-90">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Legg til eiendom
-                </Button>
-              </PropertyAddDialog>
+              <Button className="bg-gradient-primary hover:opacity-90" onClick={handleCreateRentalAgreement}>
+                <Plus className="h-4 w-4 mr-2" />
+                Ny leieavtale
+              </Button>
             )}
           </div>
 
@@ -739,6 +747,13 @@ const Rental = () => {
           />
         </>
       )}
+
+      {/* Rental Agreement Dialog */}
+      <RentalAgreementDialog
+        open={rentalAgreementDialogOpen}
+        onOpenChange={setRentalAgreementDialogOpen}
+        properties={properties}
+      />
     </div>
   );
 };
