@@ -299,10 +299,10 @@ const AdvancedCalculations = ({
                       <XAxis dataKey="year" />
                       <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
                       <Tooltip 
-                        formatter={(value, name) => [
-                          `${parseInt(value as number).toLocaleString()} kr`, 
-                          name === 'beforeTaxCashFlow' ? 'Før skatt' : 'Etter skatt'
-                        ]}
+                         formatter={(value, name) => [
+                           `${Math.round(value as number).toLocaleString()} kr`, 
+                           name === 'beforeTaxCashFlow' ? 'Før skatt' : 'Etter skatt'
+                         ]}
                         labelFormatter={(label) => `År ${label}`}
                       />
                       <Line type="monotone" dataKey="beforeTaxCashFlow" stroke="#10b981" strokeWidth={2} name="beforeTaxCashFlow" />
@@ -636,7 +636,7 @@ const AdvancedCalculations = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span>DSCR < 1.2 (Risikabel)</span>
+                      <span>DSCR &lt; 1.2 (Risikabel)</span>
                     </div>
                   </div>
                 </CardContent>
