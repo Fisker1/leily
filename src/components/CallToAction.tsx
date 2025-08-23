@@ -73,14 +73,14 @@ const CallToAction = () => {
   };
   
   return (
-    <section className="py-20 lg:py-32 bg-gradient-hero">
+    <section className="py-12 lg:py-20 xl:py-32 bg-gradient-hero">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <Card className="p-8 lg:p-12 shadow-large border-0 bg-card-elevated">
+        <Card className="p-6 sm:p-8 lg:p-12 shadow-large border-0 bg-card-elevated">
           <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-4 lg:mb-6">
               {translations.cta.title}
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-base lg:text-lg text-muted-foreground mb-6 lg:mb-8">
               {translations.cta.subtitle}
             </p>
             
@@ -103,7 +103,7 @@ const CallToAction = () => {
               </Button>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-8 justify-center items-center text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
                 Ikke behov for kredittkort
