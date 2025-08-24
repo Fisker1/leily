@@ -577,127 +577,127 @@ const Portfolio = () => {
                     }`}
                   >
                     <CardContent className="p-4">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-4 overflow-hidden">
                         {/* Property Image and Basic Info */}
-                        <div className="flex items-center gap-4 min-w-0 flex-1">
-                          <div className="relative">
+                        <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
+                          <div className="relative flex-shrink-0">
                             <PropertyImage
                               imageUrl={property.image_url}
                               address={property.address}
                               city={property.city}
-                              className="w-16 h-16 rounded-lg flex-shrink-0"
+                              className="w-16 h-16 rounded-lg"
                               alt={`Eiendom på ${property.address}`}
                             />
                             {isPrimaryHome && isUserProperty && (
                               <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-pulse shadow-lg shadow-orange-400/50"></div>
                             )}
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-foreground text-base mb-1">
+                          <div className="min-w-0 flex-1 overflow-hidden">
+                            <h3 className="font-semibold text-foreground text-base mb-1 truncate">
                               {property.address}, {property.postal_code} {property.city}
                             </h3>
-                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                              <span>Type: <span className="text-foreground">{property.property_type || 'Leilighet'}</span></span>
-                              <span>Størrelse: <span className="text-foreground">{property.size_sqm ? `${property.size_sqm}m²` : '85m²'}</span></span>
-                              <span>Kjøpsdato: <span className="text-foreground">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '2022-03-15'}</span></span>
+                            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                              <span className="whitespace-nowrap">Type: <span className="text-foreground">{property.property_type || 'Leilighet'}</span></span>
+                              <span className="whitespace-nowrap">Størrelse: <span className="text-foreground">{property.size_sqm ? `${property.size_sqm}m²` : '85m²'}</span></span>
+                              <span className="whitespace-nowrap">Kjøpsdato: <span className="text-foreground">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '2022-03-15'}</span></span>
                             </div>
                           </div>
                         </div>
 
                         {/* Financial Tiles */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
-                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[120px]">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
+                          <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[100px] sm:min-w-[120px]">
                             <p className="text-xs text-muted-foreground mb-1">Kjøpspris</p>
-                            <p className="font-semibold text-sm">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
+                            <p className="font-semibold text-xs sm:text-sm">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
                           </div>
-                          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[120px]">
+                          <div className="text-center p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
                             <p className="text-xs text-muted-foreground mb-1">Nåverdi</p>
-                            <p className="font-semibold text-sm text-blue-600 dark:text-blue-400">
+                            <p className="font-semibold text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[120px]">
+                          <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
-                            <p className="font-semibold text-sm text-green-600 dark:text-green-400">
+                            <p className="font-semibold text-xs sm:text-sm text-green-600 dark:text-green-400">
                               +{roiPercentage.toFixed(1)}%
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[120px]">
+                          <div className="text-center p-2 sm:p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
                             <p className="text-xs text-muted-foreground mb-1">Gevinst</p>
-                            <p className="font-semibold text-sm text-emerald-600 dark:text-emerald-400">
+                            <p className="font-semibold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
                               +{totalReturn.toLocaleString()} kr
                             </p>
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex lg:flex-col gap-2 flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
                           {user && !showExampleProperty ? (
                             <>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex-1 lg:flex-none lg:w-32"
+                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
                                 onClick={() => {
                                   setSelectedProperty(property);
                                   setDetailsDialogOpen(true);
                                 }}
                               >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Detaljer
+                                <Eye className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Detaljer</span>
                               </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex-1 lg:flex-none lg:w-32"
+                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
                                 onClick={() => {
                                   console.log('Opening documents for property:', property.id);
                                   setSelectedProperty(property);
                                   setDocumentsDialogOpen(true);
                                 }}
                               >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Dokumenter
+                                <FileText className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Dok.</span>
                               </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex-1 lg:flex-none lg:w-32"
+                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
                                 onClick={() => {
                                   setSelectedProperty(property);
                                   setEditDialogOpen(true);
                                 }}
                               >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Rediger
+                                <Edit className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Rediger</span>
                               </Button>
                               <Button 
                                 variant="destructive" 
                                 size="sm" 
-                                className="flex-1 lg:flex-none lg:w-32"
+                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
                                 onClick={() => handleDeleteProperty(property.id)}
                               >
-                                <Trash className="h-4 w-4 mr-2" />
-                                Slett
+                                <Trash className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Slett</span>
                               </Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Detaljer
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
+                                <Eye className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Detaljer</span>
                               </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
-                                <FileText className="h-4 w-4 mr-2" />
-                                Dokumenter
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
+                                <FileText className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Dok.</span>
                               </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Rediger
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
+                                <Edit className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Rediger</span>
                               </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-32" disabled>
-                                <Trash className="h-4 w-4 mr-2" />
-                                Slett
+                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
+                                <Trash className="h-4 w-4 lg:mr-2" />
+                                <span className="hidden lg:inline">Slett</span>
                               </Button>
                             </>
                           )}
