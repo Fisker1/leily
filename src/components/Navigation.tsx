@@ -19,8 +19,9 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-primary">
-                {translations.nav.company}
+              <Link to="/" className="flex items-center gap-3">
+                <img src="/lovable-uploads/06b5428c-d307-4463-b072-17ffa12eb59e.png" alt="Leily Logo" className="h-10 w-auto" />
+                <span className="text-2xl font-bold text-primary hidden sm:block">Leily</span>
               </Link>
             </div>
           </div>
