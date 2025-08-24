@@ -110,7 +110,7 @@ const SimpleAuth = () => {
             Tilbake til forsiden
           </Link>
           <h1 className="text-2xl font-bold text-foreground">
-            Logg inn på Apropos bolig
+            Logg inn på Leily
           </h1>
           <p className="text-muted-foreground mt-2">
             Velg din innloggingsmetode

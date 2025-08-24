@@ -246,7 +246,7 @@ const BankReport = () => {
             <div className="mb-8 pb-6 border-b-2 border-gray-800">
               <div className="flex justify-between items-start mb-4">
                 <div className="text-left">
-                  <h1 className="text-2xl font-bold text-gray-900 tracking-wide">APROPOS BOLIG AS</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 tracking-wide">LEILY AS</h1>
                   <p className="text-sm text-gray-700 mt-1">Autorisert eiendomsmegler & finansiell rådgiver</p>
                   <p className="text-xs text-gray-600 mt-1">Org.nr: 123 456 789 | REI-lisens: AB-2024</p>
                 </div>
@@ -711,7 +711,7 @@ const BankReport = () => {
             <div className="border-t-2 border-gray-800 pt-4 mt-8">
               <div className="flex justify-between items-end">
                 <div>
-                  <h4 className="font-bold text-gray-900 text-base tracking-wide">APROPOS BOLIG AS</h4>
+                  <h4 className="font-bold text-gray-900 text-base tracking-wide">LEILY AS</h4>
                   <p className="text-xs text-gray-600">Autorisert eiendomsmegler og finansiell rådgiver</p>
                   <div className="text-xs text-gray-500 mt-2 space-y-1">
                     <p>Kontakt: post@aproposbolig.no | Tlf: +47 XX XX XX XX</p>

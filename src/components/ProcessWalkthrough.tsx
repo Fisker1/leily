@@ -190,7 +190,7 @@ const ProcessWalkthrough = ({ isOpen, onClose }: ProcessWalkthroughProps) => {
         <DialogHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold">
-              Hvordan Apropos Bolig fungerer
+              Hvordan Leily fungerer
             </DialogTitle>
             <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4" />

@@ -217,7 +217,7 @@ const translations: Record<Language, Translations> = {
       backToHome: 'Tilbake til forsiden',
     },
     nav: {
-      company: 'Apropos bolig',
+      company: 'Leily',
       features: 'Funksjoner',
       calculator: 'Kalkulator',
       signIn: 'Logg inn',
@@ -273,7 +273,7 @@ const translations: Record<Language, Translations> = {
       button: 'Kom i gang gratis',
     },
     footer: {
-      company: 'Apropos bolig',
+      company: 'Leily',
       description: 'Din partner for smarte eiendomsinvesteringer',
       links: {
         about: 'Om oss',
@@ -289,7 +289,7 @@ const translations: Record<Language, Translations> = {
       social: {
         title: 'Følg oss',
       },
-      copyright: '© 2024 Apropos bolig. Alle rettigheter forbeholdt.',
+      copyright: '© 2024 Leily. Alle rettigheter forbeholdt.',
     },
     auth: {
       signIn: 'Logg inn',
@@ -393,7 +393,7 @@ const translations: Record<Language, Translations> = {
       backToHome: 'Back to home',
     },
     nav: {
-      company: 'Apropos bolig',
+      company: 'Leily',
       features: 'Features',
       calculator: 'Calculator',
       signIn: 'Sign in',
@@ -449,7 +449,7 @@ const translations: Record<Language, Translations> = {
       button: 'Get started for free',
     },
     footer: {
-      company: 'Apropos bolig',
+      company: 'Leily',
       description: 'Your partner for smart real estate investments',
       links: {
         about: 'About us',
@@ -465,7 +465,7 @@ const translations: Record<Language, Translations> = {
       social: {
         title: 'Follow us',
       },
-      copyright: '© 2024 Apropos bolig. All rights reserved.',
+      copyright: '© 2024 Leily. All rights reserved.',
     },
     auth: {
       signIn: 'Sign in',
