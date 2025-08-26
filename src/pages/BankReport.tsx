@@ -52,6 +52,7 @@ const BankReport = () => {
     ...basicData,
     propertyType: reportData.basicData?.propertyType || '',
     tomannsboligType: reportData.basicData?.tomannsboligType || '',
+    equity: reportData.basicData?.equity || 0,
     interestRate: reportData.basicData?.interestRate || 0,
     loanPeriod: reportData.basicData?.loanPeriod || 0,
     municipalFees: reportData.basicData?.municipalFees || 0,
@@ -308,10 +309,10 @@ const BankReport = () => {
                           <td className="py-1 text-gray-600">Eiendomsverdi:</td>
                           <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.propertyValue || 0)}</td>
                         </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="py-1 text-gray-600">Egenkapital:</td>
-                          <td className="py-1 text-right font-semibold">{formatCurrency((displayBasicData.propertyValue || 0) - (displayBasicData.loanAmount || 0))}</td>
-                        </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Egenkapital:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.equity || 0)}</td>
+                      </tr>
                         <tr>
                           <td className="py-1 text-gray-600">Lånebeløp:</td>
                           <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.loanAmount || 0)}</td>
