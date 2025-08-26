@@ -265,8 +265,8 @@ const BankReport = () => {
               <div className="flex justify-between items-start mb-4">
                 <div className="text-left">
                   <h1 className="text-2xl font-bold text-gray-900 tracking-wide">LEILY AS</h1>
-                  <p className="text-sm text-gray-700 mt-1">Autorisert eiendomsmegler & finansiell rådgiver</p>
-                  <p className="text-xs text-gray-600 mt-1">Org.nr: 123 456 789 | REI-lisens: AB-2024</p>
+                  <p className="text-sm text-gray-700 mt-1">Beslutningsstøtteverktøy for eiendomsfinansiering</p>
+                  <p className="text-xs text-gray-600 mt-1">Org.nr: 123 456 789</p>
                 </div>
                 <div className="text-right text-xs text-gray-700">
                   <p className="font-semibold">Rapport utstedt: {currentDate}</p>
@@ -279,7 +279,7 @@ const BankReport = () => {
                   EIENDOMSANALYSE FOR FINANSIERINGSFORMÅL
                 </h2>
                 <p className="text-sm text-gray-700 font-medium">
-                  Utarbeidet i henhold til bankenes retningslinjer for investeringsevaluation
+                  Beslutningsstøtteverktøy - Forhør deg med din lokale bank og rådgiver for finansiering
                 </p>
               </div>
             </div>
@@ -806,12 +806,13 @@ const BankReport = () => {
               <div className="flex justify-between items-end">
                 <div>
                   <h4 className="font-bold text-gray-900 text-base tracking-wide">LEILY AS</h4>
-                  <p className="text-xs text-gray-600">Autorisert eiendomsmegler og finansiell rådgiver</p>
+                  <p className="text-xs text-gray-600">Beslutningsstøtteverktøy for eiendomsfinansiering</p>
                   <div className="text-xs text-gray-500 mt-2 space-y-1">
                     <p>Kontakt: post@aproposbolig.no | Tlf: +47 XX XX XX XX</p>
-                    <p>Organisasjonsnummer: 123 456 789 MVA | REI-lisens: AB-2024</p>
+                    <p>Organisasjonsnummer: 123 456 789 MVA</p>
                     <p className="font-medium">
                       Denne rapporten er utarbeidet som grunnlag for finansieringsvurdering og er konfidensielt.
+                      Forhør deg med din lokale bank og rådgiver når det gjelder finansiering.
                     </p>
                   </div>
                 </div>
