@@ -243,10 +243,10 @@ const Calculator = () => {
                 </div>
               </div>
 
-              {/* Expected Annual Rent - only for rental */}
+              {/* Expected Monthly Rent - only for rental */}
               {calculatorData.isRental && <div className="space-y-2">
-                  <Label htmlFor="expectedAnnualRent">Forventet leieinntekt i året (NOK)</Label>
-                  <Input id="expectedAnnualRent" type="number" value={calculatorData.expectedAnnualRent} onChange={e => handleInputChange('expectedAnnualRent', e.target.value)} placeholder="300000" />
+                  <Label htmlFor="expectedMonthlyRent">Forventet leieinntekt i måneden (NOK)</Label>
+                  <Input id="expectedMonthlyRent" type="number" value={calculatorData.expectedAnnualRent ? (parseFloat(calculatorData.expectedAnnualRent) / 12).toString() : ''} onChange={e => handleInputChange('expectedAnnualRent', (parseFloat(e.target.value) * 12).toString())} placeholder="25000" />
                   {/* Yield Calculation */}
                   {totalPrice > 0 && expectedAnnualRent > 0 && <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
                       <div className="flex justify-between items-center">
@@ -254,7 +254,7 @@ const Calculator = () => {
                         <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Beregnet som årlig leieinntekt / totalpris × 100
+                        Beregnet som (månedlig leie × 12) / totalpris × 100
                       </p>
                     </div>}
                 </div>}
