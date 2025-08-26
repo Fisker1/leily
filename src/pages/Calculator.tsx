@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calculator as CalcIcon, CheckCircle2, FileText } from 'lucide-react';
@@ -59,19 +60,21 @@ const Calculator = () => {
     // Generate basic report using simple property details only
     const basicReportData = {
       basicData: {
-        propertyValue: parseFloat(calculatorData.propertyValue) || 0,
-        monthlyRent: parseFloat(calculatorData.monthlyRent) || 0,
+        propertyType: calculatorData.propertyType,
+        totalPrice: parseFloat(calculatorData.totalPrice) || 0,
+        equity: parseFloat(calculatorData.equity) || 0,
+        isRental: calculatorData.isRental,
+        expectedAnnualRent: parseFloat(calculatorData.expectedAnnualRent) || 0,
         loanAmount: parseFloat(calculatorData.loanAmount) || 0,
         interestRate: parseFloat(calculatorData.interestRate) || 0,
         loanPeriod: parseFloat(calculatorData.loanPeriod) || 0,
         expenses: totalExpenses,
         monthlyLoanPayment: monthlyLoanPayment,
-        monthlyCashFlow: calculatorData.calculatorMode === 'investment' 
-          ? monthlyRent - totalExpenses - monthlyLoanPayment
+        monthlyCashFlow: calculatorData.isRental 
+          ? (parseFloat(calculatorData.expectedAnnualRent) / 12) - totalExpenses - monthlyLoanPayment
           : -totalExpenses - monthlyLoanPayment,
-        calculatorMode: calculatorData.calculatorMode,
-        grossYield: calculatorData.calculatorMode === 'investment' 
-          ? ((monthlyRent * 12) / propertyValue * 100) 
+        yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0
+          ? (parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice)) * 100
           : 0
       },
       activatedModules: ['Grunnleggende analyse'] // Only basic analysis
@@ -85,24 +88,27 @@ const Calculator = () => {
   const loanAmount = parseFloat(calculatorData.loanAmount) || 0;
   const interestRate = parseFloat(calculatorData.interestRate) || 0;
   const loanPeriod = parseFloat(calculatorData.loanPeriod) || 0;
-  const propertyValue = parseFloat(calculatorData.propertyValue) || 0;
-  const monthlyRent = parseFloat(calculatorData.monthlyRent) || 0;
+  const totalPrice = parseFloat(calculatorData.totalPrice) || 0;
+  const expectedAnnualRent = parseFloat(calculatorData.expectedAnnualRent) || 0;
   
   // Calculate total monthly expenses using calculator data
   const totalExpenses = 
-    (parseFloat(calculatorData.electricity) || 0) +
-    (parseFloat(calculatorData.gridRent) || 0) +
-    (parseFloat(calculatorData.commonCosts) || 0) +
     (parseFloat(calculatorData.municipalFees) || 0) +
-    (parseFloat(calculatorData.internet) || 0) +
-    (parseFloat(calculatorData.otherExpenses) || 0);
+    (parseFloat(calculatorData.electricityMonthly) || 0) +
+    (parseFloat(calculatorData.insurance) || 0) +
+    (parseFloat(calculatorData.sharedExpenses) || 0);
 
   const monthlyLoanPayment = loanAmount > 0 && interestRate > 0 
     ? (loanAmount * (interestRate / 100 / 12)) / (1 - Math.pow(1 + (interestRate / 100 / 12), -(loanPeriod * 12)))
     : 0;
 
-  const canShowResults = propertyValue > 0 && 
-    (calculatorData.calculatorMode === 'investment' ? monthlyRent > 0 : true);
+  const canShowResults = totalPrice > 0 && 
+    (calculatorData.isRental ? expectedAnnualRent > 0 : true);
+
+  // Calculate yield if rental property
+  const yieldPercentage = calculatorData.isRental && totalPrice > 0 
+    ? (expectedAnnualRent / totalPrice) * 100 
+    : 0;
 
   return (
     <>
@@ -139,68 +145,92 @@ const Calculator = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Calculator Mode */}
+              {/* Property Type */}
               <div className="space-y-2">
-                <Label htmlFor="calculatorMode">Type investering</Label>
-                <Select value={calculatorData.calculatorMode} onValueChange={(value) => handleInputChange('calculatorMode', value)}>
+                <Label htmlFor="propertyType">Type bolig</Label>
+                <Select value={calculatorData.propertyType} onValueChange={(value) => handleInputChange('propertyType', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Velg type" />
+                    <SelectValue placeholder="Velg boligtype" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="investment">Utleieeiendom</SelectItem>
-                    <SelectItem value="private">Privat bolig</SelectItem>
+                    <SelectItem value="enebolig">Enebolig</SelectItem>
+                    <SelectItem value="leilighet">Leilighet</SelectItem>
+                    <SelectItem value="rekkehus">Rekkehus</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Property Value */}
+              {/* Total Price */}
               <div className="space-y-2">
-                <Label htmlFor="propertyValue">Kjøpesum (NOK)</Label>
-                  <Input
-                    id="propertyValue"
-                    type="number"
-                    value={calculatorData.propertyValue}
-                    onChange={(e) => handleInputChange('propertyValue', e.target.value)}
-                    placeholder="5000000"
-                  />
-              </div>
-
-              {/* Monthly Rent - only for investment */}
-              {calculatorData.calculatorMode === 'investment' && (
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyRent">Månedlig leieinntekt (NOK)</Label>
-                  <Input
-                    id="monthlyRent"
-                    type="number"
-                    value={calculatorData.monthlyRent}
-                    onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
-                    placeholder="25000"
-                  />
-                </div>
-              )}
-
-              {/* Total Expenses Display */}
-              <div className="space-y-2">
-                <Label>Totale månedlige utgifter</Label>
-                <div className="p-3 bg-muted rounded-md">
-                  <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Basert på strøm, nettleie, felleskostnader, kommunale avgifter, internett og andre utgifter
-                  </p>
-                </div>
-              </div>
-
-              {/* Loan Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
+                <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
                 <Input
-                  id="loanAmount"
+                  id="totalPrice"
                   type="number"
-                  value={calculatorData.loanAmount}
-                  onChange={(e) => handleInputChange('loanAmount', e.target.value)}
-                  placeholder="4000000"
+                  value={calculatorData.totalPrice}
+                  onChange={(e) => handleInputChange('totalPrice', e.target.value)}
+                  placeholder="5000000"
                 />
               </div>
+
+              {/* Equity */}
+              <div className="space-y-2">
+                <Label htmlFor="equity">Egenkapital (NOK)</Label>
+                <Input
+                  id="equity"
+                  type="number"
+                  value={calculatorData.equity}
+                  onChange={(e) => handleInputChange('equity', e.target.value)}
+                  placeholder="1000000"
+                />
+              </div>
+
+              {/* Rental Toggle */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="rental-toggle" className="text-base font-medium">
+                    Bruksformål
+                  </Label>
+                  <div className="flex items-center space-x-3">
+                    <span className={`text-sm ${!calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                      Privat
+                    </span>
+                    <Switch
+                      id="rental-toggle"
+                      checked={calculatorData.isRental}
+                      onCheckedChange={(checked) => handleInputChange('isRental', checked)}
+                    />
+                    <span className={`text-sm ${calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                      Utleie
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expected Annual Rent - only for rental */}
+              {calculatorData.isRental && (
+                <div className="space-y-2">
+                  <Label htmlFor="expectedAnnualRent">Forventet leieinntekt i året (NOK)</Label>
+                  <Input
+                    id="expectedAnnualRent"
+                    type="number"
+                    value={calculatorData.expectedAnnualRent}
+                    onChange={(e) => handleInputChange('expectedAnnualRent', e.target.value)}
+                    placeholder="300000"
+                  />
+                  {/* Yield Calculation */}
+                  {totalPrice > 0 && expectedAnnualRent > 0 && (
+                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-primary">Yield:</span>
+                        <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Beregnet som årlig leieinntekt / totalpris × 100
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Interest Rate */}
               <div className="space-y-2">
@@ -215,6 +245,18 @@ const Calculator = () => {
                 />
               </div>
 
+              {/* Loan Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
+                <Input
+                  id="loanAmount"
+                  type="number"
+                  value={calculatorData.loanAmount}
+                  onChange={(e) => handleInputChange('loanAmount', e.target.value)}
+                  placeholder="4000000"
+                />
+              </div>
+
               {/* Loan Period */}
               <div className="space-y-2">
                 <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
@@ -225,6 +267,69 @@ const Calculator = () => {
                   onChange={(e) => handleInputChange('loanPeriod', e.target.value)}
                   placeholder="30"
                 />
+              </div>
+
+              {/* Expenses Section */}
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Municipal Fees */}
+                  <div className="space-y-2">
+                    <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
+                    <Input
+                      id="municipalFees"
+                      type="number"
+                      value={calculatorData.municipalFees}
+                      onChange={(e) => handleInputChange('municipalFees', e.target.value)}
+                      placeholder="1500"
+                    />
+                  </div>
+
+                  {/* Monthly Electricity */}
+                  <div className="space-y-2">
+                    <Label htmlFor="electricityMonthly">Forventet strømbruk pr. mnd (NOK)</Label>
+                    <Input
+                      id="electricityMonthly"
+                      type="number"
+                      value={calculatorData.electricityMonthly}
+                      onChange={(e) => handleInputChange('electricityMonthly', e.target.value)}
+                      placeholder="800"
+                    />
+                  </div>
+
+                  {/* Insurance */}
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
+                    <Input
+                      id="insurance"
+                      type="number"
+                      value={calculatorData.insurance}
+                      onChange={(e) => handleInputChange('insurance', e.target.value)}
+                      placeholder="500"
+                    />
+                  </div>
+
+                  {/* Shared Expenses */}
+                  <div className="space-y-2">
+                    <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
+                    <Input
+                      id="sharedExpenses"
+                      type="number"
+                      value={calculatorData.sharedExpenses}
+                      onChange={(e) => handleInputChange('sharedExpenses', e.target.value)}
+                      placeholder="600"
+                    />
+                  </div>
+                </div>
+
+                {/* Total Expenses Display */}
+                <div className="p-3 bg-muted rounded-md">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Totale månedlige utgifter:</span>
+                    <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -288,16 +393,16 @@ const Calculator = () => {
               </div>
               
               <CalculatorModules
-                propertyValue={propertyValue}
-                monthlyRent={monthlyRent}
+                propertyValue={totalPrice}
+                monthlyRent={expectedAnnualRent / 12}
                 expenses={totalExpenses}
                 loanAmount={loanAmount}
                 interestRate={interestRate}
                 loanPeriod={loanPeriod}
                 monthlyLoanPayment={monthlyLoanPayment}
-                calculatorMode={calculatorData.calculatorMode}
-                monthlyCashFlow={calculatorData.calculatorMode === 'investment' 
-                  ? monthlyRent - totalExpenses - monthlyLoanPayment
+                calculatorMode={calculatorData.isRental ? 'investment' : 'private'}
+                monthlyCashFlow={calculatorData.isRental 
+                  ? (expectedAnnualRent / 12) - totalExpenses - monthlyLoanPayment
                   : -totalExpenses - monthlyLoanPayment}
                 onModuleActivate={handleModuleActivation}
                 onGenerateReport={handleGenerateReport}

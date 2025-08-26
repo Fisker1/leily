@@ -2,20 +2,20 @@ import { useState, useCallback } from 'react';
 
 interface CalculatorData {
   // Basic data
-  propertyValue: string;
-  monthlyRent: string;
-  loanAmount: string;
+  propertyType: string;
+  totalPrice: string;
+  equity: string;
+  isRental: boolean;
+  expectedAnnualRent: string;
   interestRate: string;
+  loanAmount: string;
   loanPeriod: string;
-  calculatorMode: 'investment' | 'private';
   
   // Expenses
-  electricity: string;
-  gridRent: string;
-  commonCosts: string;
   municipalFees: string;
-  internet: string;
-  otherExpenses: string;
+  electricityMonthly: string;
+  insurance: string;
+  sharedExpenses: string;
   
   // Renovation
   isRenovation: boolean;
@@ -28,19 +28,19 @@ interface CalculatorData {
 }
 
 const initialData: CalculatorData = {
-  propertyValue: "2500000",
-  monthlyRent: "18000", 
-  loanAmount: "2000000",
-  interestRate: "4.5",
-  loanPeriod: "25",
-  calculatorMode: 'investment',
+  propertyType: "",
+  totalPrice: "",
+  equity: "",
+  isRental: false,
+  expectedAnnualRent: "",
+  interestRate: "",
+  loanAmount: "",
+  loanPeriod: "",
   
-  electricity: "800",
-  gridRent: "400", 
-  commonCosts: "1500",
-  municipalFees: "600",
-  internet: "300",
-  otherExpenses: "400",
+  municipalFees: "",
+  electricityMonthly: "",
+  insurance: "",
+  sharedExpenses: "",
   
   isRenovation: false,
   renovationCost: "200000",
@@ -91,40 +91,39 @@ export const useCalculatorData = () => {
     switch (moduleId) {
       case 'Lønnsomhetsanalyse':
         return {
-          propertyValue: parseFloat(data.propertyValue),
-          monthlyRent: parseFloat(data.monthlyRent),
+          propertyValue: parseFloat(data.totalPrice),
+          monthlyRent: parseFloat(data.expectedAnnualRent) / 12,
           loanAmount: parseFloat(data.loanAmount),
-          calculatorMode: data.calculatorMode,
+          calculatorMode: data.isRental ? 'investment' : 'private',
           // Add calculated values
-          grossYield: ((parseFloat(data.monthlyRent) * 12) / parseFloat(data.propertyValue)) * 100,
+          grossYield: ((parseFloat(data.expectedAnnualRent)) / parseFloat(data.totalPrice)) * 100,
           score: 75 // This would be calculated based on various factors
         };
         
       case 'Avanserte beregninger':
-        const totalExpenses = parseFloat(data.electricity) + parseFloat(data.gridRent) + 
-                             parseFloat(data.commonCosts) + parseFloat(data.municipalFees) + 
-                             parseFloat(data.internet) + parseFloat(data.otherExpenses);
+        const totalExpenses = parseFloat(data.municipalFees) + parseFloat(data.electricityMonthly) + 
+                             parseFloat(data.insurance) + parseFloat(data.sharedExpenses);
         return {
           capRate: 6.5, // Would be calculated
           cashOnCashReturn: 8.2, // Would be calculated  
-          netOperatingIncome: (parseFloat(data.monthlyRent) - totalExpenses) * 12,
+          netOperatingIncome: (parseFloat(data.expectedAnnualRent) / 12 - totalExpenses) * 12,
           totalReturnPercentage: 12.5 // Would be calculated
         };
         
       case 'Markedsanalyse':
         return {
-          propertyValue: parseFloat(data.propertyValue),
-          monthlyRent: parseFloat(data.monthlyRent),
+          propertyValue: parseFloat(data.totalPrice),
+          monthlyRent: parseFloat(data.expectedAnnualRent) / 12,
           averageAreaPrice: 2800000, // Would come from market data
           averageAreaRent: 20000, // Would come from market data
-          priceComparison: ((parseFloat(data.propertyValue) - 2800000) / 2800000) * 100,
-          rentComparison: ((parseFloat(data.monthlyRent) - 20000) / 20000) * 100,
-          rentYield: ((parseFloat(data.monthlyRent) * 12) / parseFloat(data.propertyValue)) * 100,
+          priceComparison: ((parseFloat(data.totalPrice) - 2800000) / 2800000) * 100,
+          rentComparison: ((parseFloat(data.expectedAnnualRent) / 12 - 20000) / 20000) * 100,
+          rentYield: ((parseFloat(data.expectedAnnualRent)) / parseFloat(data.totalPrice)) * 100,
           marketRentYield: ((20000 * 12) / 2800000) * 100
         };
         
       case 'Risikoevaluering':
-        const loanToValue = (parseFloat(data.loanAmount) / parseFloat(data.propertyValue)) * 100;
+        const loanToValue = (parseFloat(data.loanAmount) / parseFloat(data.totalPrice)) * 100;
         return {
           loanToValue,
           debtServiceCoverage: 1.4, // Would be calculated
@@ -137,12 +136,12 @@ export const useCalculatorData = () => {
         
       case 'Avkastningsanalyse':
         return {
-          grossYield: ((parseFloat(data.monthlyRent) * 12) / parseFloat(data.propertyValue)) * 100,
+          grossYield: ((parseFloat(data.expectedAnnualRent)) / parseFloat(data.totalPrice)) * 100,
           netYield: 5.2, // Would be calculated
-          monthlyNet: parseFloat(data.monthlyRent) - 4000, // Simplified
+          monthlyNet: parseFloat(data.expectedAnnualRent) / 12 - 4000, // Simplified
           projectionYears: 10,
-          projectedValue: parseFloat(data.propertyValue) * 1.4, // 4% annual growth
-          projectedRent: parseFloat(data.monthlyRent) * 1.3, // 3% annual growth
+          projectedValue: parseFloat(data.totalPrice) * 1.4, // 4% annual growth
+          projectedRent: (parseFloat(data.expectedAnnualRent) / 12) * 1.3, // 3% annual growth
           annualizedReturn: 8.5 // Would be calculated
         };
         
@@ -152,9 +151,8 @@ export const useCalculatorData = () => {
   }, [data, isModuleActivated]);
   
   const getReportData = useCallback(() => {
-    const totalExpenses = parseFloat(data.electricity) + parseFloat(data.gridRent) + 
-                          parseFloat(data.commonCosts) + parseFloat(data.municipalFees) + 
-                          parseFloat(data.internet) + parseFloat(data.otherExpenses);
+    const totalExpenses = parseFloat(data.municipalFees) + parseFloat(data.electricityMonthly) + 
+                          parseFloat(data.insurance) + parseFloat(data.sharedExpenses);
                           
     const monthlyInterest = parseFloat(data.interestRate) / 100 / 12;
     const numberOfPayments = parseFloat(data.loanPeriod) * 12;
@@ -162,25 +160,25 @@ export const useCalculatorData = () => {
       (monthlyInterest * Math.pow(1 + monthlyInterest, numberOfPayments)) / 
       (Math.pow(1 + monthlyInterest, numberOfPayments) - 1);
       
-    const monthlyCashFlow = data.calculatorMode === 'investment'
-      ? parseFloat(data.monthlyRent) - totalExpenses - monthlyLoanPayment
+    const monthlyCashFlow = data.isRental
+      ? parseFloat(data.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment
       : -totalExpenses - monthlyLoanPayment;
       
-    const grossYield = data.calculatorMode === 'investment'
-      ? ((parseFloat(data.monthlyRent) * 12) / parseFloat(data.propertyValue)) * 100
+    const grossYield = data.isRental
+      ? (parseFloat(data.expectedAnnualRent) / parseFloat(data.totalPrice)) * 100
       : 0;
 
     return {
       basicData: {
-        propertyValue: parseFloat(data.propertyValue),
-        monthlyRent: parseFloat(data.monthlyRent),
+        propertyValue: parseFloat(data.totalPrice),
+        monthlyRent: parseFloat(data.expectedAnnualRent) / 12,
         loanAmount: parseFloat(data.loanAmount),
         expenses: totalExpenses,
         monthlyLoanPayment,
         monthlyCashFlow,
         grossYield,
-        calculatorMode: data.calculatorMode,
-        loanToValue: (parseFloat(data.loanAmount) / parseFloat(data.propertyValue)) * 100
+        calculatorMode: data.isRental ? 'investment' : 'private',
+        loanToValue: (parseFloat(data.loanAmount) / parseFloat(data.totalPrice)) * 100
       },
       profitabilityData: isModuleActivated('Lønnsomhetsanalyse') ? getModuleData('Lønnsomhetsanalyse') : null,
       advancedData: isModuleActivated('Avanserte beregninger') ? getModuleData('Avanserte beregninger') : null,
