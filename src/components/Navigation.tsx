@@ -29,12 +29,12 @@ const Navigation = () => {
                 <img 
                   src={leilyLogoIcon} 
                   alt="Leily" 
-                  className="h-8 w-auto sm:hidden"
+                  className="h-12 w-auto sm:hidden"
                 />
                 <img 
                   src={leilyLogoFull} 
                   alt="Leily" 
-                  className="h-8 w-auto hidden sm:block"
+                  className="h-12 w-auto hidden sm:block"
                 />
               </Link>
             </div>
