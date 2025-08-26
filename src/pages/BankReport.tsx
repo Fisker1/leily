@@ -469,31 +469,31 @@ const BankReport = () => {
                     <table className="w-full text-xs">
                       <tbody>
                         {basicData.calculatorMode === 'investment' && (
-                          <tr className="border-b border-gray-200">
-                            <td className="py-1 text-gray-600">Leieinntekter:</td>
-                            <td className="py-1 text-right font-semibold text-green-700">
-                              +{formatCurrency(basicData.monthlyRent || 0)}
-                            </td>
-                          </tr>
-                        )}
                         <tr className="border-b border-gray-200">
-                          <td className="py-1 text-gray-600">Driftsutgifter:</td>
-                          <td className="py-1 text-right font-semibold text-red-700">
-                            -{formatCurrency(basicData.expenses || 0)}
+                          <td className="py-1 text-gray-600">Leieinntekter:</td>
+                          <td className="py-1 text-right font-semibold text-green-700">
+                            +{formatCurrency(displayBasicData.monthlyRent || 0)}
                           </td>
                         </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="py-1 text-gray-600">Lånebetalinger:</td>
-                          <td className="py-1 text-right font-semibold text-red-700">
-                            -{formatCurrency(basicData.monthlyLoanPayment || 0)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-gray-600 font-bold">Netto cashflow:</td>
-                          <td className={`py-1 text-right font-bold ${(basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                            {(basicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(basicData.monthlyCashFlow || 0)}
-                          </td>
-                        </tr>
+                      )}
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Driftsutgifter:</td>
+                        <td className="py-1 text-right font-semibold text-red-700">
+                          -{formatCurrency(displayBasicData.expenses || 0)}
+                        </td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Lånebetalinger:</td>
+                        <td className="py-1 text-right font-semibold text-red-700">
+                          -{formatCurrency(displayBasicData.monthlyLoanPayment || 0)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-gray-600 font-bold">Netto cashflow:</td>
+                        <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
+                        </td>
+                      </tr>
                       </tbody>
                     </table>
                   </div>
