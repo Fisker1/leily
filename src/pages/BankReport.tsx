@@ -67,6 +67,14 @@ const BankReport = () => {
 
   // Use enriched basic data instead of basic data
   const displayBasicData = enrichedBasicData;
+  
+  // Debug logging for expenses
+  console.log('Individual expenses in report:');
+  console.log('Municipal fees:', displayBasicData.municipalFees);
+  console.log('Electricity:', displayBasicData.electricityMonthly);
+  console.log('Insurance:', displayBasicData.insurance);
+  console.log('Shared expenses:', displayBasicData.sharedExpenses);
+  console.log('Total expenses:', displayBasicData.expenses);
 
   const saveReportToDatabase = async (fileName: string, fileSize: number) => {
     if (!user) return;
