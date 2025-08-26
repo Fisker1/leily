@@ -6,8 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import LanguageToggle from "./LanguageToggle";
-import leilyLogoFull from "@/assets/leily-logo-full.png";
-import leilyLogoIcon from "@/assets/leily-logo-icon.png";
+import LeilyLogo from "./LeilyLogo";
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
@@ -26,15 +25,13 @@ const Navigation = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center gap-3">
-                <img 
-                  src={leilyLogoIcon} 
-                  alt="Leily" 
-                  className="h-12 w-auto sm:hidden"
+                <LeilyLogo 
+                  showText={false}
+                  className="sm:hidden"
                 />
-                <img 
-                  src={leilyLogoFull} 
-                  alt="Leily" 
-                  className="h-12 w-auto hidden sm:block"
+                <LeilyLogo 
+                  showText={true}
+                  className="hidden sm:flex"
                 />
               </Link>
             </div>
