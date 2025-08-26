@@ -86,6 +86,11 @@ const Calculator = () => {
     updateField('activated', true, moduleId);
   };
   const handleGenerateReport = () => {
+    // Debug logging to check what data we have
+    console.log('Calculator Data:', calculatorData);
+    console.log('Total Price:', calculatorData.totalPrice);
+    console.log('Parsed Total Price:', parseFloat(calculatorData.totalPrice));
+    
     // Generate basic report using simple property details only
     const basicReportData = {
       basicData: {
@@ -116,6 +121,9 @@ const Calculator = () => {
       },
       activatedModules: ['Grunnleggende analyse'] // Only basic analysis
     };
+    
+    console.log('Basic Report Data:', basicReportData);
+    
     navigate('/bank-report', {
       state: basicReportData
     });

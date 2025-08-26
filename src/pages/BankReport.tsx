@@ -34,6 +34,10 @@ const BankReport = () => {
   const reportData = location.state || {};
   const { user } = useAuth();
   
+  // Debug logging to see what data we received
+  console.log('Report Data Received:', reportData);
+  console.log('Basic Data:', reportData.basicData);
+  
   const {
     basicData = {},
     profitabilityData = {},
