@@ -336,7 +336,7 @@ const BankReport = () => {
                       <tr className="border-b border-gray-200">
                         <td className="py-1 text-gray-600">Belåningsgrad:</td>
                         <td className="py-1 text-right font-semibold">
-                          {formatPercent(((displayBasicData.loanAmount || 0) / (displayBasicData.propertyValue || 1)) * 100)}
+                          {displayBasicData.propertyValue > 0 ? formatPercent(((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100) : '0.00%'}
                         </td>
                       </tr>
                       {displayBasicData.calculatorMode === 'investment' && (
@@ -639,7 +639,7 @@ const BankReport = () => {
                       <tbody className="space-y-1">
                         <tr className="border-b border-gray-200">
                           <td className="py-1 text-gray-600">Belåningsgrad (LTV):</td>
-                          <td className="py-1 text-right font-semibold">{formatPercent(((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100)}</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.propertyValue > 0 ? formatPercent(((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100) : '0.00%'}</td>
                         </tr>
                         <tr className="border-b border-gray-200">
                           <td className="py-1 text-gray-600">Dekningsgrad:</td>
@@ -762,8 +762,8 @@ const BankReport = () => {
                   {formatCurrency(Math.abs(basicData.monthlyCashFlow || 0))}. 
                   {basicData.calculatorMode === 'investment' && ` Brutto yield på ${formatPercent(basicData.grossYield || 0)} 
                   indikerer ${(basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning sammenlignet med markedssnitt.`}
-                  {' '}Belåningsgraden på {formatPercent(((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100)} 
-                  er {((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100 < 80 ? 'innenfor' : 'over'} normale bankkrav.
+                  {' '}Belåningsgraden på {displayBasicData.propertyValue > 0 ? formatPercent(((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100) : '0.00%'} 
+                  er {displayBasicData.propertyValue > 0 && ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 < 80 ? 'innenfor' : 'over'} normale bankkrav.
                 </p>
               </div>
 
@@ -771,7 +771,7 @@ const BankReport = () => {
                 <div className="border border-green-400 bg-green-50 p-3">
                   <h5 className="font-bold text-green-800 mb-2 text-xs uppercase">Styrker ved investeringen:</h5>
                   <ul className="text-xs text-gray-800 space-y-1">
-                    {(basicData.loanToValue || 0) < 80 && <li>• Konservativ belåningsgrad under 80%</li>}
+                    {(displayBasicData.loanToValue || (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0)) < 80 && <li>• Konservativ belåningsgrad under 80%</li>}
                     {(basicData.monthlyCashFlow || 0) > 0 && <li>• Selvfinansierende investering (positiv cashflow)</li>}
                     {(basicData.grossYield || 0) > 6 && <li>• Yield over markedsgjennomsnitt</li>}
                     <li>• Omfattende analyse og dokumentasjon</li>
@@ -782,7 +782,7 @@ const BankReport = () => {
                 <div className="border border-yellow-400 bg-yellow-50 p-3">
                   <h5 className="font-bold text-yellow-800 mb-2 text-xs uppercase">Risikomomenter å vurdere:</h5>
                   <ul className="text-xs text-gray-800 space-y-1">
-                    {(basicData.loanToValue || 0) > 80 && <li>• Høy belåningsgrad - egenkapitalkrav</li>}
+                    {(displayBasicData.loanToValue || (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0)) > 80 && <li>• Høy belåningsgrad - egenkapitalkrav</li>}
                     {(basicData.monthlyCashFlow || 0) < 0 && <li>• Månedlig tilskudd nødvendig</li>}
                     <li>• Rentefølsomhet ved endringer</li>
                     <li>• Markedsrisiko og konjunktursvingninger</li>
@@ -794,9 +794,9 @@ const BankReport = () => {
               <div className="border border-gray-400 bg-white p-4 mt-4">
                 <h5 className="font-bold text-gray-800 mb-2 text-xs uppercase">Bankens vurdering:</h5>
                 <p className="text-xs text-gray-700 leading-relaxed">
-                  Investeringen {(basicData.monthlyCashFlow || 0) >= 0 && ((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100 < 80 ? 
+                  Investeringen {(displayBasicData.monthlyCashFlow || 0) >= 0 && (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0) < 80 ? 
                   'fremstår som solid med god sikkerhet for utlån' : 
-                  'krever nærmere vurdering av kredittrisiko'}. 
+                  'krever nærmere vurdering av kredittrisiko'}.
                   Dokumentasjonen er omfattende og gir et godt grunnlag for lånevurdering.
                 </p>
               </div>
