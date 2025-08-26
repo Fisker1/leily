@@ -90,17 +90,29 @@ const Calculator = () => {
     const basicReportData = {
       basicData: {
         propertyType: calculatorData.propertyType,
-        totalPrice: parseFloat(calculatorData.totalPrice) || 0,
+        tomannsboligType: calculatorData.tomannsboligType,
+        propertyValue: parseFloat(calculatorData.totalPrice) || 0,
         equity: parseFloat(calculatorData.equity) || 0,
-        isRental: calculatorData.isRental,
-        expectedAnnualRent: parseFloat(calculatorData.expectedAnnualRent) || 0,
         loanAmount: parseFloat(calculatorData.loanAmount) || 0,
         interestRate: parseFloat(calculatorData.interestRate) || 0,
         loanPeriod: parseFloat(calculatorData.loanPeriod) || 0,
+        isRental: calculatorData.isRental,
+        expectedAnnualRent: parseFloat(calculatorData.expectedAnnualRent) || 0,
+        monthlyRent: parseFloat(calculatorData.expectedAnnualRent) / 12 || 0,
+        
+        // Detailed expense breakdown
+        municipalFees: parseFloat(calculatorData.municipalFees) || 0,
+        electricityMonthly: parseFloat(calculatorData.electricityMonthly) || 0,
+        insurance: parseFloat(calculatorData.insurance) || 0,
+        sharedExpenses: parseFloat(calculatorData.sharedExpenses) || 0,
         expenses: totalExpenses,
+        
+        // Calculated values
         monthlyLoanPayment: monthlyLoanPayment,
         monthlyCashFlow: calculatorData.isRental ? parseFloat(calculatorData.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment,
-        yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0 ? parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice) * 100 : 0
+        grossYield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0 ? parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice) * 100 : 0,
+        loanToValue: parseFloat(calculatorData.totalPrice) > 0 ? (parseFloat(calculatorData.loanAmount) / parseFloat(calculatorData.totalPrice)) * 100 : 0,
+        calculatorMode: calculatorData.isRental ? 'investment' : 'private'
       },
       activatedModules: ['Grunnleggende analyse'] // Only basic analysis
     };

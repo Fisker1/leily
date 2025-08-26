@@ -47,6 +47,22 @@ const BankReport = () => {
   // Ensure activatedModules is always an array
   const activatedModules = Array.isArray(rawActivatedModules) ? rawActivatedModules : [];
 
+  // Add all basic data fields from calculator
+  const enrichedBasicData = {
+    ...basicData,
+    propertyType: reportData.basicData?.propertyType || '',
+    tomannsboligType: reportData.basicData?.tomannsboligType || '',
+    interestRate: reportData.basicData?.interestRate || 0,
+    loanPeriod: reportData.basicData?.loanPeriod || 0,
+    municipalFees: reportData.basicData?.municipalFees || 0,
+    electricityMonthly: reportData.basicData?.electricityMonthly || 0,
+    insurance: reportData.basicData?.insurance || 0,
+    sharedExpenses: reportData.basicData?.sharedExpenses || 0
+  };
+
+  // Use enriched basic data instead of basic data
+  const displayBasicData = enrichedBasicData;
+
   const saveReportToDatabase = async (fileName: string, fileSize: number) => {
     if (!user) return;
 
@@ -55,15 +71,17 @@ const BankReport = () => {
         user_id: user.id,
         report_type: 'bank_report',
         property_data: {
-          propertyValue: basicData.propertyValue,
-          loanAmount: basicData.loanAmount,
-          monthlyRent: basicData.monthlyRent,
-          expenses: basicData.expenses,
-          calculatorMode: basicData.calculatorMode
+          propertyType: displayBasicData.propertyType,
+          tomannsboligType: displayBasicData.tomannsboligType,
+          propertyValue: displayBasicData.propertyValue,
+          loanAmount: displayBasicData.loanAmount,
+          monthlyRent: displayBasicData.monthlyRent,
+          expenses: displayBasicData.expenses,
+          calculatorMode: displayBasicData.calculatorMode
         },
         calculations: {
-          monthlyCashFlow: basicData.monthlyCashFlow,
-          grossYield: basicData.grossYield,
+          monthlyCashFlow: displayBasicData.monthlyCashFlow,
+          grossYield: displayBasicData.grossYield,
           profitabilityScore: profitabilityData.score,
           capRate: advancedData.capRate,
           activatedModules
@@ -277,46 +295,122 @@ const BankReport = () => {
                   <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Eiendomsdata</h4>
                   <table className="w-full text-xs">
                     <tbody className="space-y-1">
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Boligtype:</td>
+                          <td className="py-1 text-right font-semibold">
+                            {displayBasicData.propertyType ? displayBasicData.propertyType.charAt(0).toUpperCase() + displayBasicData.propertyType.slice(1) : 'Ikke spesifisert'}
+                            {displayBasicData.propertyType === 'tomannsbolig' && displayBasicData.tomannsboligType && 
+                              ` (${displayBasicData.tomannsboligType === 'vertikaldelt' ? 'Vertikaldelt' : 'Horisontaldelt'})`
+                            }
+                          </td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Eiendomsverdi:</td>
+                          <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.propertyValue || 0)}</td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Egenkapital:</td>
+                          <td className="py-1 text-right font-semibold">{formatCurrency((displayBasicData.propertyValue || 0) - (displayBasicData.loanAmount || 0))}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 text-gray-600">Lånebeløp:</td>
+                          <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.loanAmount || 0)}</td>
+                        </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Lånevilkår og nøkkeltall</h4>
+                  <table className="w-full text-xs">
+                    <tbody>
                       <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Eiendomsverdi:</td>
-                        <td className="py-1 text-right font-semibold">{formatCurrency(basicData.propertyValue || 0)}</td>
+                        <td className="py-1 text-gray-600">Rente:</td>
+                        <td className="py-1 text-right font-semibold">{formatPercent(displayBasicData.interestRate || 0)}</td>
                       </tr>
                       <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Lånebeløp:</td>
-                        <td className="py-1 text-right font-semibold">{formatCurrency(basicData.loanAmount || 0)}</td>
+                        <td className="py-1 text-gray-600">Låneperiode:</td>
+                        <td className="py-1 text-right font-semibold">{displayBasicData.loanPeriod || 0} år</td>
                       </tr>
-                      <tr>
-                        <td className="py-1 text-gray-600">Egenkapital:</td>
-                        <td className="py-1 text-right font-semibold">{formatCurrency((basicData.propertyValue || 0) - (basicData.loanAmount || 0))}</td>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Belåningsgrad:</td>
+                        <td className="py-1 text-right font-semibold">
+                          {formatPercent(((displayBasicData.loanAmount || 0) / (displayBasicData.propertyValue || 1)) * 100)}
+                        </td>
+                      </tr>
+                      {displayBasicData.calculatorMode === 'investment' && (
+                        <tr>
+                          <td className="py-1 text-gray-600">Brutto yield:</td>
+                          <td className="py-1 text-right font-semibold">
+                            {formatPercent(displayBasicData.grossYield || 0)}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Detailed Expense Breakdown */}
+              <div className="grid grid-cols-2 gap-6 mb-4">
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Månedlige utgifter (detaljer)</h4>
+                  <table className="w-full text-xs">
+                    <tbody className="space-y-1">
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Kommunale avgifter:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.municipalFees || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Strøm (forventet):</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.electricityMonthly || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Forsikring:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.insurance || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Fellesutgifter:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.sharedExpenses || 0)}</td>
+                      </tr>
+                      <tr className="border-t border-gray-400 bg-gray-50">
+                        <td className="py-1 text-gray-800 font-bold">Sum utgifter:</td>
+                        <td className="py-1 text-right font-bold">{formatCurrency(displayBasicData.expenses || 0)}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
                 
                 <div className="border border-gray-300 p-4">
-                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Nøkkeltall</h4>
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Månedlig økonomisk oversikt</h4>
                   <table className="w-full text-xs">
                     <tbody>
-                      <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Belåningsgrad:</td>
-                        <td className="py-1 text-right font-semibold">
-                          {formatPercent(((basicData.loanAmount || 0) / (basicData.propertyValue || 1)) * 100)}
-                        </td>
-                      </tr>
-                      <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Månedlig cashflow:</td>
-                        <td className={`py-1 text-right font-semibold ${(basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {formatCurrency(basicData.monthlyCashFlow || 0)}
-                        </td>
-                      </tr>
-                      {basicData.calculatorMode === 'investment' && (
-                        <tr>
-                          <td className="py-1 text-gray-600">Brutto yield:</td>
-                          <td className="py-1 text-right font-semibold">
-                            {formatPercent(basicData.grossYield || 0)}
-                          </td>
-                        </tr>
-                      )}
+                       {displayBasicData.calculatorMode === 'investment' && (
+                         <tr className="border-b border-gray-200">
+                           <td className="py-1 text-gray-600">Leieinntekt:</td>
+                           <td className="py-1 text-right font-semibold text-green-700">
+                             +{formatCurrency(displayBasicData.monthlyRent || 0)}
+                           </td>
+                         </tr>
+                       )}
+                       <tr className="border-b border-gray-200">
+                         <td className="py-1 text-gray-600">Lånebeløp (mnd):</td>
+                         <td className="py-1 text-right font-semibold text-red-700">
+                           -{formatCurrency(displayBasicData.monthlyLoanPayment || 0)}
+                         </td>
+                       </tr>
+                       <tr className="border-b border-gray-200">
+                         <td className="py-1 text-gray-600">Driftsutgifter:</td>
+                         <td className="py-1 text-right font-semibold text-red-700">
+                           -{formatCurrency(displayBasicData.expenses || 0)}
+                         </td>
+                       </tr>
+                       <tr className="border-t border-gray-400 bg-gray-50">
+                         <td className="py-1 text-gray-800 font-bold">Netto cashflow:</td>
+                         <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                           {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
+                         </td>
+                       </tr>
                     </tbody>
                   </table>
                 </div>
