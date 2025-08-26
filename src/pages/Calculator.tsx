@@ -26,6 +26,8 @@ const Calculator = () => {
   // Get state from navigation (if returning from module addition)
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
+  
   useEffect(() => {
     if (location.state?.showModuleAdded) {
       setShowSuccessAlert(true);
@@ -42,6 +44,24 @@ const Calculator = () => {
     ...data,
     ...locationState
   };
+  
+  // Auto-calculate loan amount when total price or equity changes (unless manually edited)
+  useEffect(() => {
+    if (!isLoanAmountManuallyEdited && calculatorData.totalPrice && calculatorData.equity) {
+      const totalPrice = parseFloat(calculatorData.totalPrice) || 0;
+      const equity = parseFloat(calculatorData.equity) || 0;
+      const autoLoanAmount = Math.max(0, totalPrice - equity);
+      
+      if (autoLoanAmount !== (parseFloat(calculatorData.loanAmount) || 0)) {
+        updateField('loanAmount', autoLoanAmount.toString());
+        setLocationState(prev => ({
+          ...prev,
+          loanAmount: autoLoanAmount.toString()
+        }));
+      }
+    }
+  }, [calculatorData.totalPrice, calculatorData.equity, isLoanAmountManuallyEdited, updateField]);
+
   const selectedModules = locationState.selectedModules || [];
   const handleInputChange = (field: string, value: any) => {
     updateField(field, value);
@@ -50,6 +70,16 @@ const Calculator = () => {
       ...prev,
       [field]: value
     }));
+    
+    // Track if loan amount is manually edited
+    if (field === 'loanAmount') {
+      setIsLoanAmountManuallyEdited(true);
+    }
+    
+    // Reset manual edit flag when total price or equity changes
+    if (field === 'totalPrice' || field === 'equity') {
+      setIsLoanAmountManuallyEdited(false);
+    }
   };
   const handleModuleActivation = (moduleId: string) => {
     // Activate the module by adding some data to it
@@ -218,7 +248,16 @@ const Calculator = () => {
               {/* Loan Amount */}
               <div className="space-y-2">
                 <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
-                <Input id="loanAmount" type="number" value={calculatorData.loanAmount} onChange={e => handleInputChange('loanAmount', e.target.value)} placeholder="4000000" />
+                <Input 
+                  id="loanAmount" 
+                  type="number" 
+                  value={calculatorData.loanAmount} 
+                  onChange={e => handleInputChange('loanAmount', e.target.value)} 
+                  placeholder="4000000" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Beregnes automatisk som totalpris - egenkapital, men kan redigeres manuelt
+                </p>
               </div>
 
               {/* Loan Period */}
