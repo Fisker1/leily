@@ -13,6 +13,8 @@ import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
+import { useAuth } from '@/contexts/AuthContext';
+import { Slider } from '@/components/ui/slider';
 const Calculator = () => {
   const {
     data,
@@ -22,11 +24,14 @@ const Calculator = () => {
   } = useCalculatorData();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile } = useAuth();
 
   // Get state from navigation (if returning from module addition)
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
+  const [ownershipType, setOwnershipType] = useState(50); // 0 = Privat, 100 = AS
+  const [propertyStrategy, setPropertyStrategy] = useState(50); // 0 = Utleie, 100 = Flipp
   
   useEffect(() => {
     if (location.state?.showModuleAdded) {
@@ -335,8 +340,134 @@ const Calculator = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Gratis rapport basert på dine grunnleggende eiendomsdata
               </p>
-            </div>}
+              </div>}
         </div>
+
+        {/* Extended Bank Report Section */}
+        {canShowResults && (
+          <div className="mt-8 space-y-6">
+            <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Utvidet Bankrapport
+                </CardTitle>
+                <CardDescription>
+                  Få tilgang til avanserte analyser og tilpassede rapporter
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground"
+                    onClick={() => {
+                      if (!user) {
+                        navigate('/auth');
+                        return;
+                      }
+                      if (profile?.subscription_tier !== 'pro') {
+                        navigate('/pricing');
+                        return;
+                      }
+                      // Handle extended report generation
+                      console.log('Generate extended report');
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generer Utvidet Bankrapport
+                  </Button>
+                  
+                  {!user && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Du må logge inn for å få tilgang til utvidede rapporter
+                    </p>
+                  )}
+                  
+                  {user && profile?.subscription_tier !== 'pro' && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Oppgrader til Pro for å få tilgang til utvidede rapporter
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Advanced Settings Sliders */}
+            <Card className={`${!user || profile?.subscription_tier !== 'pro' ? 'opacity-50' : ''}`}>
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <CalcIcon className="h-5 w-5" />
+                  Avanserte Innstillinger
+                  {(!user || profile?.subscription_tier !== 'pro') && (
+                    <Badge variant="outline" className="ml-2">Pro</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Tilpass analysen etter din situasjon og strategi
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Ownership Type Slider */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">Eierstruktur</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {ownershipType <= 25 ? 'Privat' : ownershipType >= 75 ? 'AS' : 'Blandet'}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[ownershipType]}
+                      onValueChange={(value) => setOwnershipType(value[0])}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                      disabled={!user || profile?.subscription_tier !== 'pro'}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Privat</span>
+                      <span>AS</span>
+                    </div>
+                  </div>
+
+                  {/* Property Strategy Slider */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">Investeringsstrategi</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {propertyStrategy <= 25 ? 'Utleie' : propertyStrategy >= 75 ? 'Flipp' : 'Fleksibel'}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[propertyStrategy]}
+                      onValueChange={(value) => setPropertyStrategy(value[0])}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                      disabled={!user || profile?.subscription_tier !== 'pro'}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Utleie</span>
+                      <span>Flipp</span>
+                    </div>
+                  </div>
+
+                  {(!user || profile?.subscription_tier !== 'pro') && (
+                    <Alert>
+                      <AlertDescription>
+                        {!user 
+                          ? "Logg inn og oppgrader til Pro for å få tilgang til avanserte innstillinger."
+                          : "Oppgrader til Pro for å få tilgang til avanserte innstillinger."
+                        }
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
           {/* Module Selection Section */}
           {canShowResults && <div className="space-y-6">
