@@ -6,15 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calculator as CalcIcon, CheckCircle2, FileText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
+import BuildingPlanner from '@/components/BuildingPlanner';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Slider } from '@/components/ui/slider';
+
 const Calculator = () => {
   const {
     data,
@@ -32,6 +35,7 @@ const Calculator = () => {
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
   const [ownershipType, setOwnershipType] = useState(50); // 0 = Privat, 100 = AS
   const [propertyStrategy, setPropertyStrategy] = useState(50); // 0 = Utleie, 100 = Flipp
+  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner
   
   useEffect(() => {
     if (location.state?.showModuleAdded) {
@@ -86,10 +90,12 @@ const Calculator = () => {
       setIsLoanAmountManuallyEdited(false);
     }
   };
+  
   const handleModuleActivation = (moduleId: string) => {
     // Activate the module by adding some data to it
     updateField('activated', true, moduleId);
   };
+  
   const handleGenerateReport = () => {
     // Debug logging to check what data we have
     console.log('Calculator Data:', calculatorData);
@@ -133,6 +139,7 @@ const Calculator = () => {
       state: basicReportData
     });
   };
+  
   const loanAmount = parseFloat(calculatorData.loanAmount) || 0;
   const interestRate = parseFloat(calculatorData.interestRate) || 0;
   const loanPeriod = parseFloat(calculatorData.loanPeriod) || 0;
@@ -146,19 +153,23 @@ const Calculator = () => {
 
   // Calculate yield if rental property
   const yieldPercentage = calculatorData.isRental && totalPrice > 0 ? expectedAnnualRent / totalPrice * 100 : 0;
-  return <>
+  
+  return (
+    <>
       <Navigation />
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-8">
         {/* Success Alert */}
-        {showSuccessAlert && locationState.showModuleAdded && <Alert className="max-w-2xl mx-auto border-green-200 bg-green-50">
+        {showSuccessAlert && locationState.showModuleAdded && (
+          <Alert className="max-w-2xl mx-auto border-green-200 bg-green-50 mb-8">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               <strong>{locationState.addedModuleName}</strong> er lagt til som vedlegg i rapporten. 
               Du kan nå velge flere moduler eller generere den komplette rapporten.
             </AlertDescription>
-          </Alert>}
+          </Alert>
+        )}
 
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 mb-8">
           <h1 className="text-4xl font-bold text-foreground flex items-center justify-center gap-3">
             <CalcIcon className="h-10 w-10 text-primary" />
             Eiendomskalkulator
@@ -168,367 +179,424 @@ const Calculator = () => {
           </p>
         </div>
 
-        {/* Centered Property Details */}
-        <div className="max-w-2xl mx-auto">
-          <Card className="shadow-medium">
-            <CardHeader>
-              <CardTitle className="text-primary">Eiendomsdetaljer</CardTitle>
-              <CardDescription>
-                Fyll inn informasjon om eiendommen du vurderer
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Property Type */}
-              <div className="space-y-2">
-                <Label htmlFor="propertyType">Type bolig</Label>
-                <Select value={calculatorData.propertyType} onValueChange={value => handleInputChange('propertyType', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg boligtype" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="enebolig">Enebolig</SelectItem>
-                    <SelectItem value="leilighet">Leilighet</SelectItem>
-                    <SelectItem value="rekkehus">Rekkehus</SelectItem>
-                    <SelectItem value="tomannsbolig">Tomannsbolig</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tomannsbolig Type - only for tomannsbolig */}
-              {calculatorData.propertyType === 'tomannsbolig' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="tomannsbolig-toggle" className="text-base font-medium">
-                      Type tomannsbolig
-                    </Label>
-                    <div className="flex items-center space-x-3">
-                      <span className={`text-sm ${calculatorData.tomannsboligType === 'vertikaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                        Vertikaldelt
-                      </span>
-                      <Switch 
-                        id="tomannsbolig-toggle" 
-                        checked={calculatorData.tomannsboligType === 'horisontaldelt'} 
-                        onCheckedChange={checked => handleInputChange('tomannsboligType', checked ? 'horisontaldelt' : 'vertikaldelt')} 
-                      />
-                      <span className={`text-sm ${calculatorData.tomannsboligType === 'horisontaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                        Horisontaldelt
-                      </span>
-                    </div>
+        {/* Tab selector */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsTrigger value="calculator" className="flex items-center gap-2">
+              <CalcIcon className="h-4 w-4" />
+              Kalkyle
+            </TabsTrigger>
+            <TabsTrigger value="building-planner" className="flex items-center gap-2">
+              <Ruler className="h-4 w-4" />
+              Byggeplanlegger
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="calculator" className="space-y-8">
+            {/* Centered Property Details */}
+            <div className="max-w-2xl mx-auto">
+              <Card className="shadow-medium">
+                <CardHeader>
+                  <CardTitle className="text-primary">Eiendomsdetaljer</CardTitle>
+                  <CardDescription>
+                    Fyll inn informasjon om eiendommen du vurderer
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Property Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="propertyType">Type bolig</Label>
+                    <Select value={calculatorData.propertyType} onValueChange={value => handleInputChange('propertyType', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Velg boligtype" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="enebolig">Enebolig</SelectItem>
+                        <SelectItem value="leilighet">Leilighet</SelectItem>
+                        <SelectItem value="rekkehus">Rekkehus</SelectItem>
+                        <SelectItem value="tomannsbolig">Tomannsbolig</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-              )}
 
-              {/* Total Price */}
-              <div className="space-y-2">
-                <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
-                <Input id="totalPrice" type="number" value={calculatorData.totalPrice} onChange={e => handleInputChange('totalPrice', e.target.value)} placeholder="5000000" />
-              </div>
-
-              {/* Equity */}
-              <div className="space-y-2">
-                <Label htmlFor="equity">Egenkapital (NOK)</Label>
-                <Input id="equity" type="number" value={calculatorData.equity} onChange={e => handleInputChange('equity', e.target.value)} placeholder="1000000" />
-              </div>
-
-              {/* Rental Toggle */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="rental-toggle" className="text-base font-medium">
-                    Bruksformål
-                  </Label>
-                  <div className="flex items-center space-x-3">
-                    <span className={`text-sm ${!calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                      Privat
-                    </span>
-                    <Switch id="rental-toggle" checked={calculatorData.isRental} onCheckedChange={checked => handleInputChange('isRental', checked)} />
-                    <span className={`text-sm ${calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                      Utleie
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Expected Monthly Rent - only for rental */}
-              {calculatorData.isRental && <div className="space-y-2">
-                  <Label htmlFor="expectedMonthlyRent">Forventet leieinntekt i måneden (NOK)</Label>
-                  <Input id="expectedMonthlyRent" type="number" value={calculatorData.expectedAnnualRent ? (parseFloat(calculatorData.expectedAnnualRent) / 12).toString() : ''} onChange={e => handleInputChange('expectedAnnualRent', (parseFloat(e.target.value) * 12).toString())} placeholder="25000" />
-                  {/* Yield Calculation */}
-                  {totalPrice > 0 && expectedAnnualRent > 0 && <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-primary">Yield:</span>
-                        <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
+                  {/* Tomannsbolig Type - only for tomannsbolig */}
+                  {calculatorData.propertyType === 'tomannsbolig' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="tomannsbolig-toggle" className="text-base font-medium">
+                          Type tomannsbolig
+                        </Label>
+                        <div className="flex items-center space-x-3">
+                          <span className={`text-sm ${calculatorData.tomannsboligType === 'vertikaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                            Vertikaldelt
+                          </span>
+                          <Switch 
+                            id="tomannsbolig-toggle" 
+                            checked={calculatorData.tomannsboligType === 'horisontaldelt'} 
+                            onCheckedChange={checked => handleInputChange('tomannsboligType', checked ? 'horisontaldelt' : 'vertikaldelt')} 
+                          />
+                          <span className={`text-sm ${calculatorData.tomannsboligType === 'horisontaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                            Horisontaldelt
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Beregnet som (månedlig leie × 12) / totalpris × 100
-                      </p>
-                    </div>}
-                </div>}
+                    </div>
+                  )}
 
-              {/* Interest Rate */}
-              <div className="space-y-2">
-                <Label htmlFor="interestRate">Rente (%)</Label>
-                <Input id="interestRate" type="number" step="0.1" value={calculatorData.interestRate} onChange={e => handleInputChange('interestRate', e.target.value)} placeholder="4.5" />
-              </div>
-
-              {/* Loan Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
-                <Input 
-                  id="loanAmount" 
-                  type="number" 
-                  value={calculatorData.loanAmount} 
-                  onChange={e => handleInputChange('loanAmount', e.target.value)} 
-                  placeholder="4000000" 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Beregnes automatisk som totalpris - egenkapital, men kan redigeres manuelt
-                </p>
-              </div>
-
-              {/* Loan Period */}
-              <div className="space-y-2">
-                <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
-                <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
-              </div>
-
-              {/* Expenses Section */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  {/* Municipal Fees */}
+                  {/* Total Price */}
                   <div className="space-y-2">
-                    <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
-                    <Input id="municipalFees" type="number" value={calculatorData.municipalFees} onChange={e => handleInputChange('municipalFees', e.target.value)} placeholder="1500" />
+                    <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
+                    <Input id="totalPrice" type="number" value={calculatorData.totalPrice} onChange={e => handleInputChange('totalPrice', e.target.value)} placeholder="5000000" />
                   </div>
 
-                  {/* Monthly Electricity */}
+                  {/* Equity */}
                   <div className="space-y-2">
-                    <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
-                    <Input id="electricityMonthly" type="number" value={calculatorData.electricityMonthly} onChange={e => handleInputChange('electricityMonthly', e.target.value)} placeholder="800" />
+                    <Label htmlFor="equity">Egenkapital (NOK)</Label>
+                    <Input id="equity" type="number" value={calculatorData.equity} onChange={e => handleInputChange('equity', e.target.value)} placeholder="1000000" />
                   </div>
 
-                  {/* Insurance */}
+                  {/* Rental Toggle */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="rental-toggle" className="text-base font-medium">
+                        Bruksformål
+                      </Label>
+                      <div className="flex items-center space-x-3">
+                        <span className={`text-sm ${!calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                          Privat
+                        </span>
+                        <Switch id="rental-toggle" checked={calculatorData.isRental} onCheckedChange={checked => handleInputChange('isRental', checked)} />
+                        <span className={`text-sm ${calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                          Utleie
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expected Monthly Rent - only for rental */}
+                  {calculatorData.isRental && (
+                    <div className="space-y-2">
+                      <Label htmlFor="expectedMonthlyRent">Forventet leieinntekt i måneden (NOK)</Label>
+                      <Input 
+                        id="expectedMonthlyRent" 
+                        type="number" 
+                        value={calculatorData.expectedAnnualRent ? (parseFloat(calculatorData.expectedAnnualRent) / 12).toString() : ''} 
+                        onChange={e => handleInputChange('expectedAnnualRent', (parseFloat(e.target.value) * 12).toString())} 
+                        placeholder="25000" 
+                      />
+                      {/* Yield Calculation */}
+                      {totalPrice > 0 && expectedAnnualRent > 0 && (
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-primary">Yield:</span>
+                            <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Beregnet som (månedlig leie × 12) / totalpris × 100
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Interest Rate */}
                   <div className="space-y-2">
-                    <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
-                    <Input id="insurance" type="number" value={calculatorData.insurance} onChange={e => handleInputChange('insurance', e.target.value)} placeholder="500" />
+                    <Label htmlFor="interestRate">Rente (%)</Label>
+                    <Input id="interestRate" type="number" step="0.1" value={calculatorData.interestRate} onChange={e => handleInputChange('interestRate', e.target.value)} placeholder="4.5" />
                   </div>
 
-                  {/* Shared Expenses */}
+                  {/* Loan Amount */}
                   <div className="space-y-2">
-                    <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
-                    <Input id="sharedExpenses" type="number" value={calculatorData.sharedExpenses} onChange={e => handleInputChange('sharedExpenses', e.target.value)} placeholder="600" />
+                    <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
+                    <Input 
+                      id="loanAmount" 
+                      type="number" 
+                      value={calculatorData.loanAmount} 
+                      onChange={e => handleInputChange('loanAmount', e.target.value)} 
+                      placeholder="4000000" 
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Beregnes automatisk som totalpris - egenkapital, men kan redigeres manuelt
+                    </p>
                   </div>
-                </div>
 
-                {/* Total Expenses Display */}
-                <div className="p-3 bg-muted rounded-md">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Totale månedlige utgifter:</span>
-                    <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
+                  {/* Loan Period */}
+                  <div className="space-y-2">
+                    <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
+                    <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Generate Report Button */}
-          {canShowResults && <div className="mt-6 text-center">
-              <Button size="lg" className="px-8" onClick={handleGenerateReport}>
-                Generer grunnleggende bankrapport
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Gratis rapport basert på dine grunnleggende eiendomsdata
-              </p>
-              </div>}
-        </div>
+                  {/* Expenses Section */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Municipal Fees */}
+                      <div className="space-y-2">
+                        <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
+                        <Input id="municipalFees" type="number" value={calculatorData.municipalFees} onChange={e => handleInputChange('municipalFees', e.target.value)} placeholder="1500" />
+                      </div>
 
-        {/* Extended Bank Report Section - Always visible */}
-        <div className="mt-8 space-y-6">
-            <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-primary flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Utvidet Bankrapport
-                </CardTitle>
-                <CardDescription>
-                  Få tilgang til avanserte analyser og tilpassede rapporter
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Button 
-                    size="lg" 
-                    className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground"
-                    onClick={() => {
-                      if (!user) {
-                        navigate('/auth');
-                        return;
-                      }
-                      if (profile?.subscription_tier !== 'pro') {
-                        navigate('/pricing');
-                        return;
-                      }
-                      // Handle extended report generation
-                      console.log('Generate extended report');
-                    }}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generer Utvidet Bankrapport
+                      {/* Monthly Electricity */}
+                      <div className="space-y-2">
+                        <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
+                        <Input id="electricityMonthly" type="number" value={calculatorData.electricityMonthly} onChange={e => handleInputChange('electricityMonthly', e.target.value)} placeholder="800" />
+                      </div>
+
+                      {/* Insurance */}
+                      <div className="space-y-2">
+                        <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
+                        <Input id="insurance" type="number" value={calculatorData.insurance} onChange={e => handleInputChange('insurance', e.target.value)} placeholder="500" />
+                      </div>
+
+                      {/* Shared Expenses */}
+                      <div className="space-y-2">
+                        <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
+                        <Input id="sharedExpenses" type="number" value={calculatorData.sharedExpenses} onChange={e => handleInputChange('sharedExpenses', e.target.value)} placeholder="600" />
+                      </div>
+                    </div>
+
+                    {/* Total Expenses Display */}
+                    <div className="p-3 bg-muted rounded-md">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Totale månedlige utgifter:</span>
+                        <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Generate Report Button */}
+              {canShowResults && (
+                <div className="mt-6 text-center">
+                  <Button size="lg" className="px-8" onClick={handleGenerateReport}>
+                    Generer grunnleggende bankrapport
                   </Button>
-                  
-                  {!user && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Du må logge inn for å få tilgang til utvidede rapporter
-                    </p>
-                  )}
-                  
-                  {user && profile?.subscription_tier !== 'pro' && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Oppgrader til Pro for å få tilgang til utvidede rapporter
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Advanced Settings Sliders */}
-            <Card className={`${!user || profile?.subscription_tier !== 'pro' ? 'opacity-50' : ''}`}>
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <CalcIcon className="h-5 w-5" />
-                  Avanserte Innstillinger
-                  {(!user || profile?.subscription_tier !== 'pro') && (
-                    <Badge variant="outline" className="ml-2">Pro</Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Tilpass analysen etter din situasjon og strategi
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Ownership Type Slider */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-sm font-medium">Eierstruktur</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {ownershipType <= 25 ? 'Privat' : ownershipType >= 75 ? 'AS' : 'Blandet'}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[ownershipType]}
-                      onValueChange={(value) => setOwnershipType(value[0])}
-                      max={100}
-                      step={1}
-                      className="w-full"
-                      disabled={!user || profile?.subscription_tier !== 'pro'}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Privat</span>
-                      <span>AS</span>
-                    </div>
-                  </div>
-
-                  {/* Property Strategy Slider */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-sm font-medium">Investeringsstrategi</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {propertyStrategy <= 25 ? 'Utleie' : propertyStrategy >= 75 ? 'Flipp' : 'Fleksibel'}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[propertyStrategy]}
-                      onValueChange={(value) => setPropertyStrategy(value[0])}
-                      max={100}
-                      step={1}
-                      className="w-full"
-                      disabled={!user || profile?.subscription_tier !== 'pro'}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Utleie</span>
-                      <span>Flipp</span>
-                    </div>
-                  </div>
-
-                  {(!user || profile?.subscription_tier !== 'pro') && (
-                    <Alert>
-                      <AlertDescription>
-                        {!user 
-                          ? "Logg inn og oppgrader til Pro for å få tilgang til avanserte innstillinger."
-                          : "Oppgrader til Pro for å få tilgang til avanserte innstillinger."
-                        }
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Module Selection Section */}
-          {canShowResults && <div className="space-y-6">
-              {/* Show attached modules if any */}
-              {selectedModules.length > 0 && <Card className="bg-accent/5 border-accent/20">
-                  <CardHeader>
-                    <CardTitle className="text-accent flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Vedlagte Moduler ({selectedModules.length})
-                    </CardTitle>
-                    <CardDescription>
-                      Disse modulene er allerede lagt til som vedlegg i rapporten
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-3">
-                      {selectedModules.map((module, index) => <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {module.title.split(' - ')[0]}
-                        </Badge>)}
-                    </div>
-                  </CardContent>
-                </Card>}
-              
-              <div className="text-center space-y-3">
-                <h2 className="text-3xl font-bold text-foreground">
-                  {selectedModules.length > 0 ? 'Utvid fullstendig bankrapport' : 'Utvid fullstendig bankrapport'}
-                </h2>
-                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                  {selectedModules.length > 0 ? 'Fyll ut alle modulene nedenfor eller fjern de du ikke ønsker i rapporten' : 'Klikk nedenfor for å få tilgang til alle analysemodulene og fylle dem ut i sekvens'}
-                </p>
-                <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto">
-                  <p className="text-sm text-primary font-medium">
-                    💡 Tip: Jo flere moduler du fyller ut, desto mer omfattende og profesjonell blir din bankrapport
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Gratis rapport basert på dine grunnleggende eiendomsdata
                   </p>
                 </div>
-              </div>
-              
-              <CalculatorModules propertyValue={totalPrice} monthlyRent={expectedAnnualRent / 12} expenses={totalExpenses} loanAmount={loanAmount} interestRate={interestRate} loanPeriod={loanPeriod} monthlyLoanPayment={monthlyLoanPayment} calculatorMode={calculatorData.isRental ? 'investment' : 'private'} monthlyCashFlow={calculatorData.isRental ? expectedAnnualRent / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment} onModuleActivate={handleModuleActivation} onGenerateReport={handleGenerateReport} selectedModules={selectedModules} calculatorData={calculatorData} onDataChange={handleInputChange} />
+              )}
+            </div>
 
-              {/* Generate Final Report Button */}
-              {selectedModules.length > 0 && <Card className="bg-gradient-soft border-primary/20 mt-8">
-                  <CardHeader>
-                    <CardTitle className="text-primary flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Generer Komplett Bankrapport
-                    </CardTitle>
-                    <CardDescription>
-                      Basert på grunnleggende data og {selectedModules.length} vedlagte analysemoduler
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground" size="lg" onClick={handleGenerateReport}>
+            {/* Extended Bank Report Section - Always visible */}
+            <div className="space-y-6">
+              <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-primary flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Utvidet Bankrapport
+                  </CardTitle>
+                  <CardDescription>
+                    Få tilgang til avanserte analyser og tilpassede rapporter
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground"
+                      onClick={() => {
+                        if (!user) {
+                          navigate('/auth');
+                          return;
+                        }
+                        if (profile?.subscription_tier !== 'pro') {
+                          navigate('/pricing');
+                          return;
+                        }
+                        // Handle extended report generation
+                        console.log('Generate extended report');
+                      }}
+                    >
                       <FileText className="h-4 w-4 mr-2" />
-                      Generer Komplett Rapport med {selectedModules.length} Vedlegg
+                      Generer Utvidet Bankrapport
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-3 text-center">
-                      Rapporten vil inneholde alle valgte moduler som separate vedlegg
+                    
+                    {!user && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Du må logge inn for å få tilgang til utvidede rapporter
+                      </p>
+                    )}
+                    
+                    {user && profile?.subscription_tier !== 'pro' && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Oppgrader til Pro for å få tilgang til utvidede rapporter
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Advanced Settings Sliders */}
+              <Card className={`${!user || profile?.subscription_tier !== 'pro' ? 'opacity-50' : ''}`}>
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center gap-2">
+                    <CalcIcon className="h-5 w-5" />
+                    Avanserte Innstillinger
+                    {(!user || profile?.subscription_tier !== 'pro') && (
+                      <Badge variant="outline" className="ml-2">Pro</Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    Tilpass analysen etter din situasjon og strategi
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Ownership Type Slider */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-sm font-medium">Eierstruktur</Label>
+                        <span className="text-sm text-muted-foreground">
+                          {ownershipType <= 25 ? 'Privat' : ownershipType >= 75 ? 'AS' : 'Blandet'}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[ownershipType]}
+                        onValueChange={(value) => setOwnershipType(value[0])}
+                        max={100}
+                        step={1}
+                        className="w-full"
+                        disabled={!user || profile?.subscription_tier !== 'pro'}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Privat</span>
+                        <span>AS</span>
+                      </div>
+                    </div>
+
+                    {/* Property Strategy Slider */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-sm font-medium">Investeringsstrategi</Label>
+                        <span className="text-sm text-muted-foreground">
+                          {propertyStrategy <= 25 ? 'Utleie' : propertyStrategy >= 75 ? 'Flipp' : 'Fleksibel'}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[propertyStrategy]}
+                        onValueChange={(value) => setPropertyStrategy(value[0])}
+                        max={100}
+                        step={1}
+                        className="w-full"
+                        disabled={!user || profile?.subscription_tier !== 'pro'}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Utleie</span>
+                        <span>Flipp</span>
+                      </div>
+                    </div>
+
+                    {(!user || profile?.subscription_tier !== 'pro') && (
+                      <Alert>
+                        <AlertDescription>
+                          {!user 
+                            ? "Logg inn og oppgrader til Pro for å få tilgang til avanserte innstillinger."
+                            : "Oppgrader til Pro for å få tilgang til avanserte innstillinger."
+                          }
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Module Selection Section */}
+            {canShowResults && (
+              <div className="space-y-6">
+                {/* Show attached modules if any */}
+                {selectedModules.length > 0 && (
+                  <Card className="bg-accent/5 border-accent/20">
+                    <CardHeader>
+                      <CardTitle className="text-accent flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Vedlagte Moduler ({selectedModules.length})
+                      </CardTitle>
+                      <CardDescription>
+                        Disse modulene er allerede lagt til som vedlegg i rapporten
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-3">
+                        {selectedModules.map((module, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {module.title.split(' - ')[0]}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <div className="text-center space-y-3">
+                  <h2 className="text-3xl font-bold text-foreground">
+                    {selectedModules.length > 0 ? 'Utvid fullstendig bankrapport' : 'Utvid fullstendig bankrapport'}
+                  </h2>
+                  <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                    {selectedModules.length > 0 ? 'Fyll ut alle modulene nedenfor eller fjern de du ikke ønsker i rapporten' : 'Klikk nedenfor for å få tilgang til alle analysemodulene og fylle dem ut i sekvens'}
+                  </p>
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto">
+                    <p className="text-sm text-primary font-medium">
+                      💡 Tip: Jo flere moduler du fyller ut, desto mer omfattende og profesjonell blir din bankrapport
                     </p>
-                  </CardContent>
-                </Card>}
-            </div>}
+                  </div>
+                </div>
+                
+                <CalculatorModules 
+                  propertyValue={totalPrice} 
+                  monthlyRent={expectedAnnualRent / 12} 
+                  expenses={totalExpenses} 
+                  loanAmount={loanAmount} 
+                  interestRate={interestRate} 
+                  loanPeriod={loanPeriod} 
+                  monthlyLoanPayment={monthlyLoanPayment} 
+                  calculatorMode={calculatorData.isRental ? 'investment' : 'private'} 
+                  monthlyCashFlow={calculatorData.isRental ? expectedAnnualRent / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment} 
+                  onModuleActivate={handleModuleActivation} 
+                  onGenerateReport={handleGenerateReport} 
+                  selectedModules={selectedModules} 
+                  calculatorData={calculatorData} 
+                  onDataChange={handleInputChange} 
+                />
+
+                {/* Generate Final Report Button */}
+                {selectedModules.length > 0 && (
+                  <Card className="bg-gradient-soft border-primary/20 mt-8">
+                    <CardHeader>
+                      <CardTitle className="text-primary flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Generer Komplett Bankrapport
+                      </CardTitle>
+                      <CardDescription>
+                        Basert på grunnleggende data og {selectedModules.length} vedlagte analysemoduler
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground" size="lg" onClick={handleGenerateReport}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Generer Komplett Rapport med {selectedModules.length} Vedlegg
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-3 text-center">
+                        Rapporten vil inneholde alle valgte moduler som separate vedlegg
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="building-planner">
+            <BuildingPlanner />
+          </TabsContent>
+        </Tabs>
       </div>
-    </>;
+    </>
+  );
 };
+
 export default Calculator;
