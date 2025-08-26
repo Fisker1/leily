@@ -343,9 +343,8 @@ const Calculator = () => {
               </div>}
         </div>
 
-        {/* Extended Bank Report Section */}
-        {canShowResults && (
-          <div className="mt-8 space-y-6">
+        {/* Extended Bank Report Section - Always visible */}
+        <div className="mt-8 space-y-6">
             <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
               <CardHeader>
                 <CardTitle className="text-primary flex items-center gap-2">
@@ -467,7 +466,6 @@ const Calculator = () => {
               </CardContent>
             </Card>
           </div>
-        )}
 
           {/* Module Selection Section */}
           {canShowResults && <div className="space-y-6">
