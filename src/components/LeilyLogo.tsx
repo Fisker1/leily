@@ -16,31 +16,33 @@ const LeilyLogo = ({ className, showText = true }: LeilyLogoProps) => {
           viewBox="0 0 100 100" 
           className="w-8 h-8"
         >
-          {/* Main triangular shape with gradient */}
           <defs>
-            <linearGradient id="triangleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e90ff" />
-              <stop offset="50%" stopColor="#0066cc" />
-              <stop offset="100%" stopColor="#00cc66" />
+            <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1e7fd4" />
+              <stop offset="100%" stopColor="#0d4f8c" />
+            </linearGradient>
+            <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0d9488" />
+              <stop offset="100%" stopColor="#059669" />
             </linearGradient>
           </defs>
           
-          {/* Left triangle - blue */}
+          {/* Left side of "A" - blue */}
           <path
-            d="M 15 20 L 50 20 L 32.5 80 Z"
-            fill="url(#triangleGradient)"
+            d="M 20 85 L 50 15 L 35 85 Z"
+            fill="url(#blueGradient)"
           />
           
-          {/* Right triangle - teal/green */}
+          {/* Right side of "A" - green */}
           <path
-            d="M 50 20 L 85 20 L 67.5 80 Z"
-            fill="#00cc66"
+            d="M 50 15 L 80 85 L 65 85 Z"
+            fill="url(#greenGradient)"
           />
           
-          {/* Center triangle - lighter */}
+          {/* Bottom triangle fill - green */}
           <path
-            d="M 32.5 80 L 67.5 80 L 50 40 Z"
-            fill="#66ff99"
+            d="M 35 85 L 65 85 L 50 60 Z"
+            fill="url(#greenGradient)"
           />
         </svg>
       </div>
