@@ -13,16 +13,19 @@ import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
-
 const Calculator = () => {
-  const { data, updateField, isModuleActivated, getReportData } = useCalculatorData();
+  const {
+    data,
+    updateField,
+    isModuleActivated,
+    getReportData
+  } = useCalculatorData();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get state from navigation (if returning from module addition)
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-
   useEffect(() => {
     if (location.state?.showModuleAdded) {
       setShowSuccessAlert(true);
@@ -39,9 +42,7 @@ const Calculator = () => {
     ...data,
     ...locationState
   };
-
   const selectedModules = locationState.selectedModules || [];
-
   const handleInputChange = (field: string, value: any) => {
     updateField(field, value);
     // Also update location state to maintain data
@@ -50,12 +51,10 @@ const Calculator = () => {
       [field]: value
     }));
   };
-
   const handleModuleActivation = (moduleId: string) => {
     // Activate the module by adding some data to it
     updateField('activated', true, moduleId);
   };
-
   const handleGenerateReport = () => {
     // Generate basic report using simple property details only
     const basicReportData = {
@@ -70,60 +69,39 @@ const Calculator = () => {
         loanPeriod: parseFloat(calculatorData.loanPeriod) || 0,
         expenses: totalExpenses,
         monthlyLoanPayment: monthlyLoanPayment,
-        monthlyCashFlow: calculatorData.isRental 
-          ? (parseFloat(calculatorData.expectedAnnualRent) / 12) - totalExpenses - monthlyLoanPayment
-          : -totalExpenses - monthlyLoanPayment,
-        yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0
-          ? (parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice)) * 100
-          : 0
+        monthlyCashFlow: calculatorData.isRental ? parseFloat(calculatorData.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment,
+        yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0 ? parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice) * 100 : 0
       },
       activatedModules: ['Grunnleggende analyse'] // Only basic analysis
     };
-    
-    navigate('/bank-report', { 
+    navigate('/bank-report', {
       state: basicReportData
     });
   };
-
   const loanAmount = parseFloat(calculatorData.loanAmount) || 0;
   const interestRate = parseFloat(calculatorData.interestRate) || 0;
   const loanPeriod = parseFloat(calculatorData.loanPeriod) || 0;
   const totalPrice = parseFloat(calculatorData.totalPrice) || 0;
   const expectedAnnualRent = parseFloat(calculatorData.expectedAnnualRent) || 0;
-  
+
   // Calculate total monthly expenses using calculator data
-  const totalExpenses = 
-    (parseFloat(calculatorData.municipalFees) || 0) +
-    (parseFloat(calculatorData.electricityMonthly) || 0) +
-    (parseFloat(calculatorData.insurance) || 0) +
-    (parseFloat(calculatorData.sharedExpenses) || 0);
-
-  const monthlyLoanPayment = loanAmount > 0 && interestRate > 0 
-    ? (loanAmount * (interestRate / 100 / 12)) / (1 - Math.pow(1 + (interestRate / 100 / 12), -(loanPeriod * 12)))
-    : 0;
-
-  const canShowResults = totalPrice > 0 && 
-    (calculatorData.isRental ? expectedAnnualRent > 0 : true);
+  const totalExpenses = (parseFloat(calculatorData.municipalFees) || 0) + (parseFloat(calculatorData.electricityMonthly) || 0) + (parseFloat(calculatorData.insurance) || 0) + (parseFloat(calculatorData.sharedExpenses) || 0);
+  const monthlyLoanPayment = loanAmount > 0 && interestRate > 0 ? loanAmount * (interestRate / 100 / 12) / (1 - Math.pow(1 + interestRate / 100 / 12, -(loanPeriod * 12))) : 0;
+  const canShowResults = totalPrice > 0 && (calculatorData.isRental ? expectedAnnualRent > 0 : true);
 
   // Calculate yield if rental property
-  const yieldPercentage = calculatorData.isRental && totalPrice > 0 
-    ? (expectedAnnualRent / totalPrice) * 100 
-    : 0;
-
-  return (
-    <>
+  const yieldPercentage = calculatorData.isRental && totalPrice > 0 ? expectedAnnualRent / totalPrice * 100 : 0;
+  return <>
       <Navigation />
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Success Alert */}
-        {showSuccessAlert && locationState.showModuleAdded && (
-          <Alert className="max-w-2xl mx-auto border-green-200 bg-green-50">
+        {showSuccessAlert && locationState.showModuleAdded && <Alert className="max-w-2xl mx-auto border-green-200 bg-green-50">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               <strong>{locationState.addedModuleName}</strong> er lagt til som vedlegg i rapporten. 
               Du kan nå velge flere moduler eller generere den komplette rapporten.
             </AlertDescription>
-          </Alert>
-        )}
+          </Alert>}
 
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-foreground flex items-center justify-center gap-3">
@@ -148,7 +126,7 @@ const Calculator = () => {
               {/* Property Type */}
               <div className="space-y-2">
                 <Label htmlFor="propertyType">Type bolig</Label>
-                <Select value={calculatorData.propertyType} onValueChange={(value) => handleInputChange('propertyType', value)}>
+                <Select value={calculatorData.propertyType} onValueChange={value => handleInputChange('propertyType', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Velg boligtype" />
                   </SelectTrigger>
@@ -163,25 +141,13 @@ const Calculator = () => {
               {/* Total Price */}
               <div className="space-y-2">
                 <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
-                <Input
-                  id="totalPrice"
-                  type="number"
-                  value={calculatorData.totalPrice}
-                  onChange={(e) => handleInputChange('totalPrice', e.target.value)}
-                  placeholder="5000000"
-                />
+                <Input id="totalPrice" type="number" value={calculatorData.totalPrice} onChange={e => handleInputChange('totalPrice', e.target.value)} placeholder="5000000" />
               </div>
 
               {/* Equity */}
               <div className="space-y-2">
                 <Label htmlFor="equity">Egenkapital (NOK)</Label>
-                <Input
-                  id="equity"
-                  type="number"
-                  value={calculatorData.equity}
-                  onChange={(e) => handleInputChange('equity', e.target.value)}
-                  placeholder="1000000"
-                />
+                <Input id="equity" type="number" value={calculatorData.equity} onChange={e => handleInputChange('equity', e.target.value)} placeholder="1000000" />
               </div>
 
               {/* Rental Toggle */}
@@ -194,11 +160,7 @@ const Calculator = () => {
                     <span className={`text-sm ${!calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
                       Privat
                     </span>
-                    <Switch
-                      id="rental-toggle"
-                      checked={calculatorData.isRental}
-                      onCheckedChange={(checked) => handleInputChange('isRental', checked)}
-                    />
+                    <Switch id="rental-toggle" checked={calculatorData.isRental} onCheckedChange={checked => handleInputChange('isRental', checked)} />
                     <span className={`text-sm ${calculatorData.isRental ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
                       Utleie
                     </span>
@@ -207,19 +169,11 @@ const Calculator = () => {
               </div>
 
               {/* Expected Annual Rent - only for rental */}
-              {calculatorData.isRental && (
-                <div className="space-y-2">
+              {calculatorData.isRental && <div className="space-y-2">
                   <Label htmlFor="expectedAnnualRent">Forventet leieinntekt i året (NOK)</Label>
-                  <Input
-                    id="expectedAnnualRent"
-                    type="number"
-                    value={calculatorData.expectedAnnualRent}
-                    onChange={(e) => handleInputChange('expectedAnnualRent', e.target.value)}
-                    placeholder="300000"
-                  />
+                  <Input id="expectedAnnualRent" type="number" value={calculatorData.expectedAnnualRent} onChange={e => handleInputChange('expectedAnnualRent', e.target.value)} placeholder="300000" />
                   {/* Yield Calculation */}
-                  {totalPrice > 0 && expectedAnnualRent > 0 && (
-                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                  {totalPrice > 0 && expectedAnnualRent > 0 && <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-primary">Yield:</span>
                         <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
@@ -227,46 +181,25 @@ const Calculator = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         Beregnet som årlig leieinntekt / totalpris × 100
                       </p>
-                    </div>
-                  )}
-                </div>
-              )}
+                    </div>}
+                </div>}
 
               {/* Interest Rate */}
               <div className="space-y-2">
                 <Label htmlFor="interestRate">Rente (%)</Label>
-                <Input
-                  id="interestRate"
-                  type="number"
-                  step="0.1"
-                  value={calculatorData.interestRate}
-                  onChange={(e) => handleInputChange('interestRate', e.target.value)}
-                  placeholder="4.5"
-                />
+                <Input id="interestRate" type="number" step="0.1" value={calculatorData.interestRate} onChange={e => handleInputChange('interestRate', e.target.value)} placeholder="4.5" />
               </div>
 
               {/* Loan Amount */}
               <div className="space-y-2">
                 <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
-                <Input
-                  id="loanAmount"
-                  type="number"
-                  value={calculatorData.loanAmount}
-                  onChange={(e) => handleInputChange('loanAmount', e.target.value)}
-                  placeholder="4000000"
-                />
+                <Input id="loanAmount" type="number" value={calculatorData.loanAmount} onChange={e => handleInputChange('loanAmount', e.target.value)} placeholder="4000000" />
               </div>
 
               {/* Loan Period */}
               <div className="space-y-2">
                 <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
-                <Input
-                  id="loanPeriod"
-                  type="number"
-                  value={calculatorData.loanPeriod}
-                  onChange={(e) => handleInputChange('loanPeriod', e.target.value)}
-                  placeholder="30"
-                />
+                <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
               </div>
 
               {/* Expenses Section */}
@@ -277,49 +210,25 @@ const Calculator = () => {
                   {/* Municipal Fees */}
                   <div className="space-y-2">
                     <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
-                    <Input
-                      id="municipalFees"
-                      type="number"
-                      value={calculatorData.municipalFees}
-                      onChange={(e) => handleInputChange('municipalFees', e.target.value)}
-                      placeholder="1500"
-                    />
+                    <Input id="municipalFees" type="number" value={calculatorData.municipalFees} onChange={e => handleInputChange('municipalFees', e.target.value)} placeholder="1500" />
                   </div>
 
                   {/* Monthly Electricity */}
                   <div className="space-y-2">
-                    <Label htmlFor="electricityMonthly">Forventet strømbruk pr. mnd (NOK)</Label>
-                    <Input
-                      id="electricityMonthly"
-                      type="number"
-                      value={calculatorData.electricityMonthly}
-                      onChange={(e) => handleInputChange('electricityMonthly', e.target.value)}
-                      placeholder="800"
-                    />
+                    <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
+                    <Input id="electricityMonthly" type="number" value={calculatorData.electricityMonthly} onChange={e => handleInputChange('electricityMonthly', e.target.value)} placeholder="800" />
                   </div>
 
                   {/* Insurance */}
                   <div className="space-y-2">
                     <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
-                    <Input
-                      id="insurance"
-                      type="number"
-                      value={calculatorData.insurance}
-                      onChange={(e) => handleInputChange('insurance', e.target.value)}
-                      placeholder="500"
-                    />
+                    <Input id="insurance" type="number" value={calculatorData.insurance} onChange={e => handleInputChange('insurance', e.target.value)} placeholder="500" />
                   </div>
 
                   {/* Shared Expenses */}
                   <div className="space-y-2">
                     <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
-                    <Input
-                      id="sharedExpenses"
-                      type="number"
-                      value={calculatorData.sharedExpenses}
-                      onChange={(e) => handleInputChange('sharedExpenses', e.target.value)}
-                      placeholder="600"
-                    />
+                    <Input id="sharedExpenses" type="number" value={calculatorData.sharedExpenses} onChange={e => handleInputChange('sharedExpenses', e.target.value)} placeholder="600" />
                   </div>
                 </div>
 
@@ -335,24 +244,20 @@ const Calculator = () => {
           </Card>
 
           {/* Generate Report Button */}
-          {canShowResults && (
-            <div className="mt-6 text-center">
+          {canShowResults && <div className="mt-6 text-center">
               <Button size="lg" className="px-8" onClick={handleGenerateReport}>
                 Generer grunnleggende bankrapport
               </Button>
               <p className="text-xs text-muted-foreground mt-2">
                 Gratis rapport basert på dine grunnleggende eiendomsdata
               </p>
-            </div>
-          )}
+            </div>}
         </div>
 
           {/* Module Selection Section */}
-          {canShowResults && (
-            <div className="space-y-6">
+          {canShowResults && <div className="space-y-6">
               {/* Show attached modules if any */}
-              {selectedModules.length > 0 && (
-                <Card className="bg-accent/5 border-accent/20">
+              {selectedModules.length > 0 && <Card className="bg-accent/5 border-accent/20">
                   <CardHeader>
                     <CardTitle className="text-accent flex items-center gap-2">
                       <FileText className="h-5 w-5" />
@@ -364,26 +269,20 @@ const Calculator = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-3">
-                      {selectedModules.map((module, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                      {selectedModules.map((module, index) => <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
                           <CheckCircle2 className="h-3 w-3" />
                           {module.title.split(' - ')[0]}
-                        </Badge>
-                      ))}
+                        </Badge>)}
                     </div>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
               
               <div className="text-center space-y-3">
                 <h2 className="text-3xl font-bold text-foreground">
                   {selectedModules.length > 0 ? 'Utvid fullstendig bankrapport' : 'Utvid fullstendig bankrapport'}
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                  {selectedModules.length > 0 
-                    ? 'Fyll ut alle modulene nedenfor eller fjern de du ikke ønsker i rapporten'
-                    : 'Klikk nedenfor for å få tilgang til alle analysemodulene og fylle dem ut i sekvens'
-                  }
+                  {selectedModules.length > 0 ? 'Fyll ut alle modulene nedenfor eller fjern de du ikke ønsker i rapporten' : 'Klikk nedenfor for å få tilgang til alle analysemodulene og fylle dem ut i sekvens'}
                 </p>
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto">
                   <p className="text-sm text-primary font-medium">
@@ -392,28 +291,10 @@ const Calculator = () => {
                 </div>
               </div>
               
-              <CalculatorModules
-                propertyValue={totalPrice}
-                monthlyRent={expectedAnnualRent / 12}
-                expenses={totalExpenses}
-                loanAmount={loanAmount}
-                interestRate={interestRate}
-                loanPeriod={loanPeriod}
-                monthlyLoanPayment={monthlyLoanPayment}
-                calculatorMode={calculatorData.isRental ? 'investment' : 'private'}
-                monthlyCashFlow={calculatorData.isRental 
-                  ? (expectedAnnualRent / 12) - totalExpenses - monthlyLoanPayment
-                  : -totalExpenses - monthlyLoanPayment}
-                onModuleActivate={handleModuleActivation}
-                onGenerateReport={handleGenerateReport}
-                selectedModules={selectedModules}
-                calculatorData={calculatorData}
-                onDataChange={handleInputChange}
-              />
+              <CalculatorModules propertyValue={totalPrice} monthlyRent={expectedAnnualRent / 12} expenses={totalExpenses} loanAmount={loanAmount} interestRate={interestRate} loanPeriod={loanPeriod} monthlyLoanPayment={monthlyLoanPayment} calculatorMode={calculatorData.isRental ? 'investment' : 'private'} monthlyCashFlow={calculatorData.isRental ? expectedAnnualRent / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment} onModuleActivate={handleModuleActivation} onGenerateReport={handleGenerateReport} selectedModules={selectedModules} calculatorData={calculatorData} onDataChange={handleInputChange} />
 
               {/* Generate Final Report Button */}
-              {selectedModules.length > 0 && (
-                <Card className="bg-gradient-soft border-primary/20 mt-8">
+              {selectedModules.length > 0 && <Card className="bg-gradient-soft border-primary/20 mt-8">
                   <CardHeader>
                     <CardTitle className="text-primary flex items-center gap-2">
                       <FileText className="h-5 w-5" />
@@ -424,11 +305,7 @@ const Calculator = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button 
-                      className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground"
-                      size="lg"
-                      onClick={handleGenerateReport}
-                    >
+                    <Button className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground" size="lg" onClick={handleGenerateReport}>
                       <FileText className="h-4 w-4 mr-2" />
                       Generer Komplett Rapport med {selectedModules.length} Vedlegg
                     </Button>
@@ -436,13 +313,9 @@ const Calculator = () => {
                       Rapporten vil inneholde alle valgte moduler som separate vedlegg
                     </p>
                   </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+                </Card>}
+            </div>}
       </div>
-    </>
-  );
+    </>;
 };
-
 export default Calculator;
