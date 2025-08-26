@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 interface CalculatorData {
   // Basic data
   propertyType: string;
+  tomannsboligType: string; // 'vertikaldelt' or 'horisontaldelt'
   totalPrice: string;
   equity: string;
   isRental: boolean;
@@ -29,6 +30,7 @@ interface CalculatorData {
 
 const initialData: CalculatorData = {
   propertyType: "",
+  tomannsboligType: "vertikaldelt",
   totalPrice: "",
   equity: "",
   isRental: false,

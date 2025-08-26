@@ -134,9 +134,34 @@ const Calculator = () => {
                     <SelectItem value="enebolig">Enebolig</SelectItem>
                     <SelectItem value="leilighet">Leilighet</SelectItem>
                     <SelectItem value="rekkehus">Rekkehus</SelectItem>
+                    <SelectItem value="tomannsbolig">Tomannsbolig</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Tomannsbolig Type - only for tomannsbolig */}
+              {calculatorData.propertyType === 'tomannsbolig' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="tomannsbolig-toggle" className="text-base font-medium">
+                      Type tomannsbolig
+                    </Label>
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm ${calculatorData.tomannsboligType === 'vertikaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                        Vertikaldelt
+                      </span>
+                      <Switch 
+                        id="tomannsbolig-toggle" 
+                        checked={calculatorData.tomannsboligType === 'horisontaldelt'} 
+                        onCheckedChange={checked => handleInputChange('tomannsboligType', checked ? 'horisontaldelt' : 'vertikaldelt')} 
+                      />
+                      <span className={`text-sm ${calculatorData.tomannsboligType === 'horisontaldelt' ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                        Horisontaldelt
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Total Price */}
               <div className="space-y-2">
