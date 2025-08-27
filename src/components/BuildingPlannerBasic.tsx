@@ -5,13 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Upload, Hammer, Zap, ChevronDown } from 'lucide-react';
+import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BuildingPlannerBasic() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Save canvas state for undo functionality
+  const saveCanvasState = (canvas: FabricCanvas) => {
+    const currentState = JSON.stringify(canvas.toJSON());
+    const newHistory = canvasHistory.slice(0, historyIndex + 1);
+    newHistory.push(currentState);
+    
+    // Limit history to 20 states
+    if (newHistory.length > 20) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(historyIndex + 1);
+    }
+    
+    setCanvasHistory(newHistory);
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -21,6 +39,16 @@ export default function BuildingPlannerBasic() {
       height: 600,
       backgroundColor: "#ffffff",
     });
+
+    // Save initial state
+    const initialState = JSON.stringify(canvas.toJSON());
+    setCanvasHistory([initialState]);
+    setHistoryIndex(0);
+
+    // Add event listener for object modifications
+    canvas.on('object:added', () => saveCanvasState(canvas));
+    canvas.on('object:removed', () => saveCanvasState(canvas));
+    canvas.on('object:modified', () => saveCanvasState(canvas));
 
     setFabricCanvas(canvas);
     toast("Canvas klar! Last opp blåkopi for å starte");
@@ -151,7 +179,41 @@ export default function BuildingPlannerBasic() {
     fabricCanvas.clear();
     fabricCanvas.backgroundColor = "#ffffff";
     fabricCanvas.renderAll();
-    toast("Canvas cleared!");
+    toast("Canvas tømt!");
+  };
+
+  // Undo functionality
+  const undoLastAction = () => {
+    if (!fabricCanvas || historyIndex <= 0) {
+      toast("Ingen handlinger å angre");
+      return;
+    }
+
+    const previousState = canvasHistory[historyIndex - 1];
+    fabricCanvas.loadFromJSON(previousState, () => {
+      fabricCanvas.renderAll();
+      setHistoryIndex(historyIndex - 1);
+      toast("Handling angret!");
+    });
+  };
+
+  // Delete selected objects
+  const deleteSelected = () => {
+    if (!fabricCanvas) return;
+
+    const activeObjects = fabricCanvas.getActiveObjects();
+    if (activeObjects.length === 0) {
+      toast("Velg objekter for å slette dem");
+      return;
+    }
+
+    activeObjects.forEach(obj => {
+      fabricCanvas.remove(obj);
+    });
+    
+    fabricCanvas.discardActiveObject();
+    fabricCanvas.renderAll();
+    toast(`${activeObjects.length} objekt(er) slettet!`);
   };
 
   return (
@@ -232,6 +294,25 @@ export default function BuildingPlannerBasic() {
 
               <Button onClick={clearCanvas} variant="destructive">
                 Tøm canvas
+              </Button>
+              
+              <Button 
+                onClick={undoLastAction} 
+                variant="outline"
+                disabled={historyIndex <= 0}
+                className="flex items-center gap-2"
+              >
+                <Undo className="h-4 w-4" />
+                Angre
+              </Button>
+              
+              <Button 
+                onClick={deleteSelected} 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Slett valgte
               </Button>
             </div>
           </div>
