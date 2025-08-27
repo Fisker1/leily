@@ -34,6 +34,7 @@ interface FloorPlan {
   isUndoing: boolean;
   drawingMode: 'select' | 'area' | 'wall';
   selectedObjects: any[];
+  isEditingName: boolean;
 }
 
 interface MaterialSelection {
@@ -54,12 +55,14 @@ export default function BuildingPlannerBasic() {
       isUndoing: false,
       drawingMode: 'select',
       selectedObjects: [],
+      isEditingName: false,
     }
   ]);
   const [activeFloorPlan, setActiveFloorPlan] = useState('1');
   const [materialSelections, setMaterialSelections] = useState<MaterialSelection[]>([]);
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
+  const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician'>('none');
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -152,6 +155,7 @@ export default function BuildingPlannerBasic() {
       isUndoing: false,
       drawingMode: 'select',
       selectedObjects: [],
+      isEditingName: false,
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
@@ -261,14 +265,19 @@ export default function BuildingPlannerBasic() {
   // Drawing mode functions
   const setDrawingMode = (mode: 'select' | 'area' | 'wall') => {
     const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
+    if (!floorPlan?.canvas) {
+      toast("Canvas ikke klar enda, prøv igjen");
+      return;
+    }
 
     updateFloorPlan(floorPlan.id, { drawingMode: mode });
     
     if (mode === 'wall') {
       floorPlan.canvas.isDrawingMode = true;
-      floorPlan.canvas.freeDrawingBrush.color = 'brown';
-      floorPlan.canvas.freeDrawingBrush.width = 8;
+      if (floorPlan.canvas.freeDrawingBrush) {
+        floorPlan.canvas.freeDrawingBrush.color = 'brown';
+        floorPlan.canvas.freeDrawingBrush.width = 8;
+      }
       toast("Tegn vegger med mus/finger");
     } else {
       floorPlan.canvas.isDrawingMode = false;
@@ -281,11 +290,23 @@ export default function BuildingPlannerBasic() {
   };
 
   const selectArea = () => {
+    setSelectedToolCategory('carpenter');
     setDrawingMode('area');
   };
 
   const drawWalls = () => {
+    setSelectedToolCategory('carpenter');
     setDrawingMode('wall');
+  };
+
+  // Floor plan name editing
+  const startEditingName = (id: string) => {
+    updateFloorPlan(id, { isEditingName: true });
+  };
+
+  const saveFloorPlanName = (id: string, newName: string) => {
+    updateFloorPlan(id, { name: newName, isEditingName: false });
+    toast("Etasjenavn oppdatert!");
   };
 
   const addOutlet = () => {
@@ -369,6 +390,42 @@ export default function BuildingPlannerBasic() {
     toast(`${material.name} valgt - Areal: ${area.toFixed(2)}m², Kostnad: ${cost.toFixed(0)}kr`);
   };
 
+  // Quick material selection for carpenter work
+  const selectAreaWithMaterial = (materialId: string) => {
+    const material = materials.find(m => m.id === materialId);
+    if (!material) return;
+
+    // Create a sample area
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+
+    const rect = new Rect({
+      left: 100,
+      top: 100,
+      fill: 'rgba(139, 69, 19, 0.3)',
+      stroke: material.id === 'gips' ? 'blue' : 'orange',
+      strokeWidth: 2,
+      width: 200,
+      height: 150,
+    });
+
+    floorPlan.canvas.add(rect);
+
+    // Calculate area and cost
+    const area = (200 * 150) / 10000; // Convert to m²
+    const cost = area * material.pricePerM2;
+    
+    const selection: MaterialSelection = {
+      objectId: Date.now().toString(),
+      material,
+      area,
+      cost,
+    };
+
+    setMaterialSelections(prev => [...prev, selection]);
+    toast(`${material.name} område lagt til - ${area.toFixed(2)}m², ${cost.toFixed(0)}kr`);
+  };
+
   const getTotalCost = () => {
     return materialSelections.reduce((total, selection) => total + selection.cost, 0);
   };
@@ -435,7 +492,26 @@ export default function BuildingPlannerBasic() {
               <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
                 {floorPlans.map((floorPlan) => (
                   <TabsTrigger key={floorPlan.id} value={floorPlan.id} className="relative group">
-                    {floorPlan.name}
+                    {floorPlan.isEditingName ? (
+                      <Input
+                        defaultValue={floorPlan.name}
+                        className="h-6 text-xs p-1 w-20"
+                        onBlur={(e) => saveFloorPlanName(floorPlan.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            saveFloorPlanName(floorPlan.id, e.currentTarget.value);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span 
+                        onDoubleClick={() => startEditingName(floorPlan.id)}
+                        className="cursor-text"
+                      >
+                        {floorPlan.name}
+                      </span>
+                    )}
                     {floorPlans.length > 1 && (
                       <Button
                         size="sm"
@@ -493,7 +569,11 @@ export default function BuildingPlannerBasic() {
                   <div className="flex gap-2 flex-wrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2">
+                        <Button 
+                          variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
+                          className="flex items-center gap-2"
+                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'carpenter' ? 'none' : 'carpenter')}
+                        >
                           <Hammer className="h-4 w-4" />
                           Tømrer
                           <ChevronDown className="h-3 w-3" />
@@ -522,7 +602,11 @@ export default function BuildingPlannerBasic() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2">
+                        <Button 
+                          variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
+                          className="flex items-center gap-2"
+                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'electrician' ? 'none' : 'electrician')}
+                        >
                           <Zap className="h-4 w-4" />
                           Elektriker
                           <ChevronDown className="h-3 w-3" />
@@ -564,6 +648,48 @@ export default function BuildingPlannerBasic() {
                       Slett valgte
                     </Button>
                   </div>
+
+                  {/* Additional tool options */}
+                  {selectedToolCategory === 'carpenter' && (
+                    <div className="flex gap-2 flex-wrap p-3 bg-gray-50 rounded-lg">
+                      <Label className="text-sm font-medium w-full mb-2">Velg materiale og område:</Label>
+                      <Button
+                        onClick={() => selectAreaWithMaterial('gips')}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        Gipsplate område (150kr/m²)
+                      </Button>
+                      <Button
+                        onClick={() => selectAreaWithMaterial('osb')}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        OSB plate område (120kr/m²)
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedToolCategory === 'electrician' && (
+                    <div className="flex gap-2 flex-wrap p-3 bg-blue-50 rounded-lg">
+                      <Label className="text-sm font-medium w-full mb-2">Elektriske installasjoner:</Label>
+                      <Button
+                        onClick={addOutlet}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Zap className="h-4 w-4" />
+                        Stikkontakt (500kr/stk)
+                      </Button>
+                      <Button
+                        onClick={addLightSwitch}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        Lysbryter (300kr/stk)
+                      </Button>
+                    </div>
+                  )}
 
                   {materialSelections.length > 0 && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg">
