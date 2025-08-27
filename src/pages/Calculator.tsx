@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
-import BuildingPlanner from '@/components/BuildingPlanner';
+// import BuildingPlanner from '@/components/BuildingPlanner';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Slider } from '@/components/ui/slider';
@@ -591,7 +591,9 @@ const Calculator = () => {
           </TabsContent>
           
           <TabsContent value="building-planner">
-            <BuildingPlanner />
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">Byggeplanlegger er midlertidig deaktivert</p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
