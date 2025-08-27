@@ -81,7 +81,14 @@ export default function BuildingPlanner() {
     const onResize = () => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      setStageSize({ width: Math.min(rect.width, 1400), height: Math.max(500, rect.height - 16) });
+      const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
+      const availableWidth = isTablet 
+        ? Math.max(600, rect.width * 0.6) 
+        : Math.min(rect.width * 0.65, 1200);
+      const availableHeight = isTablet 
+        ? Math.max(400, Math.min(600, rect.height - 32))
+        : Math.max(500, rect.height - 32);
+      setStageSize({ width: availableWidth, height: availableHeight });
     };
     onResize();
     window.addEventListener("resize", onResize);
@@ -195,9 +202,9 @@ export default function BuildingPlanner() {
   const T = totals();
 
   return (
-    <div className="p-4 w-full h-full grid grid-cols-1 lg:grid-cols-12 gap-4" ref={containerRef}>
+    <div className="p-2 md:p-4 w-full h-full grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4" ref={containerRef}>
       {/* Left controls */}
-      <div className="lg:col-span-3 space-y-4">
+      <div className="md:col-span-4 lg:col-span-3 space-y-4 max-h-screen overflow-y-auto">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">1) Last opp plantegning</CardTitle>
@@ -381,7 +388,7 @@ export default function BuildingPlanner() {
       </div>
 
       {/* Canvas */}
-      <div className="lg:col-span-9 bg-muted/30 rounded-lg overflow-hidden border">
+      <div className="md:col-span-8 lg:col-span-9 bg-muted/30 rounded-lg overflow-hidden border min-h-[400px] md:min-h-[500px]">
         <Stage
           ref={stageRef}
           width={stageSize.width}
