@@ -127,49 +127,79 @@ export default function BuildingPlannerBasic() {
 
     canvas.on('mouse:down', (e) => {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
-      if (!currentFloor || !pendingTool) return;
+      if (!currentFloor || !pendingTool || currentFloor.drawingMode === 'wall') return;
 
       const pointer = canvas.getPointer(e.e);
+      console.log('Mouse click at:', pointer); // Debug log
       
       // Create object based on pending tool
       if (pendingTool === 'outlet') {
         const circle = new Circle({
-          left: pointer.x - 8,
-          top: pointer.y - 8,
+          left: pointer.x,
+          top: pointer.y,
           fill: 'yellow',
           stroke: 'orange',
           strokeWidth: 2,
           radius: 8,
+          originX: 'center',
+          originY: 'center',
         });
         canvas.add(circle);
+        canvas.renderAll();
         toast("Stikkontakt lagt til!");
+        setPendingTool(null);
       } else if (pendingTool === 'lightSwitch') {
         const rect = new Rect({
-          left: pointer.x - 7.5,
-          top: pointer.y - 12.5,
+          left: pointer.x,
+          top: pointer.y,
           fill: 'lightgray',
           stroke: 'black',
           strokeWidth: 1,
           width: 15,
           height: 25,
+          originX: 'center',
+          originY: 'center',
         });
         canvas.add(rect);
+        canvas.renderAll();
         toast("Lysbryter lagt til!");
+        setPendingTool(null);
       } else if (pendingTool === 'light') {
         const circle = new Circle({
-          left: pointer.x - 12,
-          top: pointer.y - 12,
+          left: pointer.x,
+          top: pointer.y,
           fill: 'lightyellow',
           stroke: 'gold',
           strokeWidth: 2,
           radius: 12,
+          originX: 'center',
+          originY: 'center',
         });
         canvas.add(circle);
+        canvas.renderAll();
         toast("Lysarmatur lagt til!");
+        setPendingTool(null);
+      } else if (pendingTool === 'area') {
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'rgba(139, 69, 19, 0.3)',
+          stroke: 'brown',
+          strokeWidth: 2,
+          width: 150,
+          height: 100,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(rect);
+        canvas.renderAll();
+        
+        // Show material dialog for area
+        setPendingObject(rect);
+        setShowMaterialDialog(true);
+        setPendingTool(null);
+        toast("Område markert - velg materiale");
       }
-      
-      // Clear pending tool
-      setPendingTool(null);
     });
 
     canvas.on('mouse:up', (e) => {
@@ -339,7 +369,8 @@ export default function BuildingPlannerBasic() {
 
   const selectArea = () => {
     setSelectedToolCategory('carpenter');
-    setDrawingMode('area');
+    setPendingTool('area');
+    toast("Klikk på lerretet for å plassere område");
   };
 
   const drawWalls = () => {
@@ -608,7 +639,7 @@ export default function BuildingPlannerBasic() {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={selectArea}>
                           <Square className="h-4 w-4 mr-2" />
-                          Velg areal
+                          Klikk for område
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={drawWalls}>
                           <PenTool className="h-4 w-4 mr-2" />
@@ -671,18 +702,12 @@ export default function BuildingPlannerBasic() {
                     <div className="flex gap-2 flex-wrap p-3 bg-gray-50 rounded-lg">
                       <Label className="text-sm font-medium w-full mb-2">Velg materiale og område:</Label>
                       <Button
-                        onClick={() => selectAreaWithMaterial('gips')}
-                        variant="outline"
+                        onClick={selectArea}
+                        variant={pendingTool === 'area' ? 'default' : 'outline'}
                         className="flex items-center gap-2"
                       >
-                        Gipsplate område (150kr/m²)
-                      </Button>
-                      <Button
-                        onClick={() => selectAreaWithMaterial('osb')}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        OSB plate område (120kr/m²)
+                        <Square className="h-4 w-4" />
+                        {pendingTool === 'area' ? 'Klikk for å plassere område' : 'Område (Gips/OSB)'}
                       </Button>
                     </div>
                   )}
