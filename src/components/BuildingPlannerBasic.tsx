@@ -14,9 +14,13 @@ export default function BuildingPlannerBasic() {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isUndoing, setIsUndoing] = useState(false);
 
   // Save canvas state for undo functionality
   const saveCanvasState = (canvas: FabricCanvas) => {
+    // Avoid saving state during undo operation
+    if (isUndoing) return;
+    
     const currentState = JSON.stringify(canvas.toJSON());
     const newHistory = canvasHistory.slice(0, historyIndex + 1);
     newHistory.push(currentState);
@@ -25,7 +29,7 @@ export default function BuildingPlannerBasic() {
     if (newHistory.length > 20) {
       newHistory.shift();
     } else {
-      setHistoryIndex(historyIndex + 1);
+      setHistoryIndex(prev => prev + 1);
     }
     
     setCanvasHistory(newHistory);
@@ -46,17 +50,36 @@ export default function BuildingPlannerBasic() {
     setHistoryIndex(0);
 
     // Add event listener for object modifications
-    canvas.on('object:added', () => saveCanvasState(canvas));
-    canvas.on('object:removed', () => saveCanvasState(canvas));
-    canvas.on('object:modified', () => saveCanvasState(canvas));
+    const handleCanvasChange = () => {
+      if (!isUndoing) {
+        const currentState = JSON.stringify(canvas.toJSON());
+        setCanvasHistory(prev => {
+          const newHistory = prev.slice(0, historyIndex + 1);
+          newHistory.push(currentState);
+          
+          // Limit history to 20 states
+          if (newHistory.length > 20) {
+            newHistory.shift();
+            return newHistory;
+          }
+          
+          setHistoryIndex((prevIndex) => prevIndex + 1);
+          return newHistory;
+        });
+      }
+    };
+
+    canvas.on('object:added', handleCanvasChange);
+    canvas.on('object:removed', handleCanvasChange);
+    canvas.on('object:modified', handleCanvasChange);
 
     setFabricCanvas(canvas);
-    toast("Canvas klar! Last opp blåkopi for å starte");
+    toast("Canvas klar! Last opp plantegning for å starte");
 
     return () => {
       canvas.dispose();
     };
-  }, []);
+  }, [isUndoing, historyIndex]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -79,7 +102,7 @@ export default function BuildingPlannerBasic() {
         fabricCanvas.clear();
         fabricCanvas.add(fabricImg);
         fabricCanvas.renderAll();
-        toast("Blåkopi lastet opp!");
+        toast("Plantegning lastet opp!");
       };
       img.src = e.target?.result as string;
     };
@@ -189,10 +212,13 @@ export default function BuildingPlannerBasic() {
       return;
     }
 
+    setIsUndoing(true);
     const previousState = canvasHistory[historyIndex - 1];
+    
     fabricCanvas.loadFromJSON(previousState, () => {
       fabricCanvas.renderAll();
-      setHistoryIndex(historyIndex - 1);
+      setHistoryIndex(prev => prev - 1);
+      setIsUndoing(false);
       toast("Handling angret!");
     });
   };
@@ -220,14 +246,14 @@ export default function BuildingPlannerBasic() {
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Byggeplanlegger - Fabric.js Test</CardTitle>
-          <CardDescription>Testing Fabric.js canvas step by step</CardDescription>
+          <CardTitle>Byggeplanlegger</CardTitle>
+          <CardDescription>Last opp plantegning og planlegg renovering</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div>
               <Label htmlFor="blueprint" className="text-sm font-medium">
-                Last opp blåkopi fra Finn.no
+                Last opp plantegning
               </Label>
               <div className="flex gap-2 mt-2">
                 <Input
@@ -244,7 +270,7 @@ export default function BuildingPlannerBasic() {
                   className="flex items-center gap-2"
                 >
                   <Upload className="h-4 w-4" />
-                  Last opp blåkopi
+                  Last opp plantegning
                 </Button>
               </div>
             </div>
