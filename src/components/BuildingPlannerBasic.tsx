@@ -714,23 +714,6 @@ export default function BuildingPlannerBasic() {
                       </Button>
                     </div>
                   )}
-
-                  {materialSelections.length > 0 && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <h3 className="font-semibold mb-2">Priskalkulator</h3>
-                      <div className="space-y-2">
-                        {materialSelections.map((selection, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{selection.material.name}</span>
-                            <span>{selection.area.toFixed(2)}m² - {selection.cost.toFixed(0)}kr</span>
-                          </div>
-                        ))}
-                        <div className="border-t pt-2 font-semibold">
-                          Total: {getTotalCost().toFixed(0)}kr
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden">
@@ -739,6 +722,23 @@ export default function BuildingPlannerBasic() {
                     className="max-w-full" 
                   />
                 </div>
+
+                {materialSelections.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-semibold mb-2">Priskalkulator</h3>
+                    <div className="space-y-2">
+                      {materialSelections.map((selection, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span>{selection.material.name}</span>
+                          <span>{selection.area.toFixed(2)}m² - {selection.cost.toFixed(0)}kr</span>
+                        </div>
+                      ))}
+                      <div className="border-t pt-2 font-semibold">
+                        Total: {getTotalCost().toFixed(0)}kr
+                      </div>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>
