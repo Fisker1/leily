@@ -5,85 +5,136 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function BuildingPlannerBasic() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isUndoing, setIsUndoing] = useState(false);
+interface FloorPlan {
+  id: string;
+  name: string;
+  canvas: FabricCanvas | null;
+  history: string[];
+  historyIndex: number;
+  isUndoing: boolean;
+}
 
-  // Save canvas state for undo functionality
-  const saveCanvasState = (canvas: FabricCanvas) => {
-    // Avoid saving state during undo operation
-    if (isUndoing) return;
-    
-    const currentState = JSON.stringify(canvas.toJSON());
-    const newHistory = canvasHistory.slice(0, historyIndex + 1);
-    newHistory.push(currentState);
-    
-    // Limit history to 20 states
-    if (newHistory.length > 20) {
-      newHistory.shift();
-    } else {
-      setHistoryIndex(prev => prev + 1);
+export default function BuildingPlannerBasic() {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([
+    {
+      id: '1',
+      name: 'Etasje 1',
+      canvas: null,
+      history: [],
+      historyIndex: -1,
+      isUndoing: false,
     }
-    
-    setCanvasHistory(newHistory);
+  ]);
+  const [activeFloorPlan, setActiveFloorPlan] = useState('1');
+  const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  const getCurrentFloorPlan = () =>
+    floorPlans.find(fp => fp.id === activeFloorPlan);
+
+  const updateFloorPlan = (id: string, updates: Partial<FloorPlan>) => {
+    setFloorPlans(prev => prev.map(fp =>
+      fp.id === id ? { ...fp, ...updates } : fp
+    ));
   };
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  // Initialize canvas for a floor plan
+  const initializeCanvas = (floorPlanId: string) => {
+    const canvasElement = canvasRefs.current[floorPlanId];
+    if (!canvasElement) return;
 
-    const canvas = new FabricCanvas(canvasRef.current, {
+    const canvas = new FabricCanvas(canvasElement, {
       width: 800,
       height: 600,
       backgroundColor: "#ffffff",
     });
 
-    // Save initial state
     const initialState = JSON.stringify(canvas.toJSON());
-    setCanvasHistory([initialState]);
-    setHistoryIndex(0);
+    
+    updateFloorPlan(floorPlanId, {
+      canvas,
+      history: [initialState],
+      historyIndex: 0,
+    });
 
-    // Add event listener for object modifications
+    // Add event listeners
     const handleCanvasChange = () => {
-      if (!isUndoing) {
-        const currentState = JSON.stringify(canvas.toJSON());
-        setCanvasHistory(prev => {
-          const newHistory = prev.slice(0, historyIndex + 1);
-          newHistory.push(currentState);
-          
-          // Limit history to 20 states
-          if (newHistory.length > 20) {
-            newHistory.shift();
-            return newHistory;
-          }
-          
-          setHistoryIndex((prevIndex) => prevIndex + 1);
-          return newHistory;
-        });
+      const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+      if (!currentFloor || currentFloor.isUndoing) return;
+
+      const currentState = JSON.stringify(canvas.toJSON());
+      const newHistory = currentFloor.history.slice(0, currentFloor.historyIndex + 1);
+      newHistory.push(currentState);
+      
+      if (newHistory.length > 20) {
+        newHistory.shift();
       }
+      
+      updateFloorPlan(floorPlanId, {
+        history: newHistory,
+        historyIndex: Math.min(currentFloor.historyIndex + 1, 19),
+      });
     };
 
     canvas.on('object:added', handleCanvasChange);
     canvas.on('object:removed', handleCanvasChange);
     canvas.on('object:modified', handleCanvasChange);
 
-    setFabricCanvas(canvas);
-    toast("Canvas klar! Last opp plantegning for å starte");
+    return canvas;
+  };
 
-    return () => {
-      canvas.dispose();
+  useEffect(() => {
+    floorPlans.forEach(floorPlan => {
+      if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
+        initializeCanvas(floorPlan.id);
+      }
+    });
+  }, [floorPlans]);
+
+  const addNewFloorPlan = () => {
+    const newId = (floorPlans.length + 1).toString();
+    const newFloorPlan: FloorPlan = {
+      id: newId,
+      name: `Etasje ${newId}`,
+      canvas: null,
+      history: [],
+      historyIndex: -1,
+      isUndoing: false,
     };
-  }, [isUndoing, historyIndex]);
+    
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+    setActiveFloorPlan(newId);
+    toast("Ny etasje lagt til!");
+  };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const removeFloorPlan = (id: string) => {
+    if (floorPlans.length <= 1) {
+      toast("Du må ha minst én etasje");
+      return;
+    }
+
+    const floorPlan = floorPlans.find(fp => fp.id === id);
+    if (floorPlan?.canvas) {
+      floorPlan.canvas.dispose();
+    }
+
+    setFloorPlans(prev => prev.filter(fp => fp.id !== id));
+    
+    if (activeFloorPlan === id) {
+      setActiveFloorPlan(floorPlans[0].id === id ? floorPlans[1].id : floorPlans[0].id);
+    }
+    
+    toast("Etasje fjernet!");
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, floorPlanId: string) => {
     const file = event.target.files?.[0];
-    if (!file || !fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!file || !floorPlan?.canvas) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -99,9 +150,9 @@ export default function BuildingPlannerBasic() {
         });
         
         // Clear canvas and add image as background
-        fabricCanvas.clear();
-        fabricCanvas.add(fabricImg);
-        fabricCanvas.renderAll();
+        floorPlan.canvas!.clear();
+        floorPlan.canvas!.add(fabricImg);
+        floorPlan.canvas!.renderAll();
         toast("Plantegning lastet opp!");
       };
       img.src = e.target?.result as string;
@@ -109,9 +160,11 @@ export default function BuildingPlannerBasic() {
     reader.readAsDataURL(file);
   };
 
-  // Tømrer verktøy
+  // Tool functions for current floor plan
   const addWall = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const rect = new Rect({
       left: 100,
       top: 100,
@@ -119,12 +172,14 @@ export default function BuildingPlannerBasic() {
       width: 150,
       height: 20,
     });
-    fabricCanvas.add(rect);
+    floorPlan.canvas.add(rect);
     toast("Vegg lagt til!");
   };
 
   const addRoom = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const rect = new Rect({
       left: 150,
       top: 150,
@@ -134,12 +189,14 @@ export default function BuildingPlannerBasic() {
       width: 120,
       height: 100,
     });
-    fabricCanvas.add(rect);
+    floorPlan.canvas.add(rect);
     toast("Rom markert!");
   };
 
   const addWindow = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const rect = new Rect({
       left: 200,
       top: 200,
@@ -149,13 +206,14 @@ export default function BuildingPlannerBasic() {
       width: 60,
       height: 10,
     });
-    fabricCanvas.add(rect);
+    floorPlan.canvas.add(rect);
     toast("Vindu lagt til!");
   };
 
-  // Elektriker verktøy
   const addOutlet = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const circle = new Circle({
       left: 250,
       top: 250,
@@ -164,12 +222,14 @@ export default function BuildingPlannerBasic() {
       strokeWidth: 2,
       radius: 8,
     });
-    fabricCanvas.add(circle);
+    floorPlan.canvas.add(circle);
     toast("Stikkontakt lagt til!");
   };
 
   const addLightSwitch = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const rect = new Rect({
       left: 300,
       top: 300,
@@ -179,12 +239,14 @@ export default function BuildingPlannerBasic() {
       width: 15,
       height: 25,
     });
-    fabricCanvas.add(rect);
+    floorPlan.canvas.add(rect);
     toast("Lysbryter lagt til!");
   };
 
   const addLight = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
     const circle = new Circle({
       left: 350,
       top: 350,
@@ -193,53 +255,57 @@ export default function BuildingPlannerBasic() {
       strokeWidth: 2,
       radius: 12,
     });
-    fabricCanvas.add(circle);
+    floorPlan.canvas.add(circle);
     toast("Lysarmatur lagt til!");
   };
 
-  const clearCanvas = () => {
-    if (!fabricCanvas) return;
-    fabricCanvas.clear();
-    fabricCanvas.backgroundColor = "#ffffff";
-    fabricCanvas.renderAll();
-    toast("Canvas tømt!");
-  };
-
-  // Undo functionality
   const undoLastAction = () => {
-    if (!fabricCanvas || historyIndex <= 0) {
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas || floorPlan.historyIndex <= 0) {
       toast("Ingen handlinger å angre");
       return;
     }
 
-    setIsUndoing(true);
-    const previousState = canvasHistory[historyIndex - 1];
+    updateFloorPlan(floorPlan.id, { isUndoing: true });
+    const previousState = floorPlan.history[floorPlan.historyIndex - 1];
     
-    fabricCanvas.loadFromJSON(previousState, () => {
-      fabricCanvas.renderAll();
-      setHistoryIndex(prev => prev - 1);
-      setIsUndoing(false);
+    floorPlan.canvas.loadFromJSON(previousState, () => {
+      floorPlan.canvas!.renderAll();
+      updateFloorPlan(floorPlan.id, {
+        historyIndex: floorPlan.historyIndex - 1,
+        isUndoing: false,
+      });
       toast("Handling angret!");
     });
   };
 
-  // Delete selected objects
   const deleteSelected = () => {
-    if (!fabricCanvas) return;
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
 
-    const activeObjects = fabricCanvas.getActiveObjects();
+    const activeObjects = floorPlan.canvas.getActiveObjects();
     if (activeObjects.length === 0) {
       toast("Velg objekter for å slette dem");
       return;
     }
 
     activeObjects.forEach(obj => {
-      fabricCanvas.remove(obj);
+      floorPlan.canvas!.remove(obj);
     });
     
-    fabricCanvas.discardActiveObject();
-    fabricCanvas.renderAll();
+    floorPlan.canvas.discardActiveObject();
+    floorPlan.canvas.renderAll();
     toast(`${activeObjects.length} objekt(er) slettet!`);
+  };
+
+  const clearCanvas = () => {
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+    
+    floorPlan.canvas.clear();
+    floorPlan.canvas.backgroundColor = "#ffffff";
+    floorPlan.canvas.renderAll();
+    toast("Canvas tømt!");
   };
 
   return (
@@ -250,101 +316,143 @@ export default function BuildingPlannerBasic() {
           <CardDescription>Last opp plantegning og planlegg renovering</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="blueprint" className="text-sm font-medium">
-                Last opp plantegning
-              </Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  id="blueprint"
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Button 
-                  onClick={() => fileInputRef.current?.click()}
+          <Tabs value={activeFloorPlan} onValueChange={setActiveFloorPlan} className="w-full">
+            <div className="flex items-center justify-between">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
+                {floorPlans.map((floorPlan) => (
+                  <TabsTrigger key={floorPlan.id} value={floorPlan.id} className="relative group">
+                    {floorPlan.name}
+                    {floorPlans.length > 1 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFloorPlan(floorPlan.id);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </TabsTrigger>
+                ))}
+                <Button
+                  size="sm"
                   variant="outline"
-                  className="flex items-center gap-2"
+                  onClick={addNewFloorPlan}
+                  className="flex items-center gap-1"
                 >
-                  <Upload className="h-4 w-4" />
-                  Last opp plantegning
+                  <Plus className="h-3 w-3" />
+                  Ny etasje
                 </Button>
-              </div>
+              </TabsList>
             </div>
-            
-            <div className="flex gap-2 flex-wrap">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Hammer className="h-4 w-4" />
-                    Tømrer
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={addWall}>
-                    Legg til vegg
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={addRoom}>
-                    Marker rom
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={addWindow}>
-                    Legg til vindu
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Elektriker
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={addOutlet}>
-                    Stikkontakt
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={addLightSwitch}>
-                    Lysbryter
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={addLight}>
-                    Lysarmatur
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {floorPlans.map((floorPlan) => (
+              <TabsContent key={floorPlan.id} value={floorPlan.id} className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor={`blueprint-${floorPlan.id}`} className="text-sm font-medium">
+                      Last opp plantegning for {floorPlan.name}
+                    </Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id={`blueprint-${floorPlan.id}`}
+                        ref={(el) => (fileInputRefs.current[floorPlan.id] = el)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, floorPlan.id)}
+                        className="hidden"
+                      />
+                      <Button 
+                        onClick={() => fileInputRefs.current[floorPlan.id]?.click()}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Last opp plantegning
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 flex-wrap">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <Hammer className="h-4 w-4" />
+                          Tømrer
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={addWall}>
+                          Legg til vegg
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addRoom}>
+                          Marker rom
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addWindow}>
+                          Legg til vindu
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-              <Button onClick={clearCanvas} variant="destructive">
-                Tøm canvas
-              </Button>
-              
-              <Button 
-                onClick={undoLastAction} 
-                variant="outline"
-                disabled={historyIndex <= 0}
-                className="flex items-center gap-2"
-              >
-                <Undo className="h-4 w-4" />
-                Angre
-              </Button>
-              
-              <Button 
-                onClick={deleteSelected} 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Slett valgte
-              </Button>
-            </div>
-          </div>
-          <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-            <canvas ref={canvasRef} className="max-w-full" />
-          </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                          <Zap className="h-4 w-4" />
+                          Elektriker
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={addOutlet}>
+                          Stikkontakt
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addLightSwitch}>
+                          Lysbryter
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addLight}>
+                          Lysarmatur
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button onClick={clearCanvas} variant="destructive">
+                      Tøm canvas
+                    </Button>
+                    
+                    <Button 
+                      onClick={undoLastAction} 
+                      variant="outline"
+                      disabled={!getCurrentFloorPlan() || getCurrentFloorPlan()!.historyIndex <= 0}
+                      className="flex items-center gap-2"
+                    >
+                      <Undo className="h-4 w-4" />
+                      Angre
+                    </Button>
+                    
+                    <Button 
+                      onClick={deleteSelected} 
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Slett valgte
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                  <canvas 
+                    ref={(el) => (canvasRefs.current[floorPlan.id] = el)} 
+                    className="max-w-full" 
+                  />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
     </div>
