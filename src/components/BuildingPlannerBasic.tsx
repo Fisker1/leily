@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2, Plus, X, Square, PenTool } from 'lucide-react';
+import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2, Plus, X, Square, PenTool, Droplet } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Material {
@@ -62,7 +62,7 @@ export default function BuildingPlannerBasic() {
   const [materialSelections, setMaterialSelections] = useState<MaterialSelection[]>([]);
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
-  const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician'>('none');
+  const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -199,6 +199,84 @@ export default function BuildingPlannerBasic() {
         setShowMaterialDialog(true);
         setPendingTool(null);
         toast("Område markert - velg materiale");
+      } else if (pendingTool === 'sink') {
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'lightblue',
+          stroke: 'blue',
+          strokeWidth: 2,
+          width: 60,
+          height: 40,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(rect);
+        canvas.renderAll();
+        toast("Vask lagt til!");
+        setPendingTool(null);
+      } else if (pendingTool === 'dishwasher') {
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'lightsteelblue',
+          stroke: 'steelblue',
+          strokeWidth: 2,
+          width: 60,
+          height: 60,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(rect);
+        canvas.renderAll();
+        toast("Oppvaskmaskin lagt til!");
+        setPendingTool(null);
+      } else if (pendingTool === 'washingMachine') {
+        const circle = new Circle({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'lightcyan',
+          stroke: 'cyan',
+          strokeWidth: 2,
+          radius: 25,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(circle);
+        canvas.renderAll();
+        toast("Vaskemaskin lagt til!");
+        setPendingTool(null);
+      } else if (pendingTool === 'shower') {
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'aqua',
+          stroke: 'darkturquoise',
+          strokeWidth: 2,
+          width: 90,
+          height: 90,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(rect);
+        canvas.renderAll();
+        toast("Dusj lagt til!");
+        setPendingTool(null);
+      } else if (pendingTool === 'toilet') {
+        const circle = new Circle({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'white',
+          stroke: 'gray',
+          strokeWidth: 2,
+          radius: 20,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(circle);
+        canvas.renderAll();
+        toast("Toalett lagt til!");
+        setPendingTool(null);
       }
     });
 
@@ -404,6 +482,37 @@ export default function BuildingPlannerBasic() {
     setSelectedToolCategory('electrician');
     setPendingTool('light');
     toast("Klikk på lerretet for å plassere lysarmatur");
+  };
+
+  // Plumber functions
+  const addSink = () => {
+    setSelectedToolCategory('plumber');
+    setPendingTool('sink');
+    toast("Klikk på lerretet for å plassere vask");
+  };
+
+  const addDishwasher = () => {
+    setSelectedToolCategory('plumber');
+    setPendingTool('dishwasher');
+    toast("Klikk på lerretet for å plassere oppvaskmaskin");
+  };
+
+  const addWashingMachine = () => {
+    setSelectedToolCategory('plumber');
+    setPendingTool('washingMachine');
+    toast("Klikk på lerretet for å plassere vaskemaskin");
+  };
+
+  const addShower = () => {
+    setSelectedToolCategory('plumber');
+    setPendingTool('shower');
+    toast("Klikk på lerretet for å plassere dusj");
+  };
+
+  const addToilet = () => {
+    setSelectedToolCategory('plumber');
+    setPendingTool('toilet');
+    toast("Klikk på lerretet for å plassere toalett");
   };
 
   // Material selection functions
@@ -676,6 +785,37 @@ export default function BuildingPlannerBasic() {
                     <Button onClick={clearCanvas} variant="destructive">
                       Tøm canvas
                     </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
+                          className="flex items-center gap-2"
+                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'plumber' ? 'none' : 'plumber')}
+                        >
+                          <Droplet className="h-4 w-4" />
+                          Rørlegger
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={addSink}>
+                          Vask
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addDishwasher}>
+                          Oppvaskmaskin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addWashingMachine}>
+                          Vaskemaskin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addShower}>
+                          Dusj
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={addToilet}>
+                          Toalett
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     
                     <Button 
                       onClick={undoLastAction} 
@@ -736,6 +876,48 @@ export default function BuildingPlannerBasic() {
                         className="flex items-center gap-2"
                       >
                         {pendingTool === 'light' ? 'Klikk for å plassere lysarmatur' : 'Lysarmatur (400kr/stk)'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedToolCategory === 'plumber' && (
+                    <div className="flex gap-2 flex-wrap p-3 bg-cyan-50 rounded-lg">
+                      <Label className="text-sm font-medium w-full mb-2">Sanitærutstyr:</Label>
+                      <Button
+                        onClick={addSink}
+                        variant={pendingTool === 'sink' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        <Droplet className="h-4 w-4" />
+                        {pendingTool === 'sink' ? 'Klikk for å plassere vask' : 'Vask (3000kr/stk)'}
+                      </Button>
+                      <Button
+                        onClick={addDishwasher}
+                        variant={pendingTool === 'dishwasher' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        {pendingTool === 'dishwasher' ? 'Klikk for å plassere oppvaskmaskin' : 'Oppvaskmaskin (2500kr/stk)'}
+                      </Button>
+                      <Button
+                        onClick={addWashingMachine}
+                        variant={pendingTool === 'washingMachine' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        {pendingTool === 'washingMachine' ? 'Klikk for å plassere vaskemaskin' : 'Vaskemaskin (2000kr/stk)'}
+                      </Button>
+                      <Button
+                        onClick={addShower}
+                        variant={pendingTool === 'shower' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        {pendingTool === 'shower' ? 'Klikk for å plassere dusj' : 'Dusj (8000kr/stk)'}
+                      </Button>
+                      <Button
+                        onClick={addToilet}
+                        variant={pendingTool === 'toilet' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        {pendingTool === 'toilet' ? 'Klikk for å plassere toalett' : 'Toalett (4000kr/stk)'}
                       </Button>
                     </div>
                   )}
