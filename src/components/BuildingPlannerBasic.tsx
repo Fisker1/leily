@@ -63,6 +63,7 @@ export default function BuildingPlannerBasic() {
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician'>('none');
+  const [pendingTool, setPendingTool] = useState<string | null>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -122,6 +123,53 @@ export default function BuildingPlannerBasic() {
       const path = e.path;
       setPendingObject(path);
       setShowMaterialDialog(true);
+    });
+
+    canvas.on('mouse:down', (e) => {
+      const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+      if (!currentFloor || !pendingTool) return;
+
+      const pointer = canvas.getPointer(e.e);
+      
+      // Create object based on pending tool
+      if (pendingTool === 'outlet') {
+        const circle = new Circle({
+          left: pointer.x - 8,
+          top: pointer.y - 8,
+          fill: 'yellow',
+          stroke: 'orange',
+          strokeWidth: 2,
+          radius: 8,
+        });
+        canvas.add(circle);
+        toast("Stikkontakt lagt til!");
+      } else if (pendingTool === 'lightSwitch') {
+        const rect = new Rect({
+          left: pointer.x - 7.5,
+          top: pointer.y - 12.5,
+          fill: 'lightgray',
+          stroke: 'black',
+          strokeWidth: 1,
+          width: 15,
+          height: 25,
+        });
+        canvas.add(rect);
+        toast("Lysbryter lagt til!");
+      } else if (pendingTool === 'light') {
+        const circle = new Circle({
+          left: pointer.x - 12,
+          top: pointer.y - 12,
+          fill: 'lightyellow',
+          stroke: 'gold',
+          strokeWidth: 2,
+          radius: 12,
+        });
+        canvas.add(circle);
+        toast("Lysarmatur lagt til!");
+      }
+      
+      // Clear pending tool
+      setPendingTool(null);
     });
 
     canvas.on('mouse:up', (e) => {
@@ -310,52 +358,21 @@ export default function BuildingPlannerBasic() {
   };
 
   const addOutlet = () => {
-    const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
-    
-    const circle = new Circle({
-      left: 250,
-      top: 250,
-      fill: 'yellow',
-      stroke: 'orange',
-      strokeWidth: 2,
-      radius: 8,
-    });
-    floorPlan.canvas.add(circle);
-    toast("Stikkontakt lagt til!");
+    setSelectedToolCategory('electrician');
+    setPendingTool('outlet');
+    toast("Klikk på lerretet for å plassere stikkontakt");
   };
 
   const addLightSwitch = () => {
-    const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
-    
-    const rect = new Rect({
-      left: 300,
-      top: 300,
-      fill: 'lightgray',
-      stroke: 'black',
-      strokeWidth: 1,
-      width: 15,
-      height: 25,
-    });
-    floorPlan.canvas.add(rect);
-    toast("Lysbryter lagt til!");
+    setSelectedToolCategory('electrician');
+    setPendingTool('lightSwitch');
+    toast("Klikk på lerretet for å plassere lysbryter");
   };
 
   const addLight = () => {
-    const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
-    
-    const circle = new Circle({
-      left: 350,
-      top: 350,
-      fill: 'lightyellow',
-      stroke: 'gold',
-      strokeWidth: 2,
-      radius: 12,
-    });
-    floorPlan.canvas.add(circle);
-    toast("Lysarmatur lagt til!");
+    setSelectedToolCategory('electrician');
+    setPendingTool('light');
+    toast("Klikk på lerretet for å plassere lysarmatur");
   };
 
   // Material selection functions
@@ -675,18 +692,25 @@ export default function BuildingPlannerBasic() {
                       <Label className="text-sm font-medium w-full mb-2">Elektriske installasjoner:</Label>
                       <Button
                         onClick={addOutlet}
-                        variant="outline"
+                        variant={pendingTool === 'outlet' ? 'default' : 'outline'}
                         className="flex items-center gap-2"
                       >
                         <Zap className="h-4 w-4" />
-                        Stikkontakt (500kr/stk)
+                        {pendingTool === 'outlet' ? 'Klikk for å plassere stikkontakt' : 'Stikkontakt (500kr/stk)'}
                       </Button>
                       <Button
                         onClick={addLightSwitch}
-                        variant="outline"
+                        variant={pendingTool === 'lightSwitch' ? 'default' : 'outline'}
                         className="flex items-center gap-2"
                       >
-                        Lysbryter (300kr/stk)
+                        {pendingTool === 'lightSwitch' ? 'Klikk for å plassere lysbryter' : 'Lysbryter (300kr/stk)'}
+                      </Button>
+                      <Button
+                        onClick={addLight}
+                        variant={pendingTool === 'light' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        {pendingTool === 'light' ? 'Klikk for å plassere lysarmatur' : 'Lysarmatur (400kr/stk)'}
                       </Button>
                     </div>
                   )}
