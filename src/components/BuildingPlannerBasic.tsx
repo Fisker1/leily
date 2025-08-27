@@ -645,10 +645,14 @@ export default function BuildingPlannerBasic() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs value={activeFloorPlan} onValueChange={setActiveFloorPlan} className="w-full">
-            <div className="flex items-center justify-between">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
+            <div className="flex items-center justify-center mb-6">
+              <TabsList className="flex justify-center items-center gap-2 bg-gray-100 p-1 rounded-lg">
                 {floorPlans.map((floorPlan) => (
-                  <TabsTrigger key={floorPlan.id} value={floorPlan.id} className="relative group">
+                  <TabsTrigger 
+                    key={floorPlan.id} 
+                    value={floorPlan.id} 
+                    className="relative group px-4 py-2 rounded-md transition-all"
+                  >
                     {floorPlan.isEditingName ? (
                       <Input
                         defaultValue={floorPlan.name}
@@ -673,7 +677,7 @@ export default function BuildingPlannerBasic() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="absolute -top-2 -right-2 h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                        className="absolute -top-1 -right-1 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 rounded-full"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFloorPlan(floorPlan.id);
@@ -688,7 +692,7 @@ export default function BuildingPlannerBasic() {
                   size="sm"
                   variant="outline"
                   onClick={addNewFloorPlan}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 ml-2 px-3 py-2 rounded-md"
                 >
                   <Plus className="h-3 w-3" />
                   Ny etasje
