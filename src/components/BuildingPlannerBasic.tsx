@@ -1,13 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect, FabricImage } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, FabricImage, Path } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2, Plus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, Hammer, Zap, ChevronDown, Undo, Trash2, Plus, X, Square, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface Material {
+  id: string;
+  name: string;
+  pricePerM2: number;
+  unit: 'm²' | 'm';
+}
+
+const materials: Material[] = [
+  { id: 'gips', name: 'Gipsplate', pricePerM2: 150, unit: 'm²' },
+  { id: 'osb', name: 'OSB plate', pricePerM2: 120, unit: 'm²' },
+  { id: 'mdf', name: 'MDF plate', pricePerM2: 180, unit: 'm²' },
+  { id: 'tre', name: 'Trevegg', pricePerM2: 250, unit: 'm²' },
+];
 
 interface FloorPlan {
   id: string;
@@ -16,6 +32,15 @@ interface FloorPlan {
   history: string[];
   historyIndex: number;
   isUndoing: boolean;
+  drawingMode: 'select' | 'area' | 'wall';
+  selectedObjects: any[];
+}
+
+interface MaterialSelection {
+  objectId: string;
+  material: Material;
+  area: number;
+  cost: number;
 }
 
 export default function BuildingPlannerBasic() {
@@ -27,9 +52,14 @@ export default function BuildingPlannerBasic() {
       history: [],
       historyIndex: -1,
       isUndoing: false,
+      drawingMode: 'select',
+      selectedObjects: [],
     }
   ]);
   const [activeFloorPlan, setActiveFloorPlan] = useState('1');
+  const [materialSelections, setMaterialSelections] = useState<MaterialSelection[]>([]);
+  const [showMaterialDialog, setShowMaterialDialog] = useState(false);
+  const [pendingObject, setPendingObject] = useState<any>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -84,6 +114,22 @@ export default function BuildingPlannerBasic() {
     canvas.on('object:removed', handleCanvasChange);
     canvas.on('object:modified', handleCanvasChange);
 
+    // Handle area selection and wall drawing completion
+    canvas.on('path:created', (e) => {
+      const path = e.path;
+      setPendingObject(path);
+      setShowMaterialDialog(true);
+    });
+
+    canvas.on('mouse:up', (e) => {
+      const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+      if (currentFloor?.drawingMode === 'area' && e.e.type === 'mouseup') {
+        // Handle area selection completion
+        const pointer = canvas.getPointer(e.e);
+        // This would need more complex implementation for actual area selection
+      }
+    });
+
     return canvas;
   };
 
@@ -104,6 +150,8 @@ export default function BuildingPlannerBasic() {
       history: [],
       historyIndex: -1,
       isUndoing: false,
+      drawingMode: 'select',
+      selectedObjects: [],
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
@@ -210,6 +258,36 @@ export default function BuildingPlannerBasic() {
     toast("Vindu lagt til!");
   };
 
+  // Drawing mode functions
+  const setDrawingMode = (mode: 'select' | 'area' | 'wall') => {
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+
+    updateFloorPlan(floorPlan.id, { drawingMode: mode });
+    
+    if (mode === 'wall') {
+      floorPlan.canvas.isDrawingMode = true;
+      floorPlan.canvas.freeDrawingBrush.color = 'brown';
+      floorPlan.canvas.freeDrawingBrush.width = 8;
+      toast("Tegn vegger med mus/finger");
+    } else {
+      floorPlan.canvas.isDrawingMode = false;
+      if (mode === 'area') {
+        toast("Klikk og dra for å velge areal");
+      } else {
+        toast("Valgmodus aktivert");
+      }
+    }
+  };
+
+  const selectArea = () => {
+    setDrawingMode('area');
+  };
+
+  const drawWalls = () => {
+    setDrawingMode('wall');
+  };
+
   const addOutlet = () => {
     const floorPlan = getCurrentFloorPlan();
     if (!floorPlan?.canvas) return;
@@ -257,6 +335,42 @@ export default function BuildingPlannerBasic() {
     });
     floorPlan.canvas.add(circle);
     toast("Lysarmatur lagt til!");
+  };
+
+  // Material selection functions
+  const handleMaterialSelection = (materialId: string) => {
+    if (!pendingObject) return;
+
+    const material = materials.find(m => m.id === materialId);
+    if (!material) return;
+
+    // Calculate area for the object
+    let area = 0;
+    if (pendingObject.type === 'rect') {
+      area = (pendingObject.width * pendingObject.scaleX) * (pendingObject.height * pendingObject.scaleY) / 10000; // Convert to m²
+    } else if (pendingObject.type === 'path') {
+      // Estimate area for drawn paths (simplified calculation)
+      area = pendingObject.path?.length * 0.01 || 1; // Rough estimate
+    }
+
+    const cost = area * material.pricePerM2;
+    
+    const selection: MaterialSelection = {
+      objectId: pendingObject.id || Date.now().toString(),
+      material,
+      area,
+      cost,
+    };
+
+    setMaterialSelections(prev => [...prev, selection]);
+    setShowMaterialDialog(false);
+    setPendingObject(null);
+    
+    toast(`${material.name} valgt - Areal: ${area.toFixed(2)}m², Kostnad: ${cost.toFixed(0)}kr`);
+  };
+
+  const getTotalCost = () => {
+    return materialSelections.reduce((total, selection) => total + selection.cost, 0);
   };
 
   const undoLastAction = () => {
@@ -395,6 +509,14 @@ export default function BuildingPlannerBasic() {
                         <DropdownMenuItem onClick={addWindow}>
                           Legg til vindu
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={selectArea}>
+                          <Square className="h-4 w-4 mr-2" />
+                          Velg areal
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={drawWalls}>
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Tegn vegger
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -442,6 +564,23 @@ export default function BuildingPlannerBasic() {
                       Slett valgte
                     </Button>
                   </div>
+
+                  {materialSelections.length > 0 && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <h3 className="font-semibold mb-2">Priskalkulator</h3>
+                      <div className="space-y-2">
+                        {materialSelections.map((selection, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span>{selection.material.name}</span>
+                            <span>{selection.area.toFixed(2)}m² - {selection.cost.toFixed(0)}kr</span>
+                          </div>
+                        ))}
+                        <div className="border-t pt-2 font-semibold">
+                          Total: {getTotalCost().toFixed(0)}kr
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden">
@@ -453,6 +592,31 @@ export default function BuildingPlannerBasic() {
               </TabsContent>
             ))}
           </Tabs>
+
+          <Dialog open={showMaterialDialog} onOpenChange={setShowMaterialDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Velg materialtype</DialogTitle>
+                <DialogDescription>
+                  Velg hvilket materiale du ønsker å bruke for dette området
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Select onValueChange={handleMaterialSelection}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Velg materiale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {materials.map((material) => (
+                      <SelectItem key={material.id} value={material.id}>
+                        {material.name} - {material.pricePerM2}kr/{material.unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
