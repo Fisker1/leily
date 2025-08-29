@@ -170,6 +170,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -198,6 +199,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -225,6 +227,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -273,6 +276,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -301,6 +305,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -328,6 +333,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -356,6 +362,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -383,6 +390,7 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
+        saveCanvasState(floorPlanId); // Save state for undo functionality
         
         // Add to placed items for pricing
         const newItem: PlacedItem = {
@@ -501,6 +509,7 @@ export default function BuildingPlannerBasic() {
       height: 20,
     });
     floorPlan.canvas.add(rect);
+    saveCanvasState(activeFloorPlan); // Save state for undo functionality
     toast("Vegg lagt til!");
   };
 
@@ -518,6 +527,7 @@ export default function BuildingPlannerBasic() {
       height: 100,
     });
     floorPlan.canvas.add(rect);
+    saveCanvasState(activeFloorPlan); // Save state for undo functionality
     toast("Rom markert!");
   };
 
@@ -535,6 +545,7 @@ export default function BuildingPlannerBasic() {
       height: 10,
     });
     floorPlan.canvas.add(rect);
+    saveCanvasState(activeFloorPlan); // Save state for undo functionality
     toast("Vindu lagt til!");
   };
 
@@ -706,6 +717,25 @@ export default function BuildingPlannerBasic() {
 
   const getTotalCost = () => {
     return materialSelections.reduce((total, selection) => total + selection.cost, 0);
+  };
+
+  // Helper function to save canvas state to history
+  const saveCanvasState = (floorPlanId: string) => {
+    const floorPlan = floorPlans.find(fp => fp.id === floorPlanId);
+    if (!floorPlan?.canvas || floorPlan.isUndoing) return;
+
+    const currentState = JSON.stringify(floorPlan.canvas.toJSON());
+    const newHistory = floorPlan.history.slice(0, floorPlan.historyIndex + 1);
+    newHistory.push(currentState);
+    
+    if (newHistory.length > 20) {
+      newHistory.shift();
+    }
+    
+    updateFloorPlan(floorPlanId, {
+      history: newHistory,
+      historyIndex: Math.min(floorPlan.historyIndex + 1, 19),
+    });
   };
 
   const undoLastAction = () => {
