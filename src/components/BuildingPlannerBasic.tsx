@@ -786,10 +786,6 @@ export default function BuildingPlannerBasic() {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Button onClick={clearCanvas} variant="destructive">
-                      Tøm canvas
-                    </Button>
-
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
@@ -820,6 +816,13 @@ export default function BuildingPlannerBasic() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {/* Separator for action buttons */}
+                    <div className="border-l border-gray-300 h-8 mx-2"></div>
+                    
+                    <Button onClick={clearCanvas} variant="destructive">
+                      Tøm canvas
+                    </Button>
                     
                     <Button 
                       onClick={undoLastAction} 
