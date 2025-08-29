@@ -428,6 +428,34 @@ export default function BuildingPlannerBasic() {
     });
   }, [floorPlans]);
 
+  // Additional effect to initialize canvas when DOM elements are ready
+  useEffect(() => {
+    // Small delay to ensure canvas elements are rendered
+    const timeoutId = setTimeout(() => {
+      floorPlans.forEach(floorPlan => {
+        if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
+          initializeCanvas(floorPlan.id);
+        }
+      });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeFloorPlan]);
+
+  // Reset cursor when switching tools
+  useEffect(() => {
+    const floorPlan = getCurrentFloorPlan();
+    if (floorPlan?.canvas) {
+      if (pendingTool) {
+        floorPlan.canvas.defaultCursor = 'crosshair';
+        floorPlan.canvas.hoverCursor = 'crosshair';
+      } else {
+        floorPlan.canvas.defaultCursor = 'default';
+        floorPlan.canvas.hoverCursor = 'move';
+      }
+    }
+  }, [pendingTool, activeFloorPlan]);
+
   const addNewFloorPlan = () => {
     const newId = (floorPlans.length + 1).toString();
     const newFloorPlan: FloorPlan = {
@@ -499,7 +527,10 @@ export default function BuildingPlannerBasic() {
   // Tool functions for current floor plan
   const addWall = () => {
     const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
+    if (!floorPlan?.canvas) {
+      toast("Canvas ikke klar enda, prøv igjen");
+      return;
+    }
     
     const rect = new Rect({
       left: 100,
@@ -515,7 +546,10 @@ export default function BuildingPlannerBasic() {
 
   const addRoom = () => {
     const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
+    if (!floorPlan?.canvas) {
+      toast("Canvas ikke klar enda, prøv igjen");
+      return;
+    }
     
     const rect = new Rect({
       left: 150,
@@ -533,7 +567,10 @@ export default function BuildingPlannerBasic() {
 
   const addWindow = () => {
     const floorPlan = getCurrentFloorPlan();
-    if (!floorPlan?.canvas) return;
+    if (!floorPlan?.canvas) {
+      toast("Canvas ikke klar enda, prøv igjen");
+      return;
+    }
     
     const rect = new Rect({
       left: 200,
@@ -553,7 +590,7 @@ export default function BuildingPlannerBasic() {
   const setDrawingMode = (mode: 'select' | 'area' | 'wall') => {
     const floorPlan = getCurrentFloorPlan();
     if (!floorPlan?.canvas) {
-      toast("Canvas ikke klar enda, prøv igjen");
+      toast("Canvas ikke klar enda, prøv igjen om litt");
       return;
     }
 
@@ -561,6 +598,7 @@ export default function BuildingPlannerBasic() {
     
     if (mode === 'wall') {
       floorPlan.canvas.isDrawingMode = true;
+      floorPlan.canvas.defaultCursor = 'crosshair';
       if (floorPlan.canvas.freeDrawingBrush) {
         floorPlan.canvas.freeDrawingBrush.color = 'brown';
         floorPlan.canvas.freeDrawingBrush.width = 8;
@@ -568,6 +606,7 @@ export default function BuildingPlannerBasic() {
       toast("Tegn vegger med mus/finger");
     } else {
       floorPlan.canvas.isDrawingMode = false;
+      floorPlan.canvas.defaultCursor = 'default';
       if (mode === 'area') {
         toast("Klikk og dra for å velge areal");
       } else {
