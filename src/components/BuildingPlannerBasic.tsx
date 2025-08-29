@@ -469,6 +469,7 @@ export default function BuildingPlannerBasic() {
   const addOutlet = () => {
     setSelectedToolCategory('electrician');
     setPendingTool('outlet');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere stikkontakt");
   };
 
