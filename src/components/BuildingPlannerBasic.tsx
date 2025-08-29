@@ -851,10 +851,14 @@ export default function BuildingPlannerBasic() {
                   <div className="flex gap-2 flex-wrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button 
+                         <Button 
                           variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
                           className="flex items-center gap-2"
-                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'carpenter' ? 'none' : 'carpenter')}
+                          onClick={() => {
+                            const newCategory = selectedToolCategory === 'carpenter' ? 'none' : 'carpenter';
+                            setSelectedToolCategory(newCategory);
+                            setPendingTool(null); // Clear any active tool when switching categories
+                          }}
                         >
                           <Hammer className="h-4 w-4" />
                           Tømrer
@@ -887,7 +891,11 @@ export default function BuildingPlannerBasic() {
                         <Button 
                           variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
                           className="flex items-center gap-2"
-                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'electrician' ? 'none' : 'electrician')}
+                          onClick={() => {
+                            const newCategory = selectedToolCategory === 'electrician' ? 'none' : 'electrician';
+                            setSelectedToolCategory(newCategory);
+                            setPendingTool(null); // Clear any active tool when switching categories
+                          }}
                         >
                           <Zap className="h-4 w-4" />
                           Elektriker
@@ -912,7 +920,11 @@ export default function BuildingPlannerBasic() {
                         <Button 
                           variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
                           className="flex items-center gap-2"
-                          onClick={() => setSelectedToolCategory(selectedToolCategory === 'plumber' ? 'none' : 'plumber')}
+                          onClick={() => {
+                            const newCategory = selectedToolCategory === 'plumber' ? 'none' : 'plumber';
+                            setSelectedToolCategory(newCategory);
+                            setPendingTool(null); // Clear any active tool when switching categories
+                          }}
                         >
                           <Droplet className="h-4 w-4" />
                           Rørlegger
@@ -1057,6 +1069,16 @@ export default function BuildingPlannerBasic() {
                       >
                         {pendingTool === 'toilet' ? 'Klikk for å plassere toalett' : 'Toalett (4000kr/stk)'}
                       </Button>
+                      {pendingTool && (
+                        <Button
+                          onClick={() => setPendingTool(null)}
+                          variant="secondary"
+                          size="sm"
+                          className="ml-2"
+                        >
+                          Stopp plassering
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1066,7 +1088,7 @@ export default function BuildingPlannerBasic() {
                     ref={(el) => (canvasRefs.current[floorPlan.id] = el)} 
                     className="max-w-full" 
                   />
-                 </div>
+                </div>
 
                 {/* Complete Cost Breakdown */}
                 {(materialSelections.length > 0 || placedItems.length > 0) && (
