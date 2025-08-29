@@ -88,8 +88,14 @@ export default function BuildingPlannerBasic() {
   const [pendingObject, setPendingObject] = useState<any>(null);
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
+  const pendingToolRef = useRef<string | null>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    pendingToolRef.current = pendingTool;
+  }, [pendingTool]);
 
   const getCurrentFloorPlan = () =>
     floorPlans.find(fp => fp.id === activeFloorPlan);
@@ -151,13 +157,14 @@ export default function BuildingPlannerBasic() {
 
     canvas.on('mouse:down', (e) => {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
-      if (!currentFloor || !pendingTool || currentFloor.drawingMode === 'wall') return;
+      const currentTool = pendingToolRef.current; // Use ref to get current value
+      if (!currentFloor || !currentTool || currentFloor.drawingMode === 'wall') return;
 
       const pointer = canvas.getPointer(e.e);
-      console.log('Mouse click at:', pointer, 'with tool:', pendingTool);
+      console.log('Mouse click at:', pointer, 'with tool:', currentTool);
       
       // Create object based on pending tool
-      if (pendingTool === 'outlet') {
+      if (currentTool === 'outlet') {
         const circle = new Circle({
           left: pointer.x,
           top: pointer.y,
@@ -185,7 +192,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Stikkontakt lagt til! Klikk igjen for flere stikkontakter.");
         // Don't reset pendingTool - allow continuous placement
-      } else if (pendingTool === 'lightSwitch') {
+      } else if (currentTool === 'lightSwitch') {
         const rect = new Rect({
           left: pointer.x,
           top: pointer.y,
@@ -214,7 +221,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Lysbryter lagt til! Klikk igjen for flere lysbrytere.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'light') {
+      } else if (currentTool === 'light') {
         const circle = new Circle({
           left: pointer.x,
           top: pointer.y,
@@ -242,7 +249,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Lysarmatur lagt til! Klikk igjen for flere lysarmaturer.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'area') {
+      } else if (currentTool === 'area') {
         const rect = new Rect({
           left: pointer.x,
           top: pointer.y,
@@ -291,7 +298,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Vask lagt til! Klikk igjen for flere vasker.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'dishwasher') {
+      } else if (currentTool === 'dishwasher') {
         const rect = new Rect({
           left: pointer.x,
           top: pointer.y,
@@ -320,7 +327,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Oppvaskmaskin lagt til! Klikk igjen for flere.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'washingMachine') {
+      } else if (currentTool === 'washingMachine') {
         const circle = new Circle({
           left: pointer.x,
           top: pointer.y,
@@ -348,7 +355,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Vaskemaskin lagt til! Klikk igjen for flere.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'shower') {
+      } else if (currentTool === 'shower') {
         const rect = new Rect({
           left: pointer.x,
           top: pointer.y,
@@ -377,7 +384,7 @@ export default function BuildingPlannerBasic() {
         
         toast("Dusj lagt til! Klikk igjen for flere.");
         // Don't reset pendingTool
-      } else if (pendingTool === 'toilet') {
+      } else if (currentTool === 'toilet') {
         const circle = new Circle({
           left: pointer.x,
           top: pointer.y,
