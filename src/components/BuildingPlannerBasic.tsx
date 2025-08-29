@@ -44,6 +44,29 @@ interface MaterialSelection {
   cost: number;
 }
 
+interface PlacedItem {
+  id: string;
+  category: 'carpenter' | 'electrician' | 'plumber';
+  type: string;
+  name: string;
+  price: number;
+  floorPlanId: string;
+}
+
+const itemPrices = {
+  // Elektriker
+  outlet: { name: 'Stikkontakt', price: 500 },
+  lightSwitch: { name: 'Lysbryter', price: 300 },
+  light: { name: 'Lysarmatur', price: 800 },
+  
+  // Rørlegger
+  sink: { name: 'Vask', price: 3000 },
+  dishwasher: { name: 'Oppvaskmaskin', price: 2500 },
+  washingMachine: { name: 'Vaskemaskin', price: 2000 },
+  shower: { name: 'Dusj', price: 8000 },
+  toilet: { name: 'Toalett', price: 4000 },
+};
+
 export default function BuildingPlannerBasic() {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([
     {
@@ -60,6 +83,7 @@ export default function BuildingPlannerBasic() {
   ]);
   const [activeFloorPlan, setActiveFloorPlan] = useState('1');
   const [materialSelections, setMaterialSelections] = useState<MaterialSelection[]>([]);
+  const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
@@ -146,8 +170,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
-        toast("Stikkontakt lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'electrician',
+          type: 'outlet',
+          name: itemPrices.outlet.name,
+          price: itemPrices.outlet.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Stikkontakt lagt til! Klikk igjen for flere stikkontakter.");
+        // Don't reset pendingTool - allow continuous placement
       } else if (pendingTool === 'lightSwitch') {
         const rect = new Rect({
           left: pointer.x,
@@ -162,8 +198,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
-        toast("Lysbryter lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'electrician',
+          type: 'lightSwitch',
+          name: itemPrices.lightSwitch.name,
+          price: itemPrices.lightSwitch.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Lysbryter lagt til! Klikk igjen for flere lysbrytere.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'light') {
         const circle = new Circle({
           left: pointer.x,
@@ -177,8 +225,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
-        toast("Lysarmatur lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'electrician',
+          type: 'light',
+          name: itemPrices.light.name,
+          price: itemPrices.light.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Lysarmatur lagt til! Klikk igjen for flere lysarmaturer.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'area') {
         const rect = new Rect({
           left: pointer.x,
@@ -213,8 +273,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
-        toast("Vask lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'plumber',
+          type: 'sink',
+          name: itemPrices.sink.name,
+          price: itemPrices.sink.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Vask lagt til! Klikk igjen for flere vasker.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'dishwasher') {
         const rect = new Rect({
           left: pointer.x,
@@ -229,8 +301,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
-        toast("Oppvaskmaskin lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'plumber',
+          type: 'dishwasher',
+          name: itemPrices.dishwasher.name,
+          price: itemPrices.dishwasher.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Oppvaskmaskin lagt til! Klikk igjen for flere.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'washingMachine') {
         const circle = new Circle({
           left: pointer.x,
@@ -244,8 +328,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
-        toast("Vaskemaskin lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'plumber',
+          type: 'washingMachine',
+          name: itemPrices.washingMachine.name,
+          price: itemPrices.washingMachine.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Vaskemaskin lagt til! Klikk igjen for flere.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'shower') {
         const rect = new Rect({
           left: pointer.x,
@@ -260,8 +356,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(rect);
         canvas.renderAll();
-        toast("Dusj lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'plumber',
+          type: 'shower',
+          name: itemPrices.shower.name,
+          price: itemPrices.shower.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Dusj lagt til! Klikk igjen for flere.");
+        // Don't reset pendingTool
       } else if (pendingTool === 'toilet') {
         const circle = new Circle({
           left: pointer.x,
@@ -275,8 +383,20 @@ export default function BuildingPlannerBasic() {
         });
         canvas.add(circle);
         canvas.renderAll();
-        toast("Toalett lagt til!");
-        setPendingTool(null);
+        
+        // Add to placed items for pricing
+        const newItem: PlacedItem = {
+          id: Date.now().toString(),
+          category: 'plumber',
+          type: 'toilet',
+          name: itemPrices.toilet.name,
+          price: itemPrices.toilet.price,
+          floorPlanId: floorPlanId,
+        };
+        setPlacedItems(prev => [...prev, newItem]);
+        
+        toast("Toalett lagt til! Klikk igjen for flere.");
+        // Don't reset pendingTool
       }
     });
 
@@ -883,8 +1003,18 @@ export default function BuildingPlannerBasic() {
                         variant={pendingTool === 'light' ? 'default' : 'outline'}
                         className="flex items-center gap-2"
                       >
-                        {pendingTool === 'light' ? 'Klikk for å plassere lysarmatur' : 'Lysarmatur (400kr/stk)'}
+                        {pendingTool === 'light' ? 'Klikk for å plassere lysarmatur' : 'Lysarmatur (800kr/stk)'}
                       </Button>
+                      {pendingTool && (
+                        <Button
+                          onClick={() => setPendingTool(null)}
+                          variant="secondary"
+                          size="sm"
+                          className="ml-2"
+                        >
+                          Stopp plassering
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -936,9 +1066,123 @@ export default function BuildingPlannerBasic() {
                     ref={(el) => (canvasRefs.current[floorPlan.id] = el)} 
                     className="max-w-full" 
                   />
-                </div>
+                 </div>
 
-                {materialSelections.length > 0 && (
+                {/* Complete Cost Breakdown */}
+                {(materialSelections.length > 0 || placedItems.length > 0) && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-semibold mb-4 text-lg">Kostnadsovesikt</h3>
+                    
+                    {/* Carpenter Materials */}
+                    {materialSelections.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium mb-2 text-amber-800">Tømrerutgifter - Materialer</h4>
+                        <div className="space-y-1 ml-2">
+                          {materialSelections.map((selection, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span>{selection.material.name} ({selection.area.toFixed(2)}m²)</span>
+                              <span className="font-medium">{selection.cost.toFixed(0)} kr</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="border-t mt-2 pt-1 ml-2">
+                          <div className="flex justify-between text-sm font-semibold text-amber-800">
+                            <span>Subtotal tømrer:</span>
+                            <span>{materialSelections.reduce((sum, sel) => sum + sel.cost, 0).toFixed(0)} kr</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Electrical Items */}
+                    {placedItems.filter(item => item.category === 'electrician').length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium mb-2 text-blue-800">Elektrikerutgifter</h4>
+                        <div className="space-y-1 ml-2">
+                          {Object.entries(
+                            placedItems
+                              .filter(item => item.category === 'electrician')
+                              .reduce((acc, item) => {
+                                acc[item.type] = (acc[item.type] || 0) + 1;
+                                return acc;
+                              }, {} as Record<string, number>)
+                          ).map(([type, count]) => {
+                            const itemInfo = itemPrices[type as keyof typeof itemPrices];
+                            return (
+                              <div key={type} className="flex justify-between text-sm">
+                                <span>{itemInfo.name} ({count} stk)</span>
+                                <span className="font-medium">{(itemInfo.price * count).toFixed(0)} kr</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="border-t mt-2 pt-1 ml-2">
+                          <div className="flex justify-between text-sm font-semibold text-blue-800">
+                            <span>Subtotal elektriker:</span>
+                            <span>
+                              {placedItems
+                                .filter(item => item.category === 'electrician')
+                                .reduce((sum, item) => sum + item.price, 0)
+                                .toFixed(0)} kr
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Plumber Items */}
+                    {placedItems.filter(item => item.category === 'plumber').length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-medium mb-2 text-cyan-800">Rørleggerutgifter</h4>
+                        <div className="space-y-1 ml-2">
+                          {Object.entries(
+                            placedItems
+                              .filter(item => item.category === 'plumber')
+                              .reduce((acc, item) => {
+                                acc[item.type] = (acc[item.type] || 0) + 1;
+                                return acc;
+                              }, {} as Record<string, number>)
+                          ).map(([type, count]) => {
+                            const itemInfo = itemPrices[type as keyof typeof itemPrices];
+                            return (
+                              <div key={type} className="flex justify-between text-sm">
+                                <span>{itemInfo.name} ({count} stk)</span>
+                                <span className="font-medium">{(itemInfo.price * count).toFixed(0)} kr</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="border-t mt-2 pt-1 ml-2">
+                          <div className="flex justify-between text-sm font-semibold text-cyan-800">
+                            <span>Subtotal rørlegger:</span>
+                            <span>
+                              {placedItems
+                                .filter(item => item.category === 'plumber')
+                                .reduce((sum, item) => sum + item.price, 0)
+                                .toFixed(0)} kr
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Grand Total */}
+                    <div className="border-t-2 pt-3 mt-4">
+                      <div className="flex justify-between text-lg font-bold">
+                        <span>Totalkostnad:</span>
+                        <span className="text-green-700">
+                          {(
+                            materialSelections.reduce((sum, sel) => sum + sel.cost, 0) +
+                            placedItems.reduce((sum, item) => sum + item.price, 0)
+                          ).toFixed(0)} kr
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy material selector - keep for backward compatibility */}
+                {materialSelections.length > 0 && (materialSelections.length > 0 && placedItems.length === 0) && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h3 className="font-semibold mb-2">Priskalkulator</h3>
                     <div className="space-y-2">
