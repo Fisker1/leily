@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect, FabricImage, Path } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, FabricImage, Path, Line } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +89,11 @@ export default function BuildingPlannerBasic() {
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const pendingToolRef = useRef<string | null>(null);
+  const [wallPoints, setWallPoints] = useState<{x: number, y: number}[]>([]);
+  const [isDrawingWall, setIsDrawingWall] = useState(false);
+  const [showWallHeightDialog, setShowWallHeightDialog] = useState(false);
+  const [currentWallLength, setCurrentWallLength] = useState(0);
+  const [tempWallObjects, setTempWallObjects] = useState<any[]>([]);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -169,7 +174,60 @@ export default function BuildingPlannerBasic() {
 
     canvas.on('mouse:down', (e) => {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
-      const currentTool = pendingToolRef.current; // Use ref to get current value
+      const currentTool = pendingToolRef.current;
+      
+      // Handle wall drawing mode
+      if (currentFloor?.drawingMode === 'wall' && isDrawingWall) {
+        const pointer = canvas.getPointer(e.e);
+        
+        // Check for double click (if click is very close to previous point within short time)
+        const lastPoint = wallPoints[wallPoints.length - 1];
+        if (lastPoint) {
+          const distance = Math.sqrt(
+            Math.pow(pointer.x - lastPoint.x, 2) + Math.pow(pointer.y - lastPoint.y, 2)
+          );
+          
+          // If double-clicked (distance < 10 pixels), finish wall
+          if (distance < 10) {
+            finishWall(floorPlanId);
+            return;
+          }
+        }
+        
+        // Add new point and draw line segment
+        const newPoints = [...wallPoints, pointer];
+        setWallPoints(newPoints);
+        
+        if (wallPoints.length > 0) {
+          // Draw line from previous point to current point
+          const prevPoint = wallPoints[wallPoints.length - 1];
+          const line = new Line([prevPoint.x, prevPoint.y, pointer.x, pointer.y], {
+            stroke: 'brown',
+            strokeWidth: 8,
+            selectable: false,
+            evented: false,
+          });
+          canvas.add(line);
+          setTempWallObjects(prev => [...prev, line]);
+        }
+        
+        // Add a small circle to mark the point
+        const point = new Circle({
+          left: pointer.x,
+          top: pointer.y,
+          radius: 4,
+          fill: 'brown',
+          selectable: false,
+          evented: false,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(point);
+        setTempWallObjects(prev => [...prev, point]);
+        canvas.renderAll();
+        return;
+      }
+      
       if (!currentFloor || !currentTool || currentFloor.drawingMode === 'wall') return;
 
       const pointer = canvas.getPointer(e.e);
@@ -436,6 +494,14 @@ export default function BuildingPlannerBasic() {
       }
     });
 
+    // Handle double click for finishing walls
+    canvas.on('mouse:dblclick', (e) => {
+      const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+      if (currentFloor?.drawingMode === 'wall' && isDrawingWall) {
+        finishWall(floorPlanId);
+      }
+    });
+
     return canvas;
   };
 
@@ -619,13 +685,10 @@ export default function BuildingPlannerBasic() {
     updateFloorPlan(floorPlan.id, { drawingMode: mode });
     
     if (mode === 'wall') {
-      floorPlan.canvas.isDrawingMode = true;
+      // Wall drawing mode is handled by point-to-point clicking, not free drawing
+      floorPlan.canvas.isDrawingMode = false;
       floorPlan.canvas.defaultCursor = 'crosshair';
-      if (floorPlan.canvas.freeDrawingBrush) {
-        floorPlan.canvas.freeDrawingBrush.color = 'brown';
-        floorPlan.canvas.freeDrawingBrush.width = 8;
-      }
-      toast("Tegn vegger med mus/finger");
+      // Don't set up free drawing brush for wall mode
     } else {
       floorPlan.canvas.isDrawingMode = false;
       floorPlan.canvas.defaultCursor = 'default';
@@ -646,6 +709,79 @@ export default function BuildingPlannerBasic() {
   const drawWalls = () => {
     setSelectedToolCategory('carpenter');
     setDrawingMode('wall');
+    setIsDrawingWall(true);
+    setWallPoints([]);
+    setTempWallObjects([]);
+    toast("Klikk for å starte vegg, fortsett å klikke for å legge til segmenter. Dobbeltklikk for å fullføre.");
+  };
+
+  // Helper function to calculate total wall length
+  const calculateWallLength = (points: {x: number, y: number}[]) => {
+    let totalLength = 0;
+    for (let i = 1; i < points.length; i++) {
+      const dx = points[i].x - points[i-1].x;
+      const dy = points[i].y - points[i-1].y;
+      totalLength += Math.sqrt(dx * dx + dy * dy);
+    }
+    // Convert pixels to meters (assuming 100 pixels = 1 meter for example)
+    return totalLength / 100;
+  };
+
+  // Function to finish wall drawing
+  const finishWall = (floorPlanId: string) => {
+    if (wallPoints.length < 2) {
+      toast("Du må ha minst 2 punkter for å lage en vegg");
+      return;
+    }
+
+    const wallLength = calculateWallLength(wallPoints);
+    setCurrentWallLength(wallLength);
+    setShowWallHeightDialog(true);
+  };
+
+  // Function to complete wall with height
+  const completeWallWithHeight = (height: number) => {
+    const floorPlan = getCurrentFloorPlan();
+    if (!floorPlan?.canvas) return;
+
+    // Convert temp objects to permanent
+    tempWallObjects.forEach(obj => {
+      obj.selectable = true;
+      obj.evented = true;
+    });
+
+    // Calculate area (length * height)
+    const area = currentWallLength * height;
+    const pricePerM2 = 250; // Default wall price per m2
+    const cost = area * pricePerM2;
+
+    // Add to material selections
+    const wallSelection = {
+      objectId: Date.now().toString(),
+      material: { 
+        id: 'wall', 
+        name: `Vegg (${currentWallLength.toFixed(1)}m × ${height}m)`, 
+        pricePerM2: pricePerM2, 
+        unit: 'm²' as const 
+      },
+      area: area,
+      cost: cost,
+    };
+
+    setMaterialSelections(prev => [...prev, wallSelection]);
+    
+    // Save canvas state
+    saveCanvasState(floorPlan.id);
+    
+    // Reset wall drawing state
+    setIsDrawingWall(false);
+    setWallPoints([]);
+    setTempWallObjects([]);
+    setShowWallHeightDialog(false);
+    setDrawingMode('select');
+    setPendingTool(null);
+    
+    toast(`Vegg fullført! ${area.toFixed(1)}m² - ${cost.toFixed(0)}kr`);
   };
 
   // Floor plan name editing
@@ -1339,7 +1475,77 @@ export default function BuildingPlannerBasic() {
             ))}
           </Tabs>
 
-          <Dialog open={showMaterialDialog} onOpenChange={setShowMaterialDialog}>
+            <Dialog open={showWallHeightDialog} onOpenChange={setShowWallHeightDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Vegg høyde</DialogTitle>
+                  <DialogDescription>
+                    Skriv inn høyden på veggen for å beregne areal og pris
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="wall-height">Høyde (meter)</Label>
+                    <Input
+                      id="wall-height"
+                      type="number"
+                      placeholder="2.7"
+                      step="0.1"
+                      min="0.1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const height = parseFloat((e.target as HTMLInputElement).value);
+                          if (height > 0) {
+                            completeWallWithHeight(height);
+                          }
+                        }
+                      }}
+                    />
+                    <p className="text-sm text-gray-600">
+                      Vegglengde: {currentWallLength.toFixed(1)} meter
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const input = document.getElementById('wall-height') as HTMLInputElement;
+                        const height = parseFloat(input.value);
+                        if (height > 0) {
+                          completeWallWithHeight(height);
+                        } else {
+                          toast("Vennligst skriv inn en gyldig høyde");
+                        }
+                      }}
+                    >
+                      Bekreft
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Cancel wall creation - remove temp objects
+                        const floorPlan = getCurrentFloorPlan();
+                        if (floorPlan?.canvas) {
+                          tempWallObjects.forEach(obj => {
+                            floorPlan.canvas!.remove(obj);
+                          });
+                          floorPlan.canvas.renderAll();
+                        }
+                        setShowWallHeightDialog(false);
+                        setIsDrawingWall(false);
+                        setWallPoints([]);
+                        setTempWallObjects([]);
+                        setDrawingMode('select');
+                        toast("Vegg avbrutt");
+                      }}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={showMaterialDialog} onOpenChange={setShowMaterialDialog}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Velg materialtype</DialogTitle>
