@@ -87,6 +87,7 @@ export default function BuildingPlannerBasic() {
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material>(materials[0]); // Default to first material
+  const [showMaterialSelector, setShowMaterialSelector] = useState(false);
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const pendingToolRef = useRef<string | null>(null);
@@ -704,16 +705,30 @@ export default function BuildingPlannerBasic() {
   const selectArea = () => {
     setSelectedToolCategory('carpenter');
     setPendingTool('area');
+    setShowMaterialSelector(true); // Show material selector when starting area selection
+    toast("Velg material for området først");
+  };
+
+  // Start area selection after material is selected
+  const startAreaSelection = () => {
+    setShowMaterialSelector(false);
     toast(`Klikk på lerretet for å plassere område med ${selectedMaterial.name}`);
   };
 
   const drawWalls = () => {
     setSelectedToolCategory('carpenter');
+    setShowMaterialSelector(true); // Show material selector when starting wall drawing
+    toast("Velg material for veggene først");
+  };
+
+  // Start wall drawing after material is selected
+  const startWallDrawing = () => {
     setDrawingMode('wall');
     setIsDrawingWall(true);
     setWallPoints([]);
     setTempWallObjects([]);
-    toast("Klikk for å starte vegg, fortsett å klikke for å legge til segmenter. Dobbeltklikk for å fullføre.");
+    setShowMaterialSelector(false);
+    toast("Klikk for å starte vegg, fortsett å klikke for å legge til segmenter. Dobbeltklikk for å fullföre.");
   };
 
   // Helper function to calculate total wall length
@@ -1097,25 +1112,7 @@ export default function BuildingPlannerBasic() {
                     </div>
                   </div>
                   
-                <div className="flex gap-4 items-center mb-4">
-                  <Label className="text-sm font-semibold">Materiale:</Label>
-                  <Select value={selectedMaterial.id} onValueChange={handleMaterialSelection}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue>
-                        {selectedMaterial.name} - {selectedMaterial.pricePerM2}kr/{selectedMaterial.unit}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {materials.map((material) => (
-                        <SelectItem key={material.id} value={material.id}>
-                          {material.name} - {material.pricePerM2}kr/{material.unit}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                          <Button 
@@ -1247,15 +1244,63 @@ export default function BuildingPlannerBasic() {
                   {/* Additional tool options */}
                   {selectedToolCategory === 'carpenter' && (
                     <div className="flex gap-2 flex-wrap p-3 bg-gray-50 rounded-lg">
-                      <Label className="text-sm font-medium w-full mb-2">Velg materiale og område:</Label>
-                      <Button
-                        onClick={selectArea}
-                        variant={pendingTool === 'area' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
-                      >
+                      <Label className="text-sm font-medium w-full mb-2">Tømrerverktøy:</Label>
+                      <Button onClick={addWall} variant="outline" className="flex items-center gap-2">
                         <Square className="h-4 w-4" />
-                        {pendingTool === 'area' ? 'Klikk for å plassere område' : 'Område (Gips/OSB)'}
+                        Legg til vegg
                       </Button>
+                      <Button onClick={addRoom} variant="outline" className="flex items-center gap-2">
+                        <Square className="h-4 w-4" />
+                        Marker rom
+                      </Button>
+                      <Button onClick={addWindow} variant="outline" className="flex items-center gap-2">
+                        <Square className="h-4 w-4" />
+                        Legg til vindu
+                      </Button>
+                      <Button onClick={selectArea} variant="outline" className="flex items-center gap-2">
+                        <Square className="h-4 w-4" />
+                        Område
+                      </Button>
+                      <Button onClick={drawWalls} variant="outline" className="flex items-center gap-2">
+                        <PenTool className="h-4 w-4" />
+                        Tegn vegger
+                      </Button>
+                      
+                      {/* Material selector - shown after clicking wall/area tools */}
+                      {showMaterialSelector && (
+                        <div className="w-full mt-4 p-3 bg-white border rounded-lg">
+                          <Label className="text-sm font-semibold mb-2 block">Velg materiale:</Label>
+                          <div className="flex gap-2 flex-wrap">
+                            {materials.map((material) => (
+                              <Button
+                                key={material.id}
+                                variant={selectedMaterial.id === material.id ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedMaterial(material);
+                                  // Start the appropriate action based on pending tool
+                                  if (pendingTool === 'area') {
+                                    startAreaSelection();
+                                  } else {
+                                    startWallDrawing();
+                                  }
+                                }}
+                                className="text-xs"
+                              >
+                                {material.name} ({material.pricePerM2}kr/m²)
+                              </Button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowMaterialSelector(false)}
+                            className="mt-2 text-xs"
+                          >
+                            Avbryt
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
