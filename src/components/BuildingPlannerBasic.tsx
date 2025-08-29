@@ -154,7 +154,7 @@ export default function BuildingPlannerBasic() {
       if (!currentFloor || !pendingTool || currentFloor.drawingMode === 'wall') return;
 
       const pointer = canvas.getPointer(e.e);
-      console.log('Mouse click at:', pointer); // Debug log
+      console.log('Mouse click at:', pointer, 'with tool:', pendingTool);
       
       // Create object based on pending tool
       if (pendingTool === 'outlet') {
@@ -423,6 +423,7 @@ export default function BuildingPlannerBasic() {
   useEffect(() => {
     floorPlans.forEach(floorPlan => {
       if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
+        console.log('Initializing canvas for floor plan:', floorPlan.id);
         initializeCanvas(floorPlan.id);
       }
     });
@@ -434,6 +435,7 @@ export default function BuildingPlannerBasic() {
     const timeoutId = setTimeout(() => {
       floorPlans.forEach(floorPlan => {
         if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
+          console.log('Re-initializing canvas for floor plan:', floorPlan.id);
           initializeCanvas(floorPlan.id);
         }
       });
@@ -442,6 +444,19 @@ export default function BuildingPlannerBasic() {
     return () => clearTimeout(timeoutId);
   }, [activeFloorPlan]);
 
+  // Initialize canvas on component mount
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentFloor = getCurrentFloorPlan();
+      if (currentFloor && !currentFloor.canvas && canvasRefs.current[currentFloor.id]) {
+        console.log('Force initializing current floor canvas:', currentFloor.id);
+        initializeCanvas(currentFloor.id);
+      }
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   // Reset cursor when switching tools
   useEffect(() => {
     const floorPlan = getCurrentFloorPlan();
@@ -449,9 +464,11 @@ export default function BuildingPlannerBasic() {
       if (pendingTool) {
         floorPlan.canvas.defaultCursor = 'crosshair';
         floorPlan.canvas.hoverCursor = 'crosshair';
+        console.log('Set cursor to crosshair for tool:', pendingTool);
       } else {
         floorPlan.canvas.defaultCursor = 'default';
         floorPlan.canvas.hoverCursor = 'move';
+        console.log('Reset cursor to default');
       }
     }
   }, [pendingTool, activeFloorPlan]);
@@ -644,6 +661,7 @@ export default function BuildingPlannerBasic() {
   };
 
   const addLightSwitch = () => {
+    console.log('Adding light switch tool');
     setSelectedToolCategory('electrician');
     setPendingTool('lightSwitch');
     setDrawingMode('select'); // Reset drawing mode to allow click placement
@@ -651,6 +669,7 @@ export default function BuildingPlannerBasic() {
   };
 
   const addLight = () => {
+    console.log('Adding light tool');
     setSelectedToolCategory('electrician');
     setPendingTool('light');
     setDrawingMode('select'); // Reset drawing mode to allow click placement
@@ -1161,7 +1180,18 @@ export default function BuildingPlannerBasic() {
                 
                 <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                   <canvas 
-                    ref={(el) => (canvasRefs.current[floorPlan.id] = el)} 
+                    ref={(el) => {
+                      canvasRefs.current[floorPlan.id] = el;
+                      // Force initialization if canvas element is ready
+                      if (el && !floorPlan.canvas) {
+                        setTimeout(() => {
+                          if (!floorPlan.canvas) {
+                            console.log('Force initializing canvas from ref callback:', floorPlan.id);
+                            initializeCanvas(floorPlan.id);
+                          }
+                        }, 50);
+                      }
+                    }}
                     className="max-w-full" 
                   />
                 </div>
