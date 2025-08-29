@@ -92,17 +92,32 @@ export default function BuildingPlannerBasic() {
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const pendingToolRef = useRef<string | null>(null);
   const [wallPoints, setWallPoints] = useState<{x: number, y: number}[]>([]);
+  const wallPointsRef = useRef<{x: number, y: number}[]>([]);
   const [isDrawingWall, setIsDrawingWall] = useState(false);
+  const isDrawingWallRef = useRef(false);
   const [showWallHeightDialog, setShowWallHeightDialog] = useState(false);
   const [currentWallLength, setCurrentWallLength] = useState(0);
   const [tempWallObjects, setTempWallObjects] = useState<any[]>([]);
+  const tempWallObjectsRef = useRef<any[]>([]);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     pendingToolRef.current = pendingTool;
   }, [pendingTool]);
+
+  useEffect(() => {
+    wallPointsRef.current = wallPoints;
+  }, [wallPoints]);
+
+  useEffect(() => {
+    isDrawingWallRef.current = isDrawingWall;
+  }, [isDrawingWall]);
+
+  useEffect(() => {
+    tempWallObjectsRef.current = tempWallObjects;
+  }, [tempWallObjects]);
 
   const getCurrentFloorPlan = () =>
     floorPlans.find(fp => fp.id === activeFloorPlan);
@@ -179,11 +194,12 @@ export default function BuildingPlannerBasic() {
       const currentTool = pendingToolRef.current;
       
       // Handle wall drawing mode
-      if (currentFloor?.drawingMode === 'wall' && isDrawingWall) {
+      if (currentFloor?.drawingMode === 'wall' && isDrawingWallRef.current) {
         const pointer = canvas.getPointer(e.e);
+        console.log('Wall drawing click at:', pointer, 'Current points:', wallPointsRef.current.length);
         
         // Check for double click (if click is very close to previous point within short time)
-        const lastPoint = wallPoints[wallPoints.length - 1];
+        const lastPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
         if (lastPoint) {
           const distance = Math.sqrt(
             Math.pow(pointer.x - lastPoint.x, 2) + Math.pow(pointer.y - lastPoint.y, 2)
@@ -197,12 +213,12 @@ export default function BuildingPlannerBasic() {
         }
         
         // Add new point and draw line segment
-        const newPoints = [...wallPoints, pointer];
+        const newPoints = [...wallPointsRef.current, pointer];
         setWallPoints(newPoints);
         
-        if (wallPoints.length > 0) {
+        if (wallPointsRef.current.length > 0) {
           // Draw line from previous point to current point
-          const prevPoint = wallPoints[wallPoints.length - 1];
+          const prevPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
           const line = new Line([prevPoint.x, prevPoint.y, pointer.x, pointer.y], {
             stroke: 'brown',
             strokeWidth: 8,
