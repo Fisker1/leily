@@ -86,6 +86,7 @@ export default function BuildingPlannerBasic() {
   const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [showMaterialDialog, setShowMaterialDialog] = useState(false);
   const [pendingObject, setPendingObject] = useState<any>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<Material>(materials[0]); // Default to first material
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const pendingToolRef = useRef<string | null>(null);
@@ -168,8 +169,8 @@ export default function BuildingPlannerBasic() {
     // Handle area selection and wall drawing completion
     canvas.on('path:created', (e) => {
       const path = e.path;
-      setPendingObject(path);
-      setShowMaterialDialog(true);
+      // Automatically apply selected material instead of showing dialog
+      applyMaterialToObject(path, selectedMaterial);
     });
 
     canvas.on('mouse:down', (e) => {
@@ -703,7 +704,7 @@ export default function BuildingPlannerBasic() {
   const selectArea = () => {
     setSelectedToolCategory('carpenter');
     setPendingTool('area');
-    toast("Klikk på lerretet for å plassere område");
+    toast(`Klikk på lerretet for å plassere område med ${selectedMaterial.name}`);
   };
 
   const drawWalls = () => {
@@ -853,36 +854,46 @@ export default function BuildingPlannerBasic() {
     toast("Klikk på lerretet for å plassere toalett");
   };
 
-  // Material selection functions
-  const handleMaterialSelection = (materialId: string) => {
-    if (!pendingObject) return;
-
-    const material = materials.find(m => m.id === materialId);
-    if (!material) return;
-
+  // Helper function to apply material to object
+  const applyMaterialToObject = (obj: any, material: Material) => {
     // Calculate area for the object
     let area = 0;
-    if (pendingObject.type === 'rect') {
-      area = (pendingObject.width * pendingObject.scaleX) * (pendingObject.height * pendingObject.scaleY) / 10000; // Convert to m²
-    } else if (pendingObject.type === 'path') {
-      // Estimate area for drawn paths (simplified calculation)
-      area = pendingObject.path?.length * 0.01 || 1; // Rough estimate
+    if (obj.type === 'rect') {
+      area = (obj.width * obj.scaleX) * (obj.height * obj.scaleY) / 10000; // Convert to m²
+    } else if (obj.type === 'path') {
+      // For drawn paths, estimate area based on bounding box
+      const bounds = obj.getBoundingRect();
+      area = (bounds.width * bounds.height) / 10000; // Convert to m²
+    } else if (obj.type === 'circle') {
+      const radius = obj.radius * obj.scaleX;
+      area = (Math.PI * radius * radius) / 10000; // Convert to m²
+    }
+
+    if (area <= 0) {
+      toast("Kunne ikke beregne areal for objektet");
+      return;
     }
 
     const cost = area * material.pricePerM2;
-    
-    const selection: MaterialSelection = {
-      objectId: pendingObject.id || Date.now().toString(),
+
+    const selection = {
+      objectId: obj.id || Date.now().toString(),
       material,
       area,
       cost,
     };
 
     setMaterialSelections(prev => [...prev, selection]);
-    setShowMaterialDialog(false);
-    setPendingObject(null);
-    
-    toast(`${material.name} valgt - Areal: ${area.toFixed(2)}m², Kostnad: ${cost.toFixed(0)}kr`);
+    toast(`${material.name} område lagt til - ${area.toFixed(2)}m², ${cost.toFixed(0)}kr`);
+  };
+
+  // Material selection functions - simplified, just sets selected material
+  const handleMaterialSelection = (materialId: string) => {
+    const material = materials.find(m => m.id === materialId);
+    if (material) {
+      setSelectedMaterial(material);
+      toast(`Valgte materiale: ${material.name}`);
+    }
   };
 
   // Quick material selection for carpenter work
@@ -1086,7 +1097,25 @@ export default function BuildingPlannerBasic() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-4 items-center mb-4">
+                  <Label className="text-sm font-semibold">Materiale:</Label>
+                  <Select value={selectedMaterial.id} onValueChange={handleMaterialSelection}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue>
+                        {selectedMaterial.name} - {selectedMaterial.pricePerM2}kr/{selectedMaterial.unit}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {materials.map((material) => (
+                        <SelectItem key={material.id} value={material.id}>
+                          {material.name} - {material.pricePerM2}kr/{material.unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                          <Button 
@@ -1546,29 +1575,32 @@ export default function BuildingPlannerBasic() {
             </Dialog>
 
             <Dialog open={showMaterialDialog} onOpenChange={setShowMaterialDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Velg materialtype</DialogTitle>
-                <DialogDescription>
-                  Velg hvilket materiale du ønsker å bruke for dette området
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Select onValueChange={handleMaterialSelection}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg materiale" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materials.map((material) => (
-                      <SelectItem key={material.id} value={material.id}>
-                        {material.name} - {material.pricePerM2}kr/{material.unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </DialogContent>
-          </Dialog>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Velg materialtype</DialogTitle>
+                  <DialogDescription>
+                    Velg hvilket materiale du ønsker å bruke for dette området
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Select onValueChange={(materialId) => {
+                    handleMaterialSelection(materialId);
+                    setShowMaterialDialog(false);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Velg materiale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {materials.map((material) => (
+                        <SelectItem key={material.id} value={material.id}>
+                          {material.name} - {material.pricePerM2}kr/{material.unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </DialogContent>
+            </Dialog>
         </CardContent>
       </Card>
     </div>
