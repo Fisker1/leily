@@ -109,7 +109,19 @@ export default function BuildingPlannerBasic() {
   // Initialize canvas for a floor plan
   const initializeCanvas = (floorPlanId: string) => {
     const canvasElement = canvasRefs.current[floorPlanId];
-    if (!canvasElement) return;
+    if (!canvasElement) {
+      console.log('No canvas element found for floor plan:', floorPlanId);
+      return;
+    }
+
+    // Check if canvas is already initialized
+    const existingFloorPlan = floorPlans.find(fp => fp.id === floorPlanId);
+    if (existingFloorPlan?.canvas) {
+      console.log('Canvas already initialized for floor plan:', floorPlanId);
+      return;
+    }
+
+    console.log('Initializing new canvas for floor plan:', floorPlanId);
 
     const canvas = new FabricCanvas(canvasElement, {
       width: 800,
@@ -428,41 +440,27 @@ export default function BuildingPlannerBasic() {
   };
 
   useEffect(() => {
+    // Only initialize canvases that don't already exist
     floorPlans.forEach(floorPlan => {
       if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
-        console.log('Initializing canvas for floor plan:', floorPlan.id);
+        console.log('UseEffect: Initializing canvas for floor plan:', floorPlan.id);
         initializeCanvas(floorPlan.id);
       }
     });
-  }, [floorPlans]);
+  }, [floorPlans.length]); // Only depend on length, not full floorPlans array
 
-  // Additional effect to initialize canvas when DOM elements are ready
-  useEffect(() => {
-    // Small delay to ensure canvas elements are rendered
-    const timeoutId = setTimeout(() => {
-      floorPlans.forEach(floorPlan => {
-        if (!floorPlan.canvas && canvasRefs.current[floorPlan.id]) {
-          console.log('Re-initializing canvas for floor plan:', floorPlan.id);
-          initializeCanvas(floorPlan.id);
-        }
-      });
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [activeFloorPlan]);
-
-  // Initialize canvas on component mount
+  // Initialize canvas on component mount - run once
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const currentFloor = getCurrentFloorPlan();
       if (currentFloor && !currentFloor.canvas && canvasRefs.current[currentFloor.id]) {
-        console.log('Force initializing current floor canvas:', currentFloor.id);
+        console.log('Mount effect: Force initializing current floor canvas:', currentFloor.id);
         initializeCanvas(currentFloor.id);
       }
     }, 200);
 
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, []); // Empty dependency array - run only on mount
 
   // Reset cursor when switching tools
   useEffect(() => {
@@ -817,6 +815,7 @@ export default function BuildingPlannerBasic() {
       return;
     }
 
+    console.log('Undoing action. Current history index:', floorPlan.historyIndex);
     updateFloorPlan(floorPlan.id, { isUndoing: true });
     const previousState = floorPlan.history[floorPlan.historyIndex - 1];
     
@@ -826,6 +825,7 @@ export default function BuildingPlannerBasic() {
         historyIndex: floorPlan.historyIndex - 1,
         isUndoing: false,
       });
+      console.log('Undo completed. New history index:', floorPlan.historyIndex - 1);
       toast("Handling angret!");
     });
   };
@@ -1189,14 +1189,16 @@ export default function BuildingPlannerBasic() {
                   <canvas 
                     ref={(el) => {
                       canvasRefs.current[floorPlan.id] = el;
-                      // Force initialization if canvas element is ready
+                      // Only initialize if canvas doesn't exist and element is ready
                       if (el && !floorPlan.canvas) {
-                        setTimeout(() => {
+                        const timeoutId = setTimeout(() => {
                           if (!floorPlan.canvas) {
-                            console.log('Force initializing canvas from ref callback:', floorPlan.id);
+                            console.log('Ref callback: Initializing canvas for floor plan:', floorPlan.id);
                             initializeCanvas(floorPlan.id);
                           }
-                        }, 50);
+                        }, 100);
+                        // Store timeout to clean up if needed
+                        el.dataset.timeoutId = timeoutId.toString();
                       }
                     }}
                     className="max-w-full" 
