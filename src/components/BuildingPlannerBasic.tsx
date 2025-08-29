@@ -646,12 +646,14 @@ export default function BuildingPlannerBasic() {
   const addLightSwitch = () => {
     setSelectedToolCategory('electrician');
     setPendingTool('lightSwitch');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere lysbryter");
   };
 
   const addLight = () => {
     setSelectedToolCategory('electrician');
     setPendingTool('light');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere lysarmatur");
   };
 
@@ -659,30 +661,35 @@ export default function BuildingPlannerBasic() {
   const addSink = () => {
     setSelectedToolCategory('plumber');
     setPendingTool('sink');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere vask");
   };
 
   const addDishwasher = () => {
     setSelectedToolCategory('plumber');
     setPendingTool('dishwasher');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere oppvaskmaskin");
   };
 
   const addWashingMachine = () => {
     setSelectedToolCategory('plumber');
     setPendingTool('washingMachine');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere vaskemaskin");
   };
 
   const addShower = () => {
     setSelectedToolCategory('plumber');
     setPendingTool('shower');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere dusj");
   };
 
   const addToilet = () => {
     setSelectedToolCategory('plumber');
     setPendingTool('toilet');
+    setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere toalett");
   };
 
