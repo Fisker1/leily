@@ -69,12 +69,16 @@ export type Database = {
           id: string
           lease_terms: string | null
           monthly_rent: number
+          parking_included: boolean | null
+          pets_allowed: boolean | null
           property_id: string
           property_owner_id: string
+          smoking_allowed: boolean | null
           start_date: string
           status: string | null
           tenant_id: string
           updated_at: string
+          utilities_included: boolean | null
         }
         Insert: {
           created_at?: string
@@ -83,12 +87,16 @@ export type Database = {
           id?: string
           lease_terms?: string | null
           monthly_rent: number
+          parking_included?: boolean | null
+          pets_allowed?: boolean | null
           property_id: string
           property_owner_id: string
+          smoking_allowed?: boolean | null
           start_date: string
           status?: string | null
           tenant_id: string
           updated_at?: string
+          utilities_included?: boolean | null
         }
         Update: {
           created_at?: string
@@ -97,12 +105,16 @@ export type Database = {
           id?: string
           lease_terms?: string | null
           monthly_rent?: number
+          parking_included?: boolean | null
+          pets_allowed?: boolean | null
           property_id?: string
           property_owner_id?: string
+          smoking_allowed?: boolean | null
           start_date?: string
           status?: string | null
           tenant_id?: string
           updated_at?: string
+          utilities_included?: boolean | null
         }
         Relationships: [
           {
@@ -405,34 +417,49 @@ export type Database = {
       }
       tenants: {
         Row: {
+          address: string | null
           created_at: string
           email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
           first_name: string
           id: string
           last_name: string
+          monthly_income: number | null
           national_id: string | null
+          occupation: string | null
           phone: string | null
           property_owner_id: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
           email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           first_name: string
           id?: string
           last_name: string
+          monthly_income?: number | null
           national_id?: string | null
+          occupation?: string | null
           phone?: string | null
           property_owner_id: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           created_at?: string
           email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           first_name?: string
           id?: string
           last_name?: string
+          monthly_income?: number | null
           national_id?: string | null
+          occupation?: string | null
           phone?: string | null
           property_owner_id?: string
           updated_at?: string

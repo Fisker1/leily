@@ -190,6 +190,10 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
   };
 
   const handleSubmit = async () => {
+    console.log('Starting rental agreement submission...');
+    console.log('Tenant data:', tenantData);
+    console.log('Lease data:', leaseData);
+    
     if (!validateStep1() || !validateStep2()) {
       toast({
         title: "Manglende informasjon",
@@ -203,12 +207,14 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user);
       
       if (!user) {
         throw new Error("User not authenticated");
       }
 
       // First, create the tenant
+      console.log('Creating tenant...');
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .insert([{
@@ -227,9 +233,14 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
         .select()
         .single();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('Tenant creation error:', tenantError);
+        throw tenantError;
+      }
+      console.log('Tenant created successfully:', tenant);
 
       // Then, create the lease agreement
+      console.log('Creating lease agreement...');
       const { data: lease, error: leaseError } = await supabase
         .from('lease_agreements')
         .insert([{
@@ -250,7 +261,11 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
         .select()
         .single();
 
-      if (leaseError) throw leaseError;
+      if (leaseError) {
+        console.error('Lease agreement creation error:', leaseError);
+        throw leaseError;
+      }
+      console.log('Lease agreement created successfully:', lease);
 
       toast({
         title: "Leieavtale opprettet",
