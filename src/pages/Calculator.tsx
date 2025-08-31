@@ -208,7 +208,7 @@ const Calculator = () => {
             </TabsTrigger>
             <TabsTrigger 
               value="building-planner" 
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700"
+              className="flex items-center gap-2 bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
             >
               <Ruler className="h-4 w-4" />
               Byggeplanlegger
