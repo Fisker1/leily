@@ -208,20 +208,6 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
         throw new Error("User not authenticated");
       }
 
-      // Update user profile with national ID if not already set
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('national_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profile && !profile.national_id) {
-        await supabase
-          .from('profiles')
-          .update({ national_id: tenantData.nationalId })
-          .eq('id', user.id);
-      }
-
       // First, create the tenant
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
