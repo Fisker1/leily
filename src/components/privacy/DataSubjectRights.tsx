@@ -31,7 +31,7 @@ const DataSubjectRights = () => {
     
     try {
       // Log the request
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('data_subject_requests')
         .insert({
           user_id: user.id,
@@ -106,7 +106,7 @@ const DataSubjectRights = () => {
       URL.revokeObjectURL(url);
 
       // Log the export
-      await supabase
+      await (supabase as any)
         .from('data_subject_requests')
         .insert({
           user_id: user.id,
