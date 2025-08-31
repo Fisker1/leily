@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, User, Home, FileText, Phone, Mail, IdCard } from "lucide-react";
+import { CalendarIcon, User, Home, FileText, Phone, Mail, IdCard, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -54,6 +54,15 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showPropertyForm, setShowPropertyForm] = useState(false);
+  const [propertyFormData, setPropertyFormData] = useState({
+    address: "",
+    city: "",
+    postal_code: "",
+    property_type: "",
+    size_sqm: "",
+    bedrooms: "",
+  });
 
   const [tenantData, setTenantData] = useState<TenantData>({
     firstName: '',
@@ -112,6 +121,74 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
     }
   };
 
+  const handleCreateProperty = async () => {
+    if (!propertyFormData.address || !propertyFormData.city) {
+      toast({
+        title: "Manglende informasjon",
+        description: "Vennligst fyll ut adresse og by",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const { data: newProperty, error: propertyError } = await supabase
+        .from('properties')
+        .insert([{
+          address: propertyFormData.address,
+          city: propertyFormData.city,
+          postal_code: propertyFormData.postal_code,
+          property_type: propertyFormData.property_type,
+          size_sqm: propertyFormData.size_sqm ? parseInt(propertyFormData.size_sqm) : null,
+          bedrooms: propertyFormData.bedrooms ? parseInt(propertyFormData.bedrooms) : null,
+          show_in_rental: true,
+          owner_id: user.id
+        }])
+        .select()
+        .single();
+
+      if (propertyError) throw propertyError;
+
+      // Update the lease data with the new property ID
+      handleLeaseDataChange('propertyId', newProperty.id);
+
+      // Reset property form and hide it
+      setPropertyFormData({
+        address: "",
+        city: "",
+        postal_code: "",
+        property_type: "",
+        size_sqm: "",
+        bedrooms: "",
+      });
+      setShowPropertyForm(false);
+
+      toast({
+        title: "Eiendom opprettet",
+        description: "Ny eiendom er lagt til og valgt for leieavtalen",
+      });
+
+      // Refresh properties list (assuming parent component will handle this)
+      
+    } catch (error) {
+      console.error('Error creating property:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke opprette eiendom",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateStep1() || !validateStep2()) {
       toast({
@@ -125,6 +202,26 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
     setLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Update user profile with national ID if not already set
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('national_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profile && !profile.national_id) {
+        await supabase
+          .from('profiles')
+          .update({ national_id: tenantData.nationalId })
+          .eq('id', user.id);
+      }
+
       // First, create the tenant
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -139,7 +236,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
           monthly_income: parseInt(tenantData.monthlyIncome) || null,
           emergency_contact: tenantData.emergencyContact,
           emergency_phone: tenantData.emergencyPhone,
-          property_owner_id: (await supabase.auth.getUser()).data.user?.id
+          property_owner_id: user.id
         }])
         .select()
         .single();
@@ -162,7 +259,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
           parking_included: leaseData.parkingIncluded,
           pets_allowed: leaseData.petsAllowed,
           smoking_allowed: leaseData.smokingAllowed,
-          property_owner_id: (await supabase.auth.getUser()).data.user?.id
+          property_owner_id: user.id
         }])
         .select()
         .single();
@@ -380,7 +477,13 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
               <CardContent className="space-y-4">
                 <div>
                   <Label>Velg eiendom *</Label>
-                  <Select value={leaseData.propertyId} onValueChange={(value) => handleLeaseDataChange('propertyId', value)}>
+                  <Select value={leaseData.propertyId} onValueChange={(value) => {
+                    if (value === "create-new") {
+                      setShowPropertyForm(true);
+                    } else {
+                      handleLeaseDataChange('propertyId', value);
+                    }
+                  }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Velg eiendom" />
                     </SelectTrigger>
@@ -390,9 +493,115 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
                           {property.address}, {property.city} ({property.size_sqm}m²)
                         </SelectItem>
                       ))}
+                      <SelectItem value="create-new">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Opprett ny eiendom
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {showPropertyForm && (
+                  <Card className="border-dashed">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Plus className="h-5 w-5" />
+                        Opprett ny eiendom
+                      </CardTitle>
+                      <CardDescription>
+                        Fyll ut grunnleggende informasjon om eiendommen
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="new-address">Adresse *</Label>
+                          <Input
+                            id="new-address"
+                            value={propertyFormData.address}
+                            onChange={(e) => setPropertyFormData(prev => ({...prev, address: e.target.value}))}
+                            placeholder="f.eks. Storgata 1"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-city">By *</Label>
+                          <Input
+                            id="new-city"
+                            value={propertyFormData.city}
+                            onChange={(e) => setPropertyFormData(prev => ({...prev, city: e.target.value}))}
+                            placeholder="Oslo"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-postal">Postnummer</Label>
+                          <Input
+                            id="new-postal"
+                            value={propertyFormData.postal_code}
+                            onChange={(e) => setPropertyFormData(prev => ({...prev, postal_code: e.target.value}))}
+                            placeholder="0123"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-type">Eiendomstype</Label>
+                          <Select value={propertyFormData.property_type} onValueChange={(value) => setPropertyFormData(prev => ({...prev, property_type: value}))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Velg type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Leilighet">Leilighet</SelectItem>
+                              <SelectItem value="Enebolig">Enebolig</SelectItem>
+                              <SelectItem value="Rekkehus">Rekkehus</SelectItem>
+                              <SelectItem value="Tomannsbolig">Tomannsbolig</SelectItem>
+                              <SelectItem value="Hytte">Hytte</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="new-size">Størrelse (m²)</Label>
+                          <Input
+                            id="new-size"
+                            type="number"
+                            value={propertyFormData.size_sqm}
+                            onChange={(e) => setPropertyFormData(prev => ({...prev, size_sqm: e.target.value}))}
+                            placeholder="85"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="new-bedrooms">Soverom</Label>
+                          <Input
+                            id="new-bedrooms"
+                            type="number"
+                            value={propertyFormData.bedrooms}
+                            onChange={(e) => setPropertyFormData(prev => ({...prev, bedrooms: e.target.value}))}
+                            placeholder="3"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          onClick={handleCreateProperty}
+                          disabled={loading}
+                          size="sm"
+                        >
+                          {loading ? "Oppretter..." : "Opprett eiendom"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => setShowPropertyForm(false)}
+                          size="sm"
+                        >
+                          Avbryt
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
