@@ -18,6 +18,7 @@ import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Slider } from '@/components/ui/slider';
+import { useToast } from '@/hooks/use-toast';
 
 const Calculator = () => {
   const {
@@ -30,6 +31,7 @@ const Calculator = () => {
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
   const { isAdmin } = useUserRole();
+  const { toast } = useToast();
 
   // Access control
   const canAccessBuildingPlanner = user?.email === 'anderslundoy@gmail.com';
@@ -42,6 +44,18 @@ const Calculator = () => {
   const [ownershipType, setOwnershipType] = useState(50); // 0 = Privat, 100 = AS
   const [propertyStrategy, setPropertyStrategy] = useState(50); // 0 = Utleie, 100 = Flipp
   const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner
+  
+  const handleTabChange = (value: string) => {
+    if (value === "building-planner" && !canAccessBuildingPlanner) {
+      toast({
+        title: "Byggeplanleggeren kommer snart!",
+        description: "Vi jobber hardt med å utvikle denne funksjonen. Den vil være tilgjengelig snart.",
+        duration: 4000,
+      });
+      return;
+    }
+    setActiveTab(value);
+  };
   
   useEffect(() => {
     if (location.state?.showModuleAdded) {
@@ -186,7 +200,7 @@ const Calculator = () => {
         </div>
 
         {/* Tab selector */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
             <TabsTrigger value="calculator" className="flex items-center gap-2">
               <CalcIcon className="h-4 w-4" />
@@ -195,7 +209,6 @@ const Calculator = () => {
             <TabsTrigger 
               value="building-planner" 
               className="flex items-center gap-2"
-              disabled={!canAccessBuildingPlanner}
             >
               <Ruler className="h-4 w-4" />
               Byggeplanlegger
