@@ -22,6 +22,7 @@ interface RentalAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   properties: any[];
+  onPropertyAdded?: () => void;
 }
 
 interface TenantData {
@@ -50,7 +51,7 @@ interface LeaseData {
   smokingAllowed: boolean;
 }
 
-const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreementDialogProps) => {
+const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded }: RentalAgreementDialogProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -175,7 +176,10 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties }: RentalAgreeme
         description: "Ny eiendom er lagt til og valgt for leieavtalen",
       });
 
-      // Refresh properties list (assuming parent component will handle this)
+      // Refresh properties list in parent component
+      if (onPropertyAdded) {
+        onPropertyAdded();
+      }
       
     } catch (error) {
       console.error('Error creating property:', error);

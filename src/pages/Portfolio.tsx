@@ -8,6 +8,7 @@ import { PropertyEditDialog } from "@/components/PropertyEditDialog";
 import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
 import { PropertyDocumentsDialog } from "@/components/PropertyDocumentsDialog";
 import PropertyImage from "@/components/PropertyImage";
+import RentalAgreementDialog from "@/components/RentalAgreementDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -103,6 +104,7 @@ const Portfolio = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [rentalAgreementDialogOpen, setRentalAgreementDialogOpen] = useState(false);
 
   // Example property for logged in users with no properties
   const exampleProperty = [
@@ -329,6 +331,11 @@ const Portfolio = () => {
   };
 
   const fetchUserProperties = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -367,7 +374,7 @@ const Portfolio = () => {
     }
   };
 
-  const showExampleProperty = user && properties.length === 0;
+  const showExampleProperty = user && properties.length === 0 && !loading;
   const displayProperties = !user ? mockProperties : (showExampleProperty ? exampleProperty : properties);
 
   const totalInvestment = displayProperties.reduce((sum, prop) => sum + (prop.purchase_price || 0), 0);
@@ -452,12 +459,22 @@ const Portfolio = () => {
               </p>
             </div>
             {user && (
-              <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
-                <Button className="bg-gradient-primary hover:opacity-90">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Legg til eiendom
+              <div className="flex gap-2">
+                <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
+                  <Button className="bg-gradient-primary hover:opacity-90">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Legg til eiendom
+                  </Button>
+                </PropertyAddDialog>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setRentalAgreementDialogOpen(true)}
+                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Ny leieavtale
                 </Button>
-              </PropertyAddDialog>
+              </div>
             )}
             {showExampleProperty && (
               <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
@@ -1415,6 +1432,14 @@ const Portfolio = () => {
           />
         </>
       )}
+
+      {/* Rental Agreement Dialog */}
+      <RentalAgreementDialog
+        open={rentalAgreementDialogOpen}
+        onOpenChange={setRentalAgreementDialogOpen}
+        properties={properties}
+        onPropertyAdded={fetchUserProperties}
+      />
     </div>
   );
 };

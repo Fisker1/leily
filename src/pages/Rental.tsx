@@ -895,6 +895,7 @@ const Rental = () => {
         open={rentalAgreementDialogOpen}
         onOpenChange={setRentalAgreementDialogOpen}
         properties={properties}
+        onPropertyAdded={fetchUserProperties}
       />
     </div>
   );
