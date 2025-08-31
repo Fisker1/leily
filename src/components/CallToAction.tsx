@@ -28,7 +28,7 @@ const CallToAction = () => {
         netYield: 4.89,
         totalMonthlyIncome: 25000,
         totalMonthlyExpenses: 6500,
-        cashFlowAnalysis: 'Negativ cashflow på kort sikt, men god potensiell verdiøkning'
+        cashFlowAnalysis: 'Negativ pengestrøm på kort sikt, men god potensiell verdiøkning'
       },
       advancedData: {
         capRate: 4.89,

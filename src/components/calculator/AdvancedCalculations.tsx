@@ -208,16 +208,16 @@ const AdvancedCalculations = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Tabs defaultValue="cashflow" className="w-full">
+        <Tabs defaultValue="pengestrøm" className="w-full">
           <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="cashflow">Kontantstrøm</TabsTrigger>
+            <TabsTrigger value="pengestrøm">Pengestrøm</TabsTrigger>
             <TabsTrigger value="amortization">Lån & DSCR</TabsTrigger>
             <TabsTrigger value="breakeven">Break-even</TabsTrigger>
             <TabsTrigger value="alternatives">Alternativer</TabsTrigger>
           </TabsList>
 
           {/* Cash Flow Tab */}
-          <TabsContent value="cashflow" className="space-y-6">
+          <TabsContent value="pengestrøm" className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">10-års Kontantstrøm Analyse</h3>
               
@@ -314,7 +314,7 @@ const AdvancedCalculations = ({
                       <Tooltip 
                          formatter={(value, name) => [
                            `${Math.round(value as number).toLocaleString()} kr`, 
-                           name === 'beforeTaxCashFlow' ? 'Før skatt' : 'Etter skatt'
+                            name === 'beforeTaxCashFlow' ? 'Før skatt' : 'Etter skatt'
                          ]}
                         labelFormatter={(label) => `År ${label}`}
                       />

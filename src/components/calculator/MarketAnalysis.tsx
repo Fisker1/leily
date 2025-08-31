@@ -132,11 +132,11 @@ const MarketAnalysis = ({ propertyValue, monthlyRent }: MarketAnalysisProps) => 
 
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div className="text-center p-4 bg-primary-soft rounded-lg">
-              <p className="text-sm text-muted-foreground">Din brutto yield</p>
+              <p className="text-sm text-muted-foreground">Din brutto avkastning</p>
               <p className="text-2xl font-bold text-primary">{rentYield.toFixed(2)}%</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Markedets yield</p>
+              <p className="text-sm text-muted-foreground">Markedets avkastning</p>
               <p className="text-2xl font-bold text-foreground">{marketRentYield.toFixed(2)}%</p>
             </div>
           </div>

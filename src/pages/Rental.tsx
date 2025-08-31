@@ -446,7 +446,7 @@ const Rental = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
-                  Gjennomsnittlig yield
+                  Gjennomsnittlig avkastning
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -455,7 +455,7 @@ const Rental = () => {
                 </div>
                 {isExampleProperty && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel yield
+                    Eksempel avkastning
                   </p>
                 )}
               </CardContent>
@@ -465,7 +465,7 @@ const Rental = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Månedlig cashflow
+                  Månedlig pengestrøm
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -474,7 +474,7 @@ const Rental = () => {
                 </div>
                 {isExampleProperty && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel cashflow
+                    Eksempel pengestrøm
                   </p>
                 )}
               </CardContent>
@@ -541,8 +541,8 @@ const Rental = () => {
                             {property.monthly_rent?.toLocaleString() || "Ikke oppgitt"} kr
                           </p>
                         </div>
-                        <div>
-                          <p className="text-muted-foreground">Yield</p>
+          <div>
+                          <p className="text-muted-foreground">Avkastning</p>
                           <p className="font-semibold text-accent">
                             {property.monthly_rent ? 
                               (((property.monthly_rent * 12) / (property.current_value || property.purchase_price)) * 100).toFixed(1) 
@@ -551,7 +551,7 @@ const Rental = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Cashflow</p>
+                          <p className="text-muted-foreground">Pengestrøm</p>
                           <p className={`font-semibold ${getCashflowColor(getCashflowValue(property))}`}>
                             {getCashflowValue(property) >= 0 ? '+' : ''}{getCashflowValue(property).toLocaleString()} kr
                           </p>

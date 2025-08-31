@@ -79,12 +79,12 @@ const ProfitabilityCalculator = ({
         <div className="space-y-2">
           {calculatorMode === 'investment' && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Netto Yield:</span>
+              <span className="text-muted-foreground">Netto avkastning:</span>
               <span className="font-semibold text-accent">{netYield.toFixed(1)}%</span>
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Måned. Cashflow:</span>
+            <span className="text-muted-foreground">Måned. pengestrøm:</span>
             <span className={`font-semibold ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`}>
               {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
             </span>
@@ -133,7 +133,7 @@ const ProfitabilityCalculator = ({
               <div className="text-center p-4 bg-card-elevated rounded-lg">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <DollarSign className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">Brutto Yield</p>
+                  <p className="text-sm text-muted-foreground">Brutto avkastning</p>
                 </div>
                 <p className="text-2xl font-bold text-primary">{grossYield.toFixed(2)}%</p>
               </div>
@@ -141,7 +141,7 @@ const ProfitabilityCalculator = ({
               <div className="text-center p-4 bg-card-elevated rounded-lg">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <TrendingUp className="h-4 w-4 text-accent" />
-                  <p className="text-sm text-muted-foreground">Netto Yield</p>
+                  <p className="text-sm text-muted-foreground">Netto avkastning</p>
                 </div>
                 <p className="text-2xl font-bold text-accent">{netYield.toFixed(2)}%</p>
               </div>
@@ -171,13 +171,13 @@ const ProfitabilityCalculator = ({
           <div className={`text-center p-4 rounded-lg ${monthlyCashFlow >= 0 ? 'bg-primary-soft' : 'bg-destructive/10'} md:col-span-${calculatorMode === 'investment' ? '2' : '1'}`}>
             <div className="flex items-center justify-center gap-2 mb-2">
               <TrendingUp className={`h-4 w-4 ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`} />
-              <p className="text-sm text-muted-foreground">Månedlig Cashflow</p>
+              <p className="text-sm text-muted-foreground">Månedlig pengestrøm</p>
             </div>
             <p className={`text-3xl font-bold ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`}>
               {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {monthlyCashFlow >= 0 ? 'Positiv' : 'Negativ'} cashflow
+              {monthlyCashFlow >= 0 ? 'Positiv' : 'Negativ'} pengestrøm
             </p>
           </div>
         </div>
@@ -222,9 +222,9 @@ const ProfitabilityCalculator = ({
           <h5 className="font-semibold text-foreground mb-2">Anbefalinger:</h5>
           <ul className="space-y-1 text-sm text-muted-foreground">
             {profitabilityScore < 40 && <li>• Vurder å justere parametrene for bedre lønnsomhet</li>}
-            {calculatorMode === 'investment' && netYield < 4 && <li>• Lav yield - vurder andre investeringsmuligheter</li>}
-            {monthlyCashFlow < 0 && <li>• Negativ cashflow krever månedlig tilskudd</li>}
-            {calculatorMode === 'investment' && grossYield > 8 && <li>• Høy yield - undersøk området nøye for skjulte risikoer</li>}
+            {calculatorMode === 'investment' && netYield < 4 && <li>• Lav avkastning - vurder andre investeringsmuligheter</li>}
+            {monthlyCashFlow < 0 && <li>• Negativ pengestrøm krever månedlig tilskudd</li>}
+            {calculatorMode === 'investment' && grossYield > 8 && <li>• Høy avkastning - undersøk området nøye for skjulte risikoer</li>}
             {profitabilityScore >= 60 && <li>• God investeringsmulighet - fortsett med grundig analyse</li>}
           </ul>
         </div>

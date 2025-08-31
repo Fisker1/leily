@@ -71,7 +71,7 @@ const CalculatorModules = ({
     {
       id: "Avanserte beregninger",
       title: "Avanserte beregninger", 
-      description: "10-års cashflow, DSCR og break-even analyse",
+      description: "10-års pengestrøm, DSCR og break-even analyse",
       icon: Calculator,
       badge: "Premium",
       color: "bg-purple-500"
@@ -160,13 +160,13 @@ const CalculatorModules = ({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Brutto yield</p>
+                  <p className="text-sm text-muted-foreground mb-2">Brutto avkastning</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {((monthlyRent * 12) / propertyValue * 100).toFixed(2)}%
                   </p>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Månedlig cashflow</p>
+                  <p className="text-sm text-muted-foreground mb-2">Månedlig pengestrøm</p>
                   <p className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {monthlyCashFlow.toLocaleString()} kr
                   </p>
@@ -378,7 +378,7 @@ const CalculatorModules = ({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-indigo-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Netto yield</p>
+                  <p className="text-sm text-muted-foreground mb-2">Netto avkastning</p>
                   <p className="text-xl font-bold text-indigo-600">
                     {(((monthlyRent * 12 - expenses * 12) / propertyValue) * 100).toFixed(2)}%
                   </p>
@@ -434,7 +434,7 @@ const CalculatorModules = ({
         score: 75,
         grossYield: 6.67,
         netYield: 3.2,
-        cashFlowAnalysis: 'Investeringen viser attraktiv yield på 6.67%. Med forventet årlig vekst på 3% er den annualiserte avkastningen på 8.50% konkurransedyktig.'
+        cashFlowAnalysis: 'Investeringen viser attraktiv avkastning på 6.67%. Med forventet årlig vekst på 3% er den annualiserte avkastningen på 8.50% konkurransedyktig.'
       },
       advancedData: {
         capRate: 5.8,
