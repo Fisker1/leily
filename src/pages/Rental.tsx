@@ -58,6 +58,10 @@ const Rental = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Access control
+  const canCreateRentalAgreement = user?.email === 'anderslundoy@gmail.com';
+  
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -290,6 +294,15 @@ const Rental = () => {
       return;
     }
 
+    if (!canCreateRentalAgreement) {
+      toast({
+        title: "Kommer snart",
+        description: "Denne funksjonen er under utvikling og kommer snart!",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check if user has properties (not just example properties)
     const realProperties = properties.filter(p => p.id !== 'example');
     if (realProperties.length === 0) {
@@ -376,9 +389,14 @@ const Rental = () => {
               </p>
             </div>
             {user && (
-              <Button className="bg-gradient-primary hover:opacity-90" onClick={handleCreateRentalAgreement}>
+              <Button 
+                className="bg-gradient-primary hover:opacity-90" 
+                onClick={handleCreateRentalAgreement}
+                disabled={!canCreateRentalAgreement}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Ny leieavtale
+                {!canCreateRentalAgreement && <Badge variant="secondary" className="ml-2 text-xs">Kommer snart</Badge>}
               </Button>
             )}
           </div>
@@ -775,17 +793,34 @@ const Rental = () => {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="shadow-medium border-primary/20">
             <CardHeader>
-              <CardTitle className="text-primary">Ny leieavtale</CardTitle>
-              <CardDescription>Opprett ny leieavtale for ledig eiendom</CardDescription>
+              <CardTitle className="text-primary flex items-center gap-2">
+                Ny leieavtale
+                {!canCreateRentalAgreement && <Badge variant="secondary" className="text-xs">Kommer snart</Badge>}
+              </CardTitle>
+              <CardDescription>
+                {canCreateRentalAgreement 
+                  ? "Opprett ny leieavtale for ledig eiendom"
+                  : "Denne funksjonen er under utvikling og kommer snart!"
+                }
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full bg-gradient-primary hover:opacity-90"
-                onClick={handleCreateRentalAgreement}
-              >
-                <PenTool className="h-4 w-4 mr-2" />
-                Opprett leieavtale
-              </Button>
+              {canCreateRentalAgreement ? (
+                <Button 
+                  className="w-full bg-gradient-primary hover:opacity-90"
+                  onClick={handleCreateRentalAgreement}
+                >
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Opprett leieavtale
+                </Button>
+              ) : (
+                <div className="text-center py-4">
+                  <PenTool className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">
+                    Vi jobber med å gjøre denne funksjonen tilgjengelig.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
