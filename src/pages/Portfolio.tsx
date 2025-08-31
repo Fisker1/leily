@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { 
   Building2, 
   DollarSign, 
@@ -90,6 +91,7 @@ interface TenantDocument {
 const Portfolio = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
@@ -634,60 +636,19 @@ const Portfolio = () => {
                         {/* Actions */}
                         <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
                           {user && !showExampleProperty ? (
-                            <>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
-                                onClick={() => {
-                                  setSelectedProperty(property);
-                                  setDetailsDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Detaljer</span>
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
-                                onClick={() => {
-                                  console.log('Opening documents for property:', property.id);
-                                  setSelectedProperty(property);
-                                  setDocumentsDialogOpen(true);
-                                }}
-                              >
-                                <FileText className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Dok.</span>
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
-                                onClick={() => {
-                                  setSelectedProperty(property);
-                                  setEditDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Rediger</span>
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
-                                className="flex-1 lg:flex-none lg:w-28 min-w-0"
-                                onClick={() => handleDeleteProperty(property.id)}
-                              >
-                                <Trash className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Slett</span>
-                              </Button>
-                            </>
-                          ) : (
                             <TooltipProvider>
                               <div className="grid grid-cols-2 gap-2 w-20 mx-auto lg:mx-0">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => {
+                                        setSelectedProperty(property);
+                                        setDetailsDialogOpen(true);
+                                      }}
+                                    >
                                       <Eye className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
@@ -698,7 +659,16 @@ const Portfolio = () => {
                                 
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => {
+                                        console.log('Opening documents for property:', property.id);
+                                        setSelectedProperty(property);
+                                        setDocumentsDialogOpen(true);
+                                      }}
+                                    >
                                       <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
@@ -709,7 +679,15 @@ const Portfolio = () => {
                                 
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => {
+                                        setSelectedProperty(property);
+                                        setEditDialogOpen(true);
+                                      }}
+                                    >
                                       <Edit className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
@@ -720,7 +698,80 @@ const Portfolio = () => {
                                 
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => handleDeleteProperty(property.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Slett</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <div className="grid grid-cols-2 gap-2 w-20 mx-auto lg:mx-0">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => navigate('/auth')}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Detaljer</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => navigate('/auth')}
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Dokumenter</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => navigate('/auth')}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Rediger</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => navigate('/auth')}
+                                    >
                                       <Trash className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
