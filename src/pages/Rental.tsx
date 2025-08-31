@@ -25,11 +25,13 @@ import {
   Calculator,
   EyeOff,
   Download,
-  PenTool
+  PenTool,
+  BarChart3
 } from "lucide-react";
 import PropertyImage from "@/components/PropertyImage";
 import { useNavigate } from "react-router-dom";
 import RentalAgreementDialog from "@/components/RentalAgreementDialog";
+import MarketAnalysisDialog from "@/components/MarketAnalysisDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Property {
@@ -71,6 +73,7 @@ const Rental = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [rentalAgreementDialogOpen, setRentalAgreementDialogOpen] = useState(false);
+  const [marketAnalysisDialogOpen, setMarketAnalysisDialogOpen] = useState(false);
 
   // Eksempel eiendom for innloggede brukere uten egne eiendommer
   const exampleProperty = {
@@ -847,7 +850,12 @@ const Rental = () => {
               <CardDescription>Sammenlign dine leiepriser med markedet</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setMarketAnalysisDialogOpen(true)}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
                 Start analyse
               </Button>
             </CardContent>
@@ -896,6 +904,13 @@ const Rental = () => {
         onOpenChange={setRentalAgreementDialogOpen}
         properties={properties}
         onPropertyAdded={fetchUserProperties}
+      />
+
+      {/* Market Analysis Dialog */}
+      <MarketAnalysisDialog
+        open={marketAnalysisDialogOpen}
+        onOpenChange={setMarketAnalysisDialogOpen}
+        properties={properties}
       />
     </div>
   );
