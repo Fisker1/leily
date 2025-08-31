@@ -11,7 +11,7 @@ const LeilyLogo = ({ className, showText = true }: LeilyLogoProps) => {
       <img 
         src="/lovable-uploads/bc6f9f14-566a-4a33-a44f-e7b3044e79ea.png" 
         alt="Leily Logo" 
-        className="h-10 w-auto"
+        className="h-10 w-auto mix-blend-multiply dark:mix-blend-screen"
       />
     </div>
   );
