@@ -27,7 +27,8 @@ import {
   Trash,
   Download
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface Property {
   id: string;
@@ -682,24 +683,53 @@ const Portfolio = () => {
                               </Button>
                             </>
                           ) : (
-                            <>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
-                                <Eye className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Detaljer</span>
-                              </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
-                                <FileText className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Dok.</span>
-                              </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
-                                <Edit className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Rediger</span>
-                              </Button>
-                              <Button variant="outline" size="sm" className="flex-1 lg:flex-none lg:w-28 min-w-0" disabled>
-                                <Trash className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Slett</span>
-                              </Button>
-                            </>
+                            <TooltipProvider>
+                              <div className="grid grid-cols-2 gap-2 w-20 mx-auto lg:mx-0">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Detaljer</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Dokumenter</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Rediger</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-8 h-8 p-0" disabled>
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Slett</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </TooltipProvider>
                           )}
                         </div>
                       </div>
@@ -1267,10 +1297,10 @@ const Portfolio = () => {
                        <YAxis 
                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
                        />
-                       <Tooltip 
-                         formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
-                         labelFormatter={(label) => `Måned: ${label}`}
-                       />
+                        <RechartsTooltip 
+                          formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
+                          labelFormatter={(label) => `Måned: ${label}`}
+                        />
                        <Legend />
                        <Line 
                          type="monotone" 
