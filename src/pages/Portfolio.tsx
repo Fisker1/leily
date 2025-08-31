@@ -701,7 +701,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="destructive" 
                                       size="sm" 
-                                      className="w-8 h-8 p-0"
+                                      className="w-8 h-8 p-0 hover:bg-red-600 dark:hover:bg-red-500"
                                       onClick={() => handleDeleteProperty(property.id)}
                                     >
                                       <Trash className="h-4 w-4" />
@@ -769,7 +769,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-8 h-8 p-0"
+                                      className="w-8 h-8 p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30"
                                       onClick={() => navigate('/auth')}
                                     >
                                       <Trash className="h-4 w-4" />
