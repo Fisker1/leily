@@ -144,17 +144,17 @@ const Portfolio = () => {
     },
     {
       id: "mock-2", 
-      address: "Bogstadveien 42",
-      city: "Oslo",
-      postal_code: "0366",
-      property_type: "Leilighet",
-      size_sqm: 65,
-      bedrooms: 1,
-      purchase_price: 2200000,
+      address: "Fiskarveien 12",
+      city: "Svolvær",
+      postal_code: "8300",
+      property_type: "Enebolig",
+      size_sqm: 95,
+      bedrooms: 3,
+      purchase_price: 1800000,
       purchase_date: "2021-11-20",
-      current_value: 2650000,
-      monthly_rent: 22000,
-      demo_cashflow: -1200,
+      current_value: 2150000,
+      monthly_rent: 18000,
+      demo_cashflow: -800,
       owner_id: "mock"
     },
     {
@@ -387,56 +387,56 @@ const Portfolio = () => {
     { 
       month: 'Jan 2022', 
       'Storgata 15': 2800000, 
-      'Bogstadveien 42': 2200000, 
-      'Grünerløkka 8': 3100000 
+        'Fiskarveien 12': 1800000, 
+        'Grünerløkka 8': 3100000 
     },
     { 
       month: 'Apr 2022', 
       'Storgata 15': 2850000, 
-      'Bogstadveien 42': 2180000, 
-      'Grünerløkka 8': 3120000 
+        'Fiskarveien 12': 1780000, 
+        'Grünerløkka 8': 3120000 
     },
     { 
       month: 'Jul 2022', 
       'Storgata 15': 2920000, 
-      'Bogstadveien 42': 2250000, 
-      'Grünerløkka 8': 3150000 
+        'Fiskarveien 12': 1850000, 
+        'Grünerløkka 8': 3150000 
     },
     { 
       month: 'Okt 2022', 
       'Storgata 15': 2980000, 
-      'Bogstadveien 42': 2300000, 
-      'Grünerløkka 8': 3200000 
+        'Fiskarveien 12': 1920000, 
+        'Grünerløkka 8': 3200000 
     },
     { 
       month: 'Jan 2023', 
       'Storgata 15': 3050000, 
-      'Bogstadveien 42': 2450000, 
-      'Grünerløkka 8': 3280000 
+        'Fiskarveien 12': 2050000, 
+        'Grünerløkka 8': 3280000 
     },
     { 
       month: 'Apr 2023', 
       'Storgata 15': 3100000, 
-      'Bogstadveien 42': 2520000, 
-      'Grünerløkka 8': 3320000 
+        'Fiskarveien 12': 2120000, 
+        'Grünerløkka 8': 3320000 
     },
     { 
       month: 'Jul 2023', 
       'Storgata 15': 3150000, 
-      'Bogstadveien 42': 2580000, 
-      'Grünerløkka 8': 3340000 
+        'Fiskarveien 12': 2080000, 
+        'Grünerløkka 8': 3340000 
     },
     { 
       month: 'Okt 2023', 
       'Storgata 15': 3180000, 
-      'Bogstadveien 42': 2620000, 
-      'Grünerløkka 8': 3350000 
+        'Fiskarveien 12': 2120000, 
+        'Grünerløkka 8': 3350000 
     },
     { 
       month: 'Jan 2024', 
       'Storgata 15': 3200000, 
-      'Bogstadveien 42': 2650000, 
-      'Grünerløkka 8': 3350000 
+        'Fiskarveien 12': 2150000, 
+        'Grünerløkka 8': 3350000 
     }
   ];
 
