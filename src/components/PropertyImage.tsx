@@ -4,7 +4,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import demoProperty1 from '@/assets/demo-property-1.jpg';
-import demoProperty2 from '@/assets/demo-property-2.jpg';
 import demoProperty3 from '@/assets/demo-property-3.jpg';
 
 interface PropertyImageProps {
@@ -18,7 +17,7 @@ interface PropertyImageProps {
 // Demo addresses that should show static images instead of satellite
 const DEMO_ADDRESSES = {
   'Storgata 15': demoProperty1,
-  'Bogstadveien 42': demoProperty2,
+  'Fiskarveien 12': '/lovable-uploads/d6d5a6d5-9cfb-4f4c-872a-f9d5563f3edf.png',
   'Grünerløkka 8': demoProperty3,
 };
 
