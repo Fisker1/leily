@@ -289,7 +289,7 @@ const translations: Record<Language, Translations> = {
       social: {
         title: 'Følg oss',
       },
-      copyright: '© 2024 Leily. Alle rettigheter forbeholdt.',
+      copyright: '© 2025 Leily. Alle rettigheter forbeholdt.',
     },
     auth: {
       signIn: 'Logg inn',
@@ -465,7 +465,7 @@ const translations: Record<Language, Translations> = {
       social: {
         title: 'Follow us',
       },
-      copyright: '© 2024 Leily. All rights reserved.',
+      copyright: '© 2025 Leily. All rights reserved.',
     },
     auth: {
       signIn: 'Sign in',
