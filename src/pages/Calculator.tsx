@@ -16,6 +16,7 @@ import CalculatorModules from '@/components/calculator/CalculatorModules';
 import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Slider } from '@/components/ui/slider';
 
 const Calculator = () => {
@@ -27,7 +28,12 @@ const Calculator = () => {
   } = useCalculatorData();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const { isAdmin } = useUserRole();
+
+  // Access control
+  const canAccessBuildingPlanner = user?.email === 'anderslundoy@gmail.com';
+  const canAccessExtendedReport = isAdmin;
 
   // Get state from navigation (if returning from module addition)
   const [locationState, setLocationState] = useState(location.state || {});
@@ -186,9 +192,14 @@ const Calculator = () => {
               <CalcIcon className="h-4 w-4" />
               Kalkyle
             </TabsTrigger>
-            <TabsTrigger value="building-planner" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="building-planner" 
+              className="flex items-center gap-2"
+              disabled={!canAccessBuildingPlanner}
+            >
               <Ruler className="h-4 w-4" />
               Byggeplanlegger
+              {!canAccessBuildingPlanner && <Badge variant="secondary" className="ml-2 text-xs">Kommer snart</Badge>}
             </TabsTrigger>
           </TabsList>
           
@@ -387,45 +398,59 @@ const Calculator = () => {
                   <CardTitle className="text-primary flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Utvidet Bankrapport
+                    {!canAccessExtendedReport && <Badge variant="secondary" className="ml-2">Kommer snart</Badge>}
                   </CardTitle>
                   <CardDescription>
-                    Få tilgang til avanserte analyser og tilpassede rapporter
+                    {canAccessExtendedReport 
+                      ? "Få tilgang til avanserte analyser og tilpassede rapporter"
+                      : "Denne funksjonen er under utvikling og kommer snart!"
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <Button 
-                      size="lg" 
-                      className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground"
-                      onClick={() => {
-                        if (!user) {
-                          navigate('/auth');
-                          return;
-                        }
-                        if (profile?.subscription_tier !== 'pro') {
-                          navigate('/pricing');
-                          return;
-                        }
-                        // Handle extended report generation
-                        console.log('Generate extended report');
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Generer Utvidet Bankrapport
-                    </Button>
-                    
-                    {!user && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Du må logge inn for å få tilgang til utvidede rapporter
+                  {canAccessExtendedReport ? (
+                    <>
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={() => {
+                          if (!user) {
+                            navigate('/auth');
+                            return;
+                          }
+                          if (profile?.subscription_tier !== 'pro') {
+                            navigate('/pricing');
+                            return;
+                          }
+                          // Handle extended report generation
+                          console.log('Generate extended report');
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Generer Utvidet Bankrapport
+                      </Button>
+                      
+                      {!user && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Du må logge inn for å få tilgang til utvidede rapporter
+                        </p>
+                      )}
+                      
+                      {user && profile?.subscription_tier !== 'pro' && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Oppgrader til Pro for å få tilgang til utvidede rapporter
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        Vi jobber med å gjøre denne funksjonen tilgjengelig for alle brukere.
                       </p>
-                    )}
-                    
-                    {user && profile?.subscription_tier !== 'pro' && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Oppgrader til Pro for å få tilgang til utvidede rapporter
-                      </p>
-                    )}
-                  </div>
+                      <Badge variant="outline" className="mt-2">Kommer snart</Badge>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -591,7 +616,20 @@ const Calculator = () => {
           </TabsContent>
           
           <TabsContent value="building-planner">
-            <BuildingPlannerBasic />
+            {canAccessBuildingPlanner ? (
+              <BuildingPlannerBasic />
+            ) : (
+              <Card className="max-w-2xl mx-auto">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <Ruler className="h-12 w-12 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold">Byggeplanlegger</h3>
+                  <p className="text-muted-foreground">
+                    Denne funksjonen er under utvikling og kommer snart!
+                  </p>
+                  <Badge variant="outline">Kommer snart</Badge>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
