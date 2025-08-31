@@ -571,7 +571,23 @@ const Rental = () => {
                     <div className="lg:col-span-1 flex flex-col justify-between">
                       {!user ? (
                         <TooltipProvider>
-                          <div className="grid grid-cols-2 gap-2 w-20 mx-auto">
+                          <div className="grid grid-cols-3 gap-2 w-28 mx-auto">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => navigate('/auth')}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Dokumenter</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
@@ -651,7 +667,26 @@ const Rental = () => {
                         </div>
                       ) : (
                         <TooltipProvider>
-                          <div className="grid grid-cols-2 gap-2 w-20 mx-auto">
+                          <div className="grid grid-cols-3 gap-2 w-28 mx-auto">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => {
+                                    setSelectedProperty(property);
+                                    setDocumentsDialogOpen(true);
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Dokumenter</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
