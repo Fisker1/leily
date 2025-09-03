@@ -81,6 +81,10 @@ const Navigation = () => {
                 <Button size="sm" className="bg-gradient-primary hover:opacity-90 hidden sm:flex" asChild>
                   <Link to="/calculator" className="text-sm">{translations.nav.startAnalysis}</Link>
                 </Button>
+                {/* Mobile login button - visible only on mobile when not logged in */}
+                <Button variant="ghost" size="sm" asChild className="sm:hidden">
+                  <Link to="/auth" className="text-sm px-2">{translations.nav.signIn}</Link>
+                </Button>
               </>
             )}
             
