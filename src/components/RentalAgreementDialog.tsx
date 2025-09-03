@@ -15,8 +15,9 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { createSecureTenant, SecureTenantData, logTenantDataAccess } from '@/lib/tenantSecurity';
 
 interface RentalAgreementDialogProps {
   open: boolean;
@@ -217,31 +218,35 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
         throw new Error("User not authenticated");
       }
 
-      // First, create the tenant
-      console.log('Creating tenant...');
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .insert([{
-          first_name: tenantData.firstName,
-          last_name: tenantData.lastName,
-          email: tenantData.email,
-          phone: tenantData.phone,
-          national_id: tenantData.nationalId,
-          address: tenantData.address,
-          occupation: tenantData.occupation,
-          monthly_income: parseInt(tenantData.monthlyIncome) || null,
-          emergency_contact: tenantData.emergencyContact,
-          emergency_phone: tenantData.emergencyPhone,
-          property_owner_id: user.id
-        }])
-        .select()
-        .single();
+      // First, create the tenant using secure function
+      console.log('Creating tenant securely...');
+      const secureTenantData: SecureTenantData = {
+        property_owner_id: user.id,
+        first_name: tenantData.firstName,
+        last_name: tenantData.lastName,
+        email: tenantData.email || undefined,
+        phone: tenantData.phone || undefined,
+        national_id: tenantData.nationalId || undefined,
+        address: tenantData.address || undefined,
+        occupation: tenantData.occupation || undefined,
+        monthly_income: parseInt(tenantData.monthlyIncome) || undefined,
+        emergency_contact: tenantData.emergencyContact || undefined,
+        emergency_phone: tenantData.emergencyPhone || undefined,
+      };
+
+      const { data: tenant, error: tenantError } = await createSecureTenant(secureTenantData);
 
       if (tenantError) {
-        console.error('Tenant creation error:', tenantError);
+        console.error('Secure tenant creation error:', tenantError);
         throw tenantError;
       }
-      console.log('Tenant created successfully:', tenant);
+      console.log('Tenant created securely:', tenant);
+
+      // Log the secure tenant creation
+      await logTenantDataAccess('created', tenant.id, {
+        property_id: leaseData.propertyId,
+        encrypted_fields: ['email', 'phone', 'national_id', 'emergency_phone']
+      });
 
       // Then, create the lease agreement
       console.log('Creating lease agreement...');
