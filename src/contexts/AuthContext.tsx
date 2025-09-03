@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   id: string;
@@ -34,6 +35,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -94,30 +96,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        // Log failed authentication attempt
+        await logSecurityEvent('auth_failure', 'auth_attempts', {
+          email,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      return { error };
+    } catch (error: any) {
+      await logSecurityEvent('auth_error', 'auth_attempts', {
+        email,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    // Environment-aware redirect URL
-    const redirectUrl = import.meta.env.VITE_APP_URL 
-      ? `${import.meta.env.VITE_APP_URL}/`
-      : `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
+    try {
+      // Environment-aware redirect URL
+      const redirectUrl = import.meta.env.VITE_APP_URL 
+        ? `${import.meta.env.VITE_APP_URL}/`
+        : `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
-    return { error };
+      });
+
+      if (error) {
+        // Log failed registration attempt
+        await logSecurityEvent('signup_failure', 'auth_attempts', {
+          email,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Log successful registration
+        await logSecurityEvent('signup_success', 'auth_attempts', {
+          email,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      return { error };
+    } catch (error: any) {
+      await logSecurityEvent('signup_error', 'auth_attempts', {
+        email,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      return { error };
+    }
+  };
+
+  // Helper function to log security events
+  const logSecurityEvent = async (action: string, table_name: string, details: any) => {
+    try {
+      await supabase
+        .from('audit_log')
+        .insert({
+          table_name,
+          action,
+          user_id: user?.id || null,
+          details
+        });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
   };
 
   const signOut = async () => {

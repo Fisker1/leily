@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
 import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import SecurityDashboard from '@/components/security/SecurityDashboard';
 
 interface Report {
   id: string;
@@ -210,7 +212,7 @@ const AdminDashboard = () => {
               Admin Dashboard
             </h1>
             <p className="text-muted-foreground mt-1">
-              Oversikt over alle genererte rapporter og brukere
+              Oversikt over systemet, brukere og sikkerhet
             </p>
           </div>
           <Button asChild variant="outline">
@@ -221,8 +223,16 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        {/* Tabbed Dashboard Content */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Oversikt</TabsTrigger>
+            <TabsTrigger value="security">Sikkerhet</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Totale rapporter</CardTitle>
@@ -274,9 +284,9 @@ const AdminDashboard = () => {
               </p>
             </CardContent>
           </Card>
-        </div>
+            </div>
 
-        {/* Reports Table */}
+            {/* Reports Table */}
         <Card>
           <CardHeader>
             <CardTitle>Genererte rapporter</CardTitle>
@@ -351,8 +361,14 @@ const AdminDashboard = () => {
                 <p>Ingen rapporter funnet</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecurityDashboard />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
