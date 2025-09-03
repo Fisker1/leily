@@ -85,41 +85,71 @@ const Navigation = () => {
           </div>
         </div>
 
-        {isMenuOpen && <div className="md:hidden border-t border-border bg-background">
-            <div className="px-4 py-6 space-y-6">
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90 shadow-lg z-50">
+            <div className="container mx-auto px-4 py-6 space-y-6">
               <nav className="flex flex-col space-y-4">
-                <Link to="/calculator" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
+                <Link 
+                  to="/calculator" 
+                  className="text-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Calculator className="h-5 w-5" />
                   Eiendomskalkulator
                 </Link>
-                <Link to="/utleie" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
+                <Link 
+                  to="/utleie" 
+                  className="text-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Briefcase className="h-5 w-5" />
                   Utleie
                 </Link>
-                <Link to="/portfolio" className="text-muted-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-2">
-                  <PieChart className="h-4 w-4" />
+                <Link 
+                  to="/portfolio" 
+                  className="text-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <PieChart className="h-5 w-5" />
                   Portefølje
                 </Link>
               </nav>
-                <div className="space-y-4">
+              <div className="space-y-4 pt-4 border-t border-border">
                 <LanguageToggle />
-                {user ? <>
-                    {isAdmin && <Button variant="outline" className="w-full" size="lg" asChild>
-                        <Link to="/admin" className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
+                {user ? (
+                  <>
+                    {isAdmin && (
+                      <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                        <Link to="/admin" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                          <Shield className="h-5 w-5" />
                           Admin Dashboard
                         </Link>
-                      </Button>}
-                    <Button className="w-full" size="lg" onClick={() => signOut()} variant="outline">
-                      <LogOut className="h-4 w-4 mr-2" />
+                      </Button>
+                    )}
+                    <Button 
+                      className="w-full justify-start" 
+                      size="lg" 
+                      onClick={() => {
+                        signOut();
+                        setIsMenuOpen(false);
+                      }} 
+                      variant="outline"
+                    >
+                      <LogOut className="h-5 w-5 mr-3" />
                       Logg ut
                     </Button>
-                  </> : <Button className="w-full" size="lg" asChild>
-                    <Link to="/calculator">{translations.nav.startAnalysis}</Link>
-                  </Button>}
+                  </>
+                ) : (
+                  <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
+                    <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
+                      {translations.nav.startAnalysis}
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
-          </div>}
+          </div>
+        )}
       </div>
     </nav>;
 };
