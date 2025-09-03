@@ -654,13 +654,13 @@ const Portfolio = () => {
                         <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
                           {user && !showExampleProperty ? (
                             <TooltipProvider>
-                              <div className="grid grid-cols-2 gap-3 w-full max-w-[240px] mx-auto lg:mx-0 lg:w-28 lg:gap-2">
+                              <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         setSelectedProperty(property);
                                         setDetailsDialogOpen(true);
@@ -679,7 +679,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         console.log('Opening documents for property:', property.id);
                                         setSelectedProperty(property);
@@ -699,7 +699,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         setSelectedProperty(property);
                                         setEditDialogOpen(true);
@@ -718,7 +718,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="destructive" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500"
                                       onClick={() => handleDeleteProperty(property.id)}
                                     >
                                       <Trash className="h-5 w-5 lg:h-4 lg:w-4" />
@@ -732,13 +732,13 @@ const Portfolio = () => {
                             </TooltipProvider>
                           ) : (
                             <TooltipProvider>
-                              <div className="grid grid-cols-2 gap-3 w-full max-w-[240px] mx-auto lg:mx-0 lg:w-28 lg:gap-2">
+                              <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
                                       <Eye className="h-5 w-5 lg:h-4 lg:w-4" />
@@ -754,7 +754,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
                                       <FileText className="h-5 w-5 lg:h-4 lg:w-4" />
@@ -770,7 +770,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
                                       <Edit className="h-5 w-5 lg:h-4 lg:w-4" />
@@ -786,7 +786,7 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 lg:w-8 lg:h-8 lg:p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30"
+                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30"
                                       onClick={() => navigate('/auth')}
                                     >
                                       <Trash className="h-5 w-5 lg:h-4 lg:w-4" />
