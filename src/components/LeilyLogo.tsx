@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import leilyLogo from "@/assets/leily-logo-full.png";
 
 interface LeilyLogoProps {
   className?: string;
@@ -9,7 +10,7 @@ const LeilyLogo = ({ className, showText = true }: LeilyLogoProps) => {
   return (
     <div className={cn("flex items-center", className)}>
       <img 
-        src="/lovable-uploads/a33c9203-ed4b-4b18-8d47-72ff2ef18f72.png" 
+        src={leilyLogo} 
         alt="Leily Logo" 
         className="h-10 w-auto"
       />
