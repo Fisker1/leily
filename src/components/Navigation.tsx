@@ -22,12 +22,12 @@ const Navigation = () => {
   return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center gap-3">
+              <Link to="/" className="flex items-center">
                 <LeilyLogo 
                   showText={false}
-                  className="sm:hidden"
+                  className="sm:hidden scale-75"
                 />
                 <LeilyLogo 
                   showText={true}
@@ -54,32 +54,40 @@ const Navigation = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <LanguageToggle />
-            {user ? <>
-                {isAdmin && <Button variant="ghost" size="sm" asChild>
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            <div className="hidden sm:block">
+              <LanguageToggle />
+            </div>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
                     <Link to="/admin" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
-                      Admin
+                      <span className="hidden lg:inline">Admin</span>
                     </Link>
-                  </Button>}
-                <Button variant="ghost" size="sm" onClick={() => signOut()} className="flex items-center gap-2">
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => signOut()} className="hidden sm:flex items-center gap-2">
                   <LogOut className="h-4 w-4" />
-                  Logg ut
+                  <span className="hidden lg:inline">Logg ut</span>
                 </Button>
-              </> : <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/auth">{translations.nav.signIn}</Link>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
+                  <Link to="/auth" className="text-sm">{translations.nav.signIn}</Link>
                 </Button>
-                <Button size="sm" className="bg-gradient-primary hover:opacity-90" asChild>
-                  <Link to="/calculator">{translations.nav.startAnalysis}</Link>
+                <Button size="sm" className="bg-gradient-primary hover:opacity-90 hidden sm:flex" asChild>
+                  <Link to="/calculator" className="text-sm">{translations.nav.startAnalysis}</Link>
                 </Button>
-              </>}
+              </>
+            )}
             
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-foreground">
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-foreground p-2">
+                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
