@@ -109,16 +109,16 @@ const Rental = () => {
     },
     {
       id: 'demo2', 
-      address: 'Bogstadveien 42',
-      city: 'Oslo',
-      postal_code: '0366',
+      address: 'Havnegata 7',
+      city: 'Kabelvåg',
+      postal_code: '8310',
       property_type: 'Leilighet',
       size_sqm: 65,
       bedrooms: 2,
-      purchase_price: 3800000,
-      current_value: 3800000,
-      monthly_rent: 22000,
-      demo_cashflow: -1200, // Negativ cashflow
+      purchase_price: 1600000,
+      current_value: 1850000,
+      monthly_rent: 16000,
+      demo_cashflow: 800, // Positiv cashflow
       owner_id: 'demo'
     },
     {
