@@ -144,17 +144,17 @@ const Portfolio = () => {
     },
     {
       id: "mock-2", 
-      address: "Fiskarveien 12",
-      city: "Svolvær",
-      postal_code: "8300",
-      property_type: "Enebolig",
-      size_sqm: 95,
-      bedrooms: 3,
-      purchase_price: 1800000,
+      address: "Havnegata 7",
+      city: "Kabelvåg",
+      postal_code: "8310",
+      property_type: "Leilighet",
+      size_sqm: 65,
+      bedrooms: 2,
+      purchase_price: 1600000,
       purchase_date: "2021-11-20",
-      current_value: 2150000,
-      monthly_rent: 18000,
-      demo_cashflow: -800,
+      current_value: 1850000,
+      monthly_rent: 16000,
+      demo_cashflow: 800,
       owner_id: "mock"
     },
     {
@@ -387,55 +387,55 @@ const Portfolio = () => {
     { 
       month: 'Jan 2022', 
       'Storgata 15': 2800000, 
-        'Fiskarveien 12': 1800000, 
+        'Havnegata 7': 1600000, 
         'Grünerløkka 8': 3100000 
     },
     { 
       month: 'Apr 2022', 
       'Storgata 15': 2850000, 
-        'Fiskarveien 12': 1780000, 
+        'Havnegata 7': 1580000, 
         'Grünerløkka 8': 3120000 
     },
     { 
       month: 'Jul 2022', 
       'Storgata 15': 2920000, 
-        'Fiskarveien 12': 1850000, 
+        'Havnegata 7': 1650000, 
         'Grünerløkka 8': 3150000 
     },
     { 
       month: 'Okt 2022', 
       'Storgata 15': 2980000, 
-        'Fiskarveien 12': 1920000, 
+        'Havnegata 7': 1720000, 
         'Grünerløkka 8': 3200000 
     },
     { 
       month: 'Jan 2023', 
       'Storgata 15': 3050000, 
-        'Fiskarveien 12': 2050000, 
+        'Havnegata 7': 1750000, 
         'Grünerløkka 8': 3280000 
     },
     { 
       month: 'Apr 2023', 
       'Storgata 15': 3100000, 
-        'Fiskarveien 12': 2120000, 
+        'Havnegata 7': 1780000, 
         'Grünerløkka 8': 3320000 
     },
     { 
       month: 'Jul 2023', 
       'Storgata 15': 3150000, 
-        'Fiskarveien 12': 2080000, 
+        'Havnegata 7': 1810000, 
         'Grünerløkka 8': 3340000 
     },
     { 
       month: 'Okt 2023', 
       'Storgata 15': 3180000, 
-        'Fiskarveien 12': 2120000, 
+        'Havnegata 7': 1830000, 
         'Grünerløkka 8': 3350000 
     },
     { 
       month: 'Jan 2024', 
       'Storgata 15': 3200000, 
-        'Fiskarveien 12': 2150000, 
+        'Havnegata 7': 1850000, 
         'Grünerløkka 8': 3350000 
     }
   ];

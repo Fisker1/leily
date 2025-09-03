@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import demoProperty1 from '@/assets/demo-property-1.jpg';
 import demoProperty3 from '@/assets/demo-property-3.jpg';
 
+import lofoteApartment from '@/assets/lofoten-apartment.jpg';
+
 interface PropertyImageProps {
   imageUrl?: string;
   address: string;
@@ -17,7 +19,7 @@ interface PropertyImageProps {
 // Demo addresses that should show static images instead of satellite
 const DEMO_ADDRESSES = {
   'Storgata 15': demoProperty1,
-  'Fiskarveien 12': '/lovable-uploads/d6d5a6d5-9cfb-4f4c-872a-f9d5563f3edf.png',
+  'Havnegata 7': lofoteApartment,
   'Grünerløkka 8': demoProperty3,
 };
 
