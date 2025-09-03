@@ -688,19 +688,19 @@ const Rental = () => {
                         </div>
                       ) : (
                         <TooltipProvider>
-                          <div className="grid grid-cols-3 gap-2 w-28 mx-auto">
+                          <div className="grid grid-cols-3 gap-3 w-full max-w-[300px] mx-auto lg:w-36 lg:gap-2">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="w-8 h-8 p-0"
+                                  className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
                                   onClick={() => {
                                     setSelectedProperty(property);
                                     setDocumentsDialogOpen(true);
                                   }}
                                 >
-                                  <FileText className="h-4 w-4" />
+                                  <FileText className="h-5 w-5 lg:h-4 lg:w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -713,13 +713,13 @@ const Rental = () => {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="w-8 h-8 p-0"
+                                  className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
                                   onClick={() => {
                                     setSelectedProperty(property);
                                     setDetailsDialogOpen(true);
                                   }}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-5 w-5 lg:h-4 lg:w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -732,13 +732,13 @@ const Rental = () => {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="w-8 h-8 p-0"
+                                  className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
                                   onClick={() => {
                                     setSelectedProperty(property);
                                     setEditDialogOpen(true);
                                   }}
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Edit className="h-5 w-5 lg:h-4 lg:w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -751,13 +751,13 @@ const Rental = () => {
                                 <Button 
                                   variant={property.show_in_rental !== false ? "outline" : "default"} 
                                   size="sm" 
-                                  className="w-8 h-8 p-0"
+                                  className="w-full h-12 lg:w-8 lg:h-8 lg:p-0"
                                   onClick={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
                                 >
                                   {property.show_in_rental !== false ? (
-                                    <EyeOff className="h-4 w-4" />
+                                    <EyeOff className="h-5 w-5 lg:h-4 lg:w-4" />
                                   ) : (
-                                    <Eye className="h-4 w-4" />
+                                    <Eye className="h-5 w-5 lg:h-4 lg:w-4" />
                                   )}
                                 </Button>
                               </TooltipTrigger>
@@ -771,10 +771,10 @@ const Rental = () => {
                                 <Button 
                                   variant="destructive" 
                                   size="sm" 
-                                  className="w-8 h-8 p-0 hover:bg-red-600 dark:hover:bg-red-500"
+                                  className="w-full h-12 lg:w-8 lg:h-8 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500"
                                   onClick={() => handleDeleteProperty(property.id)}
                                 >
-                                  <Trash className="h-4 w-4" />
+                                  <Trash className="h-5 w-5 lg:h-4 lg:w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
