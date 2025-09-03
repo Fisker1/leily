@@ -102,7 +102,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    // Environment-aware redirect URL
+    const redirectUrl = import.meta.env.VITE_APP_URL 
+      ? `${import.meta.env.VITE_APP_URL}/`
+      : `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -122,7 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithProvider = async (provider: 'google' | 'facebook') => {
-    const redirectUrl = `${window.location.origin}/`;
+    // Environment-aware redirect URL
+    const redirectUrl = import.meta.env.VITE_APP_URL 
+      ? `${import.meta.env.VITE_APP_URL}/`
+      : `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
