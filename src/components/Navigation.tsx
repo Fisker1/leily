@@ -148,11 +148,18 @@ const Navigation = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
-                    <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
-                      {translations.nav.startAnalysis}
-                    </Link>
-                  </Button>
+                  <>
+                    <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                        {translations.nav.signIn}
+                      </Link>
+                    </Button>
+                    <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
+                      <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
+                        {translations.nav.startAnalysis}
+                      </Link>
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
