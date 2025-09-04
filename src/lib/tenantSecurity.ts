@@ -55,57 +55,81 @@ export const createSecureTenant = async (tenantData: SecureTenantData): Promise<
 };
 
 /**
- * Get tenants with masked sensitive data for display
+ * Get tenants with secure access through enhanced RLS policies
  */
 export const getTenantsWithMaskedData = async (propertyOwnerId: string): Promise<{ data: MaskedTenantData[] | null; error: any }> => {
   try {
+    // Use the secure tenant access through RLS policies
     const { data, error } = await supabase
       .from('tenants')
-      .select(`
-        id,
-        property_owner_id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        national_id,
-        address,
-        occupation,
-        monthly_income,
-        emergency_contact,
-        emergency_phone,
-        created_at,
-        updated_at
-      `)
+      .select('*')
       .eq('property_owner_id', propertyOwnerId);
 
     if (error) {
+      console.error('Error fetching tenant data:', error);
       return { data: null, error };
     }
 
-    // Get masked versions using database functions
-    const maskedData = await Promise.all(
-      (data || []).map(async (tenant) => {
-        const [emailMasked, phoneMasked, nationalIdMasked] = await Promise.all([
-          getMaskedEmail(tenant.email),
-          getMaskedPhone(tenant.phone),
-          getMaskedNationalId(tenant.national_id),
-        ]);
-
-        return {
-          ...tenant,
-          email_masked: emailMasked,
-          phone_masked: phoneMasked,
-          national_id_masked: nationalIdMasked,
-          emergency_phone_masked: await getMaskedPhone(tenant.emergency_phone),
-        };
-      })
-    );
+    // Process data with proper masking for display
+    const maskedData = (data || []).map((tenant) => {
+      return {
+        ...tenant,
+        email_masked: maskSensitiveData(tenant.email, 'email'),
+        phone_masked: maskSensitiveData(tenant.phone, 'phone'),
+        national_id_masked: maskSensitiveData(tenant.national_id, 'national_id'),
+        emergency_phone_masked: maskSensitiveData(tenant.emergency_phone, 'phone'),
+      };
+    });
 
     return { data: maskedData, error: null };
   } catch (error) {
     console.error('Error fetching tenants with masked data:', error);
     return { data: null, error };
+  }
+};
+
+/**
+ * Mask sensitive data for display purposes
+ */
+const maskSensitiveData = (data: string | null, type: 'email' | 'phone' | 'national_id'): string | null => {
+  if (!data) return null;
+  
+  try {
+    // Try to decrypt if it looks like base64 encoded data
+    let decrypted = data;
+    if (data.length > 20 && /^[A-Za-z0-9+/=]+$/.test(data)) {
+      try {
+        decrypted = atob(data);
+      } catch {
+        decrypted = data; // Use as-is if decoding fails
+      }
+    }
+    
+    switch (type) {
+      case 'email':
+        const atPos = decrypted.indexOf('@');
+        if (atPos > 2) {
+          return decrypted.substring(0, 2) + '*'.repeat(atPos - 2) + decrypted.substring(atPos);
+        }
+        return '****@****.***';
+        
+      case 'phone':
+        if (decrypted.length >= 4) {
+          return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
+        }
+        return '****';
+        
+      case 'national_id':
+        if (decrypted.length >= 4) {
+          return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
+        }
+        return '****';
+        
+      default:
+        return '****';
+    }
+  } catch (error) {
+    return '****';
   }
 };
 

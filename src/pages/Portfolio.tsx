@@ -11,6 +11,7 @@ import PropertyImage from "@/components/PropertyImage";
 import RentalAgreementDialog from "@/components/RentalAgreementDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getTenantsWithMaskedData, logTenantDataAccess } from "@/lib/tenantSecurity";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +62,16 @@ interface Tenant {
   phone?: string;
   national_id?: string;
   property_owner_id: string;
+  address?: string;
+  occupation?: string;
+  monthly_income?: number;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  // Masked fields for secure display
+  email_masked?: string;
+  phone_masked?: string;
+  national_id_masked?: string;
+  emergency_phone_masked?: string;
 }
 
 interface LeaseAgreement {
@@ -217,41 +228,54 @@ const Portfolio = () => {
     try {
       const tenantsByProperty: Record<string, (Tenant & { leases: LeaseAgreement[] })[]> = {};
       
+      // Use secure tenant access through the security library
+      const { data: secureTenantsData, error: tenantsError } = await getTenantsWithMaskedData(user.id);
+      
+      if (tenantsError) {
+        console.error('Error fetching secure tenant data:', tenantsError);
+        // Set empty arrays for all properties and return
+        properties.forEach(property => {
+          tenantsByProperty[property.id] = [];
+        });
+        setPropertyTenants(tenantsByProperty);
+        return;
+      }
+      
       for (const property of properties) {
         if (property.id !== 'example-1') {
-          // Fetch tenants for this property via lease agreements
+          // Fetch lease agreements for this property
           const { data: leases, error: leasesError } = await supabase
             .from('lease_agreements')
-            .select(`
-              *,
-              tenants (*)
-            `)
+            .select('*')
             .eq('property_id', property.id)
+            .eq('property_owner_id', user.id)
             .order('start_date', { ascending: false });
 
           if (leasesError) {
-            console.error(`Error fetching tenants for property ${property.id}:`, leasesError);
+            console.error(`Error fetching leases for property ${property.id}:`, leasesError);
             tenantsByProperty[property.id] = [];
             continue;
           }
 
-          // Group leases by tenant
-          const tenantLeaseMap = new Map();
-          
-          leases?.forEach((lease: any) => {
-            if (lease.tenants) {
-              const tenantId = lease.tenants.id;
-              if (!tenantLeaseMap.has(tenantId)) {
-                tenantLeaseMap.set(tenantId, {
-                  ...lease.tenants,
-                  leases: []
-                });
-              }
-              tenantLeaseMap.get(tenantId).leases.push(lease);
-            }
-          });
+          // Match secure tenants to leases for this property
+          const propertyTenants = (secureTenantsData || [])
+            .filter(tenant => tenant.id && leases?.some(lease => lease.tenant_id === tenant.id))
+            .map(tenant => ({
+              ...tenant,
+              id: tenant.id!, // Ensure id is not undefined
+              leases: leases?.filter(lease => lease.tenant_id === tenant.id) || []
+            } as Tenant & { leases: LeaseAgreement[] }));
 
-          tenantsByProperty[property.id] = Array.from(tenantLeaseMap.values());
+          tenantsByProperty[property.id] = propertyTenants;
+          
+          // Log secure access for audit trail
+          if (propertyTenants.length > 0) {
+            await logTenantDataAccess('view_property_tenants', property.id, {
+              property_id: property.id,
+              tenant_count: propertyTenants.length,
+              access_type: 'masked_display'
+            });
+          }
         } else {
           tenantsByProperty[property.id] = [];
         }
@@ -260,6 +284,12 @@ const Portfolio = () => {
       setPropertyTenants(tenantsByProperty);
     } catch (error) {
       console.error('Error fetching property tenants:', error);
+      // Set empty tenant arrays for all properties on error
+      const emptyTenants: Record<string, (Tenant & { leases: LeaseAgreement[] })[]> = {};
+      properties.forEach(property => {
+        emptyTenants[property.id] = [];
+      });
+      setPropertyTenants(emptyTenants);
     }
   };
 

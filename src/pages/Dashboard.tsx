@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getTenantsWithMaskedData, logTenantDataAccess } from '@/lib/tenantSecurity';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +19,7 @@ interface DashboardStats {
 }
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { translations, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStats>({
     totalProperties: 0,
@@ -34,16 +35,33 @@ const Dashboard = () => {
   }, []);
 
   const fetchDashboardStats = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       // Fetch properties count
       const { count: propertiesCount } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch tenants count
-      const { count: tenantsCount } = await supabase
-        .from('tenants')
-        .select('*', { count: 'exact', head: true });
+      // Fetch tenants count using secure access
+      const { data: tenantsData, error: tenantsError } = await getTenantsWithMaskedData(user.id);
+      const tenantsCount = tenantsData?.length || 0;
+      
+      if (tenantsError) {
+        console.error('Error fetching secure tenant data for dashboard:', tenantsError);
+      }
+
+      // Log secure tenant data access for dashboard
+      if (tenantsCount > 0) {
+        await logTenantDataAccess('dashboard_stats', 'dashboard', {
+          action: 'count_tenants',
+          tenant_count: tenantsCount,
+          access_type: 'count_only'
+        });
+      }
 
       // Fetch active leases and calculate monthly income
       const { data: activeLeases, count: activeLeasesCount } = await supabase
@@ -66,7 +84,7 @@ const Dashboard = () => {
 
       setStats({
         totalProperties: propertiesCount || 0,
-        totalTenants: tenantsCount || 0,
+        totalTenants: tenantsCount,
         totalActiveLeases: activeLeasesCount || 0,
         totalMonthlyIncome,
         upcomingExpirations: upcomingExpirations || 0,
