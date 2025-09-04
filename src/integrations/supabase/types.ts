@@ -155,6 +155,13 @@ export type Database = {
             foreignKeyName: "lease_agreements_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenant_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -569,9 +576,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tenant_safe_view: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          monthly_income: number | null
+          national_id: string | null
+          occupation: string | null
+          phone: string | null
+          property_owner_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: never
+          emergency_contact?: string | null
+          emergency_phone?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          monthly_income?: number | null
+          national_id?: never
+          occupation?: string | null
+          phone?: never
+          property_owner_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: never
+          emergency_contact?: string | null
+          emergency_phone?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          monthly_income?: number | null
+          national_id?: never
+          occupation?: string | null
+          phone?: never
+          property_owner_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      has_legitimate_tenant_access: {
+        Args: { tenant_property_owner_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
