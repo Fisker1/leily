@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    target: ['es2020', 'edge88', 'firefox78', 'chrome78', 'safari14'],
+  },
   optimizeDeps: {
     force: true,
   },
