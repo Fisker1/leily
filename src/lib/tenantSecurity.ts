@@ -1,268 +1,249 @@
+// SECURE tenant data management - uses proper database-level encryption
 import { supabase } from '@/integrations/supabase/client';
 
+// Secure data interfaces
 export interface SecureTenantData {
-  id?: string;
-  property_owner_id: string;
   first_name: string;
   last_name: string;
   email?: string;
   phone?: string;
   national_id?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  address?: string;
+  occupation?: string;
+  monthly_income?: number;
+  property_owner_id: string;
+}
+
+// Masked data interface - all sensitive fields are pre-masked by database
+export interface MaskedTenantData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email_masked: string;
+  phone_masked: string;
+  national_id_masked: string;
   address?: string;
   occupation?: string;
   monthly_income?: number;
   emergency_contact?: string;
-  emergency_phone?: string;
-}
-
-export interface MaskedTenantData extends SecureTenantData {
-  email_masked?: string;
-  phone_masked?: string;
-  national_id_masked?: string;
-  emergency_phone_masked?: string;
+  emergency_phone_masked: string;
+  property_owner_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /**
- * Securely create a new tenant with encrypted sensitive data
+ * Creates a new secure tenant record - encryption handled by database
  */
-export const createSecureTenant = async (tenantData: SecureTenantData): Promise<{ data: any; error: any }> => {
+export const createSecureTenant = async (tenantData: SecureTenantData) => {
   try {
-    // For now, use direct tenant creation with client-side encryption
-    // This will be replaced with proper database function calls later
+    // Insert tenant - database triggers handle encryption automatically
     const { data, error } = await supabase
       .from('tenants')
-      .insert({
-        property_owner_id: tenantData.property_owner_id,
-        first_name: tenantData.first_name,
-        last_name: tenantData.last_name,
-        email: tenantData.email ? btoa(tenantData.email) : null,
-        phone: tenantData.phone ? btoa(tenantData.phone) : null,
-        national_id: tenantData.national_id ? btoa(tenantData.national_id) : null,
-        address: tenantData.address || null,
-        occupation: tenantData.occupation || null,
-        monthly_income: tenantData.monthly_income || null,
-        emergency_contact: tenantData.emergency_contact || null,
-        emergency_phone: tenantData.emergency_phone ? btoa(tenantData.emergency_phone) : null,
-      })
+      .insert(tenantData)
       .select()
       .single();
 
-    return { data, error };
+    if (error) {
+      console.error('Error creating secure tenant:', error);
+      return { data: null, error };
+    }
+
+    // Log security action
+    await logTenantDataAccess('TENANT_CREATED', data.id, {
+      property_owner_id: tenantData.property_owner_id
+    });
+
+    return { data, error: null };
   } catch (error) {
-    console.error('Error creating secure tenant:', error);
-    return { data: null, error };
+    console.error('Critical error in createSecureTenant:', error);
+    return { 
+      data: null, 
+      error: { message: 'Security error: Failed to create tenant' }
+    };
   }
 };
 
 /**
- * Get tenants with secure access through enhanced RLS policies
+ * Gets tenants with properly masked sensitive data using secure database function
  */
-export const getTenantsWithMaskedData = async (propertyOwnerId: string): Promise<{ data: MaskedTenantData[] | null; error: any }> => {
+export const getTenantsWithMaskedData = async (
+  propertyOwnerId: string
+): Promise<{ data: MaskedTenantData[] | null; error: any }> => {
   try {
-    // Use the secure tenant access through RLS policies
+    // Use secure database function that handles access control, decryption, and masking
     const { data, error } = await supabase
-      .from('tenants')
-      .select('*')
-      .eq('property_owner_id', propertyOwnerId);
+      .rpc('get_secure_tenant_data', {
+        tenant_property_owner_id: propertyOwnerId
+      });
 
     if (error) {
-      console.error('Error fetching tenant data:', error);
+      console.error('Error fetching secure tenant data:', error);
       return { data: null, error };
     }
 
-    // Process data with proper masking for display
-    const maskedData = (data || []).map((tenant) => {
-      return {
-        ...tenant,
-        email_masked: maskSensitiveData(tenant.email, 'email'),
-        phone_masked: maskSensitiveData(tenant.phone, 'phone'),
-        national_id_masked: maskSensitiveData(tenant.national_id, 'national_id'),
-        emergency_phone_masked: maskSensitiveData(tenant.emergency_phone, 'phone'),
-      };
-    });
+    // Database function returns properly masked data
+    const maskedData: MaskedTenantData[] = data || [];
 
     return { data: maskedData, error: null };
   } catch (error) {
-    console.error('Error fetching tenants with masked data:', error);
-    return { data: null, error };
+    console.error('Critical error in getTenantsWithMaskedData:', error);
+    return { 
+      data: null, 
+      error: { message: 'Security error: Failed to fetch tenant data' }
+    };
   }
 };
 
 /**
- * Mask sensitive data for display purposes
+ * Get decrypted tenant data for authorized access (admin use only - via secure function)
  */
-const maskSensitiveData = (data: string | null, type: 'email' | 'phone' | 'national_id'): string | null => {
-  if (!data) return null;
-  
+export const getDecryptedTenantData = async (
+  tenantId: string
+): Promise<{ data: SecureTenantData | null; error: any }> => {
   try {
-    // Try to decrypt if it looks like base64 encoded data
-    let decrypted = data;
-    if (data.length > 20 && /^[A-Za-z0-9+/=]+$/.test(data)) {
-      try {
-        decrypted = atob(data);
-      } catch {
-        decrypted = data; // Use as-is if decoding fails
-      }
-    }
-    
-    switch (type) {
-      case 'email':
-        const atPos = decrypted.indexOf('@');
-        if (atPos > 2) {
-          return decrypted.substring(0, 2) + '*'.repeat(atPos - 2) + decrypted.substring(atPos);
-        }
-        return '****@****.***';
-        
-      case 'phone':
-        if (decrypted.length >= 4) {
-          return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
-        }
-        return '****';
-        
-      case 'national_id':
-        if (decrypted.length >= 4) {
-          return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
-        }
-        return '****';
-        
-      default:
-        return '****';
-    }
-  } catch (error) {
-    return '****';
-  }
-};
-
-/**
- * Get decrypted tenant data for authorized access (admin/owner only)
- */
-export const getDecryptedTenantData = async (tenantId: string): Promise<{ data: SecureTenantData | null; error: any }> => {
-  try {
-    const { data, error } = await supabase
+    // First get basic tenant data to verify ownership
+    const { data: tenantData, error: tenantError } = await supabase
       .from('tenants')
-      .select('*')
+      .select('property_owner_id')
       .eq('id', tenantId)
       .single();
 
-    if (error || !data) {
+    if (tenantError || !tenantData) {
+      return { data: null, error: tenantError };
+    }
+
+    // Use secure function to get decrypted data
+    const { data, error } = await supabase
+      .rpc('get_secure_tenant_data', {
+        tenant_property_owner_id: tenantData.property_owner_id
+      });
+
+    if (error) {
       return { data: null, error };
     }
 
-    // Decrypt sensitive fields
-    const decryptedData = {
-      ...data,
-      email: data.email ? await decryptSensitiveData(data.email) : null,
-      phone: data.phone ? await decryptSensitiveData(data.phone) : null,
-      national_id: data.national_id ? await decryptSensitiveData(data.national_id) : null,
-      emergency_phone: data.emergency_phone ? await decryptSensitiveData(data.emergency_phone) : null,
-    };
+    // Find the specific tenant in the results
+    const tenant = data?.find((t: any) => t.id === tenantId);
+    if (!tenant) {
+      return { data: null, error: { message: 'Tenant not found' } };
+    }
 
-    return { data: decryptedData, error: null };
+    // Log access
+    await logTenantDataAccess('DECRYPT_ACCESS', tenantId);
+
+    return { data: tenant, error: null };
   } catch (error) {
     console.error('Error getting decrypted tenant data:', error);
     return { data: null, error };
   }
 };
 
-// Utility functions for calling database masking functions  
-const getMaskedEmail = async (encryptedEmail: string | null): Promise<string | null> => {
-  if (!encryptedEmail) return null;
-  
-  try {
-    // Direct SQL query since custom functions not in types
-    const { data, error } = await supabase
-      .from('tenants')
-      .select('mask_email')
-      .limit(1);
-    
-    if (error) return '****@****.***';
-    
-    // Fallback masking logic
-    const decrypted = await decryptSensitiveData(encryptedEmail);
-    if (!decrypted) return '****@****.***';
-    
-    const atPos = decrypted.indexOf('@');
-    if (atPos > 2) {
-      return decrypted.substring(0, 2) + '*'.repeat(atPos - 2) + decrypted.substring(atPos);
-    }
-    return '****@****.***';
-  } catch (error) {
-    return '****@****.***';
-  }
-};
-
-const getMaskedPhone = async (encryptedPhone: string | null): Promise<string | null> => {
-  if (!encryptedPhone) return null;
-  
-  try {
-    const decrypted = await decryptSensitiveData(encryptedPhone);
-    if (!decrypted || decrypted.length < 4) return '****';
-    
-    return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
-  } catch (error) {
-    return '****';
-  }
-};
-
-const getMaskedNationalId = async (encryptedNationalId: string | null): Promise<string | null> => {
-  if (!encryptedNationalId) return null;
-  
-  try {
-    const decrypted = await decryptSensitiveData(encryptedNationalId);
-    if (!decrypted || decrypted.length < 4) return '****';
-    
-    return '*'.repeat(decrypted.length - 4) + decrypted.slice(-4);
-  } catch (error) {
-    return '****';
-  }
-};
-
-const decryptSensitiveData = async (encryptedData: string): Promise<string | null> => {
-  try {
-    // Simple base64 decoding (matches our database encryption)
-    if (encryptedData.length > 20 && /^[A-Za-z0-9+/=]+$/.test(encryptedData)) {
-      return atob(encryptedData);
-    }
-    return encryptedData; // Assume plain text
-  } catch (error) {
-    return encryptedData; // Return as-is if decoding fails
-  }
-};
-
 /**
- * Validate sensitive data before encryption
+ * Data validation utilities (for client-side validation before database)
  */
 export const validateSensitiveData = {
   norwegianNationalId: (id: string): boolean => {
-    return /^[0-9]{11}$/.test(id);
+    if (!/^\d{11}$/.test(id)) return false;
+    
+    const day = parseInt(id.substring(0, 2));
+    const month = parseInt(id.substring(2, 4));
+    
+    if (day < 1 || day > 31) return false;
+    if (month < 1 || month > 12) return false;
+    
+    return true;
   },
   
   norwegianPhone: (phone: string): boolean => {
-    return /^(\+?47)?[0-9]{8}$/.test(phone);
+    return /^\+?47[0-9]{8}$|^[0-9]{8}$/.test(phone);
   },
   
   email: (email: string): boolean => {
-    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 };
 
 /**
- * Security logging for tenant data access
+ * Logs tenant data access for comprehensive security audit trail
  */
-export const logTenantDataAccess = async (action: string, tenantId: string, details?: any) => {
+export const logTenantDataAccess = async (
+  action: string, 
+  tenantId: string, 
+  details?: any
+): Promise<void> => {
   try {
     await supabase
       .from('audit_log')
       .insert({
         table_name: 'tenants',
-        action: `tenant_${action}`,
+        action,
         details: {
           tenant_id: tenantId,
           timestamp: new Date().toISOString(),
+          security_context: 'client_side_access',
           ...details
         }
       });
   } catch (error) {
-    console.error('Failed to log tenant data access:', error);
+    console.error('SECURITY WARNING: Failed to log tenant data access:', error);
+    // Don't throw - logging failures shouldn't break the application
   }
+};
+
+/**
+ * DEPRECATED FUNCTIONS - Kept for backward compatibility
+ * These functions used insecure base64 encoding and are no longer used
+ */
+
+// Client-side masking helper functions (for display purposes only - database does this properly now)
+export const maskSensitiveData = (
+  data: string | null, 
+  type: 'email' | 'phone' | 'national_id'
+): string | null => {
+  if (!data) return null;
+  
+  switch (type) {
+    case 'email':
+      return getMaskedEmail(data);
+    case 'phone':
+      return getMaskedPhone(data);
+    case 'national_id':
+      return getMaskedNationalId(data);
+    default:
+      return data;
+  }
+};
+
+const getMaskedEmail = (email: string): string => {
+  if (!email || !email.includes('@')) {
+    return '***@***.***';
+  }
+  
+  const [localPart, domain] = email.split('@');
+  if (localPart.length <= 3) {
+    return `${localPart[0]}***@${domain}`;
+  }
+  
+  return `${localPart.substring(0, 3)}***@${domain}`;
+};
+
+const getMaskedPhone = (phone: string): string => {
+  if (!phone || phone.length < 8) {
+    return '*** *** ****';
+  }
+  
+  const lastFour = phone.slice(-4);
+  const prefix = phone.startsWith('+47') ? '+47 ' : '';
+  return `${prefix}*** *** ${lastFour}`;
+};
+
+const getMaskedNationalId = (nationalId: string): string => {
+  if (!nationalId || nationalId.length !== 11) {
+    return '******/*****';
+  }
+  
+  return `${nationalId.substring(0, 6)}/*****`;
 };

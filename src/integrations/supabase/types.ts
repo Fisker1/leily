@@ -155,13 +155,6 @@ export type Database = {
             foreignKeyName: "lease_agreements_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "tenant_safe_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lease_agreements_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -576,59 +569,36 @@ export type Database = {
       }
     }
     Views: {
-      tenant_safe_view: {
-        Row: {
-          address: string | null
-          created_at: string | null
-          email: string | null
-          emergency_contact: string | null
-          emergency_phone: string | null
-          first_name: string | null
-          id: string | null
-          last_name: string | null
-          monthly_income: number | null
-          national_id: string | null
-          occupation: string | null
-          phone: string | null
-          property_owner_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string | null
-          email?: never
-          emergency_contact?: string | null
-          emergency_phone?: never
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          monthly_income?: number | null
-          national_id?: never
-          occupation?: string | null
-          phone?: never
-          property_owner_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          created_at?: string | null
-          email?: never
-          emergency_contact?: string | null
-          emergency_phone?: never
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          monthly_income?: number | null
-          national_id?: never
-          occupation?: string | null
-          phone?: never
-          property_owner_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      decrypt_tenant_field: {
+        Args: { encrypted_text: string }
+        Returns: string
+      }
+      encrypt_tenant_field: {
+        Args: { plain_text: string }
+        Returns: string
+      }
+      get_secure_tenant_data: {
+        Args: { tenant_property_owner_id: string }
+        Returns: {
+          address: string
+          created_at: string
+          email_masked: string
+          emergency_contact: string
+          emergency_phone_masked: string
+          first_name: string
+          id: string
+          last_name: string
+          monthly_income: number
+          national_id_masked: string
+          occupation: string
+          phone_masked: string
+          property_owner_id: string
+          updated_at: string
+        }[]
+      }
       has_legitimate_tenant_access: {
         Args: { tenant_property_owner_id: string }
         Returns: boolean
