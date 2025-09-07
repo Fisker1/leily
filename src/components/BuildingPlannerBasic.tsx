@@ -97,6 +97,7 @@ export default function BuildingPlannerBasic() {
   const [selectedToolCategory, setSelectedToolCategory] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [pendingTool, setPendingTool] = useState<string | null>(null);
   const pendingToolRef = useRef<string | null>(null);
+  const [carpenterMode, setCarpenterMode] = useState<'none' | 'window' | 'wall'>('none');
   const [wallPoints, setWallPoints] = useState<{x: number, y: number}[]>([]);
   const wallPointsRef = useRef<{x: number, y: number}[]>([]);
   const [isDrawingWall, setIsDrawingWall] = useState(false);
@@ -105,6 +106,8 @@ export default function BuildingPlannerBasic() {
   const [currentWallLength, setCurrentWallLength] = useState(0);
   const [tempWallObjects, setTempWallObjects] = useState<any[]>([]);
   const tempWallObjectsRef = useRef<any[]>([]);
+  const [wallStartPoint, setWallStartPoint] = useState<{x: number, y: number} | null>(null);
+  const [isHoldingForWall, setIsHoldingForWall] = useState(false);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -243,73 +246,27 @@ export default function BuildingPlannerBasic() {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
       const currentTool = pendingToolRef.current;
       
-      // Handle wall drawing mode
+      // Handle simple wall drawing mode with hold-to-draw
       if (currentFloor?.drawingMode === 'wall' && isDrawingWallRef.current) {
         const pointer = canvas.getPointer(e.e);
-        console.log('Wall drawing click at:', pointer, 'Current points:', wallPointsRef.current.length);
         
-        // Check for right click or double click to finish
-        if ((e.e as MouseEvent).button === 2 || e.e.detail === 2) {
-          finishWall(floorPlanId);
-          return;
-        }
+        // Start holding for wall drawing
+        setIsHoldingForWall(true);
+        setWallStartPoint(pointer);
         
-        // Check if we're clicking very close to first point to close the wall
-        if (wallPointsRef.current.length > 2) {
-          const firstPoint = wallPointsRef.current[0];
-          const distance = Math.sqrt(
-            Math.pow(pointer.x - firstPoint.x, 2) + Math.pow(pointer.y - firstPoint.y, 2)
-          );
-          
-          // If clicked close to first point (< 15 pixels), close the wall
-          if (distance < 15) {
-            // Add line back to first point
-            const lastPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
-            const closingLine = new Line([lastPoint.x, lastPoint.y, firstPoint.x, firstPoint.y], {
-              stroke: 'brown',
-              strokeWidth: 8,
-              selectable: false,
-              evented: false,
-            });
-            canvas.add(closingLine);
-            setTempWallObjects(prev => [...prev, closingLine]);
-            canvas.renderAll();
-            
-            finishWall(floorPlanId);
-            return;
-          }
-        }
-        
-        // Add new point and draw line segment
-        const newPoints = [...wallPointsRef.current, pointer];
-        setWallPoints(newPoints);
-        
-        if (wallPointsRef.current.length > 0) {
-          // Draw line from previous point to current point
-          const prevPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
-          const line = new Line([prevPoint.x, prevPoint.y, pointer.x, pointer.y], {
-            stroke: 'brown',
-            strokeWidth: 8,
-            selectable: false,
-            evented: false,
-          });
-          canvas.add(line);
-          setTempWallObjects(prev => [...prev, line]);
-        }
-        
-        // Add a small circle to mark the point
-        const point = new Circle({
+        // Add visual feedback for start point
+        const startCircle = new Circle({
           left: pointer.x,
           top: pointer.y,
-          radius: 4,
-          fill: 'brown',
+          radius: 6,
+          fill: 'red',
           selectable: false,
           evented: false,
           originX: 'center',
           originY: 'center',
         });
-        canvas.add(point);
-        setTempWallObjects(prev => [...prev, point]);
+        canvas.add(startCircle);
+        setTempWallObjects(prev => [...prev, startCircle]);
         canvas.renderAll();
         return;
       }
@@ -606,6 +563,40 @@ export default function BuildingPlannerBasic() {
 
     canvas.on('mouse:up', (e) => {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+      
+      // Handle simple wall drawing completion
+      if (currentFloor?.drawingMode === 'wall' && isHoldingForWall && wallStartPoint) {
+        const pointer = canvas.getPointer(e.e);
+        
+        // Clear temporary objects
+        tempWallObjectsRef.current.forEach(obj => canvas.remove(obj));
+        setTempWallObjects([]);
+        
+        // Calculate wall length
+        const length = Math.sqrt(
+          Math.pow(pointer.x - wallStartPoint.x, 2) + Math.pow(pointer.y - wallStartPoint.y, 2)
+        ) / 100; // Convert pixels to meters (approximate)
+        
+        // Draw the final wall
+        const wall = new Line([wallStartPoint.x, wallStartPoint.y, pointer.x, pointer.y], {
+          stroke: selectedMaterial.id === 'gips' ? 'lightblue' : 
+                  selectedMaterial.id === 'osb' ? 'orange' :
+                  selectedMaterial.id === 'mdf' ? 'purple' : 'brown',
+          strokeWidth: 8,
+          selectable: true,
+          evented: true,
+        });
+        canvas.add(wall);
+        canvas.renderAll();
+        
+        // Set current wall length and show height dialog
+        setCurrentWallLength(length);
+        setIsHoldingForWall(false);
+        setWallStartPoint(null);
+        setShowWallHeightDialog(true);
+        return;
+      }
+      
       if (currentFloor?.drawingMode === 'area' && e.e.type === 'mouseup') {
         // Handle area selection completion
         const pointer = canvas.getPointer(e.e);
@@ -907,11 +898,20 @@ export default function BuildingPlannerBasic() {
     setIsDrawingWall(false);
     setWallPoints([]);
     setTempWallObjects([]);
+    setCurrentWallLength(0);
     setShowWallHeightDialog(false);
-    setDrawingMode('select');
-    setPendingTool(null);
+    setCarpenterMode('none'); // Reset carpenter mode
+    setSelectedToolCategory('none'); // Reset tool category
+    setIsHoldingForWall(false);
+    setWallStartPoint(null);
     
-    toast(`Vegg fullført! ${area.toFixed(1)}m² - ${cost.toFixed(0)}kr`);
+    // Reset canvas drawing mode
+    updateFloorPlan(floorPlan.id, { drawingMode: 'select' });
+    floorPlan.canvas.isDrawingMode = false;
+    floorPlan.canvas.defaultCursor = 'default';
+    floorPlan.canvas.hoverCursor = 'move';
+    
+    toast(`${selectedMaterial.name} vegg lagt til! ${area.toFixed(2)}m² for ${cost.toFixed(0)} kr`);
   };
 
   // Floor plan name editing
@@ -1446,6 +1446,87 @@ export default function BuildingPlannerBasic() {
                     <div className="flex gap-1 sm:gap-2 flex-wrap p-2 sm:p-3 bg-amber-50 rounded-lg">
                       <Label className="text-xs sm:text-sm font-medium w-full mb-1 sm:mb-2">Tømrerarbeider:</Label>
                       
+                      {/* Mobile version - show window or draw wall options first */}
+                      <div className="sm:hidden w-full">
+                        {carpenterMode === 'none' && (
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => setCarpenterMode('window')}
+                              variant="outline" 
+                              size="sm" 
+                              className="flex items-center gap-1 text-xs flex-1"
+                            >
+                              <Square className="h-3 w-3" />
+                              <span>Vindu</span>
+                            </Button>
+                            <Button 
+                              onClick={() => setCarpenterMode('wall')}
+                              variant="outline" 
+                              size="sm" 
+                              className="flex items-center gap-1 text-xs flex-1"
+                            >
+                              <PenTool className="h-3 w-3" />
+                              <span>Tegn vegg</span>
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Wall material selector - only shown after selecting "tegn vegg" */}
+                        {carpenterMode === 'wall' && (
+                          <div className="w-full space-y-2">
+                            <div className="flex justify-between items-center">
+                              <Label className="text-sm font-medium">Velg veggmateriale:</Label>
+                              <Button 
+                                onClick={() => setCarpenterMode('none')}
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs px-2"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {materials.map((material) => (
+                                <Button
+                                  key={material.id}
+                                  variant={selectedMaterial.id === material.id ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedMaterial(material);
+                                    startWallDrawing();
+                                  }}
+                                  className="text-xs p-2"
+                                >
+                                  <div className="text-center">
+                                    <div className="font-medium">{material.name.split(' ')[0]}</div>
+                                    <div className="text-xs opacity-75">({material.pricePerM2}kr)</div>
+                                  </div>
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {carpenterMode === 'window' && (
+                          <div className="w-full">
+                            <div className="flex justify-between items-center mb-2">
+                              <Label className="text-sm font-medium">Vindu alternativer:</Label>
+                              <Button 
+                                onClick={() => setCarpenterMode('none')}
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs px-2"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <Button variant="outline" size="sm" className="text-xs">
+                              Standardvindu (2000kr)
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Desktop version - show draw walls button */}
                       <div className="hidden sm:block">
                         <Button onClick={drawWalls} variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs">
@@ -1454,7 +1535,7 @@ export default function BuildingPlannerBasic() {
                         </Button>
                       </div>
                       
-                      {/* Material selector for wall drawing - appears when draw walls is clicked */}
+                      {/* Material selector for wall drawing - appears when draw walls is clicked (desktop) */}
                       {showMaterialSelector && (
                         <div className="w-full mt-2 sm:mt-4 p-3 bg-white border rounded-lg">
                           <Label className="text-sm font-semibold mb-2 block">Velg veggmateriale:</Label>
