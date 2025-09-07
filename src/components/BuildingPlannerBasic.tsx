@@ -720,18 +720,20 @@ export default function BuildingPlannerBasic() {
                         className="absolute inset-0 z-10 cursor-crosshair"
                         style={{ 
                           background: 'rgba(0, 255, 0, 0.1)',
-                          touchAction: 'none' 
+                          touchAction: 'none',
+                          transition: 'background-color 0.2s ease'
                         }}
                         onClick={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
                           const x = (e.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
                           const y = (e.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
                           
-                          // Flash red border for feedback
-                          e.currentTarget.style.background = 'rgba(255, 0, 0, 0.3)';
+                          // Flash red and reset quickly
+                          const overlay = e.currentTarget;
+                          overlay.style.background = 'rgba(255, 0, 0, 0.3)';
                           setTimeout(() => {
-                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
-                          }, 200);
+                            overlay.style.background = 'rgba(0, 255, 0, 0.1)';
+                          }, 100);
                           
                           const canvas = getCurrentFloorPlan()?.canvas;
                           if (canvas) {
@@ -749,11 +751,12 @@ export default function BuildingPlannerBasic() {
                           const x = (touch.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
                           const y = (touch.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
                           
-                          // Flash red border for feedback
-                          e.currentTarget.style.background = 'rgba(255, 0, 0, 0.3)';
+                          // Flash red and reset quickly
+                          const overlay = e.currentTarget;
+                          overlay.style.background = 'rgba(255, 0, 0, 0.3)';
                           setTimeout(() => {
-                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
-                          }, 200);
+                            overlay.style.background = 'rgba(0, 255, 0, 0.1)';
+                          }, 100);
                           
                           const canvas = getCurrentFloorPlan()?.canvas;
                           if (canvas) {
@@ -767,7 +770,14 @@ export default function BuildingPlannerBasic() {
                       >
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
-                            Trykk her for å plassere
+                            Trykk her for å plassere {selectedTool === 'electrician' ? 
+                              (electricianTool === 'outlet' ? 'stikkontakt' : 
+                               electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
+                              (plumberTool === 'sink' ? 'vask' : 
+                               plumberTool === 'shower' ? 'dusj' : 
+                               plumberTool === 'toilet' ? 'toalett' :
+                               plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
+                            }
                           </div>
                         </div>
                       </div>
