@@ -192,6 +192,7 @@ export default function BuildingPlannerBasic() {
   }, [selectedTool, floorPlans]);
 
   const handleCarpenterTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
+    console.log('handleCarpenterTool called with tool:', tool);
     let shape;
     let itemData;
 
@@ -235,6 +236,7 @@ export default function BuildingPlannerBasic() {
   };
 
   const handleElectricianTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
+    console.log('handleElectricianTool called with tool:', tool);
     let shape;
     let itemData;
 
@@ -332,6 +334,7 @@ export default function BuildingPlannerBasic() {
   };
 
   const handlePlumberTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
+    console.log('handlePlumberTool called with tool:', tool);
     let shape;
     let itemData;
 
@@ -479,6 +482,8 @@ export default function BuildingPlannerBasic() {
   };
 
   const handleOverlayClick = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
+    console.log('handleOverlayClick called', { selectedTool, carpenterTool, electricianTool, plumberTool });
+    
     let clientX, clientY;
     
     if ('touches' in e.nativeEvent) {
@@ -493,21 +498,30 @@ export default function BuildingPlannerBasic() {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const canvas = getCurrentFloorPlan()?.canvas;
     
+    console.log('Canvas found:', !!canvas);
+    
     if (!canvas) return;
     
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
+    
+    console.log('Click coordinates:', { x, y });
     
     // Flash red
     setOverlayFlashing(true);
     setTimeout(() => setOverlayFlashing(false), 150);
     
           if (selectedTool === 'carpenter' && carpenterTool) {
+            console.log('Calling handleCarpenterTool with', carpenterTool);
             handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
           } else if (selectedTool === 'electrician' && electricianTool) {
+            console.log('Calling handleElectricianTool with', electricianTool);
             handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
           } else if (selectedTool === 'plumber' && plumberTool) {
+            console.log('Calling handlePlumberTool with', plumberTool);
             handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
+          } else {
+            console.log('No tool handler called - conditions not met');
           }
   };
 
