@@ -55,6 +55,7 @@ export default function BuildingPlannerBasic() {
   const [activeFloorPlan, setActiveFloorPlan] = useState('1');
   const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [selectedTool, setSelectedTool] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
+  const [carpenterTool, setCarpenterTool] = useState<string | null>(null);
   const [electricianTool, setElectricianTool] = useState<string | null>(null);
   const [plumberTool, setPlumberTool] = useState<string | null>(null);
   const [overlayFlashing, setOverlayFlashing] = useState(false);
@@ -63,12 +64,12 @@ export default function BuildingPlannerBasic() {
   // Reset overlay flash when tools change
   useEffect(() => {
     setOverlayFlashing(false);
-  }, [selectedTool, electricianTool, plumberTool]);
+  }, [selectedTool, carpenterTool, electricianTool, plumberTool]);
 
   // Store current tool state in window for mobile access
   useEffect(() => {
-    (window as any).currentToolState = { selectedTool, electricianTool, plumberTool };
-  }, [selectedTool, electricianTool, plumberTool]);
+    (window as any).currentToolState = { selectedTool, carpenterTool, electricianTool, plumberTool };
+  }, [selectedTool, carpenterTool, electricianTool, plumberTool]);
 
   // Handle window resize to update canvas dimensions on mobile
   useEffect(() => {
@@ -501,8 +502,8 @@ export default function BuildingPlannerBasic() {
     setOverlayFlashing(true);
     setTimeout(() => setOverlayFlashing(false), 150);
     
-          if (selectedTool === 'carpenter' && electricianTool) {
-            handleCarpenterTool(canvas, {x, y}, electricianTool, floorPlanId);
+          if (selectedTool === 'carpenter' && carpenterTool) {
+            handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
           } else if (selectedTool === 'electrician' && electricianTool) {
             handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
           } else if (selectedTool === 'plumber' && plumberTool) {
@@ -667,6 +668,7 @@ export default function BuildingPlannerBasic() {
                         variant={selectedTool === 'carpenter' ? 'default' : 'outline'}
                         onClick={() => {
                           setSelectedTool(selectedTool === 'carpenter' ? 'none' : 'carpenter');
+                          setCarpenterTool(null);
                           setElectricianTool(null);
                           setPlumberTool(null);
                         }}
@@ -679,6 +681,7 @@ export default function BuildingPlannerBasic() {
                         variant={selectedTool === 'electrician' ? 'default' : 'outline'}
                         onClick={() => {
                           setSelectedTool('electrician');
+                          setCarpenterTool(null);
                           setPlumberTool(null);
                         }}
                         className="flex flex-col items-center justify-center aspect-square p-4"
@@ -690,6 +693,7 @@ export default function BuildingPlannerBasic() {
                         variant={selectedTool === 'plumber' ? 'default' : 'outline'}
                         onClick={() => {
                           setSelectedTool('plumber');
+                          setCarpenterTool(null);
                           setElectricianTool(null);
                         }}
                         className="flex flex-col items-center justify-center aspect-square p-4"
@@ -705,16 +709,16 @@ export default function BuildingPlannerBasic() {
                       <div className="text-sm font-medium">Velg tømrerarbeid:</div>
                       <div className="flex gap-2 flex-wrap">
                         <Button
-                          variant={electricianTool === 'window' ? 'default' : 'outline'}
+                          variant={carpenterTool === 'window' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setElectricianTool('window')}
+                          onClick={() => setCarpenterTool('window')}
                         >
                           Vindu
                         </Button>
                         <Button
-                          variant={electricianTool === 'wall' ? 'default' : 'outline'}
+                          variant={carpenterTool === 'wall' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setElectricianTool('wall')}
+                          onClick={() => setCarpenterTool('wall')}
                         >
                           Tegn vegg
                         </Button>
@@ -795,13 +799,13 @@ export default function BuildingPlannerBasic() {
                   )}
 
                   {/* Visual feedback for selected tools */}
-                  {selectedTool === 'carpenter' && electricianTool && (
+                  {selectedTool === 'carpenter' && carpenterTool && (
                     <div className="p-3 bg-orange-100 border border-orange-300 rounded-lg">
                       <p className="text-sm text-orange-800 font-medium">
-                        ✅ {electricianTool === 'window' ? 'Vindu' : 'Tegn vegg'} klar
+                        ✅ {carpenterTool === 'window' ? 'Vindu' : 'Tegn vegg'} klar
                       </p>
                       <p className="text-xs text-orange-600">
-                        {electricianTool === 'window' ? 'Trykk på det grønne området på lerretet' : 'Tegningsmodus - tegn direkte på lerretet'}
+                        {carpenterTool === 'window' ? 'Trykk på det grønne området på lerretet' : 'Tegningsmodus - tegn direkte på lerretet'}
                       </p>
                     </div>
                   )}
@@ -828,7 +832,7 @@ export default function BuildingPlannerBasic() {
                     </div>
                   )}
 
-                  {selectedTool === 'carpenter' && electricianTool === 'wall' && (
+                  {selectedTool === 'carpenter' && carpenterTool === 'wall' && (
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">
                         Vegg-tegningsmodus aktiv - tegn direkte på lerretet med finger eller mus
@@ -836,10 +840,10 @@ export default function BuildingPlannerBasic() {
                     </div>
                   )}
 
-                  {selectedTool === 'carpenter' && electricianTool !== 'wall' && (
+                  {selectedTool === 'carpenter' && carpenterTool !== 'wall' && carpenterTool && (
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">
-                        Tegningsmodus aktiv - tegn direkte på lerretet med finger eller mus
+                        Vindu-plassering aktiv - trykk på lerretet for å plassere vindu
                       </p>
                     </div>
                   )}
@@ -874,7 +878,7 @@ export default function BuildingPlannerBasic() {
                       }}
                     />
                     {/* Touch overlay for mobile placement */}
-                    {((selectedTool === 'carpenter' && electricianTool) || (selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
+                    {((selectedTool === 'carpenter' && carpenterTool) || (selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
                       <div
                         className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
                         style={{ 
@@ -889,16 +893,19 @@ export default function BuildingPlannerBasic() {
                       >
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-center">
-                            <div className="text-sm font-medium">
-                              Trykk her for å plassere {selectedTool === 'electrician' ? 
-                                (electricianTool === 'outlet' ? 'stikkontakt' : 
-                                 electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
-                                (plumberTool === 'sink' ? 'vask' : 
-                                 plumberTool === 'shower' ? 'dusj' : 
-                                 plumberTool === 'toilet' ? 'toalett' :
-                                 plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
-                              }
-                            </div>
+                             <div className="text-sm font-medium">
+                               Trykk her for å plassere {
+                                 selectedTool === 'carpenter' ? 
+                                   (carpenterTool === 'window' ? 'vindu' : 'vegg') :
+                                 selectedTool === 'electrician' ? 
+                                   (electricianTool === 'outlet' ? 'stikkontakt' : 
+                                    electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
+                                   (plumberTool === 'sink' ? 'vask' : 
+                                    plumberTool === 'shower' ? 'dusj' : 
+                                    plumberTool === 'toilet' ? 'toalett' :
+                                    plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
+                               }
+                             </div>
                           </div>
                         </div>
                       </div>
