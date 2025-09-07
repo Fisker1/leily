@@ -3,7 +3,6 @@ import { Canvas as FabricCanvas, Circle, Rect } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -136,12 +135,9 @@ export default function BuildingPlannerBasic() {
       backgroundColor: "#ffffff",
     });
 
-    // Enable drawing mode when carpenter is selected
-    if (selectedTool === 'carpenter') {
-      canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.color = '#333333';
-      canvas.freeDrawingBrush.width = 3;
-    }
+    // Configure drawing settings
+    canvas.freeDrawingBrush.color = '#333333';
+    canvas.freeDrawingBrush.width = 3;
 
     const initialState = JSON.stringify(canvas.toJSON());
     
@@ -151,7 +147,7 @@ export default function BuildingPlannerBasic() {
       historyIndex: 0,
     });
 
-    // Add event listeners for object placement
+    // Add event listeners for object placement (NOT for carpenter - carpenter only draws)
     canvas.on('mouse:down', (e) => {
       if (selectedTool === 'electrician' && electricianTool) {
         const pointer = canvas.getPointer(e.e);
@@ -185,12 +181,30 @@ export default function BuildingPlannerBasic() {
     canvas.on('object:removed', handleCanvasChange);
     canvas.on('object:modified', handleCanvasChange);
     canvas.on('path:created', handleCanvasChange);
+
+    // Enable touch support for mobile
+    canvas.enableRetinaScaling = true;
+    
+    // Handle touch events properly
+    const touchCanvasElement = canvas.getElement();
+    touchCanvasElement.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+    
+    touchCanvasElement.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+    
+    touchCanvasElement.addEventListener('touchend', (e) => {
+      e.preventDefault();
+    }, { passive: false });
   };
 
   // Update canvas drawing mode when tool changes
   useEffect(() => {
     floorPlans.forEach(fp => {
       if (fp.canvas) {
+        // Only enable drawing mode for carpenter
         if (selectedTool === 'carpenter') {
           fp.canvas.isDrawingMode = true;
           fp.canvas.freeDrawingBrush.color = '#333333';
@@ -441,11 +455,6 @@ export default function BuildingPlannerBasic() {
     toast("Lerret tømt!");
   };
 
-  const handleImageUpload = (floorPlanId: string, file: File) => {
-    // Image upload removed for simplicity
-    toast("Bildeopplasting er ikke tilgjengelig i denne versjonen");
-  };
-
   // Calculate total cost
   const totalCost = placedItems
     .filter(item => item.floorPlanId === activeFloorPlan)
@@ -524,7 +533,7 @@ export default function BuildingPlannerBasic() {
                 {/* Tool Selection */}
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-4">
-                    <div className="text-sm font-medium">Velg yrke:</div>
+                    <div className="text-sm font-medium">Velg verktøy:</div>
                     <div className="flex justify-center gap-4">
                       <Button
                         variant={selectedTool === 'carpenter' ? 'default' : 'outline'}
@@ -658,26 +667,6 @@ export default function BuildingPlannerBasic() {
                       <Trash2 className="h-4 w-4 mr-2" />
                       Tøm
                     </Button>
-                    <div className="flex-1">
-                      <input
-                        ref={(el) => (fileInputRefs.current[plan.id] = el)}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(plan.id, file);
-                        }}
-                      />
-                      <Button
-                        onClick={() => fileInputRefs.current[plan.id]?.click()}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Last opp bilde
-                      </Button>
-                    </div>
                   </div>
 
                   {/* Canvas */}
@@ -694,7 +683,8 @@ export default function BuildingPlannerBasic() {
                       style={{ 
                         display: 'block',
                         width: '100%',
-                        height: 'auto'
+                        height: 'auto',
+                        touchAction: 'none'
                       }}
                     />
                   </div>
