@@ -140,37 +140,43 @@ export default function BuildingPlannerBasic() {
       historyIndex: 0,
     });
 
-    // Add event listeners for object placement
-    canvas.on('mouse:down', (e) => {
+    // Add direct click handler to canvas element (bypassing Fabric.js)
+    const canvasEl = canvas.getElement();
+    
+    const handleDirectClick = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const state = (window as any).currentToolState;
       
-      if (state.selectedTool === 'electrician' && state.electricianTool) {
-        const pointer = canvas.getPointer(e.e);
-        handleElectricianTool(canvas, pointer, state.electricianTool, floorPlanId);
-      } else if (state.selectedTool === 'plumber' && state.plumberTool) {
-        const pointer = canvas.getPointer(e.e);
-        handlePlumberTool(canvas, pointer, state.plumberTool, floorPlanId);
+      // Show visual feedback that click was detected
+      if (state.selectedTool === 'electrician' || state.selectedTool === 'plumber') {
+        // Flash the canvas border to show click was detected
+        canvasEl.style.border = '4px solid red';
+        setTimeout(() => {
+          canvasEl.style.border = '';
+        }, 200);
       }
-    });
-
-    // Convert touch events to mouse events for mobile
-    const touchCanvas = canvas.getElement();
-    
-    touchCanvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const state = (window as any).currentToolState;
       
       if ((state.selectedTool === 'electrician' && state.electricianTool) || 
           (state.selectedTool === 'plumber' && state.plumberTool)) {
         
-        const touch = e.touches[0];
-        const rect = touchCanvas.getBoundingClientRect();
+        let clientX, clientY;
         
-        // Calculate canvas coordinates
-        const canvasX = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const canvasY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        if (e.type === 'touchstart' || e.type === 'touchend') {
+          const touch = (e as TouchEvent).touches[0] || (e as TouchEvent).changedTouches[0];
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
         
-        const pointer = { x: canvasX, y: canvasY };
+        const rect = canvasEl.getBoundingClientRect();
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
+        
+        const pointer = { x, y };
         
         if (state.selectedTool === 'electrician' && state.electricianTool) {
           handleElectricianTool(canvas, pointer, state.electricianTool, floorPlanId);
@@ -178,7 +184,11 @@ export default function BuildingPlannerBasic() {
           handlePlumberTool(canvas, pointer, state.plumberTool, floorPlanId);
         }
       }
-    }, { passive: false });
+    };
+    
+    // Add both mouse and touch listeners directly to canvas element
+    canvasEl.addEventListener('click', handleDirectClick, { passive: false });
+    canvasEl.addEventListener('touchend', handleDirectClick, { passive: false });
 
     // Handle canvas changes for history
     const handleCanvasChange = () => {
@@ -641,6 +651,29 @@ export default function BuildingPlannerBasic() {
                           Toalett
                         </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Visual feedback for selected tools */}
+                  {selectedTool === 'electrician' && electricianTool && (
+                    <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium">
+                        ✅ {electricianTool === 'outlet' ? 'Stikkontakt' : 
+                            electricianTool === 'lightSwitch' ? 'Lysbryter' : 'Lysarmatur'} klar
+                      </p>
+                      <p className="text-xs text-blue-600">Trykk på lerretet for å plassere</p>
+                    </div>
+                  )}
+                  
+                  {selectedTool === 'plumber' && plumberTool && (
+                    <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✅ {plumberTool === 'sink' ? 'Vask' : 
+                            plumberTool === 'shower' ? 'Dusj' : 
+                            plumberTool === 'toilet' ? 'Toalett' :
+                            plumberTool === 'dishwasher' ? 'Oppvaskmaskin' : 'Vaskemaskin'} klar
+                      </p>
+                      <p className="text-xs text-green-600">Trykk på lerretet for å plassere</p>
                     </div>
                   )}
 
