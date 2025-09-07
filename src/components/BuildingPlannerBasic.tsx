@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, Group, Line, Ellipse } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -190,49 +190,124 @@ export default function BuildingPlannerBasic() {
     });
   }, [selectedTool, floorPlans]);
 
+  const handleCarpenterTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
+    let shape;
+    let itemData;
+
+    switch (tool) {
+      case 'window':
+        // Window icon - rectangle with cross lines
+        const windowGroup = new Group([
+          new Rect({
+            width: 40,
+            height: 30,
+            fill: 'white',
+            stroke: 'brown',
+            strokeWidth: 3,
+          }),
+          new Line([0, 15, 40, 15], {
+            stroke: 'brown',
+            strokeWidth: 2,
+          }),
+          new Line([20, 0, 20, 30], {
+            stroke: 'brown',
+            strokeWidth: 2,
+          })
+        ], {
+          left: pointer.x,
+          top: pointer.y,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(windowGroup);
+        canvas.renderAll();
+        toast("Vindu lagt til!");
+        return;
+      case 'wall':
+        // Enable drawing mode for walls
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.color = '#8B4513';
+        canvas.freeDrawingBrush.width = 8;
+        toast("Tegningsmodus aktivert - tegn vegger!");
+        return;
+    }
+  };
+
   const handleElectricianTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
     let shape;
     let itemData;
 
     switch (tool) {
       case 'outlet':
-        shape = new Circle({
+        // Outlet icon - circle with two lines
+        const outletGroup = new Group([
+          new Circle({
+            radius: 12,
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 2,
+          }),
+          new Line([-4, -6, -4, 6], {
+            stroke: 'black',
+            strokeWidth: 3,
+          }),
+          new Line([4, -6, 4, 6], {
+            stroke: 'black',
+            strokeWidth: 3,
+          })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'yellow',
-          stroke: 'orange',
-          strokeWidth: 2,
-          radius: 8,
           originX: 'center',
           originY: 'center',
         });
+        shape = outletGroup;
         itemData = itemPrices.outlet;
         break;
       case 'lightSwitch':
-        shape = new Rect({
+        // Light switch icon - rectangle with line
+        const switchGroup = new Group([
+          new Rect({
+            width: 16,
+            height: 24,
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 2,
+          }),
+          new Line([0, -8, 0, 8], {
+            stroke: 'black',
+            strokeWidth: 2,
+          })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightgray',
-          stroke: 'black',
-          strokeWidth: 1,
-          width: 15,
-          height: 25,
           originX: 'center',
           originY: 'center',
         });
+        shape = switchGroup;
         itemData = itemPrices.lightSwitch;
         break;
       case 'light':
-        shape = new Circle({
+        // Light icon - circle with rays
+        const lightGroup = new Group([
+          new Circle({
+            radius: 10,
+            fill: 'lightyellow',
+            stroke: 'orange',
+            strokeWidth: 2,
+          }),
+          // Light rays
+          new Line([0, -15, 0, -20], { stroke: 'orange', strokeWidth: 2 }),
+          new Line([0, 15, 0, 20], { stroke: 'orange', strokeWidth: 2 }),
+          new Line([-15, 0, -20, 0], { stroke: 'orange', strokeWidth: 2 }),
+          new Line([15, 0, 20, 0], { stroke: 'orange', strokeWidth: 2 }),
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightyellow',
-          stroke: 'gold',
-          strokeWidth: 2,
-          radius: 12,
           originX: 'center',
           originY: 'center',
         });
+        shape = lightGroup;
         itemData = itemPrices.light;
         break;
     }
@@ -261,71 +336,125 @@ export default function BuildingPlannerBasic() {
 
     switch (tool) {
       case 'sink':
-        shape = new Rect({
+        // Sink icon - rectangle with faucet
+        const sinkGroup = new Group([
+          new Rect({
+            width: 50,
+            height: 30,
+            fill: 'white',
+            stroke: 'blue',
+            strokeWidth: 2,
+          }),
+          // Faucet
+          new Line([0, -15, 0, -25], { stroke: 'silver', strokeWidth: 4 }),
+          new Circle({ radius: 3, top: -25, fill: 'silver' })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightblue',
-          stroke: 'blue',
-          strokeWidth: 2,
-          width: 60,
-          height: 40,
           originX: 'center',
           originY: 'center',
         });
+        shape = sinkGroup;
         itemData = itemPrices.sink;
         break;
       case 'dishwasher':
-        shape = new Rect({
+        // Dishwasher icon - rectangle with door
+        const dishwasherGroup = new Group([
+          new Rect({
+            width: 50,
+            height: 50,
+            fill: 'white',
+            stroke: 'gray',
+            strokeWidth: 2,
+          }),
+          new Line([-20, 20, 20, 20], { stroke: 'gray', strokeWidth: 2 }),
+          new Circle({ radius: 2, left: 15, top: 15, fill: 'gray' })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightsteelblue',
-          stroke: 'steelblue',
-          strokeWidth: 2,
-          width: 60,
-          height: 60,
           originX: 'center',
           originY: 'center',
         });
+        shape = dishwasherGroup;
         itemData = itemPrices.dishwasher;
         break;
       case 'washingMachine':
-        shape = new Circle({
+        // Washing machine icon - circle with door
+        const washingMachineGroup = new Group([
+          new Circle({
+            radius: 20,
+            fill: 'white',
+            stroke: 'gray',
+            strokeWidth: 3,
+          }),
+          new Circle({
+            radius: 12,
+            fill: 'lightblue',
+            stroke: 'blue',
+            strokeWidth: 2,
+          }),
+          new Circle({ radius: 2, left: -10, top: -10, fill: 'gray' }),
+          new Circle({ radius: 2, left: 0, top: -10, fill: 'gray' })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightcyan',
-          stroke: 'cyan',
-          strokeWidth: 2,
-          radius: 25,
           originX: 'center',
           originY: 'center',
         });
+        shape = washingMachineGroup;
         itemData = itemPrices.washingMachine;
         break;
       case 'shower':
-        shape = new Rect({
+        // Shower icon - rectangle with shower head
+        const showerGroup = new Group([
+          new Rect({
+            width: 60,
+            height: 60,
+            fill: 'lightblue',
+            stroke: 'blue',
+            strokeWidth: 2,
+          }),
+          // Shower head
+          new Line([-20, -30, -20, -20], { stroke: 'silver', strokeWidth: 4 }),
+          new Rect({ width: 15, height: 5, left: -20, top: -20, fill: 'silver' }),
+          // Water drops
+          new Circle({ radius: 1, left: -25, top: -10, fill: 'blue' }),
+          new Circle({ radius: 1, left: -20, top: -8, fill: 'blue' }),
+          new Circle({ radius: 1, left: -15, top: -12, fill: 'blue' })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightgreen',
-          stroke: 'green',
-          strokeWidth: 2,
-          width: 80,
-          height: 80,
           originX: 'center',
           originY: 'center',
         });
+        shape = showerGroup;
         itemData = itemPrices.shower;
         break;
       case 'toilet':
-        shape = new Circle({
+        // Toilet icon - oval with tank
+        const toiletGroup = new Group([
+          new Ellipse({
+            rx: 15,
+            ry: 20,
+            fill: 'white',
+            stroke: 'gray',
+            strokeWidth: 2,
+          }),
+          new Rect({
+            width: 20,
+            height: 15,
+            top: -15,
+            fill: 'white',
+            stroke: 'gray',
+            strokeWidth: 2,
+          })
+        ], {
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightpink',
-          stroke: 'pink',
-          strokeWidth: 2,
-          radius: 20,
           originX: 'center',
           originY: 'center',
         });
+        shape = toiletGroup;
         itemData = itemPrices.toilet;
         break;
     }
@@ -372,11 +501,13 @@ export default function BuildingPlannerBasic() {
     setOverlayFlashing(true);
     setTimeout(() => setOverlayFlashing(false), 150);
     
-    if (selectedTool === 'electrician' && electricianTool) {
-      handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
-    } else if (selectedTool === 'plumber' && plumberTool) {
-      handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
-    }
+          if (selectedTool === 'carpenter' && electricianTool) {
+            handleCarpenterTool(canvas, {x, y}, electricianTool, floorPlanId);
+          } else if (selectedTool === 'electrician' && electricianTool) {
+            handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
+          } else if (selectedTool === 'plumber' && plumberTool) {
+            handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
+          }
   };
 
   const addNewFloorPlan = () => {
@@ -569,6 +700,28 @@ export default function BuildingPlannerBasic() {
                     </div>
                   </div>
 
+                  {selectedTool === 'carpenter' && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Velg tømrerarbeid:</div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          variant={electricianTool === 'window' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setElectricianTool('window')}
+                        >
+                          Vindu
+                        </Button>
+                        <Button
+                          variant={electricianTool === 'wall' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setElectricianTool('wall')}
+                        >
+                          Tegn vegg
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   {selectedTool === 'electrician' && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
@@ -642,6 +795,17 @@ export default function BuildingPlannerBasic() {
                   )}
 
                   {/* Visual feedback for selected tools */}
+                  {selectedTool === 'carpenter' && electricianTool && (
+                    <div className="p-3 bg-orange-100 border border-orange-300 rounded-lg">
+                      <p className="text-sm text-orange-800 font-medium">
+                        ✅ {electricianTool === 'window' ? 'Vindu' : 'Tegn vegg'} klar
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        {electricianTool === 'window' ? 'Trykk på det grønne området på lerretet' : 'Tegningsmodus - tegn direkte på lerretet'}
+                      </p>
+                    </div>
+                  )}
+                  
                   {selectedTool === 'electrician' && electricianTool && (
                     <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg">
                       <p className="text-sm text-blue-800 font-medium">
@@ -664,7 +828,15 @@ export default function BuildingPlannerBasic() {
                     </div>
                   )}
 
-                  {selectedTool === 'carpenter' && (
+                  {selectedTool === 'carpenter' && electricianTool === 'wall' && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Vegg-tegningsmodus aktiv - tegn direkte på lerretet med finger eller mus
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedTool === 'carpenter' && electricianTool !== 'wall' && (
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">
                         Tegningsmodus aktiv - tegn direkte på lerretet med finger eller mus
@@ -702,7 +874,7 @@ export default function BuildingPlannerBasic() {
                       }}
                     />
                     {/* Touch overlay for mobile placement */}
-                    {((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
+                    {((selectedTool === 'carpenter' && electricianTool) || (selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
                       <div
                         className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
                         style={{ 
