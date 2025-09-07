@@ -135,9 +135,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     return (
       <div className={`relative ${className}`}>
         <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
-        <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
-          Satellittbilde
-        </div>
       </div>
     );
   }
