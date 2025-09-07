@@ -56,29 +56,44 @@ const MyProfile = () => {
   };
 
   const handleCropComplete = async (croppedImageBlob: Blob) => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found');
+      return;
+    }
 
     try {
       setUploading(true);
+      console.log('Starting upload for user:', user.id);
+      console.log('Blob size:', croppedImageBlob.size);
       
       const fileExt = 'jpg';
       const fileName = `${user.id}-avatar.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
+      
+      console.log('Upload path:', filePath);
 
       // Upload cropped image to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedImageBlob, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      console.log('Upload result:', { uploadData, uploadError });
+
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', data.publicUrl);
+
       // Update profile with new avatar URL
-      await updateProfile({ avatar_url: data.publicUrl });
+      const updateResult = await updateProfile({ avatar_url: data.publicUrl });
+      console.log('Profile update result:', updateResult);
 
       toast({
         title: "Profilbilde oppdatert",
@@ -88,7 +103,7 @@ const MyProfile = () => {
       console.error('Error uploading image:', error);
       toast({
         title: "Feil ved opplasting",
-        description: "Kunne ikke laste opp bildet. Prøv igjen.",
+        description: `Kunne ikke laste opp bildet: ${error.message || 'Ukjent feil'}`,
         variant: "destructive",
       });
     } finally {
