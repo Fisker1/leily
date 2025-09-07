@@ -194,16 +194,18 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
           {/* Prisutviklings-graf */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Prisutvikling over tid</CardTitle>
-                <Button onClick={() => setShowAddValuation(!showAddValuation)} size="sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle>Prisutvikling over tid</CardTitle>
+                  <CardDescription className="mt-1">
+                    Historisk verdivurdering av eiendommen
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAddValuation(!showAddValuation)} size="sm" className="self-start">
                   <Plus className="h-4 w-4 mr-2" />
                   Legg til verdivurdering
                 </Button>
               </div>
-              <CardDescription>
-                Historisk verdivurdering av eiendommen
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {showAddValuation && (
