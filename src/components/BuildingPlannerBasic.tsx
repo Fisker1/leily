@@ -165,23 +165,27 @@ export default function BuildingPlannerBasic() {
     const touchCanvasElement = canvas.getElement();
     
     const handleTouch = (e: TouchEvent) => {
-      console.log('Touch event detected', {selectedTool, electricianTool, plumberTool});
+      console.log('TOUCH EVENT FIRED!', e.type);
+      console.log('Current state:', {selectedTool, electricianTool, plumberTool});
+      
+      // Always prevent default on touch to see if this helps
+      e.preventDefault();
+      e.stopPropagation();
       
       if (selectedTool === 'carpenter') {
-        // Let fabric.js handle drawing for carpenter
+        console.log('Carpenter mode - letting fabric handle it');
         return;
       }
       
       if ((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) {
-        e.preventDefault();
-        e.stopPropagation();
+        console.log('Valid tool selected, processing touch...');
         
         const rect = touchCanvasElement.getBoundingClientRect();
         const touch = e.touches[0] || e.changedTouches[0];
         const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
         const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
         
-        console.log('Touch position:', {x, y});
+        console.log('Touch position calculated:', {x, y});
         
         if (selectedTool === 'electrician' && electricianTool) {
           console.log('Placing electrician tool via touch:', electricianTool);
@@ -190,9 +194,12 @@ export default function BuildingPlannerBasic() {
           console.log('Placing plumber tool via touch:', plumberTool);
           handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
         }
+      } else {
+        console.log('No valid tool selected for placement');
       }
     };
     
+    console.log('Adding touch event listeners to canvas');
     touchCanvasElement.addEventListener('touchstart', handleTouch, { passive: false });
     touchCanvasElement.addEventListener('touchend', handleTouch, { passive: false });
 
