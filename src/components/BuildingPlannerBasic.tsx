@@ -125,6 +125,34 @@ export default function BuildingPlannerBasic() {
     tempWallObjectsRef.current = tempWallObjects;
   }, [tempWallObjects]);
 
+  // Handle window resize to update canvas dimensions on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      floorPlans.forEach(fp => {
+        if (fp.canvas) {
+          const isMobile = window.innerWidth < 768;
+          let newWidth, newHeight;
+          
+          if (isMobile) {
+            newWidth = Math.min(window.innerWidth - 32, 400);
+            newHeight = Math.round(newWidth * 0.75);
+          } else {
+            newWidth = 800;
+            newHeight = 600;
+          }
+          
+          if (fp.canvas.width !== newWidth || fp.canvas.height !== newHeight) {
+            fp.canvas.setDimensions({width: newWidth, height: newHeight});
+            fp.canvas.renderAll();
+          }
+        }
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [floorPlans]);
+
   const getCurrentFloorPlan = () =>
     floorPlans.find(fp => fp.id === activeFloorPlan);
 
@@ -151,9 +179,25 @@ export default function BuildingPlannerBasic() {
 
     console.log('Initializing new canvas for floor plan:', floorPlanId);
 
+    // Calculate responsive canvas dimensions
+    const container = canvasElement.parentElement;
+    const isMobile = window.innerWidth < 768;
+    
+    let canvasWidth, canvasHeight;
+    
+    if (isMobile) {
+      // Mobile: Use most of the screen width but maintain aspect ratio
+      canvasWidth = Math.min(window.innerWidth - 32, 400); // Max 400px width on mobile
+      canvasHeight = Math.round(canvasWidth * 0.75); // 4:3 aspect ratio
+    } else {
+      // Desktop: Use larger dimensions
+      canvasWidth = 800;
+      canvasHeight = 600;
+    }
+
     const canvas = new FabricCanvas(canvasElement, {
-      width: 800,
-      height: 600,
+      width: canvasWidth,
+      height: canvasHeight,
       backgroundColor: "#ffffff",
     });
 
@@ -1663,8 +1707,12 @@ export default function BuildingPlannerBasic() {
                         el.dataset.timeoutId = timeoutId.toString();
                       }
                     }}
-                    className="max-w-full h-auto" 
-                    style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}
+                    className="w-full block" 
+                    style={{ 
+                      aspectRatio: window.innerWidth < 768 ? '4/3' : '4/3',
+                      maxHeight: window.innerWidth < 768 ? '300px' : 'calc(100vh - 400px)', 
+                      minHeight: window.innerWidth < 768 ? '250px' : '300px'
+                    }}
                   />
                 </div>
 
