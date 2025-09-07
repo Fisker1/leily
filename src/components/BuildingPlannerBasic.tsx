@@ -184,20 +184,6 @@ export default function BuildingPlannerBasic() {
 
     // Enable touch support for mobile
     canvas.enableRetinaScaling = true;
-    
-    // Handle touch events properly
-    const touchCanvasElement = canvas.getElement();
-    touchCanvasElement.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-    }, { passive: false });
-    
-    touchCanvasElement.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-    }, { passive: false });
-    
-    touchCanvasElement.addEventListener('touchend', (e) => {
-      e.preventDefault();
-    }, { passive: false });
   };
 
   // Update canvas drawing mode when tool changes
