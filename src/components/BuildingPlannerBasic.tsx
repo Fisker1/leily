@@ -698,7 +698,8 @@ export default function BuildingPlannerBasic() {
                     </Button>
                   </div>
 
-                  <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden bg-white">
+                  {/* Canvas with touch overlay */}
+                  <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden bg-white relative">
                     <canvas
                       ref={(el) => {
                         canvasRefs.current[plan.id] = el;
@@ -706,14 +707,71 @@ export default function BuildingPlannerBasic() {
                           setTimeout(() => initializeCanvas(plan.id), 100);
                         }
                       }}
-                      className="max-w-full touch-none"
+                      className="max-w-full block"
                       style={{ 
                         display: 'block',
                         width: '100%',
-                        height: 'auto',
-                        touchAction: 'none'
+                        height: 'auto'
                       }}
                     />
+                    {/* Touch overlay for mobile placement */}
+                    {((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
+                      <div
+                        className="absolute inset-0 z-10 cursor-crosshair"
+                        style={{ 
+                          background: 'rgba(0, 255, 0, 0.1)',
+                          touchAction: 'none' 
+                        }}
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = (e.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
+                          const y = (e.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
+                          
+                          // Flash red border for feedback
+                          e.currentTarget.style.background = 'rgba(255, 0, 0, 0.3)';
+                          setTimeout(() => {
+                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                          }, 200);
+                          
+                          const canvas = getCurrentFloorPlan()?.canvas;
+                          if (canvas) {
+                            if (selectedTool === 'electrician' && electricianTool) {
+                              handleElectricianTool(canvas, {x, y}, electricianTool, plan.id);
+                            } else if (selectedTool === 'plumber' && plumberTool) {
+                              handlePlumberTool(canvas, {x, y}, plumberTool, plan.id);
+                            }
+                          }
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          const touch = e.changedTouches[0];
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = (touch.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
+                          const y = (touch.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
+                          
+                          // Flash red border for feedback
+                          e.currentTarget.style.background = 'rgba(255, 0, 0, 0.3)';
+                          setTimeout(() => {
+                            e.currentTarget.style.background = 'rgba(0, 255, 0, 0.1)';
+                          }, 200);
+                          
+                          const canvas = getCurrentFloorPlan()?.canvas;
+                          if (canvas) {
+                            if (selectedTool === 'electrician' && electricianTool) {
+                              handleElectricianTool(canvas, {x, y}, electricianTool, plan.id);
+                            } else if (selectedTool === 'plumber' && plumberTool) {
+                              handlePlumberTool(canvas, {x, y}, plumberTool, plan.id);
+                            }
+                          }
+                        }}
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
+                            Trykk her for å plassere
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
