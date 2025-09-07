@@ -161,6 +161,41 @@ export default function BuildingPlannerBasic() {
       }
     });
 
+    // Add touch event handlers for mobile
+    const touchCanvasElement = canvas.getElement();
+    
+    const handleTouch = (e: TouchEvent) => {
+      console.log('Touch event detected', {selectedTool, electricianTool, plumberTool});
+      
+      if (selectedTool === 'carpenter') {
+        // Let fabric.js handle drawing for carpenter
+        return;
+      }
+      
+      if ((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const rect = touchCanvasElement.getBoundingClientRect();
+        const touch = e.touches[0] || e.changedTouches[0];
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        console.log('Touch position:', {x, y});
+        
+        if (selectedTool === 'electrician' && electricianTool) {
+          console.log('Placing electrician tool via touch:', electricianTool);
+          handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
+        } else if (selectedTool === 'plumber' && plumberTool) {
+          console.log('Placing plumber tool via touch:', plumberTool);
+          handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
+        }
+      }
+    };
+    
+    touchCanvasElement.addEventListener('touchstart', handleTouch, { passive: false });
+    touchCanvasElement.addEventListener('touchend', handleTouch, { passive: false });
+
     // Handle canvas changes for history
     const handleCanvasChange = () => {
       const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
