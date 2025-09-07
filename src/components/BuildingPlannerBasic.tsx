@@ -57,7 +57,13 @@ export default function BuildingPlannerBasic() {
   const [selectedTool, setSelectedTool] = useState<'none' | 'carpenter' | 'electrician' | 'plumber'>('none');
   const [electricianTool, setElectricianTool] = useState<string | null>(null);
   const [plumberTool, setPlumberTool] = useState<string | null>(null);
+  const [overlayFlashing, setOverlayFlashing] = useState(false);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
+
+  // Reset overlay flash when tools change
+  useEffect(() => {
+    setOverlayFlashing(false);
+  }, [selectedTool, electricianTool, plumberTool]);
 
   // Store current tool state in window for mobile access
   useEffect(() => {
@@ -139,56 +145,6 @@ export default function BuildingPlannerBasic() {
       history: [initialState],
       historyIndex: 0,
     });
-
-    // Add direct click handler to canvas element (bypassing Fabric.js)
-    const canvasEl = canvas.getElement();
-    
-    const handleDirectClick = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const state = (window as any).currentToolState;
-      
-      // Show visual feedback that click was detected
-      if (state.selectedTool === 'electrician' || state.selectedTool === 'plumber') {
-        // Flash the canvas border to show click was detected
-        canvasEl.style.border = '4px solid red';
-        setTimeout(() => {
-          canvasEl.style.border = '';
-        }, 200);
-      }
-      
-      if ((state.selectedTool === 'electrician' && state.electricianTool) || 
-          (state.selectedTool === 'plumber' && state.plumberTool)) {
-        
-        let clientX, clientY;
-        
-        if (e.type === 'touchstart' || e.type === 'touchend') {
-          const touch = (e as TouchEvent).touches[0] || (e as TouchEvent).changedTouches[0];
-          clientX = touch.clientX;
-          clientY = touch.clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        
-        const rect = canvasEl.getBoundingClientRect();
-        const x = (clientX - rect.left) * (canvas.width / rect.width);
-        const y = (clientY - rect.top) * (canvas.height / rect.height);
-        
-        const pointer = { x, y };
-        
-        if (state.selectedTool === 'electrician' && state.electricianTool) {
-          handleElectricianTool(canvas, pointer, state.electricianTool, floorPlanId);
-        } else if (state.selectedTool === 'plumber' && state.plumberTool) {
-          handlePlumberTool(canvas, pointer, state.plumberTool, floorPlanId);
-        }
-      }
-    };
-    
-    // Add both mouse and touch listeners directly to canvas element
-    canvasEl.addEventListener('click', handleDirectClick, { passive: false });
-    canvasEl.addEventListener('touchend', handleDirectClick, { passive: false });
 
     // Handle canvas changes for history
     const handleCanvasChange = () => {
@@ -389,6 +345,37 @@ export default function BuildingPlannerBasic() {
       setPlacedItems(prev => [...prev, newItem]);
       
       toast(`${itemData.name} lagt til!`);
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
+    let clientX, clientY;
+    
+    if ('touches' in e.nativeEvent) {
+      const touch = e.nativeEvent.changedTouches[0];
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = e.nativeEvent.clientX;
+      clientY = e.nativeEvent.clientY;
+    }
+    
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const canvas = getCurrentFloorPlan()?.canvas;
+    
+    if (!canvas) return;
+    
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    
+    // Flash red
+    setOverlayFlashing(true);
+    setTimeout(() => setOverlayFlashing(false), 150);
+    
+    if (selectedTool === 'electrician' && electricianTool) {
+      handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
+    } else if (selectedTool === 'plumber' && plumberTool) {
+      handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
     }
   };
 
@@ -661,7 +648,7 @@ export default function BuildingPlannerBasic() {
                         ✅ {electricianTool === 'outlet' ? 'Stikkontakt' : 
                             electricianTool === 'lightSwitch' ? 'Lysbryter' : 'Lysarmatur'} klar
                       </p>
-                      <p className="text-xs text-blue-600">Trykk på lerretet for å plassere</p>
+                      <p className="text-xs text-blue-600">Trykk på det grønne området på lerretet</p>
                     </div>
                   )}
                   
@@ -673,7 +660,7 @@ export default function BuildingPlannerBasic() {
                             plumberTool === 'toilet' ? 'Toalett' :
                             plumberTool === 'dishwasher' ? 'Oppvaskmaskin' : 'Vaskemaskin'} klar
                       </p>
-                      <p className="text-xs text-green-600">Trykk på lerretet for å plassere</p>
+                      <p className="text-xs text-green-600">Trykk på det grønne området på lerretet</p>
                     </div>
                   )}
 
@@ -717,67 +704,29 @@ export default function BuildingPlannerBasic() {
                     {/* Touch overlay for mobile placement */}
                     {((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
                       <div
-                        className="absolute inset-0 z-10 cursor-crosshair"
+                        className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
                         style={{ 
-                          background: 'rgba(0, 255, 0, 0.1)',
-                          touchAction: 'none',
-                          transition: 'background-color 0.2s ease'
+                          backgroundColor: overlayFlashing ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 255, 0, 0.1)',
+                          touchAction: 'none'
                         }}
-                        onClick={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const x = (e.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
-                          const y = (e.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
-                          
-                          // Flash red and reset quickly
-                          const overlay = e.currentTarget;
-                          overlay.style.background = 'rgba(255, 0, 0, 0.3)';
-                          setTimeout(() => {
-                            overlay.style.background = 'rgba(0, 255, 0, 0.1)';
-                          }, 100);
-                          
-                          const canvas = getCurrentFloorPlan()?.canvas;
-                          if (canvas) {
-                            if (selectedTool === 'electrician' && electricianTool) {
-                              handleElectricianTool(canvas, {x, y}, electricianTool, plan.id);
-                            } else if (selectedTool === 'plumber' && plumberTool) {
-                              handlePlumberTool(canvas, {x, y}, plumberTool, plan.id);
-                            }
-                          }
-                        }}
+                        onClick={(e) => handleOverlayClick(e, plan.id)}
                         onTouchEnd={(e) => {
                           e.preventDefault();
-                          const touch = e.changedTouches[0];
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const x = (touch.clientX - rect.left) * (getCurrentFloorPlan()?.canvas?.width || 400) / rect.width;
-                          const y = (touch.clientY - rect.top) * (getCurrentFloorPlan()?.canvas?.height || 300) / rect.height;
-                          
-                          // Flash red and reset quickly
-                          const overlay = e.currentTarget;
-                          overlay.style.background = 'rgba(255, 0, 0, 0.3)';
-                          setTimeout(() => {
-                            overlay.style.background = 'rgba(0, 255, 0, 0.1)';
-                          }, 100);
-                          
-                          const canvas = getCurrentFloorPlan()?.canvas;
-                          if (canvas) {
-                            if (selectedTool === 'electrician' && electricianTool) {
-                              handleElectricianTool(canvas, {x, y}, electricianTool, plan.id);
-                            } else if (selectedTool === 'plumber' && plumberTool) {
-                              handlePlumberTool(canvas, {x, y}, plumberTool, plan.id);
-                            }
-                          }
+                          handleOverlayClick(e, plan.id);
                         }}
                       >
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
-                            Trykk her for å plassere {selectedTool === 'electrician' ? 
-                              (electricianTool === 'outlet' ? 'stikkontakt' : 
-                               electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
-                              (plumberTool === 'sink' ? 'vask' : 
-                               plumberTool === 'shower' ? 'dusj' : 
-                               plumberTool === 'toilet' ? 'toalett' :
-                               plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
-                            }
+                          <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-center">
+                            <div className="text-sm font-medium">
+                              Trykk her for å plassere {selectedTool === 'electrician' ? 
+                                (electricianTool === 'outlet' ? 'stikkontakt' : 
+                                 electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
+                                (plumberTool === 'sink' ? 'vask' : 
+                                 plumberTool === 'shower' ? 'dusj' : 
+                                 plumberTool === 'toilet' ? 'toalett' :
+                                 plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
+                              }
+                            </div>
                           </div>
                         </div>
                       </div>
