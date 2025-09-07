@@ -1212,109 +1212,159 @@ export default function BuildingPlannerBasic() {
                   </div>
                   
                   <div className="flex gap-2 flex-wrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                         <Button 
-                          variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2 min-w-0 text-sm"
-                          onClick={() => {
-                            const newCategory = selectedToolCategory === 'carpenter' ? 'none' : 'carpenter';
-                            setSelectedToolCategory(newCategory);
-                            setPendingTool(null); // Clear any active tool when switching categories
-                          }}
-                        >
-                          <Hammer className="h-4 w-4" />
-                          <span className="hidden sm:inline">Tømrer</span>
-                          <span className="sm:hidden">Tømr</span>
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={addWall}>
-                          Legg til vegg
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addRoom}>
-                          Marker rom
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addWindow}>
-                          Legg til vindu
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={selectArea}>
-                          <Square className="h-4 w-4 mr-2" />
-                          Klikk for område
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={drawWalls}>
-                          <PenTool className="h-4 w-4 mr-2" />
-                          Tegn vegger
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Mobile version - just icon */}
+                    <div className="sm:hidden">
+                      <Button 
+                        variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
+                        className="flex items-center gap-2 min-w-0 text-sm"
+                        onClick={() => {
+                          if (selectedToolCategory === 'carpenter') {
+                            // If already selected, deselect
+                            setSelectedToolCategory('none');
+                            setPendingTool(null);
+                            setShowMaterialSelector(false);
+                          } else {
+                            // If not selected, select and show material selector
+                            setSelectedToolCategory('carpenter');
+                            setPendingTool(null);
+                            setShowMaterialSelector(true);
+                            toast("Velg material for veggene først");
+                          }
+                        }}
+                      >
+                        <Hammer className="h-4 w-4" />
+                        {selectedToolCategory === 'carpenter' && <span className="text-xs">Tømrer</span>}
+                      </Button>
+                    </div>
+                    
+                    {/* Desktop version - dropdown */}  
+                    <div className="hidden sm:block">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button 
+                            variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
+                            className="flex items-center gap-2 min-w-0 text-sm"
+                            onClick={() => {
+                              const newCategory = selectedToolCategory === 'carpenter' ? 'none' : 'carpenter';
+                              setSelectedToolCategory(newCategory);
+                              setPendingTool(null);
+                            }}
+                          >
+                            <Hammer className="h-4 w-4" />
+                            <span>Tømrer</span>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={drawWalls}>
+                            <PenTool className="h-4 w-4 mr-2" />
+                            Tegn vegger
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2 min-w-0 text-sm"
-                          onClick={() => {
-                            const newCategory = selectedToolCategory === 'electrician' ? 'none' : 'electrician';
-                            setSelectedToolCategory(newCategory);
-                            setPendingTool(null); // Clear any active tool when switching categories
-                          }}
-                        >
-                          <Zap className="h-4 w-4" />
-                          <span className="hidden sm:inline">Elektriker</span>
-                          <span className="sm:hidden">Elektr</span>
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={addOutlet}>
-                          Stikkontakt
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addLightSwitch}>
-                          Lysbryter
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addLight}>
-                          Lysarmatur
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Mobile version - just icon */}
+                    <div className="sm:hidden">
+                      <Button 
+                        variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
+                        className="flex items-center gap-2 min-w-0 text-sm"
+                        onClick={() => {
+                          const newCategory = selectedToolCategory === 'electrician' ? 'none' : 'electrician';
+                          setSelectedToolCategory(newCategory);
+                          setPendingTool(null);
+                        }}
+                      >
+                        <Zap className="h-4 w-4" />
+                        {selectedToolCategory === 'electrician' && <span className="text-xs">Elektriker</span>}
+                      </Button>
+                    </div>
+                    
+                    {/* Desktop version - dropdown */}
+                    <div className="hidden sm:block">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
+                            className="flex items-center gap-2 min-w-0 text-sm"
+                            onClick={() => {
+                              const newCategory = selectedToolCategory === 'electrician' ? 'none' : 'electrician';
+                              setSelectedToolCategory(newCategory);
+                              setPendingTool(null);
+                            }}
+                          >
+                            <Zap className="h-4 w-4" />
+                            <span>Elektriker</span>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={addOutlet}>
+                            Stikkontakt
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addLightSwitch}>
+                            Lysbryter
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addLight}>
+                            Lysarmatur
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2 min-w-0 text-sm"
-                          onClick={() => {
-                            const newCategory = selectedToolCategory === 'plumber' ? 'none' : 'plumber';
-                            setSelectedToolCategory(newCategory);
-                            setPendingTool(null); // Clear any active tool when switching categories
-                          }}
-                        >
-                          <Droplet className="h-4 w-4" />
-                          <span className="hidden sm:inline">Rørlegger</span>
-                          <span className="sm:hidden">Rør</span>
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={addSink}>
-                          Vask
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addDishwasher}>
-                          Oppvaskmaskin
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addWashingMachine}>
-                          Vaskemaskin
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addShower}>
-                          Dusj
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={addToilet}>
-                          Toalett
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Mobile version - just icon */}
+                    <div className="sm:hidden">
+                      <Button 
+                        variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
+                        className="flex items-center gap-2 min-w-0 text-sm"
+                        onClick={() => {
+                          const newCategory = selectedToolCategory === 'plumber' ? 'none' : 'plumber';
+                          setSelectedToolCategory(newCategory);
+                          setPendingTool(null);
+                        }}
+                      >
+                        <Droplet className="h-4 w-4" />
+                        {selectedToolCategory === 'plumber' && <span className="text-xs">Rørlegger</span>}
+                      </Button>
+                    </div>
+                    
+                    {/* Desktop version - dropdown */}
+                    <div className="hidden sm:block">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
+                            className="flex items-center gap-2 min-w-0 text-sm"
+                            onClick={() => {
+                              const newCategory = selectedToolCategory === 'plumber' ? 'none' : 'plumber';
+                              setSelectedToolCategory(newCategory);
+                              setPendingTool(null);
+                            }}
+                          >
+                            <Droplet className="h-4 w-4" />
+                            <span>Rørlegger</span>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={addSink}>
+                            Vask
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addDishwasher}>
+                            Oppvaskmaskin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addWashingMachine}>
+                            Vaskemaskin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addShower}>
+                            Dusj
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={addToilet}>
+                            Toalett
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
                     {/* Separator for action buttons - hidden on mobile */}
                     <div className="border-l border-gray-300 h-8 mx-2 hidden sm:block"></div>
@@ -1347,103 +1397,22 @@ export default function BuildingPlannerBasic() {
                     </Button>
                   </div>
 
-                  {/* Additional tool options */}
+                  {/* Carpenter tool options */}
                   {selectedToolCategory === 'carpenter' && (
                     <div className="flex gap-1 sm:gap-2 flex-wrap p-2 sm:p-3 bg-amber-50 rounded-lg">
                       <Label className="text-xs sm:text-sm font-medium w-full mb-1 sm:mb-2">Tømrerarbeider:</Label>
-                      <Button
-                        onClick={addGipsplate}
-                        variant={pendingTool === 'gipsplate' ? 'default' : 'outline'}
-                        size="sm"
-                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
-                      >
-                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {pendingTool === 'gipsplate' ? (
-                            <>
-                              <span className="sm:hidden">Klikk å plassere</span>
-                              <span className="hidden sm:inline">Klikk for å plassere gipsplate</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="sm:hidden">Gips (150kr)</span>
-                              <span className="hidden sm:inline">Gipsplate (150kr/m²)</span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                      <Button
-                        onClick={addOsbplate}
-                        variant={pendingTool === 'osbplate' ? 'default' : 'outline'}
-                        size="sm"
-                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
-                      >
-                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {pendingTool === 'osbplate' ? (
-                            <>
-                              <span className="sm:hidden">Klikk å plassere</span>
-                              <span className="hidden sm:inline">Klikk for å plassere OSB plate</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="sm:hidden">OSB (120kr)</span>
-                              <span className="hidden sm:inline">OSB plate (120kr/m²)</span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                      <Button
-                        onClick={addMdfplate}
-                        variant={pendingTool === 'mdfplate' ? 'default' : 'outline'}
-                        size="sm"
-                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
-                      >
-                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {pendingTool === 'mdfplate' ? (
-                            <>
-                              <span className="sm:hidden">Klikk å plassere</span>
-                              <span className="hidden sm:inline">Klikk for å plassere MDF plate</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="sm:hidden">MDF (180kr)</span>
-                              <span className="hidden sm:inline">MDF plate (180kr/m²)</span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                      <Button
-                        onClick={addTrevegg}
-                        variant={pendingTool === 'trevegg' ? 'default' : 'outline'}
-                        size="sm"
-                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
-                      >
-                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {pendingTool === 'trevegg' ? (
-                            <>
-                              <span className="sm:hidden">Klikk å plassere</span>
-                              <span className="hidden sm:inline">Klikk for å plassere trevegg</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="sm:hidden">Tre (250kr)</span>
-                              <span className="hidden sm:inline">Trevegg (250kr/m²)</span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                      <Button onClick={drawWalls} variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs">
-                        <PenTool className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="hidden sm:inline">Tegn vegger med waypoints</span>
-                        <span className="sm:hidden">Tegn vegger</span>
-                      </Button>
                       
-                      {/* Material selector for wall drawing */}
+                      {/* Desktop version - show draw walls button */}
+                      <div className="hidden sm:block">
+                        <Button onClick={drawWalls} variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs">
+                          <PenTool className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Tegn vegger med waypoints</span>
+                        </Button>
+                      </div>
+                      
+                      {/* Material selector for wall drawing - appears when draw walls is clicked */}
                       {showMaterialSelector && (
-                        <div className="w-full mt-4 p-3 bg-white border rounded-lg">
+                        <div className="w-full mt-2 sm:mt-4 p-3 bg-white border rounded-lg">
                           <Label className="text-sm font-semibold mb-2 block">Velg veggmateriale:</Label>
                           <div className="flex gap-2 flex-wrap">
                             {materials.map((material) => (
@@ -1457,7 +1426,8 @@ export default function BuildingPlannerBasic() {
                                 }}
                                 className="text-xs"
                               >
-                                {material.name} ({material.pricePerM2}kr/m²)
+                                <span className="sm:hidden">{material.name.split(' ')[0]} ({material.pricePerM2}kr)</span>
+                                <span className="hidden sm:inline">{material.name} ({material.pricePerM2}kr/m²)</span>
                               </Button>
                             ))}
                           </div>
@@ -1470,19 +1440,6 @@ export default function BuildingPlannerBasic() {
                             Avbryt
                           </Button>
                         </div>
-                      )}
-                      
-                      {pendingTool && (pendingTool === 'gipsplate' || pendingTool === 'osbplate' || 
-                                      pendingTool === 'mdfplate' || pendingTool === 'trevegg') && (
-                        <Button
-                          onClick={() => setPendingTool(null)}
-                          variant="secondary"
-                          size="sm"
-                          className="text-xs px-2"
-                        >
-                          <span className="hidden sm:inline">Stopp plassering</span>
-                          <span className="sm:hidden">Stopp</span>
-                        </Button>
                       )}
                     </div>
                   )}
