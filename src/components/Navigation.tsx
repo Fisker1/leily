@@ -129,12 +129,12 @@ const Navigation = () => {
               <div className="space-y-4 pt-4 border-t border-border">
                 {user ? (
                   <>
-                    <Button variant="outline" className="w-full justify-start" size="lg" asChild>
-                      <Link to="/min-side" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                        <User className="h-5 w-5" />
-                        Min side
-                      </Link>
-                    </Button>
+                     <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                       <Link to="/min-side" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                         <User className="h-5 w-5" />
+                         Min side
+                       </Link>
+                     </Button>
                     {isAdmin && (
                       <Button variant="outline" className="w-full justify-start" size="lg" asChild>
                         <Link to="/admin" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
