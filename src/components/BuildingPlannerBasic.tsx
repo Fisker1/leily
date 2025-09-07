@@ -1216,7 +1216,7 @@ export default function BuildingPlannerBasic() {
                       <DropdownMenuTrigger asChild>
                          <Button 
                           variant={selectedToolCategory === 'carpenter' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 min-w-0 text-sm"
                           onClick={() => {
                             const newCategory = selectedToolCategory === 'carpenter' ? 'none' : 'carpenter';
                             setSelectedToolCategory(newCategory);
@@ -1224,7 +1224,8 @@ export default function BuildingPlannerBasic() {
                           }}
                         >
                           <Hammer className="h-4 w-4" />
-                          Tømrer
+                          <span className="hidden sm:inline">Tømrer</span>
+                          <span className="sm:hidden">Tømr</span>
                           <ChevronDown className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1253,7 +1254,7 @@ export default function BuildingPlannerBasic() {
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant={selectedToolCategory === 'electrician' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 min-w-0 text-sm"
                           onClick={() => {
                             const newCategory = selectedToolCategory === 'electrician' ? 'none' : 'electrician';
                             setSelectedToolCategory(newCategory);
@@ -1261,7 +1262,8 @@ export default function BuildingPlannerBasic() {
                           }}
                         >
                           <Zap className="h-4 w-4" />
-                          Elektriker
+                          <span className="hidden sm:inline">Elektriker</span>
+                          <span className="sm:hidden">Elektr</span>
                           <ChevronDown className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1282,7 +1284,7 @@ export default function BuildingPlannerBasic() {
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant={selectedToolCategory === 'plumber' ? 'default' : 'outline'} 
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 min-w-0 text-sm"
                           onClick={() => {
                             const newCategory = selectedToolCategory === 'plumber' ? 'none' : 'plumber';
                             setSelectedToolCategory(newCategory);
@@ -1290,7 +1292,8 @@ export default function BuildingPlannerBasic() {
                           }}
                         >
                           <Droplet className="h-4 w-4" />
-                          Rørlegger
+                          <span className="hidden sm:inline">Rørlegger</span>
+                          <span className="sm:hidden">Rør</span>
                           <ChevronDown className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1313,72 +1316,129 @@ export default function BuildingPlannerBasic() {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {/* Separator for action buttons */}
-                    <div className="border-l border-gray-300 h-8 mx-2"></div>
+                    {/* Separator for action buttons - hidden on mobile */}
+                    <div className="border-l border-gray-300 h-8 mx-2 hidden sm:block"></div>
                     
-                    <Button onClick={clearCanvas} variant="destructive">
-                      Tøm canvas
+                    <Button onClick={clearCanvas} variant="destructive" size="sm" className="text-xs px-2 sm:px-4">
+                      <span className="hidden sm:inline">Tøm canvas</span>
+                      <span className="sm:hidden">Tøm</span>
                     </Button>
                     
                     <Button 
                       onClick={undoLastAction} 
                       variant="outline"
+                      size="sm"
                       disabled={!getCurrentFloorPlan() || getCurrentFloorPlan()!.historyIndex <= 0}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1 sm:gap-2 text-xs px-2 sm:px-4"
                     >
                       <Undo className="h-4 w-4" />
-                      Angre
+                      <span className="hidden sm:inline">Angre</span>
                     </Button>
                     
                     <Button 
                       onClick={deleteSelected} 
                       variant="outline"
-                      className="flex items-center gap-2"
+                      size="sm"
+                      className="flex items-center gap-1 sm:gap-2 text-xs px-2 sm:px-4"
                     >
                       <Trash2 className="h-4 w-4" />
-                      Slett valgte
+                      <span className="hidden sm:inline">Slett valgte</span>
+                      <span className="sm:hidden">Slett</span>
                     </Button>
                   </div>
 
                   {/* Additional tool options */}
                   {selectedToolCategory === 'carpenter' && (
-                    <div className="flex gap-2 flex-wrap p-3 bg-amber-50 rounded-lg">
-                      <Label className="text-sm font-medium w-full mb-2">Tømrerarbeider:</Label>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap p-2 sm:p-3 bg-amber-50 rounded-lg">
+                      <Label className="text-xs sm:text-sm font-medium w-full mb-1 sm:mb-2">Tømrerarbeider:</Label>
                       <Button
                         onClick={addGipsplate}
                         variant={pendingTool === 'gipsplate' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Hammer className="h-4 w-4" />
-                        {pendingTool === 'gipsplate' ? 'Klikk for å plassere gipsplate' : 'Gipsplate (150kr/m²)'}
+                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'gipsplate' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere gipsplate</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Gips (150kr)</span>
+                              <span className="hidden sm:inline">Gipsplate (150kr/m²)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addOsbplate}
                         variant={pendingTool === 'osbplate' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Hammer className="h-4 w-4" />
-                        {pendingTool === 'osbplate' ? 'Klikk for å plassere OSB plate' : 'OSB plate (120kr/m²)'}
+                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'osbplate' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere OSB plate</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">OSB (120kr)</span>
+                              <span className="hidden sm:inline">OSB plate (120kr/m²)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addMdfplate}
                         variant={pendingTool === 'mdfplate' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Hammer className="h-4 w-4" />
-                        {pendingTool === 'mdfplate' ? 'Klikk for å plassere MDF plate' : 'MDF plate (180kr/m²)'}
+                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'mdfplate' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere MDF plate</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">MDF (180kr)</span>
+                              <span className="hidden sm:inline">MDF plate (180kr/m²)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addTrevegg}
                         variant={pendingTool === 'trevegg' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Hammer className="h-4 w-4" />
-                        {pendingTool === 'trevegg' ? 'Klikk for å plassere trevegg' : 'Trevegg (250kr/m²)'}
+                        <Hammer className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'trevegg' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere trevegg</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Tre (250kr)</span>
+                              <span className="hidden sm:inline">Trevegg (250kr/m²)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
-                      <Button onClick={drawWalls} variant="outline" className="flex items-center gap-2">
-                        <PenTool className="h-4 w-4" />
-                        Tegn vegger med waypoints
+                      <Button onClick={drawWalls} variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs">
+                        <PenTool className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Tegn vegger med waypoints</span>
+                        <span className="sm:hidden">Tegn vegger</span>
                       </Button>
                       
                       {/* Material selector for wall drawing */}
@@ -1418,99 +1478,212 @@ export default function BuildingPlannerBasic() {
                           onClick={() => setPendingTool(null)}
                           variant="secondary"
                           size="sm"
-                          className="ml-2"
+                          className="text-xs px-2"
                         >
-                          Stopp plassering
+                          <span className="hidden sm:inline">Stopp plassering</span>
+                          <span className="sm:hidden">Stopp</span>
                         </Button>
                       )}
                     </div>
                   )}
 
                   {selectedToolCategory === 'electrician' && (
-                    <div className="flex gap-2 flex-wrap p-3 bg-blue-50 rounded-lg">
-                      <Label className="text-sm font-medium w-full mb-2">Elektriske installasjoner:</Label>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap p-2 sm:p-3 bg-blue-50 rounded-lg">
+                      <Label className="text-xs sm:text-sm font-medium w-full mb-1 sm:mb-2">Elektriske installasjoner:</Label>
                       <Button
                         onClick={addOutlet}
                         variant={pendingTool === 'outlet' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Zap className="h-4 w-4" />
-                        {pendingTool === 'outlet' ? 'Klikk for å plassere stikkontakt' : 'Stikkontakt (500kr/stk)'}
+                        <Zap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'outlet' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere stikkontakt</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Kontakt (500kr)</span>
+                              <span className="hidden sm:inline">Stikkontakt (500kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addLightSwitch}
                         variant={pendingTool === 'lightSwitch' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'lightSwitch' ? 'Klikk for å plassere lysbryter' : 'Lysbryter (300kr/stk)'}
+                        <Zap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'lightSwitch' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere lysbryter</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Bryter (300kr)</span>
+                              <span className="hidden sm:inline">Lysbryter (300kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addLight}
                         variant={pendingTool === 'light' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'light' ? 'Klikk for å plassere lysarmatur' : 'Lysarmatur (800kr/stk)'}
+                        <Zap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'light' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere lysarmatur</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Armatur (800kr)</span>
+                              <span className="hidden sm:inline">Lysarmatur (800kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       {pendingTool && (
                         <Button
                           onClick={() => setPendingTool(null)}
                           variant="secondary"
                           size="sm"
-                          className="ml-2"
+                          className="text-xs px-2"
                         >
-                          Stopp plassering
+                          <span className="hidden sm:inline">Stopp plassering</span>
+                          <span className="sm:hidden">Stopp</span>
                         </Button>
                       )}
                     </div>
                   )}
 
                   {selectedToolCategory === 'plumber' && (
-                    <div className="flex gap-2 flex-wrap p-3 bg-cyan-50 rounded-lg">
-                      <Label className="text-sm font-medium w-full mb-2">Sanitærutstyr:</Label>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap p-2 sm:p-3 bg-cyan-50 rounded-lg">
+                      <Label className="text-xs sm:text-sm font-medium w-full mb-1 sm:mb-2">Sanitærutstyr:</Label>
                       <Button
                         onClick={addSink}
                         variant={pendingTool === 'sink' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        <Droplet className="h-4 w-4" />
-                        {pendingTool === 'sink' ? 'Klikk for å plassere vask' : 'Vask (3000kr/stk)'}
+                        <Droplet className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'sink' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere vask</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Vask (3000kr)</span>
+                              <span className="hidden sm:inline">Vask (3000kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addDishwasher}
                         variant={pendingTool === 'dishwasher' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'dishwasher' ? 'Klikk for å plassere oppvaskmaskin' : 'Oppvaskmaskin (2500kr/stk)'}
+                        <Droplet className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'dishwasher' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere oppvaskmaskin</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Oppvask (2500kr)</span>
+                              <span className="hidden sm:inline">Oppvaskmaskin (2500kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addWashingMachine}
                         variant={pendingTool === 'washingMachine' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'washingMachine' ? 'Klikk for å plassere vaskemaskin' : 'Vaskemaskin (2000kr/stk)'}
+                        <Droplet className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'washingMachine' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere vaskemaskin</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Vaske (2000kr)</span>
+                              <span className="hidden sm:inline">Vaskemaskin (2000kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addShower}
                         variant={pendingTool === 'shower' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'shower' ? 'Klikk for å plassere dusj' : 'Dusj (8000kr/stk)'}
+                        <Droplet className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'shower' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere dusj</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Dusj (8000kr)</span>
+                              <span className="hidden sm:inline">Dusj (8000kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         onClick={addToilet}
                         variant={pendingTool === 'toilet' ? 'default' : 'outline'}
-                        className="flex items-center gap-2"
+                        size="sm"
+                        className="flex items-center gap-1 sm:gap-2 text-xs min-w-0"
                       >
-                        {pendingTool === 'toilet' ? 'Klikk for å plassere toalett' : 'Toalett (4000kr/stk)'}
+                        <Droplet className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {pendingTool === 'toilet' ? (
+                            <>
+                              <span className="sm:hidden">Klikk å plassere</span>
+                              <span className="hidden sm:inline">Klikk for å plassere toalett</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="sm:hidden">Toalett (4000kr)</span>
+                              <span className="hidden sm:inline">Toalett (4000kr/stk)</span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       {pendingTool && (
                         <Button
                           onClick={() => setPendingTool(null)}
                           variant="secondary"
                           size="sm"
-                          className="ml-2"
+                          className="text-xs px-2"
                         >
-                          Stopp plassering
+                          <span className="hidden sm:inline">Stopp plassering</span>
+                          <span className="sm:hidden">Stopp</span>
                         </Button>
                       )}
                     </div>
@@ -1533,14 +1706,15 @@ export default function BuildingPlannerBasic() {
                         el.dataset.timeoutId = timeoutId.toString();
                       }
                     }}
-                    className="max-w-full" 
+                    className="max-w-full h-auto" 
+                    style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '300px' }}
                   />
                 </div>
 
                 {/* Complete Cost Breakdown */}
                 {(materialSelections.length > 0 || placedItems.length > 0) && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="font-semibold mb-4 text-lg">Kostnadsovesikt</h3>
+                  <div className="mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">Kostnadsovesikt</h3>
                     
                     {/* Carpenter Materials */}
                     {materialSelections.length > 0 && (
