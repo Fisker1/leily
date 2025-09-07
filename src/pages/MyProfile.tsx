@@ -12,6 +12,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const MyProfile = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -19,28 +20,61 @@ const MyProfile = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Fil for stor",
+        description: "Velg et bilde som er mindre enn 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ugyldig filtype",
+        description: "Velg en bildefil (JPG, PNG, etc.).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    if (!user) return;
 
     try {
       setUploading(true);
       
-      const fileExt = file.name.split('.').pop();
+      const fileExt = 'jpg';
       const fileName = `${user.id}-avatar.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
 
-      // Upload image to Supabase storage
+      // Upload cropped image to Supabase storage
       const { error: uploadError } = await supabase.storage
-        .from('property-images')
-        .upload(filePath, file, { upsert: true });
+        .from('avatars')
+        .upload(filePath, croppedImageBlob, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data } = supabase.storage
-        .from('property-images')
+        .from('avatars')
         .getPublicUrl(filePath);
 
       // Update profile with new avatar URL
@@ -175,7 +209,7 @@ const MyProfile = () => {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={handleImageUpload}
+                    onChange={handleImageSelect}
                     className="hidden"
                   />
                 </div>
@@ -241,6 +275,13 @@ const MyProfile = () => {
             </CardContent>
           </Card>
         </div>
+
+        <ImageCropDialog
+          open={cropDialogOpen}
+          onOpenChange={setCropDialogOpen}
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+        />
       </div>
     </div>
   );
