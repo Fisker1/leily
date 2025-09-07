@@ -489,22 +489,12 @@ const Portfolio = () => {
               </p>
             </div>
             {user && (
-              <div className="flex gap-2">
-                <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
-                  <Button className="bg-gradient-primary hover:opacity-90">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Legg til eiendom
-                  </Button>
-                </PropertyAddDialog>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setRentalAgreementDialogOpen(true)}
-                  className="border-primary text-primary hover:bg-primary hover:text-white"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Ny leieavtale
+              <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
+                <Button className="bg-gradient-primary hover:opacity-90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Legg til eiendom
                 </Button>
-              </div>
+              </PropertyAddDialog>
             )}
             {showExampleProperty && (
               <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
