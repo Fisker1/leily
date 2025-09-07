@@ -616,16 +616,16 @@ const Portfolio = () => {
                         : ''
                     }`}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-4 overflow-hidden">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-3 overflow-hidden">
                         {/* Property Image and Basic Info */}
-                        <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                           <div className="relative flex-shrink-0">
                             <PropertyImage
                               imageUrl={property.image_url}
                               address={property.address}
                               city={property.city}
-                              className="w-16 h-16 rounded-lg"
+                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg"
                               alt={`Eiendom på ${property.address}`}
                             />
                             {isPrimaryHome && isUserProperty && (
@@ -633,10 +633,10 @@ const Portfolio = () => {
                             )}
                           </div>
                           <div className="min-w-0 flex-1 overflow-hidden">
-                            <h3 className="font-semibold text-foreground text-base mb-1 truncate">
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base mb-1 truncate">
                               {property.address}, {property.postal_code} {property.city}
                             </h3>
-                            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-muted-foreground">
                               <span className="whitespace-nowrap">Type: <span className="text-foreground">{property.property_type || 'Leilighet'}</span></span>
                               <span className="whitespace-nowrap">Størrelse: <span className="text-foreground">{property.size_sqm ? `${property.size_sqm}m²` : '85m²'}</span></span>
                               <span className="whitespace-nowrap">Kjøpsdato: <span className="text-foreground">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '2022-03-15'}</span></span>
@@ -645,26 +645,26 @@ const Portfolio = () => {
                         </div>
 
                         {/* Financial Tiles */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
-                          <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[100px] sm:min-w-[120px]">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0 overflow-x-auto">
+                          <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Kjøpspris</p>
-                            <p className="font-semibold text-xs sm:text-sm">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
+                            <p className="font-semibold text-xs">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
                           </div>
-                          <div className="text-center p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
+                          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Nåverdi</p>
-                            <p className="font-semibold text-xs sm:text-sm text-blue-600 dark:text-blue-400">
+                            <p className="font-semibold text-xs text-blue-600 dark:text-blue-400">
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
                           </div>
-                          <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
+                          <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
-                            <p className="font-semibold text-xs sm:text-sm text-green-600 dark:text-green-400">
+                            <p className="font-semibold text-xs text-green-600 dark:text-green-400">
                               +{roiPercentage.toFixed(1)}%
                             </p>
                           </div>
-                          <div className="text-center p-2 sm:p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[100px] sm:min-w-[120px]">
+                          <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Gevinst</p>
-                            <p className="font-semibold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
+                            <p className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">
                               +{totalReturn.toLocaleString()} kr
                             </p>
                           </div>
@@ -674,19 +674,19 @@ const Portfolio = () => {
                         <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
                           {user && !showExampleProperty ? (
                             <TooltipProvider>
-                              <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
+                              <div className="grid grid-cols-2 gap-2 flex-shrink-0">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         setSelectedProperty(property);
                                         setDetailsDialogOpen(true);
                                       }}
                                     >
-                                      <Eye className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Eye className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -699,14 +699,14 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         console.log('Opening documents for property:', property.id);
                                         setSelectedProperty(property);
                                         setDocumentsDialogOpen(true);
                                       }}
                                     >
-                                      <FileText className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -719,13 +719,13 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => {
                                         setSelectedProperty(property);
                                         setEditDialogOpen(true);
                                       }}
                                     >
-                                      <Edit className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Edit className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -738,10 +738,10 @@ const Portfolio = () => {
                                     <Button 
                                       variant="destructive" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500"
                                       onClick={() => handleDeleteProperty(property.id)}
                                     >
-                                      <Trash className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Trash className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -752,16 +752,16 @@ const Portfolio = () => {
                             </TooltipProvider>
                           ) : (
                             <TooltipProvider>
-                              <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-shrink-0 overflow-x-auto">
+                              <div className="grid grid-cols-2 gap-2 flex-shrink-0">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
-                                      <Eye className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Eye className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -774,10 +774,10 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
-                                      <FileText className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -790,10 +790,10 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0"
                                       onClick={() => navigate('/auth')}
                                     >
-                                      <Edit className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Edit className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -806,10 +806,10 @@ const Portfolio = () => {
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="w-full h-12 min-w-[100px] sm:min-w-[120px] lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30"
+                                      className="w-full h-8 lg:w-8 lg:h-8 lg:min-w-0 lg:p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30"
                                       onClick={() => navigate('/auth')}
                                     >
-                                      <Trash className="h-5 w-5 lg:h-4 lg:w-4" />
+                                      <Trash className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
