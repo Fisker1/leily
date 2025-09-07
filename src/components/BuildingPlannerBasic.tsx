@@ -58,7 +58,11 @@ export default function BuildingPlannerBasic() {
   const [electricianTool, setElectricianTool] = useState<string | null>(null);
   const [plumberTool, setPlumberTool] = useState<string | null>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
-  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // Store current tool state in window for mobile access
+  useEffect(() => {
+    (window as any).currentToolState = { selectedTool, electricianTool, plumberTool };
+  }, [selectedTool, electricianTool, plumberTool]);
 
   // Handle window resize to update canvas dimensions on mobile
   useEffect(() => {
@@ -100,31 +104,20 @@ export default function BuildingPlannerBasic() {
   // Initialize canvas for a floor plan
   const initializeCanvas = (floorPlanId: string) => {
     const canvasElement = canvasRefs.current[floorPlanId];
-    if (!canvasElement) {
-      console.log('No canvas element found for floor plan:', floorPlanId);
-      return;
-    }
+    if (!canvasElement) return;
 
     // Check if canvas is already initialized
     const existingFloorPlan = floorPlans.find(fp => fp.id === floorPlanId);
-    if (existingFloorPlan?.canvas) {
-      console.log('Canvas already initialized for floor plan:', floorPlanId);
-      return;
-    }
-
-    console.log('Initializing new canvas for floor plan:', floorPlanId);
+    if (existingFloorPlan?.canvas) return;
 
     // Calculate responsive canvas dimensions
     const isMobile = window.innerWidth < 768;
-    
     let canvasWidth, canvasHeight;
     
     if (isMobile) {
-      // Mobile: Use most of the screen width but maintain aspect ratio
-      canvasWidth = Math.min(window.innerWidth - 32, 400); // Max 400px width on mobile
-      canvasHeight = Math.round(canvasWidth * 0.75); // 4:3 aspect ratio
+      canvasWidth = Math.min(window.innerWidth - 32, 400);
+      canvasHeight = Math.round(canvasWidth * 0.75);
     } else {
-      // Desktop: Use larger dimensions
       canvasWidth = 800;
       canvasHeight = 600;
     }
@@ -147,61 +140,45 @@ export default function BuildingPlannerBasic() {
       historyIndex: 0,
     });
 
-    // Add event listeners for object placement (NOT for carpenter - carpenter only draws)
+    // Add event listeners for object placement
     canvas.on('mouse:down', (e) => {
-      console.log('Mouse down event', {selectedTool, electricianTool, plumberTool});
-      if (selectedTool === 'electrician' && electricianTool) {
+      const state = (window as any).currentToolState;
+      
+      if (state.selectedTool === 'electrician' && state.electricianTool) {
         const pointer = canvas.getPointer(e.e);
-        console.log('Placing electrician tool:', electricianTool, 'at:', pointer);
-        handleElectricianTool(canvas, pointer, electricianTool, floorPlanId);
-      } else if (selectedTool === 'plumber' && plumberTool) {
+        handleElectricianTool(canvas, pointer, state.electricianTool, floorPlanId);
+      } else if (state.selectedTool === 'plumber' && state.plumberTool) {
         const pointer = canvas.getPointer(e.e);
-        console.log('Placing plumber tool:', plumberTool, 'at:', pointer);
-        handlePlumberTool(canvas, pointer, plumberTool, floorPlanId);
+        handlePlumberTool(canvas, pointer, state.plumberTool, floorPlanId);
       }
     });
 
-    // Add touch event handlers for mobile
-    const touchCanvasElement = canvas.getElement();
+    // Convert touch events to mouse events for mobile
+    const touchCanvas = canvas.getElement();
     
-    const handleTouch = (e: TouchEvent) => {
-      console.log('TOUCH EVENT FIRED!', e.type);
-      console.log('Current state:', {selectedTool, electricianTool, plumberTool});
-      
-      // Always prevent default on touch to see if this helps
+    touchCanvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      e.stopPropagation();
+      const state = (window as any).currentToolState;
       
-      if (selectedTool === 'carpenter') {
-        console.log('Carpenter mode - letting fabric handle it');
-        return;
-      }
-      
-      if ((selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) {
-        console.log('Valid tool selected, processing touch...');
+      if ((state.selectedTool === 'electrician' && state.electricianTool) || 
+          (state.selectedTool === 'plumber' && state.plumberTool)) {
         
-        const rect = touchCanvasElement.getBoundingClientRect();
-        const touch = e.touches[0] || e.changedTouches[0];
-        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        const touch = e.touches[0];
+        const rect = touchCanvas.getBoundingClientRect();
         
-        console.log('Touch position calculated:', {x, y});
+        // Calculate canvas coordinates
+        const canvasX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const canvasY = (touch.clientY - rect.top) * (canvas.height / rect.height);
         
-        if (selectedTool === 'electrician' && electricianTool) {
-          console.log('Placing electrician tool via touch:', electricianTool);
-          handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
-        } else if (selectedTool === 'plumber' && plumberTool) {
-          console.log('Placing plumber tool via touch:', plumberTool);
-          handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
+        const pointer = { x: canvasX, y: canvasY };
+        
+        if (state.selectedTool === 'electrician' && state.electricianTool) {
+          handleElectricianTool(canvas, pointer, state.electricianTool, floorPlanId);
+        } else if (state.selectedTool === 'plumber' && state.plumberTool) {
+          handlePlumberTool(canvas, pointer, state.plumberTool, floorPlanId);
         }
-      } else {
-        console.log('No valid tool selected for placement');
       }
-    };
-    
-    console.log('Adding touch event listeners to canvas');
-    touchCanvasElement.addEventListener('touchstart', handleTouch, { passive: false });
-    touchCanvasElement.addEventListener('touchend', handleTouch, { passive: false });
+    }, { passive: false });
 
     // Handle canvas changes for history
     const handleCanvasChange = () => {
@@ -235,7 +212,6 @@ export default function BuildingPlannerBasic() {
   useEffect(() => {
     floorPlans.forEach(fp => {
       if (fp.canvas) {
-        // Only enable drawing mode for carpenter
         if (selectedTool === 'carpenter') {
           fp.canvas.isDrawingMode = true;
           fp.canvas.freeDrawingBrush.color = '#333333';
@@ -299,7 +275,6 @@ export default function BuildingPlannerBasic() {
       canvas.add(shape);
       canvas.renderAll();
       
-      // Add to placed items for pricing
       const newItem: PlacedItem = {
         id: Date.now().toString(),
         category: 'electrician',
@@ -310,7 +285,7 @@ export default function BuildingPlannerBasic() {
       };
       setPlacedItems(prev => [...prev, newItem]);
       
-      toast(`${itemData.name} lagt til! Klikk igjen for flere.`);
+      toast(`${itemData.name} lagt til!`);
     }
   };
 
@@ -393,7 +368,6 @@ export default function BuildingPlannerBasic() {
       canvas.add(shape);
       canvas.renderAll();
       
-      // Add to placed items for pricing
       const newItem: PlacedItem = {
         id: Date.now().toString(),
         category: 'plumber',
@@ -404,7 +378,7 @@ export default function BuildingPlannerBasic() {
       };
       setPlacedItems(prev => [...prev, newItem]);
       
-      toast(`${itemData.name} lagt til! Klikk igjen for flere.`);
+      toast(`${itemData.name} lagt til!`);
     }
   };
 
@@ -422,7 +396,6 @@ export default function BuildingPlannerBasic() {
     setFloorPlans(prev => [...prev, newFloorPlan]);
     setActiveFloorPlan(newId);
     
-    // Initialize canvas for the new floor plan after state update
     setTimeout(() => initializeCanvas(newId), 100);
   };
 
@@ -480,13 +453,11 @@ export default function BuildingPlannerBasic() {
       historyIndex: 0,
     });
     
-    // Clear placed items for this floor plan
     setPlacedItems(prev => prev.filter(item => item.floorPlanId !== currentFloor.id));
     
     toast("Lerret tømt!");
   };
 
-  // Calculate total cost
   const totalCost = placedItems
     .filter(item => item.floorPlanId === activeFloorPlan)
     .reduce((sum, item) => sum + item.price, 0);
@@ -503,7 +474,6 @@ export default function BuildingPlannerBasic() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Floor Plan Tabs */}
           <Tabs value={activeFloorPlan} onValueChange={setActiveFloorPlan} className="w-full">
             <div className="flex items-center justify-between mb-4">
               <TabsList>
@@ -561,7 +531,6 @@ export default function BuildingPlannerBasic() {
 
             {floorPlans.map((plan) => (
               <TabsContent key={plan.id} value={plan.id} className="space-y-6">
-                {/* Tool Selection */}
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-4">
                     <div className="text-sm font-medium">Velg verktøy:</div>
@@ -603,7 +572,6 @@ export default function BuildingPlannerBasic() {
                     </div>
                   </div>
 
-                  {/* Electrician Tools */}
                   {selectedTool === 'electrician' && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
@@ -633,7 +601,6 @@ export default function BuildingPlannerBasic() {
                     </div>
                   )}
 
-                  {/* Plumber Tools */}
                   {selectedTool === 'plumber' && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
@@ -677,7 +644,6 @@ export default function BuildingPlannerBasic() {
                     </div>
                   )}
 
-                  {/* Drawing Instructions */}
                   {selectedTool === 'carpenter' && (
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">
@@ -687,7 +653,6 @@ export default function BuildingPlannerBasic() {
                   )}
                 </div>
 
-                {/* Canvas and Controls */}
                 <div className="space-y-4">
                   <div className="flex gap-2 mb-4">
                     <Button onClick={undo} variant="outline" size="sm">
@@ -700,13 +665,11 @@ export default function BuildingPlannerBasic() {
                     </Button>
                   </div>
 
-                  {/* Canvas */}
                   <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden bg-white">
                     <canvas
                       ref={(el) => {
                         canvasRefs.current[plan.id] = el;
                         if (el && !plan.canvas) {
-                          // Delay initialization to ensure DOM is ready
                           setTimeout(() => initializeCanvas(plan.id), 100);
                         }
                       }}
@@ -720,7 +683,6 @@ export default function BuildingPlannerBasic() {
                     />
                   </div>
 
-                  {/* Cost Summary */}
                   {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
                     <Card>
                       <CardHeader>
