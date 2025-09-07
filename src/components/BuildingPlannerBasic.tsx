@@ -149,11 +149,14 @@ export default function BuildingPlannerBasic() {
 
     // Add event listeners for object placement (NOT for carpenter - carpenter only draws)
     canvas.on('mouse:down', (e) => {
+      console.log('Mouse down event', {selectedTool, electricianTool, plumberTool});
       if (selectedTool === 'electrician' && electricianTool) {
         const pointer = canvas.getPointer(e.e);
+        console.log('Placing electrician tool:', electricianTool, 'at:', pointer);
         handleElectricianTool(canvas, pointer, electricianTool, floorPlanId);
       } else if (selectedTool === 'plumber' && plumberTool) {
         const pointer = canvas.getPointer(e.e);
+        console.log('Placing plumber tool:', plumberTool, 'at:', pointer);
         handlePlumberTool(canvas, pointer, plumberTool, floorPlanId);
       }
     });
@@ -528,7 +531,7 @@ export default function BuildingPlannerBasic() {
                           setElectricianTool(null);
                           setPlumberTool(null);
                         }}
-                        className="flex flex-col items-center p-4 h-auto"
+                        className="flex flex-col items-center justify-center aspect-square p-4"
                       >
                         <Hammer className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
                         {!isMobile && <span className="text-xs">Tømrer</span>}
@@ -536,10 +539,10 @@ export default function BuildingPlannerBasic() {
                       <Button
                         variant={selectedTool === 'electrician' ? 'default' : 'outline'}
                         onClick={() => {
-                          setSelectedTool(selectedTool === 'electrician' ? 'none' : 'electrician');
+                          setSelectedTool('electrician');
                           setPlumberTool(null);
                         }}
-                        className="flex flex-col items-center p-4 h-auto"
+                        className="flex flex-col items-center justify-center aspect-square p-4"
                       >
                         <Zap className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
                         {!isMobile && <span className="text-xs">Elektriker</span>}
@@ -547,10 +550,10 @@ export default function BuildingPlannerBasic() {
                       <Button
                         variant={selectedTool === 'plumber' ? 'default' : 'outline'}
                         onClick={() => {
-                          setSelectedTool(selectedTool === 'plumber' ? 'none' : 'plumber');
+                          setSelectedTool('plumber');
                           setElectricianTool(null);
                         }}
-                        className="flex flex-col items-center p-4 h-auto"
+                        className="flex flex-col items-center justify-center aspect-square p-4"
                       >
                         <Droplet className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
                         {!isMobile && <span className="text-xs">Rørlegger</span>}
@@ -566,21 +569,21 @@ export default function BuildingPlannerBasic() {
                         <Button
                           variant={electricianTool === 'outlet' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setElectricianTool(electricianTool === 'outlet' ? null : 'outlet')}
+                          onClick={() => setElectricianTool('outlet')}
                         >
                           Stikkontakt
                         </Button>
                         <Button
                           variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setElectricianTool(electricianTool === 'lightSwitch' ? null : 'lightSwitch')}
+                          onClick={() => setElectricianTool('lightSwitch')}
                         >
                           Lysbryter
                         </Button>
                         <Button
                           variant={electricianTool === 'light' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setElectricianTool(electricianTool === 'light' ? null : 'light')}
+                          onClick={() => setElectricianTool('light')}
                         >
                           Lysarmatur
                         </Button>
@@ -596,35 +599,35 @@ export default function BuildingPlannerBasic() {
                         <Button
                           variant={plumberTool === 'sink' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setPlumberTool(plumberTool === 'sink' ? null : 'sink')}
+                          onClick={() => setPlumberTool('sink')}
                         >
                           Vask
                         </Button>
                         <Button
                           variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setPlumberTool(plumberTool === 'dishwasher' ? null : 'dishwasher')}
+                          onClick={() => setPlumberTool('dishwasher')}
                         >
                           Oppvaskmaskin
                         </Button>
                         <Button
                           variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setPlumberTool(plumberTool === 'washingMachine' ? null : 'washingMachine')}
+                          onClick={() => setPlumberTool('washingMachine')}
                         >
                           Vaskemaskin
                         </Button>
                         <Button
                           variant={plumberTool === 'shower' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setPlumberTool(plumberTool === 'shower' ? null : 'shower')}
+                          onClick={() => setPlumberTool('shower')}
                         >
                           Dusj
                         </Button>
                         <Button
                           variant={plumberTool === 'toilet' ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setPlumberTool(plumberTool === 'toilet' ? null : 'toilet')}
+                          onClick={() => setPlumberTool('toilet')}
                         >
                           Toalett
                         </Button>
