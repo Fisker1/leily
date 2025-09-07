@@ -54,6 +54,12 @@ interface PlacedItem {
 }
 
 const itemPrices = {
+  // Tømrer
+  gipsplate: { name: 'Gipsplate', price: 150 },
+  osbplate: { name: 'OSB plate', price: 120 },
+  mdfplate: { name: 'MDF plate', price: 180 },
+  trevegg: { name: 'Trevegg', price: 250 },
+  
   // Elektriker
   outlet: { name: 'Stikkontakt', price: 500 },
   lightSwitch: { name: 'Lysbryter', price: 300 },
@@ -198,15 +204,33 @@ export default function BuildingPlannerBasic() {
         const pointer = canvas.getPointer(e.e);
         console.log('Wall drawing click at:', pointer, 'Current points:', wallPointsRef.current.length);
         
-        // Check for double click (if click is very close to previous point within short time)
-        const lastPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
-        if (lastPoint) {
+        // Check for right click or double click to finish
+        if ((e.e as MouseEvent).button === 2 || e.e.detail === 2) {
+          finishWall(floorPlanId);
+          return;
+        }
+        
+        // Check if we're clicking very close to first point to close the wall
+        if (wallPointsRef.current.length > 2) {
+          const firstPoint = wallPointsRef.current[0];
           const distance = Math.sqrt(
-            Math.pow(pointer.x - lastPoint.x, 2) + Math.pow(pointer.y - lastPoint.y, 2)
+            Math.pow(pointer.x - firstPoint.x, 2) + Math.pow(pointer.y - firstPoint.y, 2)
           );
           
-          // If double-clicked (distance < 10 pixels), finish wall
-          if (distance < 10) {
+          // If clicked close to first point (< 15 pixels), close the wall
+          if (distance < 15) {
+            // Add line back to first point
+            const lastPoint = wallPointsRef.current[wallPointsRef.current.length - 1];
+            const closingLine = new Line([lastPoint.x, lastPoint.y, firstPoint.x, firstPoint.y], {
+              stroke: 'brown',
+              strokeWidth: 8,
+              selectable: false,
+              evented: false,
+            });
+            canvas.add(closingLine);
+            setTempWallObjects(prev => [...prev, closingLine]);
+            canvas.renderAll();
+            
             finishWall(floorPlanId);
             return;
           }
@@ -352,11 +376,44 @@ export default function BuildingPlannerBasic() {
         canvas.add(rect);
         canvas.renderAll();
         
-        // Show material dialog for area
-        setPendingObject(rect);
-        setShowMaterialDialog(true);
+        // Apply selected material automatically
+        applyMaterialToObject(rect, selectedMaterial);
         setPendingTool(null);
-        toast("Område markert - velg materiale");
+      } else if (currentTool === 'gipsplate' || currentTool === 'osbplate' || 
+                 currentTool === 'mdfplate' || currentTool === 'trevegg') {
+        // Place material area directly
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'rgba(139, 69, 19, 0.3)',
+          stroke: currentTool === 'gipsplate' ? 'lightblue' : 
+                  currentTool === 'osbplate' ? 'orange' :
+                  currentTool === 'mdfplate' ? 'purple' : 'brown',
+          strokeWidth: 2,
+          width: 100,
+          height: 100,
+          originX: 'center',
+          originY: 'center',
+        });
+        canvas.add(rect);
+        canvas.renderAll();
+        saveCanvasState(floorPlanId);
+        
+        // Calculate area and add as material selection
+        const area = (100 * 100) / 10000; // Convert to m²
+        const material = materials.find(m => m.id === currentTool.replace('plate', ''));
+        if (material) {
+          const cost = area * material.pricePerM2;
+          const selection: MaterialSelection = {
+            objectId: Date.now().toString(),
+            material,
+            area,
+            cost,
+          };
+          setMaterialSelections(prev => [...prev, selection]);
+          toast(`${material.name} område lagt til - ${area.toFixed(2)}m², ${cost.toFixed(0)}kr`);
+        }
+        // Don't reset pendingTool - allow continuous placement
       } else if (pendingTool === 'sink') {
         const rect = new Rect({
           left: pointer.x,
@@ -744,7 +801,7 @@ export default function BuildingPlannerBasic() {
     setWallPoints([]);
     setTempWallObjects([]);
     setShowMaterialSelector(false);
-    toast("Klikk for å starte vegg, fortsett å klikke for å legge til segmenter. Dobbeltklikk for å fullföre.");
+    toast("Klikk for waypoints i kartet. Høyreklikk eller dobbeltklikk for å fullføre veggen.");
   };
 
   // Helper function to calculate total wall length
@@ -784,17 +841,14 @@ export default function BuildingPlannerBasic() {
 
     // Calculate area (length * height)
     const area = currentWallLength * height;
-    const pricePerM2 = 250; // Default wall price per m2
-    const cost = area * pricePerM2;
+    const cost = area * selectedMaterial.pricePerM2;
 
-    // Add to material selections
+    // Add to material selections using the selected material
     const wallSelection = {
       objectId: Date.now().toString(),
       material: { 
-        id: 'wall', 
-        name: `Vegg (${currentWallLength.toFixed(1)}m × ${height}m)`, 
-        pricePerM2: pricePerM2, 
-        unit: 'm²' as const 
+        ...selectedMaterial,
+        name: `${selectedMaterial.name} vegg (${currentWallLength.toFixed(1)}m × ${height}m)`,
       },
       area: area,
       cost: cost,
@@ -883,6 +937,35 @@ export default function BuildingPlannerBasic() {
     setPendingTool('toilet');
     setDrawingMode('select'); // Reset drawing mode to allow click placement
     toast("Klikk på lerretet for å plassere toalett");
+  };
+
+  // Add carpenter material functions
+  const addGipsplate = () => {
+    setSelectedToolCategory('carpenter');
+    setPendingTool('gipsplate');
+    setDrawingMode('select');
+    toast("Klikk på lerretet for å plassere gipsplate område");
+  };
+
+  const addOsbplate = () => {
+    setSelectedToolCategory('carpenter');
+    setPendingTool('osbplate');
+    setDrawingMode('select');
+    toast("Klikk på lerretet for å plassere OSB plate område");
+  };
+
+  const addMdfplate = () => {
+    setSelectedToolCategory('carpenter');
+    setPendingTool('mdfplate');
+    setDrawingMode('select');
+    toast("Klikk på lerretet for å plassere MDF plate område");
+  };
+
+  const addTrevegg = () => {
+    setSelectedToolCategory('carpenter');
+    setPendingTool('trevegg');
+    setDrawingMode('select');
+    toast("Klikk på lerretet for å plassere trevegg område");
   };
 
   // Helper function to apply material to object
@@ -1259,33 +1342,49 @@ export default function BuildingPlannerBasic() {
 
                   {/* Additional tool options */}
                   {selectedToolCategory === 'carpenter' && (
-                    <div className="flex gap-2 flex-wrap p-3 bg-gray-50 rounded-lg">
-                      <Label className="text-sm font-medium w-full mb-2">Tømrerverktøy:</Label>
-                      <Button onClick={addWall} variant="outline" className="flex items-center gap-2">
-                        <Square className="h-4 w-4" />
-                        Legg til vegg
+                    <div className="flex gap-2 flex-wrap p-3 bg-amber-50 rounded-lg">
+                      <Label className="text-sm font-medium w-full mb-2">Tømrerarbeider:</Label>
+                      <Button
+                        onClick={addGipsplate}
+                        variant={pendingTool === 'gipsplate' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        <Hammer className="h-4 w-4" />
+                        {pendingTool === 'gipsplate' ? 'Klikk for å plassere gipsplate' : 'Gipsplate (150kr/m²)'}
                       </Button>
-                      <Button onClick={addRoom} variant="outline" className="flex items-center gap-2">
-                        <Square className="h-4 w-4" />
-                        Marker rom
+                      <Button
+                        onClick={addOsbplate}
+                        variant={pendingTool === 'osbplate' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        <Hammer className="h-4 w-4" />
+                        {pendingTool === 'osbplate' ? 'Klikk for å plassere OSB plate' : 'OSB plate (120kr/m²)'}
                       </Button>
-                      <Button onClick={addWindow} variant="outline" className="flex items-center gap-2">
-                        <Square className="h-4 w-4" />
-                        Legg til vindu
+                      <Button
+                        onClick={addMdfplate}
+                        variant={pendingTool === 'mdfplate' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        <Hammer className="h-4 w-4" />
+                        {pendingTool === 'mdfplate' ? 'Klikk for å plassere MDF plate' : 'MDF plate (180kr/m²)'}
                       </Button>
-                      <Button onClick={selectArea} variant="outline" className="flex items-center gap-2">
-                        <Square className="h-4 w-4" />
-                        Område
+                      <Button
+                        onClick={addTrevegg}
+                        variant={pendingTool === 'trevegg' ? 'default' : 'outline'}
+                        className="flex items-center gap-2"
+                      >
+                        <Hammer className="h-4 w-4" />
+                        {pendingTool === 'trevegg' ? 'Klikk for å plassere trevegg' : 'Trevegg (250kr/m²)'}
                       </Button>
                       <Button onClick={drawWalls} variant="outline" className="flex items-center gap-2">
                         <PenTool className="h-4 w-4" />
-                        Tegn vegger
+                        Tegn vegger med waypoints
                       </Button>
                       
-                      {/* Material selector - shown after clicking wall/area tools */}
+                      {/* Material selector for wall drawing */}
                       {showMaterialSelector && (
                         <div className="w-full mt-4 p-3 bg-white border rounded-lg">
-                          <Label className="text-sm font-semibold mb-2 block">Velg materiale:</Label>
+                          <Label className="text-sm font-semibold mb-2 block">Velg veggmateriale:</Label>
                           <div className="flex gap-2 flex-wrap">
                             {materials.map((material) => (
                               <Button
@@ -1294,12 +1393,7 @@ export default function BuildingPlannerBasic() {
                                 size="sm"
                                 onClick={() => {
                                   setSelectedMaterial(material);
-                                  // Start the appropriate action based on pending tool
-                                  if (pendingTool === 'area') {
-                                    startAreaSelection();
-                                  } else {
-                                    startWallDrawing();
-                                  }
+                                  startWallDrawing();
                                 }}
                                 className="text-xs"
                               >
@@ -1316,6 +1410,18 @@ export default function BuildingPlannerBasic() {
                             Avbryt
                           </Button>
                         </div>
+                      )}
+                      
+                      {pendingTool && (pendingTool === 'gipsplate' || pendingTool === 'osbplate' || 
+                                      pendingTool === 'mdfplate' || pendingTool === 'trevegg') && (
+                        <Button
+                          onClick={() => setPendingTool(null)}
+                          variant="secondary"
+                          size="sm"
+                          className="ml-2"
+                        >
+                          Stopp plassering
+                        </Button>
                       )}
                     </div>
                   )}
