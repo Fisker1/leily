@@ -614,9 +614,13 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      promote_user_to_ambassador: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "ambassador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -744,7 +748,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "ambassador"],
     },
   },
 } as const

@@ -25,15 +25,24 @@ interface UserProfile {
   email: string;
   full_name: string;
   created_at: string;
+  subscription_tier?: string;
+  subscription_end?: string;
+}
+
+interface UserWithRoles extends UserProfile {
+  user_roles?: Array<{
+    role: 'admin' | 'user' | 'ambassador';
+  }>;
 }
 
 const SecurityDashboard: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [promoteEmail, setPromoteEmail] = useState('');
+  const [ambassadorEmail, setAmbassadorEmail] = useState('');
 
   useEffect(() => {
     fetchSecurityData();
@@ -64,8 +73,24 @@ const SecurityDashboard: React.FC = () => {
 
       if (profilesError) {
         console.error('Error fetching users:', profilesError);
+        setUsers([]);
       } else {
-        setUsers(profiles || []);
+        // Fetch user roles separately
+        const { data: roles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role');
+
+        if (rolesError) {
+          console.error('Error fetching roles:', rolesError);
+          setUsers(profiles || []);
+        } else {
+          // Combine profiles with their roles
+          const usersWithRoles = (profiles || []).map(profile => ({
+            ...profile,
+            user_roles: roles?.filter(role => role.user_id === profile.id) || []
+          }));
+          setUsers(usersWithRoles);
+        }
       }
 
     } catch (error) {
@@ -130,6 +155,56 @@ const SecurityDashboard: React.FC = () => {
     }
   };
 
+  const promoteUserToAmbassador = async () => {
+    if (!ambassadorEmail.trim()) {
+      toast({
+        title: 'Feil',
+        description: 'Vennligst skriv inn en e-postadresse',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Find user by email
+      const targetUser = users.find(u => u.email.toLowerCase() === ambassadorEmail.toLowerCase());
+      
+      if (!targetUser) {
+        toast({
+          title: 'Feil',
+          description: 'Bruker ikke funnet',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Call the promote to ambassador function
+      const { error } = await supabase.rpc('promote_user_to_ambassador', {
+        target_user_id: targetUser.id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Suksess',
+        description: `${ambassadorEmail} er nå forfremmet til ambassadør med gratis premium abonnement`,
+      });
+
+      setAmbassadorEmail('');
+      fetchSecurityData(); // Refresh data
+
+    } catch (error: any) {
+      console.error('Error promoting user to ambassador:', error);
+      toast({
+        title: 'Feil',
+        description: error.message || 'Kunne ikke forfremme bruker til ambassadør',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString('no-NO');
   };
@@ -144,6 +219,7 @@ const SecurityDashboard: React.FC = () => {
         return 'destructive';
       case 'bootstrap_admin_created':
       case 'user_promoted_to_admin':
+      case 'user_promoted_to_ambassador':
         return 'outline';
       default:
         return 'secondary';
@@ -201,7 +277,8 @@ const SecurityDashboard: React.FC = () => {
             <div className="text-2xl font-bold">
               {auditLogs.filter(log => 
                 log.action === 'bootstrap_admin_created' || 
-                log.action === 'user_promoted_to_admin'
+                log.action === 'user_promoted_to_admin' ||
+                log.action === 'user_promoted_to_ambassador'
               ).length}
             </div>
           </CardContent>
@@ -293,6 +370,43 @@ const SecurityDashboard: React.FC = () => {
 
           <Card>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-amber-600" />
+                Forfrem Bruker til Ambassadør
+              </CardTitle>
+              <CardDescription>
+                Gi en bruker ambassadør-status med gratis premium abonnement (1 år)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <UserPlus className="h-4 w-4" />
+                <AlertTitle>Ambassadør-fordeler</AlertTitle>
+                <AlertDescription>
+                  Ambassadører får gratis premium abonnement i 1 år og kan hjelpe andre brukere.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="ambassador-email">Bruker E-post</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ambassador-email"
+                    type="email"
+                    placeholder="bruker@example.com"
+                    value={ambassadorEmail}
+                    onChange={(e) => setAmbassadorEmail(e.target.value)}
+                  />
+                  <Button onClick={promoteUserToAmbassador} className="bg-amber-600 hover:bg-amber-700">
+                    Forfrem til Ambassadør
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Registrerte Brukere</CardTitle>
               <CardDescription>
                 Oversikt over alle brukere i systemet
@@ -302,9 +416,27 @@ const SecurityDashboard: React.FC = () => {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {users.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{user.full_name || 'Ikke angitt'}</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{user.full_name || 'Ikke angitt'}</p>
+                        {user.user_roles?.map((role) => (
+                          <Badge 
+                            key={role.role} 
+                            variant={role.role === 'admin' ? 'destructive' : role.role === 'ambassador' ? 'default' : 'secondary'}
+                            className={role.role === 'ambassador' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                          >
+                            {role.role === 'admin' ? 'Admin' : 
+                             role.role === 'ambassador' ? 'Ambassadør' : 'Bruker'}
+                          </Badge>
+                        ))}
+                      </div>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
+                      {user.subscription_tier && user.subscription_tier !== 'free' && (
+                        <p className="text-xs text-green-600">
+                          {user.subscription_tier === 'premium' ? 'Premium' : user.subscription_tier} 
+                          {user.subscription_end && ` (til ${new Date(user.subscription_end).toLocaleDateString('no-NO')})`}
+                        </p>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Registrert: {formatTimestamp(user.created_at)}
