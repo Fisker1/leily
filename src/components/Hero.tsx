@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calculator, TrendingUp, FileText, PieChart } from "lucide-react";
+import { Calculator, TrendingUp, FileText, PieChart, Play, Users, Target, Building } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/hero-image.jpg";
+import videoPlaceholder from "@/assets/video-placeholder.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProcessWalkthrough from "@/components/ProcessWalkthrough";
 
@@ -12,23 +12,23 @@ const Hero = () => {
   const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
   
   return (
-    <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div className="text-center lg:text-left">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              {translations.hero.title}
+    <>
+      {/* Hero Section */}
+      <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
+              Din komplette eiendomsportal
             </h1>
-            <p className="mt-4 lg:mt-6 text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-              {translations.hero.subtitle}
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+              Forenkle forvaltning og investering av eiendom med profesjonelle verktøy for kalkulasjoner, 
+              utleieadministrasjon og markedsanalyse.
             </p>
             
-            <div className="mt-6 lg:mt-8 flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium" asChild>
-                <Link to="/calculator">
-                  <Calculator className="mr-2 h-5 w-5" />
-                  {translations.hero.cta}
+                <Link to="/auth">
+                  Kom i gang gratis
                 </Link>
               </Button>
               <Button 
@@ -37,62 +37,118 @@ const Hero = () => {
                 className="shadow-soft"
                 onClick={() => setIsWalkthroughOpen(true)}
               >
-                {translations.hero.secondaryCta}
+                Se hvordan det virker
               </Button>
             </div>
 
             {/* Quick Stats */}
-            <div className="mt-8 lg:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
-              <Card className="p-3 lg:p-4 text-center shadow-soft">
-                <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-primary mx-auto mb-1.5 lg:mb-2" />
-                <p className="text-xs lg:text-sm text-muted-foreground">{translations.features.feature1.title}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
+              <Card className="p-4 text-center shadow-soft">
+                <Calculator className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Kalkulatorer</p>
               </Card>
-              <Card className="p-3 lg:p-4 text-center shadow-soft">
-                <PieChart className="h-5 w-5 lg:h-6 lg:w-6 text-primary mx-auto mb-1.5 lg:mb-2" />
-                <p className="text-xs lg:text-sm text-muted-foreground">{translations.features.feature2.title}</p>
+              <Card className="p-4 text-center shadow-soft">
+                <Building className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Utleieforvaltning</p>
               </Card>
-              <Card className="p-3 lg:p-4 text-center shadow-soft">
-                <FileText className="h-5 w-5 lg:h-6 lg:w-6 text-primary mx-auto mb-1.5 lg:mb-2" />
-                <p className="text-xs lg:text-sm text-muted-foreground">{translations.features.feature3.title}</p>
+              <Card className="p-4 text-center shadow-soft">
+                <FileText className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Rapporter</p>
               </Card>
-              <Card className="p-3 lg:p-4 text-center shadow-soft">
-                <Calculator className="h-5 w-5 lg:h-6 lg:w-6 text-primary mx-auto mb-1.5 lg:mb-2" />
-                <p className="text-xs lg:text-sm text-muted-foreground">{translations.calculator.title}</p>
+              <Card className="p-4 text-center shadow-soft">
+                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Markedsanalyse</p>
               </Card>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Image */}
-          <div className="relative lg:mt-0 mt-8">
-            <Card className="overflow-hidden shadow-large">
-              <img 
-                src={heroImage} 
-                alt="Property investment analysis dashboard" 
-                className="w-full h-auto object-cover"
-              />
-            </Card>
-            
-            {/* Floating calculator preview - hidden on mobile to prevent overflow */}
-            <Card className="absolute -bottom-6 -left-6 p-4 lg:p-6 shadow-large bg-card-elevated border-0 hidden sm:block">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="p-1.5 lg:p-2 bg-primary-soft rounded-lg">
-                  <Calculator className="h-4 w-4 lg:h-6 lg:w-6 text-primary" />
+      {/* Video Introduction Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+              Se hvordan Leily fungerer
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              En kort introduksjon til hvordan du kan bruke vår plattform for å optimalisere dine eiendomsinvesteringer.
+            </p>
+          </div>
+          
+          <div className="max-w-4xl mx-auto">
+            <Card className="relative overflow-hidden shadow-large">
+              <div className="relative">
+                <img 
+                  src={videoPlaceholder} 
+                  alt="Introduksjonsvideo til Leily plattformen" 
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <div className="bg-white/90 rounded-full p-6 shadow-large">
+                    <Play className="h-12 w-12 text-primary ml-1" />
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-xs lg:text-sm">{translations.calculator.title}</p>
-                  <p className="text-primary text-base lg:text-lg font-bold">8.2% {translations.calculator.results.annualReturn}</p>
+                <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm">
+                  Video kommer snart
                 </div>
               </div>
             </Card>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Vision Section */}
+      <section className="py-16 bg-gradient-soft">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6">
+              Vår visjon
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Vi ønsker å gjøre eiendomsinvestering tilgjengelig for alle ved å tilby profesjonelle verktøy 
+              som tidligere kun var tilgjengelige for store aktører. Med Leily kan du ta informerte beslutninger 
+              basert på solid data og analyser.
+            </p>
+            
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="bg-primary-soft rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Tilgjengelighet</h3>
+                <p className="text-sm text-muted-foreground">
+                  Profesjonelle verktøy for alle
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-primary-soft rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Target className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Presisjon</h3>
+                <p className="text-sm text-muted-foreground">
+                  Nøyaktige beregninger og analyser
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-primary-soft rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <TrendingUp className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Vekst</h3>
+                <p className="text-sm text-muted-foreground">
+                  Hjelper deg å bygge din eiendomsportefølje
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <ProcessWalkthrough 
         isOpen={isWalkthroughOpen}
         onClose={() => setIsWalkthroughOpen(false)}
       />
-    </section>
+    </>
   );
 };
 

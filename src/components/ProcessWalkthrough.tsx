@@ -25,139 +25,77 @@ const ProcessWalkthrough = ({ isOpen, onClose }: ProcessWalkthroughProps) => {
 
   const steps = [
     {
-      id: 0,
-      title: "Gjør gode investeringer",
-      description: "Analyser lønnsomhet, risiko og markedspotensial før du kjøper eiendom",
-      icon: Target,
+      id: 1,
+      title: "Start med kalkulatoren",
+      description: "Bruk vår avanserte kalkulator for å analysere eiendomsinvesteringer.",
+      icon: Calculator,
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="shadow-soft">
-              <CardHeader className="pb-4">
-                <Calculator className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Lønnsomhetsanalyse</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Beregn kontantstrøm, avkastning og tilbakebetalingstid
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft">
-              <CardHeader className="pb-4">
-                <TrendingUp className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Markedsanalyse</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Sammenlign priser og leieinntekter i området
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft">
-              <CardHeader className="pb-4">
-                <BarChart3 className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Risikoevaluering</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Identifiser potensielle risikoer og få anbefalinger
-                </p>
-              </CardContent>
-            </Card>
+          <div className="bg-gradient-soft p-4 rounded-lg">
+            <h4 className="font-semibold mb-2">Profesjonelle beregninger</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Lønnsomhetsanalyse med cash flow</li>
+              <li>• Avkastningsberegninger</li>
+              <li>• Finansieringsscenarier</li>
+              <li>• Risikoevaluering</li>
+            </ul>
           </div>
-          <p className="text-center text-muted-foreground">
-            Få en fullstendig analyse før du investerer i ny eiendom
+          <p className="text-sm text-muted-foreground">
+            Få detaljerte analyser på minutter med våre profesjonelle kalkulatorer.
           </p>
         </div>
       )
     },
     {
-      id: 1,
-      title: "Overvåk utleieforhold",
-      description: "Hold oversikt over leiekontrakter, vedlikehold og økonomiske resultater",
+      id: 2,
+      title: "Opprett din portefølje",
+      description: "Administrer alle dine eiendommer og leieforhold på ett sted.",
       icon: Home,
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg">Leieforholdsoversikt</CardTitle>
-                <CardDescription>Aktive leiekontrakter og leietakere</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                    <span className="font-medium">Storgata 15</span>
-                    <span className="text-primary font-bold">15,000 kr/mnd</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                    <span className="font-medium">Bjørnebærvei 8</span>
-                    <span className="text-primary font-bold">18,500 kr/mnd</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg">Månedlige resultater</CardTitle>
-                <CardDescription>Inntekter, utgifter og netto kontantstrøm</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Leieinntekter:</span>
-                    <span className="font-bold text-green-600">+33,500 kr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Utgifter:</span>
-                    <span className="font-bold text-red-600">-8,200 kr</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium">Netto kontantstrøm:</span>
-                    <span className="font-bold text-primary">+25,300 kr</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-primary-soft p-3 rounded-lg text-center">
+              <Home className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-xs font-medium">Eiendommer</p>
+            </div>
+            <div className="bg-primary-soft p-3 rounded-lg text-center">
+              <Target className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-xs font-medium">Leietakere</p>
+            </div>
+            <div className="bg-orange-muted/20 border border-orange-border/30 p-3 rounded-lg text-center">
+              <BarChart3 className="h-6 w-6 text-orange mx-auto mb-1" />
+              <p className="text-xs font-medium">Kontrakter</p>
+            </div>
+            <div className="bg-orange-muted/20 border border-orange-border/30 p-3 rounded-lg text-center">
+              <PieChart className="h-6 w-6 text-orange mx-auto mb-1" />
+              <p className="text-xs font-medium">Depositum</p>
+            </div>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Hold full oversikt over din eiendomsportefølje med vårt dashboard.
+          </p>
         </div>
       )
     },
     {
-      id: 2,
-      title: "Porteføljeoversikt",
-      description: "Se hvordan hele porteføljen utvikler seg over tid med detaljerte analyser",
-      icon: PieChart,
+      id: 3,
+      title: "Generer rapporter",
+      description: "Få profesjonelle PDF-rapporter for bank og rådgivere.",
+      icon: Target,
       content: (
         <div className="space-y-4">
-          <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle className="text-lg">Porteføljeytelse</CardTitle>
-              <CardDescription>Samlet verdiutvikling og avkastning</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gradient-soft rounded-lg">
-                  <p className="text-2xl font-bold text-primary">2.8M kr</p>
-                  <p className="text-sm text-muted-foreground">Samlet verdi</p>
-                </div>
-                <div className="text-center p-4 bg-gradient-soft rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">+12.5%</p>
-                  <p className="text-sm text-muted-foreground">Årlig avkastning</p>
-                </div>
-                <div className="text-center p-4 bg-gradient-soft rounded-lg">
-                  <p className="text-2xl font-bold text-primary">285k kr</p>
-                  <p className="text-sm text-muted-foreground">Årlig kontantstrøm</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <p className="text-center text-muted-foreground">
-            Få full oversikt over porteføljens utvikling og identifiser muligheter for optimalisering
+          <div className="bg-gradient-soft p-4 rounded-lg">
+            <h4 className="font-semibold mb-2">Bankrapporter inneholder:</h4>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              <li>• Detaljerte lønnsomhetsberegninger</li>
+              <li>• Markedsanalyse og sammenligning</li>
+              <li>• Finansieringsscenarier</li>
+              <li>• Risikoevaluering</li>
+              <li>• Profesjonelle anbefalinger</li>
+            </ul>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Profesjonelle rapporter som bankene setter pris på og som styrker lånesøknaden din.
           </p>
         </div>
       )
