@@ -21,11 +21,11 @@ const Hero = () => {
               Din komplette eiendomsportal
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Forenkle forvaltning og investering av eiendom med profesjonelle verktøy for kalkulasjoner, 
+              Enkelt å eie, enkelt å leie. Forenkle forvaltning og investering av eiendom med profesjonelle verktøy for kalkulasjoner, 
               utleieadministrasjon og markedsanalyse.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium" asChild>
                 <Link to="/auth">
                   Kom i gang gratis
@@ -39,26 +39,6 @@ const Hero = () => {
               >
                 Se hvordan det virker
               </Button>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              <Card className="p-4 text-center shadow-soft">
-                <Calculator className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Kalkulatorer</p>
-              </Card>
-              <Card className="p-4 text-center shadow-soft">
-                <Building className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Utleieforvaltning</p>
-              </Card>
-              <Card className="p-4 text-center shadow-soft">
-                <FileText className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Rapporter</p>
-              </Card>
-              <Card className="p-4 text-center shadow-soft">
-                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Markedsanalyse</p>
-              </Card>
             </div>
           </div>
         </div>

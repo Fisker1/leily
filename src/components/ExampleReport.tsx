@@ -8,22 +8,33 @@ const ExampleReport = () => {
   const navigate = useNavigate();
 
   const handleViewExampleReport = () => {
-    // Example report data that matches the actual structure
+    // Example report data that matches the BankReport structure
     const exampleReportData = {
-      propertyData: {
+      basicData: {
+        propertyType: "leilighet",
         propertyValue: 2500000,
-        downPayment: 20,
-        monthlyRent: 15000,
-        monthlyExpenses: 5000,
-        interestRate: 4.5,
-        location: "Grünerløkka, Oslo"
-      },
-      calculations: {
+        equity: 500000,
         loanAmount: 2000000,
-        monthlyPayment: 11500,
-        netCashFlow: -1500,
+        interestRate: 4.5,
+        loanPeriod: 25,
+        monthlyRent: 15000,
+        expenses: 5000,
+        municipalFees: 1500,
+        electricityMonthly: 1000,
+        insurance: 800,
+        sharedExpenses: 1700,
+        monthlyLoanPayment: 11500,
+        monthlyCashFlow: -1500,
+        grossYield: 7.2,
+        calculatorMode: "investment"
+      },
+      profitabilityData: {
+        score: 75,
         monthlyReturn: -1.2,
-        annualReturn: 6.8,
+        annualReturn: 6.8
+      },
+      advancedData: {
+        capRate: 6.5,
         totalYield: 7.2,
         paybackPeriod: 18.5
       },
@@ -33,16 +44,21 @@ const ExampleReport = () => {
         rentYield: 6.5,
         marketGrowth: 4.2
       },
-      riskFactors: [
-        "Negativ månedlig cash flow første år",
-        "Høy belåningsgrad (80%)",
-        "Lav leiedekning i området"
-      ],
-      recommendations: [
-        "Vurder høyere egenkapitalandel for bedre cash flow",
-        "Undersøk muligheter for økt leieinntekt",
-        "Beregn med fremtidig rentestigning"
-      ]
+      riskData: {
+        riskFactors: [
+          "Negativ månedlig cash flow første år",
+          "Høy belåningsgrad (80%)",
+          "Lav leiedekning i området"
+        ]
+      },
+      yieldData: {
+        recommendations: [
+          "Vurder høyere egenkapitalandel for bedre cash flow",
+          "Undersøk muligheter for økt leieinntekt",
+          "Beregn med fremtidig rentestigning"
+        ]
+      },
+      activatedModules: ["basic", "profitability", "advanced", "market", "risk", "yield"]
     };
 
     navigate('/bank-report', { state: exampleReportData });
@@ -79,25 +95,6 @@ const ExampleReport = () => {
             </CardHeader>
             
             <CardContent className="space-y-6">
-              {/* Key Metrics */}
-              <div className="grid sm:grid-cols-3 gap-4">
-                <Card className="p-4 text-center border-l-4 border-l-primary">
-                  <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Årlig avkastning</p>
-                  <p className="text-2xl font-bold text-primary">6.8%</p>
-                </Card>
-                <Card className="p-4 text-center border-l-4 border-l-orange">
-                  <PieChart className="h-6 w-6 text-orange mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Total yield</p>
-                  <p className="text-2xl font-bold text-orange">7.2%</p>
-                </Card>
-                <Card className="p-4 text-center border-l-4 border-l-red-500">
-                  <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Månedlig cash flow</p>
-                  <p className="text-2xl font-bold text-red-500">-1,500 kr</p>
-                </Card>
-              </div>
-
               {/* Sample Content Preview */}
               <div className="bg-gradient-soft p-6 rounded-lg">
                 <h3 className="font-semibold mb-4">Sammendrag av analysen:</h3>
