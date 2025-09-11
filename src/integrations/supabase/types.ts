@@ -589,6 +589,10 @@ export type Database = {
         Args: { encrypted_text: string }
         Returns: string
       }
+      detect_security_violations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       detect_suspicious_tenant_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined
