@@ -147,25 +147,55 @@ const BankReport = () => {
       const style = document.createElement('style');
       style.textContent = `
         .pdf-generation {
-          max-width: ${isMobile ? '800px' : '1000px'} !important;
-          width: ${isMobile ? '800px' : '1000px'} !important;
+          max-width: ${isMobile ? '750px' : '1000px'} !important;
+          width: ${isMobile ? '750px' : '1000px'} !important;
           margin: 0 auto !important;
-          padding: 20px !important;
-          font-size: ${isMobile ? '12px' : '14px'} !important;
+          padding: ${isMobile ? '16px' : '20px'} !important;
+          font-size: ${isMobile ? '11px' : '14px'} !important;
+          line-height: ${isMobile ? '1.3' : '1.4'} !important;
         }
         .pdf-generation .grid-cols-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: ${isMobile ? '12px' : '16px'};
+          display: ${isMobile ? 'block' : 'grid'} !important;
+          grid-template-columns: ${isMobile ? 'none' : '1fr 1fr'};
+          gap: ${isMobile ? '8px' : '16px'};
+        }
+        .pdf-generation .grid-cols-2 > div {
+          margin-bottom: ${isMobile ? '8px' : '0'} !important;
         }
         .pdf-generation table {
           width: 100% !important;
-          font-size: ${isMobile ? '10px' : '11px'} !important;
+          font-size: ${isMobile ? '9px' : '11px'} !important;
+          line-height: ${isMobile ? '1.2' : '1.3'} !important;
         }
-        .pdf-generation h1 { font-size: ${isMobile ? '18px' : '20px'} !important; }
-        .pdf-generation h2 { font-size: ${isMobile ? '16px' : '18px'} !important; }
-        .pdf-generation h3 { font-size: ${isMobile ? '14px' : '16px'} !important; }
-        .pdf-generation h4 { font-size: ${isMobile ? '12px' : '14px'} !important; }
+        .pdf-generation table td {
+          padding: ${isMobile ? '2px 4px' : '4px 8px'} !important;
+        }
+        .pdf-generation .border {
+          border-width: ${isMobile ? '1px' : '2px'} !important;
+        }
+        .pdf-generation h1 { 
+          font-size: ${isMobile ? '16px' : '20px'} !important; 
+          margin-bottom: ${isMobile ? '8px' : '12px'} !important;
+        }
+        .pdf-generation h2 { 
+          font-size: ${isMobile ? '14px' : '18px'} !important; 
+          margin-bottom: ${isMobile ? '6px' : '10px'} !important;
+        }
+        .pdf-generation h3 { 
+          font-size: ${isMobile ? '12px' : '16px'} !important; 
+          margin-bottom: ${isMobile ? '4px' : '8px'} !important;
+        }
+        .pdf-generation h4 { 
+          font-size: ${isMobile ? '10px' : '14px'} !important; 
+          margin-bottom: ${isMobile ? '3px' : '6px'} !important;
+        }
+        .pdf-generation .mb-8 { margin-bottom: ${isMobile ? '16px' : '32px'} !important; }
+        .pdf-generation .mb-6 { margin-bottom: ${isMobile ? '12px' : '24px'} !important; }
+        .pdf-generation .mb-4 { margin-bottom: ${isMobile ? '8px' : '16px'} !important; }
+        .pdf-generation .p-8 { padding: ${isMobile ? '12px' : '32px'} !important; }
+        .pdf-generation .p-4 { padding: ${isMobile ? '8px' : '16px'} !important; }
+        .pdf-generation .pb-6 { padding-bottom: ${isMobile ? '12px' : '24px'} !important; }
+        .pdf-generation .pb-2 { padding-bottom: ${isMobile ? '4px' : '8px'} !important; }
         @media print {
           .report-section {
             page-break-inside: avoid;
