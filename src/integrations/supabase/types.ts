@@ -572,6 +572,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_access_tenant_data: {
+        Args: { admin_justification: string; tenant_property_owner_id: string }
+        Returns: {
+          access_timestamp: string
+          email_partially_masked: string
+          first_name: string
+          id: string
+          last_name: string
+          national_id_partially_masked: string
+          phone_partially_masked: string
+          property_owner_id: string
+        }[]
+      }
       decrypt_tenant_field: {
         Args: { encrypted_text: string }
         Returns: string
@@ -613,6 +626,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      monitor_admin_tenant_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       promote_user_to_admin: {
         Args: { target_user_id: string }
