@@ -680,6 +680,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_security_status_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          description: string
+          requires_manual_config: boolean
+          security_feature: string
+          status: string
+        }[]
+      }
       has_legitimate_tenant_access: {
         Args: { tenant_property_owner_id: string }
         Returns: boolean
