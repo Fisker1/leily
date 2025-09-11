@@ -624,7 +624,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_auth_security_config: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_required: string
+          current_status: string
+          recommendation: string
+          setting_name: string
+        }[]
+      }
       cleanup_old_rate_limits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_security_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -643,6 +656,10 @@ export type Database = {
       encrypt_tenant_field: {
         Args: { plain_text: string }
         Returns: string
+      }
+      enhanced_auth_security_monitoring: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_secure_tenant_data: {
         Args: { tenant_property_owner_id: string }
