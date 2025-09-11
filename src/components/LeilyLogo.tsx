@@ -9,7 +9,7 @@ const LeilyLogo = ({ className, showText = true }: LeilyLogoProps) => {
   return (
     <div className={cn("flex items-center", className)}>
       <img 
-        src="/lovable-uploads/7fdc8aa1-0826-4dec-9e36-0027dae5dbfe.png" 
+        src="/lovable-uploads/a307073e-e0ff-4a05-8b51-1239b1270ed3.png" 
         alt="Leily Logo" 
         className="h-10 w-auto"
       />

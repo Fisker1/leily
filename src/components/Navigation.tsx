@@ -60,6 +60,12 @@ const Navigation = () => {
             </div>
             {user ? (
               <>
+                <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
+                  <Link to="/min-side" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden lg:inline">Min side</span>
+                  </Link>
+                </Button>
                 {isAdmin && (
                   <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
                     <Link to="/admin" className="flex items-center gap-2">
