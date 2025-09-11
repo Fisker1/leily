@@ -136,71 +136,158 @@ const BankReport = () => {
       const originalWidth = reportElement.style.width;
       const originalPadding = reportElement.style.padding;
 
-      // Apply PDF-optimized styles temporarily
-      if (isMobile) {
-        reportElement.style.maxWidth = '800px';
-        reportElement.style.width = '800px';
-        reportElement.style.padding = '20px';
-      }
-
-      // Add comprehensive print styles
+      // Apply simple PDF-optimized styles
       const style = document.createElement('style');
       style.textContent = `
         .pdf-generation {
-          max-width: ${isMobile ? '750px' : '1000px'} !important;
-          width: ${isMobile ? '750px' : '1000px'} !important;
+          max-width: 210mm !important;
+          width: 210mm !important;
           margin: 0 auto !important;
-          padding: ${isMobile ? '16px' : '20px'} !important;
-          font-size: ${isMobile ? '11px' : '14px'} !important;
-          line-height: ${isMobile ? '1.3' : '1.4'} !important;
+          padding: 15mm !important;
+          font-size: 12px !important;
+          line-height: 1.4 !important;
+          background: white !important;
         }
-        .pdf-generation .grid-cols-2 {
-          display: ${isMobile ? 'block' : 'grid'} !important;
-          grid-template-columns: ${isMobile ? 'none' : '1fr 1fr'};
-          gap: ${isMobile ? '8px' : '16px'};
+        
+        .pdf-generation * {
+          box-sizing: border-box !important;
         }
-        .pdf-generation .grid-cols-2 > div {
-          margin-bottom: ${isMobile ? '8px' : '0'} !important;
+        
+        .pdf-generation h1 { 
+          font-size: 18px !important; 
+          margin-bottom: 12px !important;
+          page-break-after: avoid !important;
         }
+        
+        .pdf-generation h2 { 
+          font-size: 16px !important; 
+          margin-bottom: 10px !important;
+          page-break-after: avoid !important;
+        }
+        
+        .pdf-generation h3 { 
+          font-size: 14px !important; 
+          margin-bottom: 8px !important;
+          page-break-after: avoid !important;
+        }
+        
+        .pdf-generation h4 { 
+          font-size: 12px !important; 
+          margin-bottom: 6px !important;
+        }
+        
+        .pdf-generation .grid {
+          display: block !important;
+        }
+        
+        .pdf-generation .grid > div {
+          width: 100% !important;
+          margin-bottom: 15px !important;
+          display: block !important;
+        }
+        
+        .pdf-generation .grid-cols-2 > div:nth-child(odd) {
+          margin-bottom: 8px !important;
+        }
+        
         .pdf-generation table {
           width: 100% !important;
-          font-size: ${isMobile ? '9px' : '11px'} !important;
-          line-height: ${isMobile ? '1.2' : '1.3'} !important;
+          font-size: 11px !important;
+          border-collapse: collapse !important;
+          margin-bottom: 10px !important;
         }
+        
         .pdf-generation table td {
-          padding: ${isMobile ? '2px 4px' : '4px 8px'} !important;
+          padding: 6px 8px !important;
+          border-bottom: 1px solid #ddd !important;
+          vertical-align: top !important;
         }
+        
         .pdf-generation .border {
-          border-width: ${isMobile ? '1px' : '2px'} !important;
+          border: 1px solid #333 !important;
+          margin-bottom: 15px !important;
         }
-        .pdf-generation h1 { 
-          font-size: ${isMobile ? '16px' : '20px'} !important; 
-          margin-bottom: ${isMobile ? '8px' : '12px'} !important;
+        
+        .pdf-generation .p-4 {
+          padding: 12px !important;
         }
-        .pdf-generation h2 { 
-          font-size: ${isMobile ? '14px' : '18px'} !important; 
-          margin-bottom: ${isMobile ? '6px' : '10px'} !important;
+        
+        .pdf-generation .p-8 {
+          padding: 15px !important;
         }
-        .pdf-generation h3 { 
-          font-size: ${isMobile ? '12px' : '16px'} !important; 
-          margin-bottom: ${isMobile ? '4px' : '8px'} !important;
+        
+        .pdf-generation .mb-8 { 
+          margin-bottom: 20px !important; 
         }
-        .pdf-generation h4 { 
-          font-size: ${isMobile ? '10px' : '14px'} !important; 
-          margin-bottom: ${isMobile ? '3px' : '6px'} !important;
+        
+        .pdf-generation .mb-6 { 
+          margin-bottom: 15px !important; 
         }
-        .pdf-generation .mb-8 { margin-bottom: ${isMobile ? '16px' : '32px'} !important; }
-        .pdf-generation .mb-6 { margin-bottom: ${isMobile ? '12px' : '24px'} !important; }
-        .pdf-generation .mb-4 { margin-bottom: ${isMobile ? '8px' : '16px'} !important; }
-        .pdf-generation .p-8 { padding: ${isMobile ? '12px' : '32px'} !important; }
-        .pdf-generation .p-4 { padding: ${isMobile ? '8px' : '16px'} !important; }
-        .pdf-generation .pb-6 { padding-bottom: ${isMobile ? '12px' : '24px'} !important; }
-        .pdf-generation .pb-2 { padding-bottom: ${isMobile ? '4px' : '8px'} !important; }
-        @media print {
-          .report-section {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
+        
+        .pdf-generation .mb-4 { 
+          margin-bottom: 12px !important; 
+        }
+        
+        .pdf-generation .pb-6 { 
+          padding-bottom: 15px !important; 
+        }
+        
+        .pdf-generation .pb-2 { 
+          padding-bottom: 6px !important; 
+        }
+        
+        .pdf-generation .report-section {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 20px !important;
+        }
+        
+        .pdf-generation .avoid-break {
+          page-break-inside: avoid !important;
+        }
+        
+        .pdf-generation .page-break-before {
+          page-break-before: always !important;
+        }
+        
+        /* Ensure text is readable */
+        .pdf-generation .text-xs {
+          font-size: 11px !important;
+        }
+        
+        .pdf-generation .text-sm {
+          font-size: 12px !important;
+        }
+        
+        /* Fix spacing for mobile PDF */
+        .pdf-generation .space-y-1 > * + * {
+          margin-top: 4px !important;
+        }
+        
+        /* Better table styling for PDF */
+        .pdf-generation tbody tr:last-child td {
+          border-bottom: 2px solid #333 !important;
+        }
+        
+        .pdf-generation .bg-gray-50 {
+          background-color: #f9f9f9 !important;
+        }
+        
+        /* Improve text contrast */
+        .pdf-generation .text-gray-600 {
+          color: #4a4a4a !important;
+        }
+        
+        .pdf-generation .text-gray-700 {
+          color: #333 !important;
+        }
+        
+        .pdf-generation .text-gray-800 {
+          color: #222 !important;
+        }
+        
+        .pdf-generation .text-gray-900 {
+          color: #111 !important;
         }
       `;
       document.head.appendChild(style);
@@ -211,31 +298,26 @@ const BankReport = () => {
       // Wait for layout to settle
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Determine canvas settings based on device
-      const scale = isMobile ? 1.5 : 2;
-      const canvasWidth = isMobile ? 800 : 1000;
-
-      // Create single canvas for entire report
+      // Create canvas with better settings for PDF
       const canvas = await html2canvas(reportElement, {
-        scale: scale,
+        scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: canvasWidth,
-        height: reportElement.scrollHeight,
+        width: 794, // A4 width in pixels at 96 DPI
         scrollX: 0,
         scrollY: 0,
-        windowWidth: isMobile ? 800 : 1200,
+        windowWidth: 794,
         windowHeight: reportElement.scrollHeight
       });
 
-      // Create PDF
+      // Create PDF with A4 dimensions
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
+      const imgWidth = 210; // A4 width in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = 297;
+      const pageHeight = 297; // A4 height in mm
 
-      const imgData = canvas.toDataURL('image/png', 0.95);
+      const imgData = canvas.toDataURL('image/png', 0.9);
 
       if (imgHeight < pageHeight) {
         // Single page
