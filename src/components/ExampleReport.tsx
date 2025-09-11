@@ -65,71 +65,27 @@ const ExampleReport = () => {
   };
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-12 sm:py-16 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4">
             Se en ferdig analyserapport
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Her er et eksempel på hva du får når du bruker våre kalkulatorer og genererer en bankrapport.
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
+            Se hvordan en komplett eiendomsanalyse ser ut med våre kalkulatorer.
           </p>
-        </div>
-
-        <div className="max-w-4xl mx-auto">
-          <Card className="shadow-large mb-8">
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <FileText className="h-8 w-8 text-primary" />
-                <CardTitle className="text-2xl">Eiendomsanalyserapport</CardTitle>
-              </div>
-              <p className="text-muted-foreground">
-                Profesjonell analyse av leilighet på Grünerløkka, Oslo
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center mt-4">
-                <Badge variant="secondary">Lønnsomhetsanalyse</Badge>
-                <Badge variant="secondary">Markedssammenligning</Badge>
-                <Badge variant="secondary">Risikoevaluering</Badge>
-                <Badge variant="secondary">Finansieringsscenarier</Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Sample Content Preview */}
-              <div className="bg-gradient-soft p-6 rounded-lg">
-                <h3 className="font-semibold mb-4">Sammendrag av analysen:</h3>
-                <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>
-                    <strong>Eiendom:</strong> 2-roms leilighet, 65 kvm, Grünerløkka Oslo - Kjøpesum: 2.5 mill kr
-                  </p>
-                  <p>
-                    <strong>Finansiering:</strong> 20% egenkapital, 4.5% rente, månedlig betaling: 11,500 kr
-                  </p>
-                  <p>
-                    <strong>Leieinntekt:</strong> 15,000 kr/mnd (over markedsgjennomsnitt på 14,500 kr)
-                  </p>
-                  <p>
-                    <strong>Anbefaling:</strong> Vurder høyere egenkapital for positiv cash flow, ellers solid investering med god avkastning på lang sikt.
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="text-center pt-4">
-                <Button 
-                  onClick={handleViewExampleReport}
-                  size="lg" 
-                  className="gap-2"
-                >
-                  <Download className="h-5 w-5" />
-                  Se full eksempelrapport
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Klikk for å se hvordan rapporten ser ut i sin helhet
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          
+          <Button 
+            onClick={handleViewExampleReport}
+            size="lg" 
+            className="gap-2 w-full sm:w-auto"
+          >
+            <Download className="h-5 w-5" />
+            Se full eksempelrapport
+          </Button>
+          <p className="text-sm text-muted-foreground mt-3 sm:mt-4">
+            Klikk for å se hvordan rapporten ser ut i sin helhet
+          </p>
         </div>
       </div>
     </section>
