@@ -1,1 +1,5 @@
 project_id = "rkhzyzuttsvsjcgzrokt"
+
+# Rate limiting function configuration
+[functions.rate-limiter]
+verify_jwt = false

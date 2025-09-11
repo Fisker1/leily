@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRateLimit } from '@/hooks/useRateLimit';
 
 interface Profile {
   id: string;
@@ -36,6 +37,7 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
+  const { checkRateLimit } = useRateLimit();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -97,6 +99,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Check rate limit before attempting sign in
+      const canProceed = await checkRateLimit('auth/login', email);
+      if (!canProceed) {
+        return { error: { message: 'Rate limit exceeded. Please try again later.' } };
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -124,6 +132,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
+      // Check rate limit before attempting sign up
+      const canProceed = await checkRateLimit('auth/register', email);
+      if (!canProceed) {
+        return { error: { message: 'Rate limit exceeded. Please try again later.' } };
+      }
+
       // Environment-aware redirect URL
       const redirectUrl = import.meta.env.VITE_APP_URL 
         ? `${import.meta.env.VITE_APP_URL}/`

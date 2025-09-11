@@ -1,6 +1,16 @@
 // SECURE tenant data management - uses proper database-level encryption
 import { supabase } from '@/integrations/supabase/client';
 
+// Import rate limiting for sensitive operations
+let rateLimitHook: any = null;
+const getRateLimitHook = async () => {
+  if (!rateLimitHook) {
+    const { useRateLimit } = await import('@/hooks/useRateLimit');
+    rateLimitHook = useRateLimit;
+  }
+  return rateLimitHook;
+};
+
 // Secure data interfaces
 export interface SecureTenantData {
   first_name: string;
@@ -68,11 +78,40 @@ export const createSecureTenant = async (tenantData: SecureTenantData) => {
 
 /**
  * Gets tenants with properly masked sensitive data using secure database function
+ * Includes rate limiting protection
  */
 export const getTenantsWithMaskedData = async (
   propertyOwnerId: string
-): Promise<{ data: MaskedTenantData[] | null; error: any }> => {
+): Promise<{ data: MaskedTenantData[] | null; error: any; rateLimited?: boolean }> => {
   try {
+    // Apply rate limiting for tenant data access
+    const checkRateLimit = async (endpoint: string, identifier: string) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('rate-limiter', {
+          body: { endpoint, identifier }
+        });
+        
+        if (error) {
+          console.warn('Rate limiter error, allowing request:', error);
+          return true;
+        }
+        
+        return data?.success !== false;
+      } catch (error) {
+        console.warn('Rate limiter failed, allowing request:', error);
+        return true;
+      }
+    };
+
+    const canProceed = await checkRateLimit('tenant/access', propertyOwnerId);
+    if (!canProceed) {
+      return { 
+        data: null, 
+        error: { message: 'Rate limit exceeded for tenant access' },
+        rateLimited: true
+      };
+    }
+
     // Use secure database function that handles access control, decryption, and masking
     const { data, error } = await supabase
       .rpc('get_secure_tenant_data', {

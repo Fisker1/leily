@@ -10,6 +10,8 @@ import { Shield, Users, AlertTriangle, Activity, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { RateLimitStatus } from './RateLimitStatus';
+import { RateLimitInfo } from './RateLimitInfo';
 
 interface AuditLogEntry {
   id: string;
@@ -289,6 +291,7 @@ const SecurityDashboard: React.FC = () => {
         <TabsList>
           <TabsTrigger value="audit">Sikkerhetslogg</TabsTrigger>
           <TabsTrigger value="users">Brukerstyring</TabsTrigger>
+          <TabsTrigger value="rate-limits">Rate Limiting</TabsTrigger>
         </TabsList>
 
         <TabsContent value="audit" className="space-y-4">
@@ -446,6 +449,13 @@ const SecurityDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="rate-limits" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <RateLimitStatus />
+            <RateLimitInfo />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
