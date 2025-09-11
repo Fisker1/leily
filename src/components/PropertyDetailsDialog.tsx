@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, Plus, TrendingUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Eye, Plus, TrendingUp, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import PropertyValuationAPI from '@/components/PropertyValuationAPI';
 
 interface Property {
   id: string;
@@ -125,6 +127,39 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
     }
   };
 
+  const handleValuationFromAPI = async (valuation: any) => {
+    if (valuation.estimatedValue) {
+      try {
+        const { error } = await supabase
+          .from('property_valuations')
+          .insert([{
+            property_id: property.id,
+            valuation_amount: valuation.estimatedValue,
+            valuation_date: new Date().toISOString().split('T')[0],
+            valuation_type: 'api',
+            source: valuation.source === 'kartverket' ? 'Kartverket API' : 'Estimat API',
+            notes: `Automatisk hentet verdi. Konfidens: ${valuation.confidence}`
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Verdivurdering lagret",
+          description: `Eiendomsverdi på ${valuation.estimatedValue.toLocaleString()} kr er lagt til`,
+        });
+
+        fetchValuations();
+      } catch (error) {
+        console.error('Error saving API valuation:', error);
+        toast({
+          title: "Feil",
+          description: "Kunne ikke lagre automatisk verdivurdering",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const chartData = valuations.map(v => ({
     date: new Date(v.valuation_date).toLocaleDateString('no-NO'),
     value: v.valuation_amount,
@@ -140,187 +175,207 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
             Eiendomsdetaljer - {property.address}
           </DialogTitle>
           <DialogDescription>
-            Prisutviklings-graf og verdivurderinger over tid
+            Eiendomsinformasjon, prisutviklings-graf og automatisk verdivurdering
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Eiendomsinformasjon */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Eiendomsinformasjon
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Adresse</p>
-                  <p className="font-medium">{property.address}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">By</p>
-                  <p className="font-medium">{property.city || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium">{property.property_type || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Størrelse</p>
-                  <p className="font-medium">{property.size_sqm ? `${property.size_sqm} m²` : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Kjøpspris</p>
-                  <p className="font-medium">{property.purchase_price ? `${property.purchase_price.toLocaleString()} kr` : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Kjøpsdato</p>
-                  <p className="font-medium">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Lån</p>
-                  <p className="font-medium">{property.loan_amount ? `${property.loan_amount.toLocaleString()} kr` : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Rente</p>
-                  <p className="font-medium">{property.interest_rate ? `${property.interest_rate}%` : '-'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Prisutviklings-graf */}
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <CardTitle>Prisutvikling over tid</CardTitle>
-                  <CardDescription className="mt-1">
-                    Historisk verdivurdering av eiendommen
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAddValuation(!showAddValuation)} size="sm" className="self-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Legg til verdivurdering
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {showAddValuation && (
-                <div className="mb-6 p-4 border rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-4">Ny verdivurdering</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="valuation_amount">Verdi (kr) *</Label>
-                      <Input
-                        id="valuation_amount"
-                        type="number"
-                        value={newValuation.amount}
-                        onChange={(e) => setNewValuation(prev => ({ ...prev, amount: e.target.value }))}
-                        placeholder="3500000"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="valuation_date">Dato *</Label>
-                      <Input
-                        id="valuation_date"
-                        type="date"
-                        value={newValuation.date}
-                        onChange={(e) => setNewValuation(prev => ({ ...prev, date: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="valuation_source">Kilde</Label>
-                      <Input
-                        id="valuation_source"
-                        value={newValuation.source}
-                        onChange={(e) => setNewValuation(prev => ({ ...prev, source: e.target.value }))}
-                        placeholder="f.eks. Finn.no, eiendomsmegler"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="valuation_notes">Notater</Label>
-                      <Input
-                        id="valuation_notes"
-                        value={newValuation.notes}
-                        onChange={(e) => setNewValuation(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Tilleggsinformasjon"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button onClick={handleAddValuation} disabled={loading}>
-                      {loading ? "Lagrer..." : "Legg til"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowAddValuation(false)}>
-                      Avbryt
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {chartData.length > 0 ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis 
-                        tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Verdi']}
-                        labelFormatter={(label) => `Dato: ${label}`}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="hsl(var(--primary))" 
-                        strokeWidth={2}
-                        dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Ingen verdivurderinger registrert ennå</p>
-                  <p className="text-sm">Legg til din første verdivurdering for å se prisutvikling</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Verdivurderinger liste */}
-          {valuations.length > 0 && (
+        <Tabs defaultValue="info" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="info">Eiendomsinfo</TabsTrigger>
+            <TabsTrigger value="valuation">Verdivurdering</TabsTrigger>
+            <TabsTrigger value="api">Hent Eiendomsverdi</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="info" className="space-y-6">
+            {/* Eiendomsinformasjon */}
             <Card>
               <CardHeader>
-                <CardTitle>Verdivurderinger</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Eiendomsinformasjon
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {valuations.map((valuation) => (
-                    <div key={valuation.id} className="flex items-center justify-between p-3 bg-muted/50 rounded">
-                      <div className="flex-1">
-                        <p className="font-medium">{valuation.valuation_amount.toLocaleString()} kr</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(valuation.valuation_date).toLocaleDateString('no-NO')}
-                          {valuation.source && ` • ${valuation.source}`}
-                        </p>
-                        {valuation.notes && (
-                          <p className="text-sm text-muted-foreground">{valuation.notes}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Adresse</p>
+                    <p className="font-medium">{property.address}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">By</p>
+                    <p className="font-medium">{property.city || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Type</p>
+                    <p className="font-medium">{property.property_type || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Størrelse</p>
+                    <p className="font-medium">{property.size_sqm ? `${property.size_sqm} m²` : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Kjøpspris</p>
+                    <p className="font-medium">{property.purchase_price ? `${property.purchase_price.toLocaleString()} kr` : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Kjøpsdato</p>
+                    <p className="font-medium">{property.purchase_date ? new Date(property.purchase_date).toLocaleDateString('no-NO') : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Lån</p>
+                    <p className="font-medium">{property.loan_amount ? `${property.loan_amount.toLocaleString()} kr` : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Rente</p>
+                    <p className="font-medium">{property.interest_rate ? `${property.interest_rate}%` : '-'}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="api" className="space-y-6">
+            <PropertyValuationAPI
+              propertyId={property.id}
+              initialAddress={property.address}
+              initialPostalCode={property.postal_code}
+              initialCity={property.city}
+              onValuationReceived={handleValuationFromAPI}
+            />
+          </TabsContent>
+
+          <TabsContent value="valuation" className="space-y-6">
+            {/* Prisutviklings-graf */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <CardTitle>Prisutvikling over tid</CardTitle>
+                    <CardDescription className="mt-1">
+                      Historisk verdivurdering av eiendommen
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setShowAddValuation(!showAddValuation)} size="sm" className="self-start">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Legg til verdivurdering
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {showAddValuation && (
+                  <div className="mb-6 p-4 border rounded-lg bg-muted/50">
+                    <h4 className="font-medium mb-4">Ny verdivurdering</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="valuation_amount">Verdi (kr) *</Label>
+                        <Input
+                          id="valuation_amount"
+                          type="number"
+                          value={newValuation.amount}
+                          onChange={(e) => setNewValuation(prev => ({ ...prev, amount: e.target.value }))}
+                          placeholder="3500000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="valuation_date">Dato *</Label>
+                        <Input
+                          id="valuation_date"
+                          type="date"
+                          value={newValuation.date}
+                          onChange={(e) => setNewValuation(prev => ({ ...prev, date: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="valuation_source">Kilde</Label>
+                        <Input
+                          id="valuation_source"
+                          value={newValuation.source}
+                          onChange={(e) => setNewValuation(prev => ({ ...prev, source: e.target.value }))}
+                          placeholder="f.eks. Finn.no, eiendomsmegler"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="valuation_notes">Notater</Label>
+                        <Input
+                          id="valuation_notes"
+                          value={newValuation.notes}
+                          onChange={(e) => setNewValuation(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Tilleggsinformasjon"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={handleAddValuation} disabled={loading}>
+                        {loading ? "Lagrer..." : "Legg til"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowAddValuation(false)}>
+                        Avbryt
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {chartData.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis 
+                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Verdi']}
+                          labelFormatter={(label) => `Dato: ${label}`}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Ingen verdivurderinger registrert ennå</p>
+                    <p className="text-sm">Legg til din første verdivurdering for å se prisutvikling</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Verdivurderinger liste */}
+            {valuations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Verdivurderinger</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {valuations.map((valuation) => (
+                      <div key={valuation.id} className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                        <div className="flex-1">
+                          <p className="font-medium">{valuation.valuation_amount.toLocaleString()} kr</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(valuation.valuation_date).toLocaleDateString('no-NO')}
+                            {valuation.source && ` • ${valuation.source}`}
+                          </p>
+                          {valuation.notes && (
+                            <p className="text-sm text-muted-foreground">{valuation.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end">
           <Button onClick={() => onOpenChange(false)}>
