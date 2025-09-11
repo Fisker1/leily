@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { RateLimitStatus } from './RateLimitStatus';
 import { RateLimitInfo } from './RateLimitInfo';
+import { SecurityImplementationStatus } from './SecurityImplementationStatus';
 
 interface AuditLogEntry {
   id: string;
@@ -247,6 +248,9 @@ const SecurityDashboard: React.FC = () => {
         <Shield className="h-6 w-6" />
         <h2 className="text-2xl font-bold">Sikkerhetsdashbord</h2>
       </div>
+
+      {/* Security Implementation Status */}
+      <SecurityImplementationStatus />
 
       {/* Security Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
