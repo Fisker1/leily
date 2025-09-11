@@ -63,13 +63,32 @@ export const useSecurityMonitoring = () => {
     });
   }, [logSecurityEvent]);
 
+  const logSubscriptionAttempt = useCallback((
+    action: 'upgrade_attempt' | 'downgrade_attempt' | 'modification_blocked',
+    fromTier: string,
+    toTier: string,
+    blocked: boolean = false
+  ) => {
+    logSecurityEvent({
+      action: `subscription_${action}`,
+      table_name: 'subscription_security',
+      details: {
+        from_tier: fromTier,
+        to_tier: toTier,
+        blocked,
+        timestamp: new Date().toISOString(),
+        security_level: blocked ? 'CRITICAL_VIOLATION' : 'INFO'
+      }
+    });
+  }, [logSecurityEvent]);
+
   // Monitor for suspicious activity patterns
   useEffect(() => {
     if (!user) return;
 
     const monitorSuspiciousActivity = async () => {
       try {
-        // Check for rapid failed login attempts (would need more sophisticated tracking)
+        // Check for rapid failed login attempts
         const now = new Date();
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
@@ -91,6 +110,27 @@ export const useSecurityMonitoring = () => {
             }
           });
         }
+
+        // Check for subscription violation attempts
+        const { data: subscriptionViolations } = await supabase
+          .from('audit_log')
+          .select('*')
+          .eq('action', 'UNAUTHORIZED_SUBSCRIPTION_UPGRADE_ATTEMPT')
+          .eq('user_id', user.id)
+          .gte('created_at', fiveMinutesAgo.toISOString());
+
+        if (subscriptionViolations && subscriptionViolations.length > 0) {
+          logSecurityEvent({
+            action: 'security_violation_detected',
+            table_name: 'security_alerts',
+            details: {
+              type: 'unauthorized_subscription_attempts',
+              count: subscriptionViolations.length,
+              timeframe: '5_minutes',
+              security_level: 'CRITICAL'
+            }
+          });
+        }
       } catch (error) {
         console.error('Error monitoring suspicious activity:', error);
       }
@@ -106,6 +146,7 @@ export const useSecurityMonitoring = () => {
     logSecurityEvent,
     logAuthAttempt,
     logSensitiveDataAccess,
-    logAdminAction
+    logAdminAction,
+    logSubscriptionAttempt
   };
 };

@@ -615,6 +615,15 @@ export type Database = {
           property_owner_id: string
         }[]
       }
+      admin_update_subscription: {
+        Args: {
+          admin_justification: string
+          new_subscription_end: string
+          new_subscription_tier: string
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -668,6 +677,19 @@ export type Database = {
       monitor_admin_tenant_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      monitor_subscription_violations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_paid_subscription_upgrade: {
+        Args: {
+          duration_months?: number
+          new_tier: string
+          payment_id: string
+          user_id: string
+        }
+        Returns: boolean
       }
       promote_user_to_admin: {
         Args: { target_user_id: string }
