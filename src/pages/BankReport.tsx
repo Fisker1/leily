@@ -122,28 +122,52 @@ const BankReport = () => {
     if (!reportRef.current) return;
 
     try {
+      // Detect if we're on mobile
+      const isMobile = window.innerWidth <= 768;
+      
       // Hide navigation temporarily
       const nav = document.querySelector('nav');
       const navDisplay = nav?.style.display;
       if (nav) nav.style.display = 'none';
 
-      // Add print styles temporarily
+      // Store original styles
+      const reportElement = reportRef.current;
+      const originalMaxWidth = reportElement.style.maxWidth;
+      const originalWidth = reportElement.style.width;
+      const originalPadding = reportElement.style.padding;
+
+      // Apply PDF-optimized styles temporarily
+      if (isMobile) {
+        reportElement.style.maxWidth = '800px';
+        reportElement.style.width = '800px';
+        reportElement.style.padding = '20px';
+      }
+
+      // Add comprehensive print styles
       const style = document.createElement('style');
       style.textContent = `
+        .pdf-generation {
+          max-width: ${isMobile ? '800px' : '1000px'} !important;
+          width: ${isMobile ? '800px' : '1000px'} !important;
+          margin: 0 auto !important;
+          padding: 20px !important;
+          font-size: ${isMobile ? '12px' : '14px'} !important;
+        }
+        .pdf-generation .grid-cols-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: ${isMobile ? '12px' : '16px'};
+        }
+        .pdf-generation table {
+          width: 100% !important;
+          font-size: ${isMobile ? '10px' : '11px'} !important;
+        }
+        .pdf-generation h1 { font-size: ${isMobile ? '18px' : '20px'} !important; }
+        .pdf-generation h2 { font-size: ${isMobile ? '16px' : '18px'} !important; }
+        .pdf-generation h3 { font-size: ${isMobile ? '14px' : '16px'} !important; }
+        .pdf-generation h4 { font-size: ${isMobile ? '12px' : '14px'} !important; }
         @media print {
           .report-section {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
-          .page-break-before {
-            page-break-before: always;
-            break-before: page;
-          }
-          .page-break-after {
-            page-break-after: always;
-            break-after: page;
-          }
-          .avoid-break {
             page-break-inside: avoid;
             break-inside: avoid;
           }
@@ -151,62 +175,62 @@ const BankReport = () => {
       `;
       document.head.appendChild(style);
 
-      // Create multiple smaller canvases for each section to ensure better page breaks
-      const sections = reportRef.current.querySelectorAll('.report-section');
+      // Add PDF class for styling
+      reportElement.classList.add('pdf-generation');
+
+      // Wait for layout to settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Determine canvas settings based on device
+      const scale = isMobile ? 1.5 : 2;
+      const canvasWidth = isMobile ? 800 : 1000;
+
+      // Create single canvas for entire report
+      const canvas = await html2canvas(reportElement, {
+        scale: scale,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        width: canvasWidth,
+        height: reportElement.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: isMobile ? 800 : 1200,
+        windowHeight: reportElement.scrollHeight
+      });
+
+      // Create PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
-      const pageHeight = 295;
-      
-      let isFirstSection = true;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297;
 
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i] as HTMLElement;
-        
-        const canvas = await html2canvas(section, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: '#ffffff',
-          height: section.scrollHeight,
-          width: section.scrollWidth
-        });
+      const imgData = canvas.toDataURL('image/png', 0.95);
 
-        const imgData = canvas.toDataURL('image/png');
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Add new page if not first section and content is too tall
-        if (!isFirstSection && imgHeight > pageHeight * 0.8) {
+      if (imgHeight < pageHeight) {
+        // Single page
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        // Multiple pages
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
           pdf.addPage();
-        }
-        
-        // If section is taller than one page, split it
-        if (imgHeight > pageHeight) {
-          let heightLeft = imgHeight;
-          let position = 0;
-          
-          if (!isFirstSection) pdf.addPage();
           pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
           heightLeft -= pageHeight;
-          
-          while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
-        } else {
-          // Section fits on one page
-          if (!isFirstSection) {
-            pdf.addPage();
-          }
-          
-          pdf.addImage(imgData, 'PNG', 0, isFirstSection ? 0 : 10, imgWidth, imgHeight);
         }
-        
-        isFirstSection = false;
       }
 
-      // Remove temporary styles
+      // Clean up styles
+      reportElement.classList.remove('pdf-generation');
+      reportElement.style.maxWidth = originalMaxWidth;
+      reportElement.style.width = originalWidth;
+      reportElement.style.padding = originalPadding;
       document.head.removeChild(style);
 
       // Restore navigation
@@ -217,14 +241,17 @@ const BankReport = () => {
       const fileName = `bankrapport-${reportId}.pdf`;
       pdf.save(fileName);
 
-      // Calculate approximate file size (PDF output as bytes)
+      // Calculate approximate file size
       const pdfOutput = pdf.output('arraybuffer');
       const fileSize = pdfOutput.byteLength;
 
       // Save report tracking to database
       await saveReportToDatabase(fileName, fileSize);
+      
+      toast.success('PDF generert og lastet ned!');
     } catch (error) {
       console.error('Error generating PDF:', error);
+      toast.error('Feil ved generering av PDF. Prøv igjen.');
     }
   };
 
@@ -270,7 +297,7 @@ const BankReport = () => {
         </div>
 
         {/* Report Container */}
-        <div ref={reportRef} className="max-w-4xl mx-auto bg-white text-black shadow-none overflow-hidden relative print:shadow-none">
+        <div ref={reportRef} className="w-full max-w-4xl mx-auto bg-white text-black shadow-none overflow-hidden relative print:shadow-none">
           {/* Report Content */}
           <div className="relative z-20 p-8">
             {/* Professional Header */}
