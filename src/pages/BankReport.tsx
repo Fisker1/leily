@@ -442,7 +442,7 @@ const BankReport = () => {
                 1. SAMMENDRAG AV ANALYSE
               </h3>
               
-              <div className="grid grid-cols-2 gap-6 mb-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
                 <div className="border border-gray-300 p-4">
                   <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Eiendomsdata</h4>
                   <table className="w-full text-xs">
@@ -504,7 +504,7 @@ const BankReport = () => {
               </div>
 
               {/* Detailed Expense Breakdown */}
-              <div className="grid grid-cols-2 gap-6 mb-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
                 <div className="border border-gray-300 p-4">
                   <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Månedlige utgifter (detaljer)</h4>
                   <table className="w-full text-xs">
