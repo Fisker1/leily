@@ -17,6 +17,7 @@ import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,10 +32,11 @@ const Calculator = () => {
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
   const { isAdmin } = useUserRole();
+  const { isPro } = useSubscription();
   const { toast } = useToast();
 
   // Access control
-  const canAccessBuildingPlanner = user?.email === 'anderslundoy@gmail.com';
+  const canAccessBuildingPlanner = isPro;
   const canAccessExtendedReport = isAdmin;
 
   // Get state from navigation (if returning from module addition)
@@ -48,8 +50,8 @@ const Calculator = () => {
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
       toast({
-        title: "Byggeplanleggeren kommer snart!",
-        description: "Vi jobber hardt med å utvikle denne funksjonen. Den vil være tilgjengelig snart.",
+        title: "Byggeplanlegger (Pro)",
+        description: "Oppgrader til Pro for å få tilgang til den avanserte byggeplanleggeren.",
         duration: 4000,
       });
       return;
@@ -212,6 +214,7 @@ const Calculator = () => {
             >
               <Ruler className="h-4 w-4" />
               Byggeplanlegger
+              {!isPro && <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>}
             </TabsTrigger>
           </TabsList>
           
@@ -634,11 +637,14 @@ const Calculator = () => {
               <Card className="max-w-2xl mx-auto">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
                   <Ruler className="h-12 w-12 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold">Byggeplanlegger</h3>
+                  <h3 className="text-xl font-semibold">Avansert Byggeplanlegger</h3>
                   <p className="text-muted-foreground">
-                    Denne funksjonen er under utvikling og kommer snart!
+                    Tegn og planlegg ditt byggeprosjekt med interaktiv planlegger. Kun tilgjengelig for Pro-brukere.
                   </p>
-                  <Badge variant="outline">Kommer snart</Badge>
+                  <Badge variant="outline">Pro</Badge>
+                  <Button className="mt-4">
+                    Oppgrader til Pro
+                  </Button>
                 </CardContent>
               </Card>
             )}
