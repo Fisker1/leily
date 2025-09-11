@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calculator, TrendingUp, FileText, PieChart, Play, Users, Target, Building } from "lucide-react";
 import { Link } from "react-router-dom";
 import videoPlaceholder from "@/assets/video-placeholder.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
-import ProcessWalkthrough from "@/components/ProcessWalkthrough";
+import LazyImage from "@/components/LazyImage";
+
+// Lazy load the process walkthrough component
+const ProcessWalkthrough = lazy(() => import("@/components/ProcessWalkthrough"));
 
 const Hero = () => {
   const { translations } = useLanguage();
@@ -59,7 +62,7 @@ const Hero = () => {
           <div className="max-w-4xl mx-auto">
             <Card className="relative overflow-hidden shadow-large">
               <div className="relative">
-                <img 
+                <LazyImage 
                   src={videoPlaceholder} 
                   alt="Introduksjonsvideo til Leily plattformen" 
                   className="w-full h-auto object-cover"
@@ -124,10 +127,12 @@ const Hero = () => {
         </div>
       </section>
 
-      <ProcessWalkthrough 
-        isOpen={isWalkthroughOpen}
-        onClose={() => setIsWalkthroughOpen(false)}
-      />
+      <Suspense fallback={<div />}>
+        <ProcessWalkthrough 
+          isOpen={isWalkthroughOpen}
+          onClose={() => setIsWalkthroughOpen(false)}
+        />
+      </Suspense>
     </>
   );
 };

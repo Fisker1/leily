@@ -5,19 +5,29 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import Index from "./pages/Index";
-import SimpleAuth from "./pages/SimpleAuth";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import Pricing from "./pages/Pricing";
-import NotFound from "./pages/NotFound";
-import Rental from "./pages/Rental";
-import Portfolio from "./pages/Portfolio";
-import Calculator from "./pages/Calculator";
-import RiskAnalysis from "./pages/calculator/RiskAnalysis";
-import ExtendedPropertyDetails from "./pages/calculator/ExtendedPropertyDetails";
-import BankReport from "./pages/BankReport";
-import MyProfile from "./pages/MyProfile";
+import { Suspense, lazy } from "react";
+
+// Lazy load all pages for better performance
+const Index = lazy(() => import("./pages/Index"));
+const SimpleAuth = lazy(() => import("./pages/SimpleAuth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Rental = lazy(() => import("./pages/Rental"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Calculator = lazy(() => import("./pages/Calculator"));
+const RiskAnalysis = lazy(() => import("./pages/calculator/RiskAnalysis"));
+const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPropertyDetails"));
+const BankReport = lazy(() => import("./pages/BankReport"));
+const MyProfile = lazy(() => import("./pages/MyProfile"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -29,22 +39,24 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<SimpleAuth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/utleie" element={<Rental />} />
-              <Route path="/portfolio" element={<Portfolio />} />
-              <Route path="/calculator" element={<Calculator />} />
-              <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
-              <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
-              <Route path="/bank-report" element={<BankReport />} />
-              <Route path="/min-side" element={<MyProfile />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<SimpleAuth />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/utleie" element={<Rental />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/calculator" element={<Calculator />} />
+                <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
+                <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
+                <Route path="/bank-report" element={<BankReport />} />
+                <Route path="/min-side" element={<MyProfile />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </LanguageProvider>
