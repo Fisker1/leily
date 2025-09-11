@@ -17,19 +17,19 @@ const Hero = () => {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative bg-gradient-hero py-20 lg:py-32 overflow-hidden">
+      <section className="relative bg-gradient-hero py-16 sm:py-20 lg:py-32 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6 px-2">
               Din komplette eiendomsportal
             </h1>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+            <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8 px-4 leading-relaxed">
               Enkelt å eie, enkelt å leie. Forenkle forvaltning og investering av eiendom med profesjonelle verktøy for kalkulasjoner, 
               utleieadministrasjon og markedsanalyse.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium" asChild>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+              <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-medium w-full sm:w-auto" asChild>
                 <Link to="/auth">
                   Kom i gang gratis
                 </Link>
@@ -37,7 +37,7 @@ const Hero = () => {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="shadow-soft"
+                className="shadow-soft w-full sm:w-auto"
                 onClick={() => setIsWalkthroughOpen(true)}
               >
                 Se hvordan det virker
@@ -48,13 +48,13 @@ const Hero = () => {
       </section>
 
       {/* Video Introduction Section */}
-      <section className="py-16 bg-background">
+      <section className="py-12 sm:py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4 px-2">
               Se hvordan Leily fungerer
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto px-4 leading-relaxed">
               En kort introduksjon til hvordan du kan bruke vår plattform for å optimalisere dine eiendomsinvesteringer.
             </p>
           </div>

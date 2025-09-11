@@ -20,8 +20,8 @@ const Navigation = () => {
     isAdmin
   } = useUserRole();
   return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo - Left Section */}
           <div className="flex items-center flex-shrink-0">
             <Link to="/" className="flex items-center">
@@ -55,7 +55,7 @@ const Navigation = () => {
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <div className="hidden sm:block">
               <LanguageToggle />
             </div>
@@ -89,15 +89,20 @@ const Navigation = () => {
                   <Link to="/calculator" className="text-sm">{translations.nav.startAnalysis}</Link>
                 </Button>
                 {/* Mobile login button - visible only on mobile when not logged in */}
-                <Button variant="ghost" size="sm" asChild className="sm:hidden">
-                  <Link to="/auth" className="text-sm px-2">{translations.nav.signIn}</Link>
+                <Button variant="ghost" size="sm" asChild className="sm:hidden text-sm">
+                  <Link to="/auth" className="px-2">{translations.nav.signIn}</Link>
                 </Button>
               </>
             )}
             
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-foreground p-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                className="text-primary bg-primary/10 hover:bg-primary/20 p-2 ml-2"
+              >
                 {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
