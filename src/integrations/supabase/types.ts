@@ -618,6 +618,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      validate_tenant_ownership: {
+        Args: { tenant_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "ambassador"
