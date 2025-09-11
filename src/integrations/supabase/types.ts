@@ -576,6 +576,10 @@ export type Database = {
         Args: { encrypted_text: string }
         Returns: string
       }
+      detect_suspicious_tenant_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       encrypt_tenant_field: {
         Args: { plain_text: string }
         Returns: string
