@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, TrendingUp, Loader2, CheckCircle, Info } from 'lucide-react';
+import { MapPin, TrendingUp, Loader2, CheckCircle, Info, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface PropertyValuationAPIProps {
   onValuationReceived?: (valuation: any) => void;
@@ -39,6 +40,7 @@ const PropertyValuationAPI: React.FC<PropertyValuationAPIProps> = ({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ValuationResult | null>(null);
   const { toast } = useToast();
+  const { isPro, isFree } = useSubscription();
 
   const handleGetValuation = async () => {
     if (!address.trim()) {
@@ -131,6 +133,35 @@ const PropertyValuationAPI: React.FC<PropertyValuationAPIProps> = ({
       </Badge>
     );
   };
+
+  // Show upgrade notice for free users
+  if (isFree) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="w-5 h-5" />
+            Automatisk Eiendomsverdi (Pro)
+          </CardTitle>
+          <CardDescription>
+            Få automatiske eiendomsverdier fra offentlige kilder
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              Automatisk eiendomsvurdering er kun tilgjengelig for Pro-brukere. 
+              Oppgrader for å få tilgang til sanntids-verdiestimat fra Kartverket og andre kilder.
+            </AlertDescription>
+          </Alert>
+          <Button className="w-full mt-4" variant="outline">
+            Oppgrader til Pro
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">

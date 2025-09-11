@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Plus, TrendingUp, MapPin } from "lucide-react";
+import { Eye, Plus, TrendingUp, MapPin, Zap, Hand } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import PropertyValuationAPI from '@/components/PropertyValuationAPI';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface Property {
   id: string;
@@ -48,6 +49,7 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
   const [valuations, setValuations] = useState<PropertyValuation[]>([]);
   const [showAddValuation, setShowAddValuation] = useState(false);
   const { toast } = useToast();
+  const { isPro, isFree } = useSubscription();
   
   const [newValuation, setNewValuation] = useState({
     amount: "",
@@ -182,8 +184,14 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
         <Tabs defaultValue="info" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Eiendomsinfo</TabsTrigger>
-            <TabsTrigger value="valuation">Verdivurdering</TabsTrigger>
-            <TabsTrigger value="api">Hent Eiendomsverdi</TabsTrigger>
+            <TabsTrigger value="valuation" className="flex items-center gap-2">
+              {isFree ? <Hand className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+              Verdivurdering
+            </TabsTrigger>
+            <TabsTrigger value="api" className="flex items-center gap-2">
+              {isPro ? <Zap className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
+              {isPro ? "Auto Verdi" : "Hent Verdi"}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="info" className="space-y-6">
@@ -250,9 +258,12 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <CardTitle>Prisutvikling over tid</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      {isFree ? <Hand className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                      {isFree ? "Manuell prisutvikling" : "Prisutvikling over tid"}
+                    </CardTitle>
                     <CardDescription className="mt-1">
-                      Historisk verdivurdering av eiendommen
+                      {isFree ? "Legg inn verdier manuelt" : "Automatisk og manuell verdivurdering"}
                     </CardDescription>
                   </div>
                   <Button onClick={() => setShowAddValuation(!showAddValuation)} size="sm" className="self-start">
