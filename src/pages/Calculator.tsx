@@ -203,17 +203,20 @@ const Calculator = () => {
 
         {/* Tab selector */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
-            <TabsTrigger value="calculator" className="flex items-center gap-2">
-              <CalcIcon className="h-4 w-4" />
-              Kalkyle
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto mb-8 h-auto p-2 gap-2">
+            <TabsTrigger 
+              value="calculator" 
+              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium"
+            >
+              <CalcIcon className="h-5 w-5" />
+              <span>Eiendomskalkulator</span>
             </TabsTrigger>
             <TabsTrigger 
               value="building-planner" 
-              className="flex items-center gap-2 bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
+              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
             >
-              <Ruler className="h-4 w-4" />
-              Byggeplanlegger
+              <Ruler className="h-5 w-5" />
+              <span>Byggeplanlegger</span>
               {!isPro && <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>}
             </TabsTrigger>
           </TabsList>
