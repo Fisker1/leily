@@ -7,6 +7,32 @@
     <meta name="description" content="Professional property investment analysis tools. Calculate yields, cash flow, and generate bank-ready PDF reports for smarter investment decisions." />
     <meta name="author" content="Leily" />
     <meta name="keywords" content="property investment, rental yield calculator, cash flow analysis, real estate, ROI calculator, investment analysis" />
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://*.supabase.co;
+      style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: blob: https: http:;
+      media-src 'self' data: blob:;
+      connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com wss://*.supabase.co;
+      worker-src 'self' blob:;
+      child-src 'self';
+      frame-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+      upgrade-insecure-requests;
+    " />
+    
+    <!-- Additional Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
 
     <meta property="og:title" content="Leily - Smart Property Investment Analysis" />
     <meta property="og:description" content="Professional property investment analysis tools. Calculate yields, cash flow, and generate bank-ready PDF reports." />
