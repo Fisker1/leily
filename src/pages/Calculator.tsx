@@ -567,32 +567,6 @@ const Calculator = () => {
                   </p>
                 )}
               </div>
-              
-              {/* Pro Section - Always visible */}
-              <div className="text-center space-y-4 mt-8">
-                <h2 className="text-2xl font-bold text-foreground">
-                  Utvid fullstendig bankrapport
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Få tilgang til alle analysemodulene
-                </p>
-                <Button 
-                  size="lg" 
-                  className="px-8 py-4 bg-gradient-primary hover:opacity-90"
-                  onClick={() => {
-                    const moduleSelectionElement = document.querySelector('.module-selection-section');
-                    if (moduleSelectionElement) {
-                      moduleSelectionElement.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Utvid fullstendig bankrapport
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Alle 5 analysemoduler • <span className="text-orange-600">⚡ Pro-abonnement</span>
-                </p>
-              </div>
             </div>
 
 
