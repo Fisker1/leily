@@ -14,10 +14,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     // Update display value when value prop changes
     useEffect(() => {
-      if (isFocused) {
-        // When focused, show clean numeric value for editing
-        setDisplayValue(value ? value.toString() : "");
-      } else {
+      if (!isFocused) {
         // When not focused, show formatted value with spaces
         setDisplayValue(formatNumberWithSpaces(value || ""));
       }
@@ -25,8 +22,8 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
-      // Show clean numeric value for editing
-      setDisplayValue(value ? value.toString() : "");
+      // Show formatted value for better user experience
+      setDisplayValue(formatNumberWithSpaces(value || ""));
       onFocus?.(e);
     };
 
