@@ -762,7 +762,7 @@ const Portfolio = () => {
                           </div>
                           <div className={`text-center p-2 rounded-lg min-w-[90px] relative transition-all duration-300 ${
                             autoValuationEnabled && isPro 
-                              ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-400 shadow-blue-400/20' 
+                              ? 'bg-blue-100 dark:bg-blue-900/30' 
                               : 'bg-blue-50 dark:bg-blue-900/20'
                           }`}>
                             <div className="flex items-center justify-center gap-1 mb-1">

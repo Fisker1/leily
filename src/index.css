@@ -160,9 +160,21 @@
 
 @keyframes gauge-needle {
   0%, 100% {
-    transform: rotate(-20deg);
+    transform: rotate(-10deg);
+  }
+  45% {
+    transform: rotate(25deg);
   }
   50% {
     transform: rotate(20deg);
+  }
+  55% {
+    transform: rotate(25deg);
+  }
+  65% {
+    transform: rotate(22deg);
+  }
+  75% {
+    transform: rotate(25deg);
   }
 }
