@@ -45,8 +45,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   });
 
   useEffect(() => {
-    console.log('useEffect ALWAYS triggered, shouldShowSatellite:', shouldShowSatellite, 'address:', address);
-    // Only fetch Mapbox token if we need to show satellite for logged in users
     if (shouldShowSatellite) {
       console.log('Attempting to fetch Mapbox token for address:', address);
       const fetchMapboxToken = async () => {
@@ -62,8 +60,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           if (data?.token) {
             console.log('Mapbox token received:', data.token.substring(0, 10) + '...');
             setMapboxToken(data.token);
-          } else {
-            console.error('No token received from get-mapbox-token function');
           }
         } catch (error) {
           console.error('Error fetching Mapbox token:', error);
@@ -73,11 +69,13 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       fetchMapboxToken();
       setShowMap(true);
     }
-  });
+  }, [shouldShowSatellite, address]);
 
   useEffect(() => {
+    console.log('Map creation useEffect called:', { showMap, mapboxToken: !!mapboxToken, mapContainer: !!mapContainer.current, existingMap: !!map.current });
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
 
+    console.log('Creating Mapbox GL map for address:', address);
     mapboxgl.accessToken = mapboxToken;
     
     // Geocode the address to get coordinates
@@ -93,6 +91,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       .then(data => {
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
+          console.log('Creating map at coordinates:', lng, lat);
           
           try {
             map.current = new mapboxgl.Map({
@@ -105,6 +104,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
             map.current.on('error', (e) => {
               console.error('Mapbox GL error:', e);
+            });
+
+            map.current.on('load', () => {
+              console.log('Map loaded successfully for:', address);
             });
           } catch (error) {
             console.error('Error creating Mapbox GL map:', error);
