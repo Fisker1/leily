@@ -45,10 +45,13 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   });
 
   useEffect(() => {
+    console.log('useEffect for Mapbox token triggered, shouldShowSatellite:', shouldShowSatellite);
     // Only fetch Mapbox token if we need to show satellite for logged in users
     if (shouldShowSatellite) {
+      console.log('Attempting to fetch Mapbox token for address:', address);
       const fetchMapboxToken = async () => {
         try {
+          console.log('Calling get-mapbox-token function...');
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
@@ -57,7 +60,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           if (data?.token) {
+            console.log('Mapbox token received:', data.token.substring(0, 10) + '...');
             setMapboxToken(data.token);
+          } else {
+            console.error('No token received from get-mapbox-token function');
           }
         } catch (error) {
           console.error('Error fetching Mapbox token:', error);
@@ -67,7 +73,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       fetchMapboxToken();
       setShowMap(true);
     }
-  }, [shouldShowSatellite]);
+  }, [shouldShowSatellite, address]);
 
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
