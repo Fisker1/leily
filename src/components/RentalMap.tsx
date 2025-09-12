@@ -12,10 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import { formatNumberWithSpaces } from "@/lib/utils";
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 
-console.log('=== Mapbox GL imported successfully ===', !!mapboxgl);
+console.log('=== RentalMap module loading ===');
 
 const RentalMap = () => {
   console.log('=== RentalMap component mounting ===');
@@ -24,14 +22,34 @@ const RentalMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<mapboxgl.Marker[]>([]);
+  const map = useRef<any>(null);
+  const markers = useRef<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('kommune');
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [mapboxgl, setMapboxgl] = useState<any>(null);
+  const [mapboxError, setMapboxError] = useState<string | null>(null);
   
   console.log('RentalMap state:', { isPro, user: !!user, loading, mapboxToken: !!mapboxToken });
   
+  // Dynamically load Mapbox GL
+  useEffect(() => {
+    const loadMapbox = async () => {
+      try {
+        console.log('=== Loading Mapbox GL dynamically ===');
+        const mapboxModule = await import('mapbox-gl');
+        await import('mapbox-gl/dist/mapbox-gl.css');
+        setMapboxgl(mapboxModule.default);
+        console.log('=== Mapbox GL loaded successfully ===');
+      } catch (error) {
+        console.error('=== Mapbox GL load failed ===', error);
+        setMapboxError(error instanceof Error ? error.message : 'Unknown error');
+      }
+    };
+    
+    loadMapbox();
+  }, []);
+
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
   const [showRentalProperties, setShowRentalProperties] = useState(true);
@@ -140,7 +158,7 @@ const RentalMap = () => {
 
   // Add markers to map
   const addMarkersToMap = () => {
-    if (!map.current) return;
+    if (!map.current || !mapboxgl) return;
     
     clearMarkers();
 
@@ -267,6 +285,7 @@ const RentalMap = () => {
       });
     }
   };
+
   // Initialize map
   useEffect(() => {
     console.log('Map initialization effect triggered:', {
@@ -283,6 +302,10 @@ const RentalMap = () => {
     }
     if (!mapboxToken) {
       console.log('Map initialization skipped: No Mapbox token');
+      return;
+    }
+    if (!mapboxgl) {
+      console.log('Map initialization skipped: Mapbox not loaded yet');
       return;
     }
     if (!isPro) {
@@ -338,14 +361,14 @@ const RentalMap = () => {
       clearMarkers();
       map.current?.remove();
     };
-  }, [mapboxToken, isPro, toast]);
+  }, [mapboxToken, isPro, mapboxgl, toast]);
 
   // Update markers when data or layer settings change
   useEffect(() => {
     if (map.current && mapboxToken) {
       addMarkersToMap();
     }
-  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
+  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxgl]);
 
   const handleRegionChange = (value: string) => {
     setSelectedRegion(value);
@@ -356,10 +379,62 @@ const RentalMap = () => {
     });
   };
 
-  // Temporarily allow access for debugging - change back to isPro for production
-  const allowMapAccess = isPro;
-  
-  if (!allowMapAccess) {
+  // Show error if Mapbox failed to load
+  if (mapboxError) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Kartfeil
+            </CardTitle>
+            <CardDescription>
+              Kunne ikke laste Mapbox GL library
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">
+                <strong>Teknisk feil:</strong> {mapboxError}
+              </p>
+              <p className="text-sm">
+                Kartet krever Mapbox GL JavaScript library for å fungere. 
+                Dette kan skyldes nettverksproblemer eller at pakken ikke er tilgjengelig.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading while Mapbox is loading
+  if (!mapboxgl) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Leiekart - Laster...
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Laster kartbibliotek...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check Pro access after Mapbox loads  
+  if (!isPro) {
     return (
       <div className="space-y-6">
         <Card className="border-primary/20">
@@ -510,7 +585,11 @@ const RentalMap = () => {
                       <Calculator className="h-3 w-3 text-gray-500" />
                       <span>Hvit = Kalkulasjoner</span>
                     </div>
-                    <p className="text-muted-foreground mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full" />
+                      <span>Farget = Markedsdata</span>
+                    </div>
+                    <p className="text-muted-foreground pt-2 border-t">
                       Klikk på markørene for detaljer
                     </p>
                   </div>
@@ -521,56 +600,51 @@ const RentalMap = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Mine eiendommer</CardTitle>
+            <CardTitle className="text-lg text-blue-600">
+              {properties.length}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Mine eiendommer</p>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{properties.length}</div>
-            <p className="text-xs text-muted-foreground">Totalt</p>
-          </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Utleie-enheter</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <CardTitle className="text-lg text-green-600">
               {properties.filter(p => p.show_in_rental && p.monthly_rent).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Aktive</p>
-          </CardContent>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Utleie-enheter</p>
+          </CardHeader>
         </Card>
-
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Kalkulasjoner</CardTitle>
+            <CardTitle className="text-lg text-gray-600">
+              {calculationProperties.length}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Kalkulasjoner</p>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{calculationProperties.length}</div>
-            <p className="text-xs text-muted-foreground">Lagrede</p>
-          </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Gj.snitt avkastning</CardTitle>
+            <CardTitle className="text-lg text-primary">
+              {(() => {
+                const rentalProperties = properties.filter(p => p.show_in_rental && p.monthly_rent && p.current_value);
+                if (rentalProperties.length === 0) return '0.0';
+                
+                const avgYield = rentalProperties.reduce((sum, prop) => {
+                  return sum + ((prop.monthly_rent || 0) * 12 / (prop.current_value || 1) * 100);
+                }, 0) / rentalProperties.length;
+                
+                return avgYield.toFixed(1);
+              })()}%
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Gj.snitt avkastning</p>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {properties.filter(p => p.monthly_rent && p.current_value).length > 0
-                ? (properties
-                    .filter(p => p.monthly_rent && p.current_value)
-                    .reduce((acc, p) => acc + (p.monthly_rent! * 12 / p.current_value! * 100), 0) / 
-                   properties.filter(p => p.monthly_rent && p.current_value).length
-                  ).toFixed(1)
-                : '0.0'
-              }%
-            </div>
-            <p className="text-xs text-muted-foreground">Mine utleier</p>
-          </CardContent>
         </Card>
       </div>
     </div>
