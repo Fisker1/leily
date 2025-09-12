@@ -415,15 +415,17 @@ const Rental = () => {
                   Totale eiendommer
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col justify-between min-h-[60px]">
                 <div className="text-2xl font-bold text-primary">
                   {isExampleProperty ? 1 : properties.length}
                 </div>
-                {isExampleProperty && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel eiendom
-                  </p>
-                )}
+                <div className="h-4">
+                  {isExampleProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel eiendom
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -434,15 +436,17 @@ const Rental = () => {
                   Månedlige leieinntekter
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col justify-between min-h-[60px]">
                 <div className="text-2xl font-bold text-primary">
                   {totalRent.toLocaleString()} kr
                 </div>
-                {isExampleProperty && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel beløp
-                  </p>
-                )}
+                <div className="h-4">
+                  {isExampleProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel beløp
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -453,15 +457,17 @@ const Rental = () => {
                   Beleggsprosent
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col justify-between min-h-[60px]">
                 <div className="text-2xl font-bold text-accent">
                   {occupancyRate.toFixed(1)}%
                 </div>
-                {isExampleProperty && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel verdi
-                  </p>
-                )}
+                <div className="h-4">
+                  {isExampleProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel verdi
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -472,15 +478,17 @@ const Rental = () => {
                   Gjennomsnittlig avkastning
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col justify-between min-h-[60px]">
                 <div className="text-2xl font-bold text-accent">
                   {averageYield.toFixed(1)}%
                 </div>
-                {isExampleProperty && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel avkastning
-                  </p>
-                )}
+                <div className="h-4">
+                  {isExampleProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel avkastning
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -491,15 +499,17 @@ const Rental = () => {
                   Månedlig pengestrøm
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col justify-between min-h-[60px]">
                 <div className={`text-2xl font-bold ${getCashflowColor(totalCashflow)}`}>
                   {totalCashflow >= 0 ? '+' : ''}{totalCashflow.toLocaleString()} kr
                 </div>
-                {isExampleProperty && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Eksempel pengestrøm
-                  </p>
-                )}
+                <div className="h-4">
+                  {isExampleProperty && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Eksempel pengestrøm
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
