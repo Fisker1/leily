@@ -18,6 +18,7 @@ import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
 import CalculationLibrary from '@/components/CalculationLibrary';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useCalculationHistory } from '@/hooks/useCalculationHistory';
+import { ExtendedDetailsDialog } from '@/components/ExtendedDetailsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -43,6 +44,7 @@ const Calculator = () => {
 
   // States for save dialog
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [extendedDetailsOpen, setExtendedDetailsOpen] = useState(false);
   const [calculationName, setCalculationName] = useState('');
   const [finnCode, setFinnCode] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
@@ -570,82 +572,39 @@ const Calculator = () => {
             </div>
 
 
-            {/* Module Selection Section - Always visible */}
-            <div className="space-y-6 module-selection-section">
-                {/* Show attached modules if any */}
-                {selectedModules.length > 0 && (
-                  <Card className="bg-accent/5 border-accent/20">
-                    <CardHeader>
-                      <CardTitle className="text-accent flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Vedlagte Moduler ({selectedModules.length})
-                      </CardTitle>
-                      <CardDescription>
-                        Disse modulene er allerede lagt til som vedlegg i rapporten
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-3">
-                        {selectedModules.map((module, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {module.title.split(' - ')[0]}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-bold text-foreground">
-                    Utvid fullstendig bankrapport
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedModules.length > 0 ? 'Fyll ut modulene eller fjern de du ikke ønsker' : 'Få tilgang til alle analysemodulene'}
-                  </p>
-                </div>
-                
-                <CalculatorModules 
-                  propertyValue={totalPrice} 
-                  monthlyRent={expectedAnnualRent / 12} 
-                  expenses={totalExpenses} 
-                  loanAmount={loanAmount} 
-                  interestRate={interestRate} 
-                  loanPeriod={loanPeriod} 
-                  monthlyLoanPayment={monthlyLoanPayment} 
-                  calculatorMode={calculatorData.isRental ? 'investment' : 'private'} 
-                  monthlyCashFlow={calculatorData.isRental ? expectedAnnualRent / 12 - totalExpenses - monthlyLoanPayment : -totalExpenses - monthlyLoanPayment} 
-                  onModuleActivate={handleModuleActivation} 
-                  onGenerateReport={handleGenerateReport} 
-                  selectedModules={selectedModules} 
-                  calculatorData={calculatorData} 
-                  onDataChange={handleInputChange} 
-                />
-
-                {/* Generate Final Report Button */}
-                {selectedModules.length > 0 && (
-                  <Card className="bg-gradient-soft border-primary/20 mt-8">
-                    <CardHeader>
-                      <CardTitle className="text-primary flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Generer Komplett Bankrapport
-                      </CardTitle>
-                      <CardDescription>
-                        Basert på grunnleggende data og {selectedModules.length} vedlagte analysemoduler
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground" size="lg" onClick={handleGenerateReport}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Generer Komplett Rapport med {selectedModules.length} Vedlegg
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-3 text-center">
-                        Rapporten vil inneholde alle valgte moduler som separate vedlegg
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+            {/* Pro Section - Always visible */}
+            <div className="text-center space-y-4 mt-8">
+              <h2 className="text-2xl font-bold text-foreground">
+                Utvid fullstendig bankrapport
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Legg til utvidede detaljer for en komplett analyse
+              </p>
+              {isPro ? (
+                <Button 
+                  size="lg" 
+                  className="px-8 py-4 bg-gradient-primary hover:opacity-90"
+                  onClick={() => setExtendedDetailsOpen(true)}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Legg til utvidede detaljer
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  className="px-8 py-4 bg-gradient-primary hover:opacity-90"
+                  onClick={() => {
+                    // Redirect to pricing or show upgrade modal
+                    console.log('Show upgrade modal');
+                  }}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Utvid fullstendig bankrapport
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {isPro ? 'Finansiering • Risikovurdering • Dokumentopplasting' : 'Alle analysemoduler • ⚡ Pro-abonnement'}
+              </p>
             </div>
           </TabsContent>
           
@@ -677,6 +636,11 @@ const Calculator = () => {
             )}
           </TabsContent>
         </Tabs>
+        
+        <ExtendedDetailsDialog
+          open={extendedDetailsOpen}
+          onOpenChange={setExtendedDetailsOpen}
+        />
       </div>
     </>
   );
