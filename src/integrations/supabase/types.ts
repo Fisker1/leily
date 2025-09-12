@@ -669,6 +669,16 @@ export type Database = {
           setting_name: string
         }[]
       }
+      check_security_configuration: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_required: string
+          check_name: string
+          description: string
+          severity: string
+          status: string
+        }[]
+      }
       cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
