@@ -506,14 +506,14 @@ const Calculator = () => {
               {/* Generate Report Button */}
               {canShowResults && (
                 <div className="mt-6 text-center space-y-4">
-                  <div className="flex gap-4 justify-center">
-                    <Button size="lg" className="px-8" onClick={handleGenerateReport}>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                    <Button size="lg" className="w-full sm:w-auto px-8" onClick={handleGenerateReport}>
                       Generer grunnleggende bankrapport
                     </Button>
                     {user && (
                       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button size="lg" variant="outline" className="px-8">
+                          <Button size="lg" variant="outline" className="w-full sm:w-auto px-8">
                             <Save className="h-4 w-4 mr-2" />
                             Lagre kalkulasjon
                           </Button>
@@ -555,70 +555,6 @@ const Calculator = () => {
               )}
             </div>
 
-            {/* Extended Bank Report Section - Always visible */}
-            <div className="space-y-6">
-              <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-primary flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Utvidet Bankrapport
-                    {!canAccessExtendedReport && <Badge variant="secondary" className="ml-2">Kommer snart</Badge>}
-                  </CardTitle>
-                  <CardDescription>
-                    {canAccessExtendedReport 
-                      ? "Få tilgang til avanserte analyser og tilpassede rapporter"
-                      : "Denne funksjonen er under utvikling og kommer snart!"
-                    }
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {canAccessExtendedReport ? (
-                    <>
-                      <Button
-                        size="lg"
-                        className="w-full"
-                        onClick={() => {
-                          if (!user) {
-                            navigate('/auth');
-                            return;
-                          }
-                          if (profile?.subscription_tier !== 'pro') {
-                            navigate('/pricing');
-                            return;
-                          }
-                          // Handle extended report generation
-                          console.log('Generate extended report');
-                        }}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Generer Utvidet Bankrapport
-                      </Button>
-                      
-                      {!user && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          Du må logge inn for å få tilgang til utvidede rapporter
-                        </p>
-                      )}
-                      
-                      {user && profile?.subscription_tier !== 'pro' && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          Oppgrader til Pro for å få tilgang til utvidede rapporter
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">
-                        Vi jobber med å gjøre denne funksjonen tilgjengelig for alle brukere.
-                      </p>
-                      <Badge variant="outline" className="mt-2">Kommer snart</Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-            </div>
 
             {/* Module Selection Section */}
             {canShowResults && (
