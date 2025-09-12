@@ -12,25 +12,23 @@
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://*.supabase.co;
-      style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com data:;
-      img-src 'self' data: blob: https: http:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://*.mapbox.com https://*.supabase.co https://cdn.gpteng.co;
+      style-src 'self' 'unsafe-inline' https://api.mapbox.com https://*.mapbox.com https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com https://*.mapbox.com data:;
+      img-src 'self' data: blob: https: http: https://*.mapboxapi.com https://*.mapbox.com;
       media-src 'self' data: blob:;
-      connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com wss://*.supabase.co;
-      worker-src 'self' blob:;
-      child-src 'self';
-      frame-src 'self';
+      connect-src 'self' https://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://events.mapbox.com https://nominatim.openstreetmap.org wss://*.supabase.co;
+      worker-src 'self' blob: https://*.mapbox.com;
+      child-src 'self' https://*.mapbox.com;
+      frame-src 'self' https://*.mapbox.com;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
-      frame-ancestors 'none';
       upgrade-insecure-requests;
     " />
     
     <!-- Additional Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
