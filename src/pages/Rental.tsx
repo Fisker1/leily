@@ -860,19 +860,6 @@ const Rental = () => {
               </Button>
             </CardContent>
           </Card>
-
-          <Card className="shadow-medium border-secondary/20">
-            <CardHeader>
-              <CardTitle className="text-secondary">Kalkyle/Nytt kjøp</CardTitle>
-              <CardDescription>Analyser nye investeringsmuligheter</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">
-                <Calculator className="h-4 w-4 mr-2" />
-                Start kalkyle
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
