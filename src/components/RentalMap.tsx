@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2, MapPin, TrendingUp, Home, DollarSign, Calculator } from "lucide-react";
@@ -17,7 +16,6 @@ const RentalMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState('kommune');
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [mapboxgl, setMapboxgl] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -341,14 +339,6 @@ const RentalMap = () => {
     }
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxgl]);
 
-  const handleRegionChange = (value: string) => {
-    setSelectedRegion(value);
-    toast({
-      title: "Kommer snart",
-      description: `${value === 'kommune' ? 'Kommune' : 'Bydel'}-nivå data kommer i neste versjon`,
-    });
-  };
-
   if (!isPro) {
     return (
       <Card className="border-primary/20">
@@ -400,21 +390,6 @@ const RentalMap = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <label className="text-sm font-medium whitespace-nowrap">Geografinivå:</label>
-              <Select value={selectedRegion} onValueChange={handleRegionChange}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kommune">Kommune</SelectItem>
-                  <SelectItem value="bydel">Bydel</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           {/* Layer Controls */}
           <Card className="p-4 bg-muted/50">
             <h4 className="font-medium mb-3">Kartlag</h4>
