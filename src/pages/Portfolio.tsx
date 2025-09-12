@@ -625,7 +625,7 @@ const Portfolio = () => {
                               imageUrl={property.image_url}
                               address={property.address}
                               city={property.city}
-                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg"
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg"
                               alt={`Eiendom på ${property.address}`}
                             />
                             {isPrimaryHome && isUserProperty && (

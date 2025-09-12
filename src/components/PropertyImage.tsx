@@ -34,21 +34,11 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
   const shouldShowSatellite = user && !imageUrl && !isDemoAddress;
 
-  console.log('PropertyImage debug:', {
-    address,
-    user: !!user,
-    imageUrl: !!imageUrl,
-    isDemoAddress: !!isDemoAddress,
-    shouldShowSatellite
-  });
-
   useEffect(() => {
     // Only fetch Mapbox token if we need to show satellite for logged in users
     if (shouldShowSatellite) {
-      console.log('Attempting to fetch Mapbox token for address:', address);
       const fetchMapboxToken = async () => {
         try {
-          console.log('Calling get-mapbox-token function...');
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
@@ -57,10 +47,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           if (data?.token) {
-            console.log('Mapbox token received:', data.token.substring(0, 10) + '...');
             setMapboxToken(data.token);
-          } else {
-            console.error('No token received from get-mapbox-token function');
           }
         } catch (error) {
           console.error('Error fetching Mapbox token:', error);
@@ -80,20 +67,16 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     // Geocode the address to get coordinates
     const fullAddress = `${address}, ${city || ''}`;
     
-    console.log('Making geocoding request for:', fullAddress);
     fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}&country=NO&limit=1`)
       .then(response => {
-        console.log('Geocoding response status:', response.status);
         if (!response.ok) {
           throw new Error(`Geocoding failed with status ${response.status}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log('Geocoding data:', data);
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
-          console.log('Creating map at coordinates:', lng, lat);
           
           try {
             map.current = new mapboxgl.Map({
@@ -106,10 +89,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
             map.current.on('error', (e) => {
               console.error('Mapbox GL error:', e);
-            });
-
-            map.current.on('load', () => {
-              console.log('Map loaded successfully');
             });
           } catch (error) {
             console.error('Error creating Mapbox GL map:', error);
@@ -128,13 +107,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
            map.current.keyboard.disable();
            map.current.doubleClickZoom.disable();
            map.current.touchZoomRotate.disable();
-        } else {
-          console.log('No geocoding results found for address:', fullAddress);
         }
       })
       .catch(error => {
         console.error('Error geocoding address:', error);
-        console.error('Full error details:', error.message);
       });
 
     return () => {
