@@ -34,6 +34,14 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
   const shouldShowSatellite = user && !imageUrl && !isDemoAddress;
 
+  console.log('PropertyImage debug:', {
+    address,
+    user: !!user,
+    imageUrl: !!imageUrl,
+    isDemoAddress: !!isDemoAddress,
+    shouldShowSatellite
+  });
+
   useEffect(() => {
     // Only fetch Mapbox token if we need to show satellite for logged in users
     if (shouldShowSatellite) {
