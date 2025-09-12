@@ -67,31 +67,55 @@ const AdminDashboard = () => {
 
   const fetchReports = async () => {
     try {
-      const { data, error } = await supabase
+      // First get the reports
+      const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            email
-          ),
-          payment_records:payment_record_id (
-            amount,
-            payment_status,
-            payment_method
-          )
-        `)
+        .select('*')
         .order('generated_at', { ascending: false })
         .limit(100);
 
-      if (error) {
-        console.error('Error fetching reports:', error);
+      if (reportsError) {
+        console.error('Error fetching reports:', reportsError);
         toast.error('Feil ved henting av rapporter');
         return;
       }
 
-      // Type cast to fix TypeScript issues with complex Supabase joins
-      setReports((data as any) || []);
+      if (!reportsData || reportsData.length === 0) {
+        setReports([]);
+        return;
+      }
+
+      // Get unique user IDs and payment record IDs
+      const userIds = [...new Set(reportsData.map(r => r.user_id).filter(Boolean))];
+      const paymentIds = [...new Set(reportsData.map(r => r.payment_record_id).filter(Boolean))];
+
+      // Fetch user profiles
+      const profilesPromise = userIds.length > 0 
+        ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
+        : Promise.resolve({ data: [], error: null });
+
+      // Fetch payment records
+      const paymentsPromise = paymentIds.length > 0
+        ? supabase.from('payment_records').select('id, amount, payment_status, payment_method').in('id', paymentIds)
+        : Promise.resolve({ data: [], error: null });
+
+      const [{ data: profiles }, { data: payments }] = await Promise.all([profilesPromise, paymentsPromise]);
+
+      // Create lookup maps
+      const profileMap = new Map<string, { full_name: string | null; email: string }>();
+      profiles?.forEach(p => profileMap.set(p.id, { full_name: p.full_name, email: p.email }));
+      
+      const paymentMap = new Map<string, { amount: number; payment_status: string; payment_method: string | null }>();
+      payments?.forEach(p => paymentMap.set(p.id, { amount: p.amount, payment_status: p.payment_status, payment_method: p.payment_method }));
+
+      // Combine the data
+      const combinedReports: Report[] = reportsData.map(report => ({
+        ...report,
+        profiles: report.user_id ? profileMap.get(report.user_id) || null : null,
+        payment_records: report.payment_record_id ? paymentMap.get(report.payment_record_id) || null : null
+      }));
+
+      setReports(combinedReports);
     } catch (error) {
       console.error('Error fetching reports:', error);
       toast.error('Feil ved henting av rapporter');
