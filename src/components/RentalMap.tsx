@@ -37,6 +37,7 @@ const RentalMap = () => {
   // Fetch Mapbox token from Supabase Edge Function
   useEffect(() => {
     const fetchMapboxToken = async () => {
+      console.log('Attempting to fetch Mapbox token...');
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
@@ -44,27 +45,38 @@ const RentalMap = () => {
           console.error('Error fetching Mapbox token:', error);
           toast({
             title: "Kartfeil",
-            description: "Kunne ikke laste inn kartfunksjonalitet",
+            description: `Kunne ikke laste inn kartfunksjonalitet: ${error.message}`,
             variant: "destructive",
           });
           return;
         }
 
         if (data?.token) {
+          console.log('Mapbox token received successfully');
           setMapboxToken(data.token);
+        } else {
+          console.error('No token in response:', data);
+          toast({
+            title: "Kartfeil", 
+            description: "Ingen Mapbox-token mottatt",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error fetching Mapbox token:', error);
         toast({
           title: "Kartfeil", 
-          description: "Kunne ikke laste inn kartfunksjonalitet",
+          description: `Kunne ikke laste inn kartfunksjonalitet: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
           variant: "destructive",
         });
       }
     };
 
-    if (isPro) {
+    console.log('isPro status:', isPro, 'allowMapAccess:', true);
+    if (true) { // Always fetch token for debugging
       fetchMapboxToken();
+    } else {
+      console.log('User is not Pro, skipping Mapbox token fetch');
     }
   }, [isPro, toast]);
 
@@ -245,34 +257,70 @@ const RentalMap = () => {
   };
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || !isPro) return;
+    const allowMapAccess = true; // For debugging - change back to isPro for production
+    
+    console.log('Map initialization effect triggered:', {
+      hasContainer: !!mapContainer.current,
+      hasToken: !!mapboxToken,
+      isPro,
+      allowMapAccess,
+      tokenLength: mapboxToken?.length
+    });
+    
+    if (!mapContainer.current || !mapboxToken || !allowMapAccess) {
+      console.log('Map initialization skipped due to missing requirements');
+      return;
+    }
 
+    console.log('Initializing Mapbox map...');
     mapboxgl.accessToken = mapboxToken;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [10.7522, 59.9139], // Oslo center
-      zoom: 8,
-    });
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [10.7522, 59.9139], // Oslo center
+        zoom: 8,
+      });
 
-    // Add navigation controls  
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
+      // Add navigation controls  
+      map.current.addControl(
+        new mapboxgl.NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
 
-    map.current.on('load', () => {
-      addMarkersToMap();
-    });
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        addMarkersToMap();
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        toast({
+          title: "Kartfeil",
+          description: "Feil ved lasting av kart",
+          variant: "destructive",
+        });
+      });
+
+      console.log('Map initialization completed');
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      toast({
+        title: "Kartfeil",
+        description: `Kunne ikke initialisere kart: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
+        variant: "destructive",
+      });
+    }
 
     return () => {
+      console.log('Cleaning up map...');
       clearMarkers();
       map.current?.remove();
     };
-  }, [mapboxToken, isPro]);
+  }, [mapboxToken, isPro, toast]);
 
   // Update markers when data or layer settings change
   useEffect(() => {
@@ -290,7 +338,10 @@ const RentalMap = () => {
     });
   };
 
-  if (!isPro) {
+  // Temporarily allow access for debugging - change back to isPro for production
+  const allowMapAccess = true;
+  
+  if (!allowMapAccess) {
     return (
       <div className="space-y-6">
         <Card className="border-primary/20">
