@@ -689,7 +689,7 @@ const Portfolio = () => {
                       onClick={toggleAutoValuation}
                       disabled={false}
                     >
-                      <Gauge className="h-5 w-5" animated={isUpdatingValues} />
+                      <Gauge className="h-8 w-8" animated={isUpdatingValues} />
                     </Button>
                   )}
                 </CardTitle>
