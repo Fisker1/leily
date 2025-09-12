@@ -297,7 +297,7 @@ const Calculator = () => {
             </TabsTrigger>
             <TabsTrigger 
               value="building-planner" 
-              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
+              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
             >
               <Ruler className="h-5 w-5" />
               <span className="hidden sm:inline">Byggeplanlegger</span>
