@@ -291,14 +291,23 @@ const RentalMap = () => {
     
     console.log('Map initialization effect triggered:', {
       hasContainer: !!mapContainer.current,
+      containerElement: mapContainer.current,
       hasToken: !!mapboxToken,
       isPro,
       allowMapAccess,
       tokenLength: mapboxToken?.length
     });
     
-    if (!mapContainer.current || !mapboxToken || !allowMapAccess) {
-      console.log('Map initialization skipped due to missing requirements');
+    if (!mapContainer.current) {
+      console.log('Map initialization skipped: No container element');
+      return;
+    }
+    if (!mapboxToken) {
+      console.log('Map initialization skipped: No Mapbox token');
+      return;
+    }
+    if (!allowMapAccess) {
+      console.log('Map initialization skipped: Access not allowed');
       return;
     }
 
@@ -501,7 +510,15 @@ const RentalMap = () => {
             </div>
           ) : (
             <div className="relative">
-              <div ref={mapContainer} className="h-96 rounded-lg shadow-medium" />
+              <div 
+                ref={mapContainer} 
+                className="h-96 rounded-lg shadow-medium"
+                style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc' }}
+                onLoad={() => console.log('Map container loaded')}
+              />
+              <div style={{padding: '10px', fontSize: '12px', color: 'blue'}}>
+                DEBUG: Map container rendered, ref attached: {mapContainer.current ? 'Yes' : 'No'}
+              </div>
               
               {/* Legend - Hidden on mobile */}
               <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
