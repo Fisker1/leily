@@ -10,7 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, User, Home, FileText, Phone, Mail, IdCard, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarIcon, User, Home, FileText, Phone, Mail, IdCard, Plus, Building, CreditCard, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,8 @@ interface LeaseData {
   parkingIncluded: boolean;
   petsAllowed: boolean;
   smokingAllowed: boolean;
+  createDepositAccount: boolean;
+  bankName: string;
 }
 
 const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded }: RentalAgreementDialogProps) => {
@@ -89,7 +92,9 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
     utilitiesIncluded: false,
     parkingIncluded: false,
     petsAllowed: false,
-    smokingAllowed: false
+    smokingAllowed: false,
+    createDepositAccount: false,
+    bankName: 'Instabank'
   });
 
   const handleTenantDataChange = (field: keyof TenantData, value: string) => {
@@ -276,6 +281,35 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
       }
       console.log('Lease agreement created successfully:', lease);
 
+      // Create deposit account if requested
+      if (leaseData.createDepositAccount && leaseData.depositAmount && parseFloat(leaseData.depositAmount) > 0) {
+        console.log('Creating deposit account...');
+        const { data: depositAccount, error: depositError } = await supabase
+          .from('deposit_accounts')
+          .insert([{
+            lease_id: lease.id,
+            property_owner_id: user.id,
+            deposit_amount: parseFloat(leaseData.depositAmount),
+            interest_rate: 2.5, // Default Instabank rate
+            bank_name: leaseData.bankName,
+            status: 'active'
+          }])
+          .select()
+          .single();
+
+        if (depositError) {
+          console.error('Deposit account creation error:', depositError);
+          // Don't throw error - lease is still created
+          toast({
+            title: "Advarsel",
+            description: "Leieavtale opprettet, men depositumskonto kunne ikke opprettes automatisk",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Deposit account created successfully:', depositAccount);
+        }
+      }
+
       toast({
         title: "Leieavtale opprettet",
         description: `Leieavtale for ${tenantData.firstName} ${tenantData.lastName} er opprettet`,
@@ -304,7 +338,9 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
         utilitiesIncluded: false,
         parkingIncluded: false,
         petsAllowed: false,
-        smokingAllowed: false
+        smokingAllowed: false,
+        createDepositAccount: false,
+        bankName: 'Instabank'
       });
       setStep(1);
       onOpenChange(false);
@@ -636,6 +672,46 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
                   </div>
                 </div>
 
+                {/* Deposit Account Creation */}
+                {leaseData.depositAmount && parseFloat(leaseData.depositAmount) > 0 && (
+                  <Card className="border-blue-200 bg-blue-50/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        Depositumskonto
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Opprett sikker depositumskonto gjennom Instabank
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="createDepositAccount"
+                          checked={leaseData.createDepositAccount}
+                          onCheckedChange={(checked) => handleLeaseDataChange('createDepositAccount', checked)}
+                        />
+                        <Label htmlFor="createDepositAccount" className="text-sm">
+                          Opprett depositumskonto hos {leaseData.bankName}
+                        </Label>
+                      </div>
+                      
+                      {leaseData.createDepositAccount && (
+                        <div className="bg-white p-3 rounded border space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-blue-700">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="font-medium">Depositum: {parseInt(leaseData.depositAmount).toLocaleString()} kr</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Kontoen opprettes automatisk med høyeste rente og vil være knyttet til denne leieavtalen. 
+                            Leietaker får tilgang til kontoinformasjon via e-post.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Startdato *</Label>
@@ -745,6 +821,9 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
                       )}
                       <p><strong>Månedlig leie:</strong> {parseInt(leaseData.monthlyRent || '0').toLocaleString()} kr</p>
                       {leaseData.depositAmount && <p><strong>Depositum:</strong> {parseInt(leaseData.depositAmount).toLocaleString()} kr</p>}
+                      {leaseData.createDepositAccount && leaseData.depositAmount && (
+                        <p><strong>Depositumskonto:</strong> Opprettes hos {leaseData.bankName}</p>
+                      )}
                       {leaseData.startDate && <p><strong>Startdato:</strong> {format(leaseData.startDate, "PPP", { locale: nb })}</p>}
                       {leaseData.endDate && <p><strong>Sluttdato:</strong> {format(leaseData.endDate, "PPP", { locale: nb })}</p>}
                     </div>

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import PropertyValuationAPI from '@/components/PropertyValuationAPI';
 import { useSubscription } from '@/hooks/useSubscription';
+import PropertyLeaseHistory from './PropertyLeaseHistory';
 
 interface Property {
   id: string;
@@ -182,8 +183,9 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
         </DialogHeader>
 
         <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Eiendomsinfo</TabsTrigger>
+            <TabsTrigger value="leases">Leiehistorikk</TabsTrigger>
             <TabsTrigger value="valuation" className="flex items-center gap-2">
               {isFree ? <Hand className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
               Verdivurdering
@@ -240,6 +242,13 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="leases" className="space-y-6">
+            <PropertyLeaseHistory 
+              propertyId={property.id} 
+              propertyAddress={property.address}
+            />
           </TabsContent>
 
           <TabsContent value="api" className="space-y-6">
