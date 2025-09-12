@@ -52,6 +52,7 @@ const AdminDashboard = () => {
     reportsToday: 0
   });
   const [loading, setLoading] = useState(true);
+  const [dataCopyLoading, setDataCopyLoading] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -187,6 +188,35 @@ const AdminDashboard = () => {
     return `${mb.toFixed(1)} MB`;
   };
 
+  const handleCopyProductionData = async () => {
+    setDataCopyLoading(true);
+    try {
+      toast.info('Starter kopiering av produksjonsdata...');
+      
+      const { data, error } = await supabase.functions.invoke('copy-production-data', {});
+      
+      if (error) {
+        console.error('Error copying data:', error);
+        toast.error('Feil ved kopiering av data: ' + error.message);
+        return;
+      }
+      
+      if (data?.success) {
+        toast.success(`Data kopiert! ${data.totalRecords} poster i ${data.copiedTables.length} tabeller`);
+        // Refresh stats after successful copy
+        fetchStats();
+        fetchReports();
+      } else {
+        toast.error('Kopiering feilet: ' + (data?.error || 'Ukjent feil'));
+      }
+    } catch (error) {
+      console.error('Error copying data:', error);
+      toast.error('Feil ved kopiering av data');
+    } finally {
+      setDataCopyLoading(false);
+    }
+  };
+
   if (roleLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -249,9 +279,10 @@ const AdminDashboard = () => {
 
         {/* Tabbed Dashboard Content */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
             <TabsTrigger value="security">Sikkerhet</TabsTrigger>
+            <TabsTrigger value="staging">Staging</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -391,6 +422,38 @@ const AdminDashboard = () => {
 
           <TabsContent value="security">
             <SecurityDashboard />
+          </TabsContent>
+
+          <TabsContent value="staging">
+            <Card>
+              <CardHeader>
+                <CardTitle>Staging Database Management</CardTitle>
+                <CardDescription>
+                  Kopier produksjonsdata til staging for testing
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Kopier produksjonsdata</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Denne funksjonen kopierer all data fra produksjonsdatabasen til staging-databasen.
+                    Eksisterende data i staging vil bli overskrevet.
+                  </p>
+                  <Button 
+                    onClick={handleCopyProductionData}
+                    disabled={dataCopyLoading}
+                    className="w-full"
+                  >
+                    {dataCopyLoading ? 'Kopierer data...' : 'Kopier produksjonsdata'}
+                  </Button>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Fra:</strong> rkhzyzuttsvsjcgzrokt.supabase.co (Produksjon)</p>
+                  <p><strong>Til:</strong> wdwjmapvuibsqiifslno.supabase.co (Staging)</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
