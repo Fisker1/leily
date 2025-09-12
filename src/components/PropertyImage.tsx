@@ -57,7 +57,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           if (data?.token) {
+            console.log('Mapbox token received:', data.token.substring(0, 10) + '...');
             setMapboxToken(data.token);
+          } else {
+            console.error('No token received from get-mapbox-token function');
           }
         } catch (error) {
           console.error('Error fetching Mapbox token:', error);
@@ -77,37 +80,61 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     // Geocode the address to get coordinates
     const fullAddress = `${address}, ${city || ''}`;
     
+    console.log('Making geocoding request for:', fullAddress);
     fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}&country=NO&limit=1`)
-      .then(response => response.json())
+      .then(response => {
+        console.log('Geocoding response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Geocoding failed with status ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log('Geocoding data:', data);
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
+          console.log('Creating map at coordinates:', lng, lat);
           
-          map.current = new mapboxgl.Map({
-            container: mapContainer.current!,
-            style: 'mapbox://styles/mapbox/satellite-v9',
-            center: [lng, lat],
-            zoom: 16,
-            attributionControl: false
-          });
+          try {
+            map.current = new mapboxgl.Map({
+              container: mapContainer.current!,
+              style: 'mapbox://styles/mapbox/satellite-v9',
+              center: [lng, lat],
+              zoom: 16,
+              attributionControl: false
+            });
+
+            map.current.on('error', (e) => {
+              console.error('Mapbox GL error:', e);
+            });
+
+            map.current.on('load', () => {
+              console.log('Map loaded successfully');
+            });
+          } catch (error) {
+            console.error('Error creating Mapbox GL map:', error);
+          }
 
           // Add a marker at the property location
           new mapboxgl.Marker({ color: '#ff0000' })
             .setLngLat([lng, lat])
             .addTo(map.current);
 
-          // Disable all interactions for a static look
-          map.current.dragPan.disable();
-          map.current.scrollZoom.disable();
-          map.current.boxZoom.disable();
-          map.current.dragRotate.disable();
-          map.current.keyboard.disable();
-          map.current.doubleClickZoom.disable();
-          map.current.touchZoomRotate.disable();
+           // Disable all interactions for a static look
+           map.current.dragPan.disable();
+           map.current.scrollZoom.disable();
+           map.current.boxZoom.disable();
+           map.current.dragRotate.disable();
+           map.current.keyboard.disable();
+           map.current.doubleClickZoom.disable();
+           map.current.touchZoomRotate.disable();
+        } else {
+          console.log('No geocoding results found for address:', fullAddress);
         }
       })
       .catch(error => {
         console.error('Error geocoding address:', error);
+        console.error('Full error details:', error.message);
       });
 
     return () => {
