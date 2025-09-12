@@ -107,7 +107,7 @@ const Portfolio = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isPro } = useSubscription();
+  const { isPro, subscriptionTier } = useSubscription();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
@@ -117,6 +117,9 @@ const Portfolio = () => {
   // Auto valuation states
   const [autoValuationEnabled, setAutoValuationEnabled] = useState(false);
   const [isUpdatingValues, setIsUpdatingValues] = useState(false);
+  
+  // Debug subscription status
+  console.log('User subscription status:', { isPro, subscriptionTier, user: !!user });
   
   // Dialog states
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -762,11 +765,40 @@ const Portfolio = () => {
                             <p className="text-xs text-muted-foreground mb-1">Kjøpspris</p>
                             <p className="font-semibold text-xs">{property.purchase_price?.toLocaleString() || '2.800.000'} kr</p>
                           </div>
-                          <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg min-w-[90px]">
-                            <p className="text-xs text-muted-foreground mb-1">Nåverdi</p>
+                          <div className={`text-center p-2 rounded-lg min-w-[90px] relative transition-all duration-300 ${
+                            autoValuationEnabled && isPro 
+                              ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-400 shadow-blue-400/20' 
+                              : 'bg-blue-50 dark:bg-blue-900/20'
+                          }`}>
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <p className="text-xs text-muted-foreground">Nåverdi</p>
+                              {isPro && user && !showExampleProperty && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={`h-4 w-4 p-0 transition-colors ${
+                                    autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAutoValuation();
+                                  }}
+                                  disabled={isUpdatingValues}
+                                >
+                                  {isUpdatingValues ? (
+                                    <Zap className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Gauge className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                             <p className="font-semibold text-xs text-blue-600 dark:text-blue-400">
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
+                            {autoValuationEnabled && isPro && (
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                            )}
                           </div>
                           <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
