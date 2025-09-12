@@ -116,6 +116,7 @@ const Portfolio = () => {
   // Auto valuation states
   const [autoValuationEnabled, setAutoValuationEnabled] = useState(false);
   const [isUpdatingValues, setIsUpdatingValues] = useState(false);
+  const [originalValues, setOriginalValues] = useState<Record<string, number>>({});
   
   // Debug subscription status
   console.log('User subscription status:', { isPro, subscriptionTier, user: !!user });
@@ -243,6 +244,15 @@ const Portfolio = () => {
     }
 
     if (!autoValuationEnabled) {
+      // Lagre originale verdier før vi aktiverer automatisk oppdatering
+      const originalPropertyValues: Record<string, number> = {};
+      properties.forEach(property => {
+        if (property.current_value) {
+          originalPropertyValues[property.id] = property.current_value;
+        }
+      });
+      setOriginalValues(originalPropertyValues);
+
       // Aktiverer automatisk verdiestimering
       setAutoValuationEnabled(true);
       setIsUpdatingValues(true);
@@ -265,13 +275,44 @@ const Portfolio = () => {
         setIsUpdatingValues(false);
       }
     } else {
-      // Deaktiverer automatisk verdiestimering
+      // Deaktiverer og gjenoppretter originale verdier
       setAutoValuationEnabled(false);
-      setIsUpdatingValues(false);
-      toast({
-        title: "Automatisk verdiestimering deaktivert",
-        description: "Eiendomsverdier oppdateres ikke lenger automatisk",
-      });
+      setIsUpdatingValues(true);
+      
+      try {
+        // Gjenopprett originale verdier i databasen
+        const restorePromises = Object.entries(originalValues).map(async ([propertyId, originalValue]) => {
+          if (propertyId.startsWith('example') || propertyId.startsWith('mock')) return;
+          
+          const { error: updateError } = await supabase
+            .from('properties')
+            .update({ current_value: originalValue })
+            .eq('id', propertyId);
+
+          if (updateError) {
+            console.error(`Error restoring property ${propertyId}:`, updateError);
+          }
+        });
+
+        await Promise.all(restorePromises);
+        
+        // Oppdater lokal state
+        await fetchUserProperties();
+        
+        toast({
+          title: "Automatisk verdiestimering deaktivert",
+          description: "Originale eiendomsverdier er gjenopprettet",
+        });
+      } catch (error) {
+        console.error('Error restoring original values:', error);
+        toast({
+          title: "Feil ved deaktivering",
+          description: "Kunne ikke gjenopprette originale verdier",
+          variant: "destructive"
+        });
+      } finally {
+        setIsUpdatingValues(false);
+      }
     }
   };
 
@@ -644,11 +685,11 @@ const Portfolio = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`ml-auto h-7 w-7 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
+                      className={`ml-auto h-8 w-8 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
                       onClick={() => toggleAutoValuation()}
                       disabled={isUpdatingValues}
                     >
-                      <Gauge className="h-4 w-4" animated={isUpdatingValues} />
+                      <Gauge className="h-5 w-5" animated={isUpdatingValues} />
                     </Button>
                   )}
                 </CardTitle>
