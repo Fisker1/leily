@@ -36,32 +36,42 @@ const RentalMap = () => {
 
   // Fetch Mapbox token
   useEffect(() => {
+    console.log('Token fetch effect - isPro:', isPro);
+    
     if (!isPro) {
+      console.log('User not Pro, setting loading to false');
       setLoading(false);
       return;
     }
 
     const fetchToken = async () => {
+      console.log('Fetching Mapbox token...');
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
+        console.log('Token response:', { data, error });
+        
         if (error) {
+          console.error('Supabase function error:', error);
           throw error;
         }
 
         if (data?.token) {
+          console.log('Token received, length:', data.token.length);
           setMapboxToken(data.token);
         } else {
+          console.error('No token in response:', data);
           throw new Error('Ingen token mottatt');
         }
       } catch (error) {
         console.error('Token fetch error:', error);
         toast({
           title: "Kartfeil",
-          description: "Kunne ikke hente Mapbox token",
+          description: `Kunne ikke hente Mapbox token: ${error.message}`,
           variant: "destructive",
         });
       } finally {
+        console.log('Token fetch complete, setting loading to false');
         setLoading(false);
       }
     };
