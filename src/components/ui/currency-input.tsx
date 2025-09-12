@@ -1,0 +1,66 @@
+import React, { useState, useEffect, forwardRef } from "react";
+import { Input } from "@/components/ui/input";
+import { formatNumberWithSpaces, parseFormattedNumber } from "@/lib/utils";
+
+interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  value?: string | number;
+  onChange?: (value: string) => void;
+}
+
+const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
+  ({ value, onChange, onFocus, onBlur, ...props }, ref) => {
+    const [displayValue, setDisplayValue] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
+
+    // Update display value when value prop changes
+    useEffect(() => {
+      if (isFocused) {
+        // When focused, show clean numeric value for editing
+        setDisplayValue(value ? value.toString() : "");
+      } else {
+        // When not focused, show formatted value with spaces
+        setDisplayValue(formatNumberWithSpaces(value || ""));
+      }
+    }, [value, isFocused]);
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      // Show clean numeric value for editing
+      setDisplayValue(value ? value.toString() : "");
+      onFocus?.(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      // Show formatted value with spaces
+      setDisplayValue(formatNumberWithSpaces(value || ""));
+      onBlur?.(e);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      setDisplayValue(inputValue);
+      
+      // Pass clean numeric value to parent
+      const cleanValue = parseFormattedNumber(inputValue);
+      onChange?.(cleanValue);
+    };
+
+    return (
+      <Input
+        {...props}
+        ref={ref}
+        type="text"
+        inputMode="numeric"
+        value={displayValue}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+    );
+  }
+);
+
+CurrencyInput.displayName = "CurrencyInput";
+
+export { CurrencyInput };

@@ -19,7 +19,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Slider } from '@/components/ui/slider';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { useToast } from '@/hooks/use-toast';
+import { formatNumberWithSpaces } from '@/lib/utils';
 
 const Calculator = () => {
   const {
@@ -270,17 +272,17 @@ const Calculator = () => {
                     </div>
                   )}
 
-                  {/* Total Price */}
-                  <div className="space-y-2">
-                    <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
-                    <Input id="totalPrice" type="number" value={calculatorData.totalPrice} onChange={e => handleInputChange('totalPrice', e.target.value)} placeholder="5000000" />
-                  </div>
+                   {/* Total Price */}
+                   <div className="space-y-2">
+                     <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
+                     <CurrencyInput id="totalPrice" value={calculatorData.totalPrice} onChange={value => handleInputChange('totalPrice', value)} placeholder="5 000 000" />
+                   </div>
 
-                  {/* Equity */}
-                  <div className="space-y-2">
-                    <Label htmlFor="equity">Egenkapital (NOK)</Label>
-                    <Input id="equity" type="number" value={calculatorData.equity} onChange={e => handleInputChange('equity', e.target.value)} placeholder="1000000" />
-                  </div>
+                   {/* Equity */}
+                   <div className="space-y-2">
+                     <Label htmlFor="equity">Egenkapital (NOK)</Label>
+                     <CurrencyInput id="equity" value={calculatorData.equity} onChange={value => handleInputChange('equity', value)} placeholder="1 000 000" />
+                   </div>
 
                   {/* Rental Toggle */}
                   <div className="space-y-3">
@@ -300,31 +302,30 @@ const Calculator = () => {
                     </div>
                   </div>
 
-                  {/* Expected Monthly Rent - only for rental */}
-                  {calculatorData.isRental && (
-                    <div className="space-y-2">
-                      <Label htmlFor="expectedMonthlyRent">Forventet leieinntekt i måneden (NOK)</Label>
-                      <Input 
-                        id="expectedMonthlyRent" 
-                        type="number" 
-                        value={calculatorData.expectedAnnualRent ? (parseFloat(calculatorData.expectedAnnualRent) / 12).toString() : ''} 
-                        onChange={e => handleInputChange('expectedAnnualRent', (parseFloat(e.target.value) * 12).toString())} 
-                        placeholder="25000" 
-                      />
-                      {/* Yield Calculation */}
-                      {totalPrice > 0 && expectedAnnualRent > 0 && (
-                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-primary">Yield:</span>
-                            <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Beregnet som (månedlig leie × 12) / totalpris × 100
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                   {/* Expected Monthly Rent - only for rental */}
+                   {calculatorData.isRental && (
+                     <div className="space-y-2">
+                       <Label htmlFor="expectedMonthlyRent">Forventet leieinntekt i måneden (NOK)</Label>
+                       <CurrencyInput 
+                         id="expectedMonthlyRent" 
+                         value={calculatorData.expectedAnnualRent ? (parseFloat(calculatorData.expectedAnnualRent) / 12).toString() : ''} 
+                         onChange={value => handleInputChange('expectedAnnualRent', (parseFloat(value || '0') * 12).toString())} 
+                         placeholder="25 000" 
+                       />
+                       {/* Yield Calculation */}
+                       {totalPrice > 0 && expectedAnnualRent > 0 && (
+                         <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                           <div className="flex justify-between items-center">
+                             <span className="text-sm font-medium text-primary">Yield:</span>
+                             <span className="text-lg font-bold text-primary">{yieldPercentage.toFixed(2)}%</span>
+                           </div>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             Beregnet som (månedlig leie × 12) / totalpris × 100
+                           </p>
+                         </div>
+                       )}
+                     </div>
+                   )}
 
                   {/* Interest Rate */}
                   <div className="space-y-2">
@@ -332,20 +333,19 @@ const Calculator = () => {
                     <Input id="interestRate" type="number" step="0.1" value={calculatorData.interestRate} onChange={e => handleInputChange('interestRate', e.target.value)} placeholder="4.5" />
                   </div>
 
-                  {/* Loan Amount */}
-                  <div className="space-y-2">
-                    <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
-                    <Input 
-                      id="loanAmount" 
-                      type="number" 
-                      value={calculatorData.loanAmount} 
-                      onChange={e => handleInputChange('loanAmount', e.target.value)} 
-                      placeholder="4000000" 
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Beregnes automatisk som totalpris - egenkapital, men kan redigeres manuelt
-                    </p>
-                  </div>
+                   {/* Loan Amount */}
+                   <div className="space-y-2">
+                     <Label htmlFor="loanAmount">Lånebeløp (NOK)</Label>
+                     <CurrencyInput 
+                       id="loanAmount" 
+                       value={calculatorData.loanAmount} 
+                       onChange={value => handleInputChange('loanAmount', value)} 
+                       placeholder="4 000 000" 
+                     />
+                     <p className="text-xs text-muted-foreground">
+                       Beregnes automatisk som totalpris - egenkapital, men kan redigeres manuelt
+                     </p>
+                   </div>
 
                   {/* Loan Period */}
                   <div className="space-y-2">
@@ -358,36 +358,36 @@ const Calculator = () => {
                     <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
                     
                     <div className="grid grid-cols-1 gap-4">
-                      {/* Municipal Fees */}
-                      <div className="space-y-2">
-                        <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
-                        <Input id="municipalFees" type="number" value={calculatorData.municipalFees} onChange={e => handleInputChange('municipalFees', e.target.value)} placeholder="1500" />
-                      </div>
+                       {/* Municipal Fees */}
+                       <div className="space-y-2">
+                         <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
+                         <CurrencyInput id="municipalFees" value={calculatorData.municipalFees} onChange={value => handleInputChange('municipalFees', value)} placeholder="1 500" />
+                       </div>
 
-                      {/* Monthly Electricity */}
-                      <div className="space-y-2">
-                        <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
-                        <Input id="electricityMonthly" type="number" value={calculatorData.electricityMonthly} onChange={e => handleInputChange('electricityMonthly', e.target.value)} placeholder="800" />
-                      </div>
+                       {/* Monthly Electricity */}
+                       <div className="space-y-2">
+                         <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
+                         <CurrencyInput id="electricityMonthly" value={calculatorData.electricityMonthly} onChange={value => handleInputChange('electricityMonthly', value)} placeholder="800" />
+                       </div>
 
-                      {/* Insurance */}
-                      <div className="space-y-2">
-                        <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
-                        <Input id="insurance" type="number" value={calculatorData.insurance} onChange={e => handleInputChange('insurance', e.target.value)} placeholder="500" />
-                      </div>
+                       {/* Insurance */}
+                       <div className="space-y-2">
+                         <Label htmlFor="insurance">Forsikring (pr. mnd)</Label>
+                         <CurrencyInput id="insurance" value={calculatorData.insurance} onChange={value => handleInputChange('insurance', value)} placeholder="500" />
+                       </div>
 
-                      {/* Shared Expenses */}
-                      <div className="space-y-2">
-                        <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
-                        <Input id="sharedExpenses" type="number" value={calculatorData.sharedExpenses} onChange={e => handleInputChange('sharedExpenses', e.target.value)} placeholder="600" />
-                      </div>
+                       {/* Shared Expenses */}
+                       <div className="space-y-2">
+                         <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
+                         <CurrencyInput id="sharedExpenses" value={calculatorData.sharedExpenses} onChange={value => handleInputChange('sharedExpenses', value)} placeholder="600" />
+                       </div>
                     </div>
 
                     {/* Total Expenses Display */}
                     <div className="p-3 bg-muted rounded-md">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Totale månedlige utgifter:</span>
-                        <span className="text-lg font-semibold">{totalExpenses.toLocaleString()} kr</span>
+                        <span className="text-lg font-semibold">{formatNumberWithSpaces(totalExpenses)} kr</span>
                       </div>
                     </div>
                   </div>

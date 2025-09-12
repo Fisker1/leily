@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, DollarSign, Target, PieChart } from "lucide-react";
+import { formatNumberWithSpaces } from "@/lib/utils";
 
 interface ProfitabilityCalculatorProps {
   propertyValue: number;
@@ -86,12 +87,12 @@ const ProfitabilityCalculator = ({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Måned. pengestrøm:</span>
             <span className={`font-semibold ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`}>
-              {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
+              {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(monthlyCashFlow)} kr
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Egenkapital:</span>
-            <span className="font-semibold">{initialInvestment.toLocaleString()} kr</span>
+            <span className="font-semibold">{formatNumberWithSpaces(initialInvestment)} kr</span>
           </div>
         </div>
       </div>
@@ -174,7 +175,7 @@ const ProfitabilityCalculator = ({
               <p className="text-sm text-muted-foreground">Månedlig pengestrøm</p>
             </div>
             <p className={`text-3xl font-bold ${monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}`}>
-              {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
+              {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(monthlyCashFlow)} kr
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {monthlyCashFlow >= 0 ? 'Positiv' : 'Negativ'} pengestrøm
@@ -188,30 +189,30 @@ const ProfitabilityCalculator = ({
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total investering:</span>
-              <span className="font-semibold">{propertyValue.toLocaleString()} kr</span>
+              <span className="font-semibold">{formatNumberWithSpaces(propertyValue)} kr</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Egenkapital:</span>
-              <span className="font-semibold">{initialInvestment.toLocaleString()} kr</span>
+              <span className="font-semibold">{formatNumberWithSpaces(initialInvestment)} kr</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Lånebeløp:</span>
-              <span className="font-semibold">{loanAmount.toLocaleString()} kr</span>
+              <span className="font-semibold">{formatNumberWithSpaces(loanAmount)} kr</span>
             </div>
             {calculatorMode === 'investment' && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Månedlige leieinntekter:</span>
-                <span className="font-semibold text-primary">{monthlyRent.toLocaleString()} kr</span>
+                <span className="font-semibold text-primary">{formatNumberWithSpaces(monthlyRent)} kr</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Månedlige utgifter:</span>
-              <span className="font-semibold text-destructive">{(expenses + monthlyLoanPayment).toLocaleString()} kr</span>
+              <span className="font-semibold text-destructive">{formatNumberWithSpaces(expenses + monthlyLoanPayment)} kr</span>
             </div>
             <div className="flex justify-between pt-2 border-t font-semibold">
               <span>Netto månedlig resultat:</span>
               <span className={monthlyCashFlow >= 0 ? 'text-primary' : 'text-destructive'}>
-                {monthlyCashFlow >= 0 ? '+' : ''}{monthlyCashFlow.toLocaleString()} kr
+                {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(monthlyCashFlow)} kr
               </span>
             </div>
           </div>

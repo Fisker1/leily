@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
+import { formatNumberWithSpaces } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCalculatorData } from "@/hooks/useCalculatorData";
@@ -168,7 +169,7 @@ const CalculatorModules = ({
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-2">Månedlig pengestrøm</p>
                   <p className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {monthlyCashFlow.toLocaleString()} kr
+                    {formatNumberWithSpaces(monthlyCashFlow)} kr
                   </p>
                 </div>
               </div>
