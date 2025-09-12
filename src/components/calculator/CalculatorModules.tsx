@@ -475,19 +475,17 @@ const CalculatorModules = ({
 
   if (!expandedModules) {
     return (
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-4">
         <Button 
           size="lg" 
-          className="px-12 py-6 text-lg bg-gradient-primary hover:opacity-90"
+          className="px-8 py-4 bg-gradient-primary hover:opacity-90"
           onClick={handleExpandModules}
         >
-          <Plus className="h-6 w-6 mr-3" />
+          <Plus className="h-5 w-5 mr-2" />
           Utvid fullstendig bankrapport
         </Button>
-        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Få tilgang til alle 5 analysemodulene og fyll dem ut etter behov. Du kan fjerne moduler du ikke ønsker med X-knappen.
-          <br />
-          <span className="text-orange-600 font-medium">⚡ Modulutfylling krever Pro-abonnement</span>
+        <p className="text-xs text-muted-foreground">
+          Alle 5 analysemoduler • <span className="text-orange-600">⚡ Pro-abonnement</span>
         </p>
       </div>
     );
