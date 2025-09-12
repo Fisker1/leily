@@ -391,17 +391,17 @@ const BankReport = () => {
       
       <div className="container mx-auto px-4 py-8">
         {/* Header Actions */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <Link to="/" className="flex items-center gap-2 text-primary hover:text-primary/80">
             <ArrowLeft className="h-5 w-5" />
             Tilbake til kalkulator
           </Link>
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={() => window.print()}>
+          <div className="flex gap-3 flex-wrap">
+            <Button variant="outline" onClick={() => window.print()} className="min-w-[120px]">
               <Printer className="h-4 w-4 mr-2" />
               Skriv ut
             </Button>
-            <Button className="bg-gradient-primary hover:opacity-90" onClick={generatePDF}>
+            <Button className="bg-gradient-primary hover:opacity-90 min-w-[140px]" onClick={generatePDF}>
               <Download className="h-4 w-4 mr-2" />
               Last ned PDF
             </Button>
@@ -491,12 +491,12 @@ const BankReport = () => {
                         </td>
                       </tr>
                       {displayBasicData.calculatorMode === 'investment' && (
-                        <tr>
-                          <td className="py-1 text-gray-600">Brutto yield:</td>
-                          <td className="py-1 text-right font-semibold">
-                            {formatPercent(displayBasicData.grossYield || 0)}
-                          </td>
-                        </tr>
+                         <tr>
+                           <td className="py-1 text-gray-600">Brutto avkastning:</td>
+                           <td className="py-1 text-right font-semibold">
+                             {formatPercent(displayBasicData.grossYield || 0)}
+                           </td>
+                         </tr>
                       )}
                     </tbody>
                   </table>
@@ -557,12 +557,12 @@ const BankReport = () => {
                           -{formatCurrency(displayBasicData.expenses || 0)}
                         </td>
                       </tr>
-                      <tr className="border-t border-gray-400 bg-gray-50">
-                        <td className="py-1 text-gray-800 font-bold">Netto cashflow pr. mnd:</td>
-                        <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
-                        </td>
-                      </tr>
+                       <tr className="border-t border-gray-400 bg-gray-50">
+                         <td className="py-1 text-gray-800 font-bold">Netto pengestrøm pr. mnd:</td>
+                         <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                           {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
+                         </td>
+                       </tr>
                     </tbody>
                   </table>
                 </div>
@@ -601,14 +601,14 @@ const BankReport = () => {
                         </tr>
                         {basicData.calculatorMode === 'investment' && (
                           <>
-                            <tr className="border-b border-gray-200">
-                              <td className="py-1 text-gray-600">Brutto yield:</td>
-                              <td className="py-1 text-right font-semibold">{formatPercent(profitabilityData.grossYield || 0)}</td>
-                            </tr>
-                            <tr>
-                              <td className="py-1 text-gray-600">Netto yield:</td>
-                              <td className="py-1 text-right font-semibold">{formatPercent(profitabilityData.netYield || 0)}</td>
-                            </tr>
+                             <tr className="border-b border-gray-200">
+                               <td className="py-1 text-gray-600">Brutto avkastning:</td>
+                               <td className="py-1 text-right font-semibold">{formatPercent(profitabilityData.grossYield || 0)}</td>
+                             </tr>
+                             <tr>
+                               <td className="py-1 text-gray-600">Netto avkastning:</td>
+                               <td className="py-1 text-right font-semibold">{formatPercent(profitabilityData.netYield || 0)}</td>
+                             </tr>
                           </>
                         )}
                       </tbody>
@@ -639,12 +639,12 @@ const BankReport = () => {
                           -{formatCurrency(displayBasicData.monthlyLoanPayment || 0)}
                         </td>
                       </tr>
-                      <tr>
-                        <td className="py-1 text-gray-600 font-bold">Netto cashflow:</td>
-                        <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
-                        </td>
-                      </tr>
+                       <tr>
+                         <td className="py-1 text-gray-600 font-bold">Netto pengestrøm:</td>
+                         <td className={`py-1 text-right font-bold ${(displayBasicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                           {(displayBasicData.monthlyCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayBasicData.monthlyCashFlow || 0)}
+                         </td>
+                       </tr>
                       </tbody>
                     </table>
                   </div>
@@ -796,12 +796,12 @@ const BankReport = () => {
                           <td className="py-1 text-gray-600">Dekningsgrad:</td>
                           <td className="py-1 text-right font-semibold">{(riskData.debtServiceCoverage || 1.2).toFixed(1)}x</td>
                         </tr>
-                        <tr>
-                          <td className="py-1 text-gray-600">Cashflow-buffer:</td>
-                          <td className={`py-1 text-right font-semibold ${(riskData.cashFlowBuffer || basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                            {formatCurrency(riskData.cashFlowBuffer || basicData.monthlyCashFlow || 0)}
-                          </td>
-                        </tr>
+                         <tr>
+                           <td className="py-1 text-gray-600">Pengestrøm-buffer:</td>
+                           <td className={`py-1 text-right font-semibold ${(riskData.cashFlowBuffer || basicData.monthlyCashFlow || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                             {formatCurrency(riskData.cashFlowBuffer || basicData.monthlyCashFlow || 0)}
+                           </td>
+                         </tr>
                       </tbody>
                     </table>
                   </div>
@@ -852,14 +852,14 @@ const BankReport = () => {
                     <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Nåværende avkastning</h4>
                     <table className="w-full text-xs">
                       <tbody className="space-y-1">
-                        <tr className="border-b border-gray-200">
-                          <td className="py-1 text-gray-600">Brutto årlig yield:</td>
-                          <td className="py-1 text-right font-semibold">{formatPercent(yieldData.currentYield || basicData.grossYield || 0)}</td>
-                        </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="py-1 text-gray-600">Netto årlig yield:</td>
-                          <td className="py-1 text-right font-semibold">{formatPercent(yieldData.netYield || (basicData.grossYield * 0.7) || 0)}</td>
-                        </tr>
+                         <tr className="border-b border-gray-200">
+                           <td className="py-1 text-gray-600">Brutto årlig avkastning:</td>
+                           <td className="py-1 text-right font-semibold">{formatPercent(yieldData.currentYield || basicData.grossYield || 0)}</td>
+                         </tr>
+                         <tr className="border-b border-gray-200">
+                           <td className="py-1 text-gray-600">Netto årlig avkastning:</td>
+                           <td className="py-1 text-right font-semibold">{formatPercent(yieldData.netYield || (basicData.grossYield * 0.7) || 0)}</td>
+                         </tr>
                         <tr>
                           <td className="py-1 text-gray-600">Månedlig netto:</td>
                           <td className="py-1 text-right font-semibold">{formatCurrency(basicData.monthlyCashFlow || 0)}</td>
@@ -891,10 +891,10 @@ const BankReport = () => {
 
                 <div className="border border-gray-400 bg-gray-50 p-4">
                   <h4 className="font-bold text-gray-800 mb-2 text-sm uppercase">Avkastningsvurdering</h4>
-                  <p className="text-xs text-gray-700 leading-relaxed">
-                    Avkastningsanalysen viser {(yieldData.currentYield || basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} yield på {formatPercent(yieldData.currentYield || basicData.grossYield || 0)}. 
-                    Med forventet årlig vekst på 3% er den annualiserte avkastningen på {formatPercent(yieldData.annualizedReturn || 8.5)} konkurransedyktig.
-                  </p>
+                   <p className="text-xs text-gray-700 leading-relaxed">
+                     Avkastningsanalysen viser {(yieldData.currentYield || basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning på {formatPercent(yieldData.currentYield || basicData.grossYield || 0)}. 
+                     Med forventet årlig vekst på 3% er den annualiserte avkastningen på {formatPercent(yieldData.annualizedReturn || 8.5)} konkurransedyktig.
+                   </p>
                 </div>
               </section>
             )}
@@ -907,27 +907,27 @@ const BankReport = () => {
               
               <div className="border border-gray-400 bg-gray-50 p-4 mb-4">
                 <h4 className="font-bold text-gray-800 mb-2 text-sm uppercase">Samlet vurdering</h4>
-                <p className="text-xs text-gray-800 leading-relaxed">
-                  Basert på gjennomført analyse viser eiendommen {' '}
-                  {(basicData.monthlyCashFlow || 0) >= 0 ? 'positiv' : 'negativ'} månedlig cashflow på {' '}
-                  {formatCurrency(Math.abs(basicData.monthlyCashFlow || 0))}. 
-                  {basicData.calculatorMode === 'investment' && ` Brutto yield på ${formatPercent(basicData.grossYield || 0)} 
-                  indikerer ${(basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning sammenlignet med markedssnitt.`}
-                  {' '}Belåningsgraden på {displayBasicData.propertyValue > 0 ? formatPercent(((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100) : '0.00%'} 
-                  er {displayBasicData.propertyValue > 0 && ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 < 80 ? 'innenfor' : 'over'} normale bankkrav.
-                </p>
+                 <p className="text-xs text-gray-800 leading-relaxed">
+                   Basert på gjennomført analyse viser eiendommen {' '}
+                   {(basicData.monthlyCashFlow || 0) >= 0 ? 'positiv' : 'negativ'} månedlig pengestrøm på {' '}
+                   {formatCurrency(Math.abs(basicData.monthlyCashFlow || 0))}. 
+                   {basicData.calculatorMode === 'investment' && ` Brutto avkastning på ${formatPercent(basicData.grossYield || 0)} 
+                   indikerer ${(basicData.grossYield || 0) > 6 ? 'attraktiv' : 'moderat'} avkastning sammenlignet med markedssnitt.`}
+                   {' '}Belåningsgraden på {displayBasicData.propertyValue > 0 ? formatPercent(((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100) : '0.00%'} 
+                   er {displayBasicData.propertyValue > 0 && ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 < 80 ? 'innenfor' : 'over'} normale bankkrav.
+                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="border border-green-400 bg-green-50 p-3">
                   <h5 className="font-bold text-green-800 mb-2 text-xs uppercase">Styrker ved investeringen:</h5>
-                  <ul className="text-xs text-gray-800 space-y-1">
-                    {(displayBasicData.loanToValue || (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0)) < 80 && <li>• Konservativ belåningsgrad under 80%</li>}
-                    {(basicData.monthlyCashFlow || 0) > 0 && <li>• Selvfinansierende investering (positiv cashflow)</li>}
-                    {(basicData.grossYield || 0) > 6 && <li>• Yield over markedsgjennomsnitt</li>}
-                    <li>• Omfattende analyse og dokumentasjon</li>
-                    <li>• Transparent økonomisk fremstilling</li>
-                  </ul>
+                   <ul className="text-xs text-gray-800 space-y-1">
+                     {(displayBasicData.loanToValue || (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0)) < 80 && <li>• Konservativ belåningsgrad under 80%</li>}
+                     {(basicData.monthlyCashFlow || 0) > 0 && <li>• Selvfinansierende investering (positiv pengestrøm)</li>}
+                     {(basicData.grossYield || 0) > 6 && <li>• Avkastning over markedsgjennomsnitt</li>}
+                     <li>• Omfattende analyse og dokumentasjon</li>
+                     <li>• Transparent økonomisk fremstilling</li>
+                   </ul>
                 </div>
 
                 <div className="border border-yellow-400 bg-yellow-50 p-3">
