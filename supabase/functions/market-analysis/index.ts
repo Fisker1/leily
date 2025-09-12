@@ -244,42 +244,51 @@ function calculateMarketData(request: AnalysisRequest): MarketData {
   const municipality = request.postal_code ? getMunicipalityFromPostalCode(request.postal_code) : (request.city || 'Ukjent');
   const propertyType = request.property_type || 'Leilighet';
   
-  // Base rent calculations based on location and property type
-  let baseRent = 20000; // Default base rent
+  // Base rent calculations based on location and property type - adjusted for realistic Norwegian market
+  let baseRent = 8000; // More realistic base rent for Norwegian market
   
-  // Location multipliers
+  // Location multipliers (adjusted to reflect actual Norwegian rental market)
   const locationMultipliers: { [key: string]: number } = {
-    'Oslo': 1.4,
-    'Bergen': 1.1,
-    'Trondheim': 1.0,
-    'Stavanger': 1.2,
-    'Svolvær': 0.7,
-    'Reine': 0.6,
-    'Leknes': 0.65,
+    'Oslo': 2.2,       // Oslo is significantly more expensive
+    'Bergen': 1.6,     // Bergen is expensive but less than Oslo
+    'Trondheim': 1.4,  // University town with high demand
+    'Stavanger': 1.8,  // Oil city with higher prices
+    'Svolvær': 1.0,    // Tourist area can have higher prices
+    'Reine': 0.9,      // Remote but tourist area
+    'Leknes': 0.8,     // Smaller town
   };
 
-  // Property type multipliers
+  // Property type multipliers (more conservative)
   const propertyTypeMultipliers: { [key: string]: number } = {
     'Leilighet': 1.0,
-    'Enebolig': 1.3,
-    'Rekkehus': 1.15,
-    'Tomannsbolig': 1.25,
+    'Enebolig': 1.4,     // Whole house is more expensive
+    'Rekkehus': 1.2,     // Townhouse
+    'Tomannsbolig': 1.1, // Duplex - not as expensive as full house
   };
 
-  // Size adjustments
+  // Size adjustments (more conservative scaling)
   let sizeMultiplier = 1.0;
   if (request.size_sqm) {
-    if (request.size_sqm < 50) sizeMultiplier = 0.8;
-    else if (request.size_sqm < 70) sizeMultiplier = 0.9;
-    else if (request.size_sqm < 90) sizeMultiplier = 1.0;
-    else if (request.size_sqm < 120) sizeMultiplier = 1.2;
-    else sizeMultiplier = 1.4;
+    if (request.size_sqm < 40) sizeMultiplier = 0.7;      // Very small apartments
+    else if (request.size_sqm < 60) sizeMultiplier = 0.85; // Small apartments
+    else if (request.size_sqm < 80) sizeMultiplier = 1.0;  // Standard size
+    else if (request.size_sqm < 100) sizeMultiplier = 1.15; // Larger properties
+    else if (request.size_sqm < 130) sizeMultiplier = 1.3;  // Large properties
+    else sizeMultiplier = 1.45; // Very large properties
   }
 
   const locationMultiplier = locationMultipliers[municipality] || 0.8;
   const typeMultiplier = propertyTypeMultipliers[propertyType] || 1.0;
 
   baseRent = Math.round(baseRent * locationMultiplier * typeMultiplier * sizeMultiplier);
+  
+  // Log calculation breakdown for debugging
+  console.log(`Calculation breakdown:
+    - Base rent: 8000 NOK
+    - Location (${municipality}): x${locationMultiplier}
+    - Property type (${propertyType}): x${typeMultiplier}  
+    - Size (${request.size_sqm}m²): x${sizeMultiplier}
+    - Final average rent: ${baseRent} NOK`);
 
   // Calculate market statistics
   const averageRent = baseRent;
