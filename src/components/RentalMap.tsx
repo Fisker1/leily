@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +13,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import { formatNumberWithSpaces } from "@/lib/utils";
 
+// Debug mapbox import
+console.log('=== Importing mapbox-gl ===');
+let mapboxgl: any = null;
+try {
+  mapboxgl = require('mapbox-gl');
+  require('mapbox-gl/dist/mapbox-gl.css');
+  console.log('Mapbox GL imported successfully:', !!mapboxgl);
+} catch (error) {
+  console.error('Failed to import mapbox-gl:', error);
+}
+
 const RentalMap = () => {
+  console.log('=== RentalMap component mounting ===');
+  
+  // Early check - if mapbox failed to load, show error
+  if (!mapboxgl) {
+    console.error('Mapbox GL not available');
+    return (
+      <div style={{padding: '20px', border: '2px solid red', backgroundColor: 'lightyellow'}}>
+        <h3>Mapbox GL ikke tilgjengelig</h3>
+        <p>Mapbox GL JavaScript library kunne ikke lastes. Sjekk nettverkstilkobling og prøv på nytt.</p>
+      </div>
+    );
+  }
+  
   const { isPro } = useSubscription();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -26,6 +48,8 @@ const RentalMap = () => {
   const [selectedRegion, setSelectedRegion] = useState('kommune');
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   
+  console.log('RentalMap state:', { isPro, user: !!user, loading, mapboxToken: !!mapboxToken });
+  
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
   const [showRentalProperties, setShowRentalProperties] = useState(true);
@@ -33,6 +57,12 @@ const RentalMap = () => {
   const [showMarketData, setShowMarketData] = useState(false);
 
   const { properties, calculationProperties, loading: dataLoading } = usePropertyData();
+  
+  console.log('Property data:', { 
+    propertiesCount: properties?.length, 
+    calculationsCount: calculationProperties?.length, 
+    dataLoading 
+  });
 
   // Fetch Mapbox token from Supabase Edge Function
   useEffect(() => {

@@ -874,7 +874,10 @@ const Rental = () => {
           </TabsContent>
 
           <TabsContent value="map">
-            <RentalMap />
+            <div style={{border: '2px solid red', padding: '10px'}}>
+              <p style={{color: 'red', fontWeight: 'bold'}}>DEBUG: About to render RentalMap component</p>
+              <RentalMap />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
