@@ -62,10 +62,10 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
       let analysisData;
       
       if (useCustomAddress) {
-        if (!customAddress || !customCity || !customPostalCode) {
+        if (!customAddress || !customCity || !customPostalCode || !customSize) {
           toast({
             title: "Manglende informasjon",
-            description: "Vennligst fyll ut alle påkrevde felter for adressen",
+            description: "Vennligst fyll ut alle påkrevde felter (adresse, postnummer, by og størrelse)",
             variant: "destructive",
           });
           setLoading(false);
@@ -77,7 +77,7 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
           city: customCity,
           postal_code: customPostalCode,
           property_type: customPropertyType || 'Leilighet',
-          size_sqm: customSize ? parseInt(customSize) : null,
+          size_sqm: parseInt(customSize),
         };
       } else {
         if (!selectedPropertyId) {
@@ -302,16 +302,17 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
                             <SelectItem value="Enebolig">Enebolig</SelectItem>
                             <SelectItem value="Rekkehus">Rekkehus</SelectItem>
                             <SelectItem value="Tomannsbolig">Tomannsbolig</SelectItem>
+                            <SelectItem value="Hybel">Hybel</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="custom-size">Størrelse (m²)</Label>
+                        <Label htmlFor="custom-size">Størrelse (m²) *</Label>
                         <Input
                           id="custom-size"
                           value={customSize}
                           onChange={(e) => setCustomSize(e.target.value)}
-                          placeholder="85"
+                          placeholder="70"
                           type="number"
                         />
                       </div>
@@ -321,7 +322,7 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
 
                 <Button 
                   onClick={handleAnalyze} 
-                  disabled={loading || (!useCustomAddress && !selectedPropertyId) || (useCustomAddress && (!customAddress || !customCity || !customPostalCode))}
+                  disabled={loading || (!useCustomAddress && !selectedPropertyId) || (useCustomAddress && (!customAddress || !customCity || !customPostalCode || !customSize))}
                   className="w-full"
                 >
                   {loading ? (

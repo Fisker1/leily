@@ -240,36 +240,57 @@ function getMunicipalityFromPostalCode(postalCode: string): string {
 // Function to fetch real rental data from SSB API
 async function fetchSSBRentalData(municipality: string, propertyType: string, sizeSqm: number): Promise<MarketData | null> {
   try {
-    // Map municipality to SSB region codes
+    // Map municipality to SSB region codes (updated with more regions)
     const regionMapping: { [key: string]: string } = {
       'Oslo': '0301',
       'Bergen': '1201', 
       'Trondheim': '5001',
       'Stavanger': '1103',
+      'Kristiansand': '1001',
+      'Fredrikstad': '0104', 
+      'Sandnes': '1108',
+      'Tromsø': '5401',
+      'Sarpsborg': '0105',
+      'Skien': '0806',
+      'Ålesund': '1507',
+      'Sandefjord': '0704',
+      'Haugesund': '1106',
+      'Tønsberg': '0704',
+      'Moss': '0104',
+      'Lørenskog': '0230',
+      'Bærum': '0219',
+      'Asker': '0220',
     };
     
     const regionCode = regionMapping[municipality];
     if (!regionCode) {
-      console.log(`No SSB region mapping for municipality: ${municipality}`);
+      console.log(`❌ No SSB region mapping for municipality: ${municipality}`);
+      console.log(`Available regions:`, Object.keys(regionMapping));
       return null;
     }
+
+    console.log(`✅ Mapped ${municipality} to region code: ${regionCode}`);
 
     // Map property type to SSB categories
     const propertyMapping: { [key: string]: string } = {
       'Leilighet': '01',
       'Enebolig': '02', 
       'Rekkehus': '03',
-      'Tomannsbolig': '04'
+      'Tomannsbolig': '04',
+      'Hybel': '01' // Hybler behandles som leiligheter i SSB
     };
     
     const propertyCode = propertyMapping[propertyType] || '01';
     
-    // Determine room category based on size
+    // Determine room category based on size (more granular)
     let roomCategory = '2';
-    if (sizeSqm < 40) roomCategory = '1'; 
-    else if (sizeSqm < 70) roomCategory = '2';
-    else if (sizeSqm < 100) roomCategory = '3';
-    else roomCategory = '4';
+    if (sizeSqm < 30) roomCategory = '1';       // Studio/hybel 
+    else if (sizeSqm < 55) roomCategory = '2';  // 1-2 rom
+    else if (sizeSqm < 85) roomCategory = '3';  // 2-3 rom
+    else if (sizeSqm < 120) roomCategory = '4'; // 3-4 rom
+    else roomCategory = '5';                    // 4+ rom
+
+    console.log(`✅ Property analysis: ${propertyType} (${propertyCode}), ${sizeSqm}m² → ${roomCategory} rooms`);
 
     // Construct SSB API query for table 09897 (Predicted monthly rent)
     const ssbQuery = {
@@ -311,18 +332,29 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
       body: JSON.stringify(ssbQuery)
     });
 
+    console.log(`SSB API Response Status: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
-      console.log(`SSB API returned status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`SSB API Error - Status: ${response.status}, Response: ${errorText}`);
       return null;
     }
 
     const data = await response.json();
-    console.log('Raw SSB API Response:', JSON.stringify(data, null, 2));
+    console.log('Raw SSB API Response structure:', {
+      hasValue: !!data.value,
+      valueLength: data.value?.length || 0,
+      hasLabel: !!data.label,
+      hasDimension: !!data.dimension,
+      sampleValue: data.value?.slice(0, 5)
+    });
     
     // Parse JSON-stat format
     if (data.value && data.value.length > 0) {
       // Get the most recent non-null value
       const values = data.value.filter((v: any) => v !== null && v !== undefined);
+      console.log(`Found ${values.length} non-null values out of ${data.value.length} total values`);
+      
       if (values.length === 0) {
         console.log('No valid values found in SSB data');
         return null;
@@ -333,7 +365,8 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
       const medianRent = Math.round(averageRent * 0.95);
       const rentVariation = averageRent * 0.25;
       
-      console.log(`SSB data found - Average rent: ${averageRent} NOK`);
+      console.log(`✅ SSB data found - Municipality: ${municipality}, Type: ${propertyType}, Size: ${sizeSqm}m²`);
+      console.log(`   Average rent: ${averageRent} NOK, Values used: ${values.length}`);
       
       return {
         averageRent,
@@ -348,13 +381,16 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
         municipality,
         propertyType
       };
+    } else {
+      console.log('❌ No rental data found in SSB response - missing data.value or empty array');
+      return null;
     }
     
-    console.log('No rental data found in SSB response');
-    return null;
-    
   } catch (error) {
-    console.error('Error fetching SSB data:', error);
+    console.error('❌ Error fetching SSB data:', error);
+    if (error instanceof Error) {
+      console.error('   Error details:', error.message, error.stack);
+    }
     return null;
   }
 }
