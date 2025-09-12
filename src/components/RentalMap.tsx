@@ -12,31 +12,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import { formatNumberWithSpaces } from "@/lib/utils";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
-// Debug mapbox import
-console.log('=== Importing mapbox-gl ===');
-let mapboxgl: any = null;
-try {
-  mapboxgl = require('mapbox-gl');
-  require('mapbox-gl/dist/mapbox-gl.css');
-  console.log('Mapbox GL imported successfully:', !!mapboxgl);
-} catch (error) {
-  console.error('Failed to import mapbox-gl:', error);
-}
+console.log('=== Mapbox GL imported successfully ===', !!mapboxgl);
 
 const RentalMap = () => {
   console.log('=== RentalMap component mounting ===');
-  
-  // Early check - if mapbox failed to load, show error
-  if (!mapboxgl) {
-    console.error('Mapbox GL not available');
-    return (
-      <div style={{padding: '20px', border: '2px solid red', backgroundColor: 'lightyellow'}}>
-        <h3>Mapbox GL ikke tilgjengelig</h3>
-        <p>Mapbox GL JavaScript library kunne ikke lastes. Sjekk nettverkstilkobling og prøv på nytt.</p>
-      </div>
-    );
-  }
   
   const { isPro } = useSubscription();
   const { user } = useAuth();
@@ -102,8 +84,8 @@ const RentalMap = () => {
       }
     };
 
-    console.log('isPro status:', isPro, 'allowMapAccess:', true);
-    if (true) { // Always fetch token for debugging
+    console.log('isPro status:', isPro, 'allowMapAccess:', isPro);
+    if (isPro) {
       fetchMapboxToken();
     } else {
       console.log('User is not Pro, skipping Mapbox token fetch');
@@ -287,14 +269,11 @@ const RentalMap = () => {
   };
   // Initialize map
   useEffect(() => {
-    const allowMapAccess = true; // For debugging - change back to isPro for production
-    
     console.log('Map initialization effect triggered:', {
       hasContainer: !!mapContainer.current,
       containerElement: mapContainer.current,
       hasToken: !!mapboxToken,
       isPro,
-      allowMapAccess,
       tokenLength: mapboxToken?.length
     });
     
@@ -306,8 +285,8 @@ const RentalMap = () => {
       console.log('Map initialization skipped: No Mapbox token');
       return;
     }
-    if (!allowMapAccess) {
-      console.log('Map initialization skipped: Access not allowed');
+    if (!isPro) {
+      console.log('Map initialization skipped: User not Pro');
       return;
     }
 
@@ -378,7 +357,7 @@ const RentalMap = () => {
   };
 
   // Temporarily allow access for debugging - change back to isPro for production
-  const allowMapAccess = true;
+  const allowMapAccess = isPro;
   
   if (!allowMapAccess) {
     return (
@@ -510,15 +489,7 @@ const RentalMap = () => {
             </div>
           ) : (
             <div className="relative">
-              <div 
-                ref={mapContainer} 
-                className="h-96 rounded-lg shadow-medium"
-                style={{ backgroundColor: '#f0f0f0', border: '1px solid #ccc' }}
-                onLoad={() => console.log('Map container loaded')}
-              />
-              <div style={{padding: '10px', fontSize: '12px', color: 'blue'}}>
-                DEBUG: Map container rendered, ref attached: {mapContainer.current ? 'Yes' : 'No'}
-              </div>
+              <div ref={mapContainer} className="h-96 rounded-lg shadow-medium" />
               
               {/* Legend - Hidden on mobile */}
               <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
