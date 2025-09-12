@@ -226,6 +226,38 @@ const Auth = () => {
                     {translations.auth.signIn}
                   </Button>
                 </form>
+                
+                {/* Quick test login section */}
+                <div className="mt-6 pt-4 border-t border-border">
+                  <div className="text-center mb-3">
+                    <span className="text-xs text-muted-foreground bg-background px-2">
+                      Stage Test Login
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-center text-muted-foreground">
+                      🥷 Test bruker for staging
+                    </div>
+                    <div className="text-xs text-center font-mono">
+                      <div>Email: stager@vipps.no</div>
+                      <div>Passord: blåmeis</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          email: 'stager@vipps.no',
+                          password: 'blåmeis'
+                        });
+                      }}
+                    >
+                      Fyll inn test-bruker
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4 mt-4">
