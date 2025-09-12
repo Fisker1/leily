@@ -24,6 +24,8 @@ const DEMO_ADDRESSES = {
 };
 
 const PropertyImage = ({ imageUrl, address, city, className = "", alt }: PropertyImageProps) => {
+  console.log('PropertyImage called with:', { address, imageUrl, city });
+  
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');

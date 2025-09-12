@@ -547,7 +547,7 @@ const Rental = () => {
                         imageUrl={property.image_url}
                         address={property.address}
                         city={property.city}
-                        className="w-full h-32 rounded-lg"
+                        className="w-full h-40 rounded-lg border-2 border-primary/20"
                         alt={`Eiendom på ${property.address}`}
                       />
                     </div>
