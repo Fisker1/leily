@@ -383,12 +383,6 @@ function calculateEstimatedValue(propertyData: any, postalCode?: string): number
   }
 }
 
-  } catch (error) {
-    console.error('Error calculating estimated value:', error);
-    return 0;
-  }
-}
-
 function getRegionalEstimate(postalCode?: string, city?: string): number {
   // Very basic regional estimates for Norwegian housing market
   const regionalPrices: { [key: string]: number } = {
