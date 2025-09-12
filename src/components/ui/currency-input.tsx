@@ -39,11 +39,14 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
-      setDisplayValue(inputValue);
       
       // Pass clean numeric value to parent
       const cleanValue = parseFormattedNumber(inputValue);
       onChange?.(cleanValue);
+      
+      // Format display value in real-time while typing
+      const formattedValue = formatNumberWithSpaces(cleanValue);
+      setDisplayValue(formattedValue);
     };
 
     return (
