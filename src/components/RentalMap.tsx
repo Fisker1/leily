@@ -343,11 +343,11 @@ const RentalMap = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Geografinivå:</label>
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <label className="text-sm font-medium whitespace-nowrap">Geografinivå:</label>
               <Select value={selectedRegion} onValueChange={handleRegionChange}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,7 +361,7 @@ const RentalMap = () => {
           {/* Layer Controls */}
           <Card className="p-4 bg-muted/50">
             <h4 className="font-medium mb-3">Kartlag</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex items-center space-x-2">
                 <Switch 
                   id="my-properties" 
@@ -422,7 +422,8 @@ const RentalMap = () => {
             <div className="relative">
               <div ref={mapContainer} className="h-96 rounded-lg shadow-medium" />
               
-              <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur">
+              {/* Legend - Hidden on mobile */}
+              <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">Leiekart</CardTitle>
                 </CardHeader>
