@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Camera, Shield, Star, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
@@ -16,7 +17,8 @@ import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const MyProfile = () => {
   const { user, profile, updateProfile } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAmbassador } = useUserRole();
+  const { subscriptionTier } = useSubscription();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -114,8 +116,7 @@ const MyProfile = () => {
   const getRoleBadge = () => {
     if (!user) return null;
 
-    // Check user roles from the database
-    // For now, we'll check if user is admin using the existing hook
+    // Admin role has highest priority
     if (isAdmin) {
       return (
         <TooltipProvider>
@@ -134,38 +135,38 @@ const MyProfile = () => {
       );
     }
 
-    // TODO: Add ambassador role check when implemented
-    // if (isAmbassador) {
-    //   return (
-    //     <TooltipProvider>
-    //       <Tooltip>
-    //         <TooltipTrigger asChild>
-    //           <Badge variant="secondary" className="cursor-help">
-    //             <Star className="w-3 h-3 mr-1" />
-    //             Ambassadør
-    //           </Badge>
-    //         </TooltipTrigger>
-    //         <TooltipContent>
-    //           <p>Ambassadør - Gratis tilgang til alle premium funksjoner</p>
-    //         </TooltipContent>
-    //       </Tooltip>
-    //     </TooltipProvider>
-    //   );
-    // }
+    // Ambassador role
+    if (isAmbassador) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="secondary" className="cursor-help">
+                <Star className="w-3 h-3 mr-1" />
+                Ambassadør
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ambassadør - Gratis tilgang til alle premium funksjoner</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
 
     // Check subscription tier
-    if (profile?.subscription_tier === 'premium') {
+    if (subscriptionTier === 'premium' || subscriptionTier === 'pro') {
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge variant="secondary" className="cursor-help">
                 <Crown className="w-3 h-3 mr-1" />
-                Premium
+                Pro
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Premium bruker - Tilgang til alle betalte funksjoner</p>
+              <p>Pro bruker - Tilgang til alle betalte funksjoner</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -259,7 +260,7 @@ const MyProfile = () => {
                   <Label htmlFor="subscription">Abonnement</Label>
                   <Input
                     id="subscription"
-                    value={profile?.subscription_tier === 'premium' ? 'Premium' : 'Gratis'}
+                    value={subscriptionTier === 'pro' ? 'Pro' : subscriptionTier === 'premium' ? 'Premium' : 'Gratis'}
                     disabled
                     className="bg-muted"
                   />

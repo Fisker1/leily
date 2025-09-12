@@ -5,12 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useUserRole = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAmbassador, setIsAmbassador] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkUserRole = async () => {
       if (!user) {
         setIsAdmin(false);
+        setIsAmbassador(false);
         setLoading(false);
         return;
       }
@@ -20,13 +22,17 @@ export const useUserRole = () => {
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
+          .in('role', ['admin', 'ambassador']);
 
-        setIsAdmin(!!data && !error);
+        if (error) throw error;
+
+        const roles = data?.map(r => r.role) || [];
+        setIsAdmin(roles.includes('admin'));
+        setIsAmbassador(roles.includes('ambassador'));
       } catch (error) {
         console.error('Error checking user role:', error);
         setIsAdmin(false);
+        setIsAmbassador(false);
       } finally {
         setLoading(false);
       }
@@ -35,5 +41,5 @@ export const useUserRole = () => {
     checkUserRole();
   }, [user]);
 
-  return { isAdmin, loading };
+  return { isAdmin, isAmbassador, loading };
 };
