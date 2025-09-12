@@ -15,6 +15,7 @@ import { getTenantsWithMaskedData, logTenantDataAccess } from "@/lib/tenantSecur
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 import { 
   Building2, 
   DollarSign, 
@@ -28,7 +29,9 @@ import {
   Eye,
   Edit,
   Trash,
-  Download
+  Download,
+  Gauge,
+  Zap
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -104,11 +107,16 @@ const Portfolio = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isPro } = useSubscription();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
   const [propertyTenants, setPropertyTenants] = useState<Record<string, (Tenant & { leases: LeaseAgreement[] })[]>>({});
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null);
+  
+  // Auto valuation states
+  const [autoValuationEnabled, setAutoValuationEnabled] = useState(false);
+  const [isUpdatingValues, setIsUpdatingValues] = useState(false);
   
   // Dialog states
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -221,6 +229,89 @@ const Portfolio = () => {
       fetchAllPropertyTenants();
     }
   }, [user, properties]);
+
+  const toggleAutoValuation = async () => {
+    if (!isPro) {
+      toast({
+        title: "Pro-funksjon",
+        description: "Automatisk eiendomsvurdering krever Pro-abonnement",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!autoValuationEnabled) {
+      setAutoValuationEnabled(true);
+      setIsUpdatingValues(true);
+      
+      try {
+        await updateAllPropertyValues();
+        toast({
+          title: "Automatisk verdiestimering aktivert",
+          description: "Eiendomsverdier oppdateres automatisk",
+        });
+      } catch (error) {
+        console.error('Error updating property values:', error);
+        setAutoValuationEnabled(false);
+        toast({
+          title: "Feil ved aktivering",
+          description: "Kunne ikke aktivere automatisk verdiestimering",
+          variant: "destructive"
+        });
+      } finally {
+        setIsUpdatingValues(false);
+      }
+    } else {
+      setAutoValuationEnabled(false);
+      toast({
+        title: "Automatisk verdiestimering deaktivert",
+        description: "Eiendomsverdier oppdateres ikke lenger automatisk",
+      });
+    }
+  };
+
+  const updateAllPropertyValues = async () => {
+    if (!user || !properties.length) return;
+
+    const updatePromises = properties.map(async (property) => {
+      if (property.id.startsWith('example') || property.id.startsWith('mock')) return;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('property-valuation', {
+          body: {
+            address: property.address,
+            postalCode: property.postal_code,
+            city: property.city,
+            propertyId: property.id
+          }
+        });
+
+        if (error) {
+          console.error(`Error getting valuation for ${property.address}:`, error);
+          return;
+        }
+
+        if (data?.estimatedValue) {
+          // Update property with new current_value
+          const { error: updateError } = await supabase
+            .from('properties')
+            .update({ current_value: data.estimatedValue })
+            .eq('id', property.id);
+
+          if (updateError) {
+            console.error(`Error updating property ${property.id}:`, updateError);
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing property ${property.address}:`, error);
+      }
+    });
+
+    await Promise.all(updatePromises);
+    
+    // Refresh properties to show updated values
+    await fetchUserProperties();
+  };
 
   const fetchAllPropertyTenants = async () => {
     if (!user) return;
@@ -539,15 +630,36 @@ const Portfolio = () => {
               </CardContent>
             </Card>
 
-            <Card className="shadow-medium">
+            <Card className={`shadow-medium transition-all duration-300 relative ${autoValuationEnabled && isPro ? 'ring-2 ring-blue-400 shadow-blue-400/20 animate-pulse-slow' : ''}`}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Nåværende verdi
+                  {isPro && user && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`ml-auto h-6 w-6 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
+                      onClick={() => toggleAutoValuation()}
+                      disabled={isUpdatingValues}
+                    >
+                      {isUpdatingValues ? (
+                        <Zap className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Gauge className="h-3 w-3" />
+                      )}
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">{currentPortfolioValue.toLocaleString()} kr</div>
+                {autoValuationEnabled && isPro && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <p className="text-xs text-blue-600">Automatisk oppdatering aktiv</p>
+                  </div>
+                )}
                 {(!user || showExampleProperty) && (
                   <p className="text-xs text-muted-foreground mt-1">
                     {!user ? "Demo verdi" : "Eksempelverdi"}
