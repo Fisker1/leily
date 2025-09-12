@@ -166,8 +166,8 @@ async function fetchAIMarketData(municipality: string, propertyType: string, siz
   try {
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     
-    if (!perplexityApiKey) {
-      console.log('❌ Perplexity API key not configured');
+    if (!perplexityApiKey || perplexityApiKey === 'NO_KEY_REQUIRED' || perplexityApiKey === '') {
+      console.log('❌ Perplexity API key not configured or disabled - using formula calculations');
       return null;
     }
 
