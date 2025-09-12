@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/Navigation";
+import RentalMap from "@/components/RentalMap";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { PropertyEditDialog } from "@/components/PropertyEditDialog";
 import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
@@ -503,9 +505,17 @@ const Rental = () => {
           </div>
         </div>
 
-        {/* Properties List */}
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
+        {/* Tabs for Properties and Rental Map */}
+        <Tabs defaultValue="properties" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="properties">Eiendommer</TabsTrigger>
+            <TabsTrigger value="map">Leiekart</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="properties" className="space-y-6">
+            {/* Properties List */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold text-foreground">
               {!user 
                 ? "Demo eiendommer" 
@@ -518,10 +528,10 @@ const Rental = () => {
               <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
                 Eksempel - Legg til din egen eiendom
               </Badge>
-            )}
-          </div>
-          
-          <div className="grid gap-6">
+              )}
+            </div>
+            
+            <div className="grid gap-6">
             {properties.map((property) => (
               <Card 
                 key={property.id} 
@@ -788,12 +798,11 @@ const Rental = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
 
-        {/* Quick Actions */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Quick Actions */}
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="shadow-medium border-primary/20">
             <CardHeader>
               <CardTitle className="text-primary flex items-center gap-2">
@@ -859,8 +868,15 @@ const Rental = () => {
                 Start analyse
               </Button>
             </CardContent>
-          </Card>
-        </div>
+            </Card>
+            </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="map">
+            <RentalMap />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialogs */}
