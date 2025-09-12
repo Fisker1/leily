@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save } from 'lucide-react';
+import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
@@ -503,62 +503,101 @@ const Calculator = () => {
                 </CardContent>
               </Card>
 
-              {/* Generate Report Button */}
-              {canShowResults && (
-                <div className="mt-6 text-center space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    <Button size="lg" className="w-full sm:w-auto px-8" onClick={handleGenerateReport}>
-                      Generer grunnleggende bankrapport
-                    </Button>
-                    {user && (
-                      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="lg" variant="outline" className="w-full sm:w-auto px-8">
-                            <Save className="h-4 w-4 mr-2" />
-                            Lagre kalkulasjon
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Lagre kalkulasjon</DialogTitle>
-                            <DialogDescription>
-                              Lagre denne kalkulasjonen til biblioteket ditt for senere bruk
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="calc-name">Kalkulasjonsnavn</Label>
-                              <Input 
-                                id="calc-name"
-                                value={calculationName}
-                                onChange={e => setCalculationName(e.target.value)}
-                                placeholder="Gi kalkulasjonen et navn..."
-                              />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-                                Avbryt
-                              </Button>
-                              <Button onClick={handleSaveCalculation}>
-                                Lagre
-                              </Button>
-                            </div>
+              {/* Generate Report Button - Always visible */}
+              <div className="mt-6 text-center space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <Button 
+                    size="lg" 
+                    className={`w-full sm:w-auto px-8 ${!canShowResults ? 'opacity-50' : ''}`}
+                    onClick={handleGenerateReport}
+                    disabled={!canShowResults}
+                  >
+                    Generer grunnleggende bankrapport
+                  </Button>
+                  {user && (
+                    <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          size="lg" 
+                          variant="outline" 
+                          className={`w-full sm:w-auto px-8 ${!canShowResults ? 'opacity-50' : ''}`}
+                          disabled={!canShowResults}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Lagre kalkulasjon
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Lagre kalkulasjon</DialogTitle>
+                          <DialogDescription>
+                            Lagre denne kalkulasjonen til biblioteket ditt for senere bruk
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="calc-name">Kalkulasjonsnavn</Label>
+                            <Input 
+                              id="calc-name"
+                              value={calculationName}
+                              onChange={e => setCalculationName(e.target.value)}
+                              placeholder="Gi kalkulasjonen et navn..."
+                            />
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                              Avbryt
+                            </Button>
+                            <Button onClick={handleSaveCalculation}>
+                              Lagre
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+                {canShowResults ? (
                   <p className="text-xs text-muted-foreground">
                     Gratis rapport basert på dine grunnleggende eiendomsdata
                   </p>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-orange-600">
+                    Fyll inn {totalPrice <= 0 ? 'totalpris' : ''}{totalPrice <= 0 && calculatorData.isRental && expectedAnnualRent <= 0 ? ' og ' : ''}{calculatorData.isRental && expectedAnnualRent <= 0 ? 'forventet årlig leie' : ''} for å generere rapport
+                  </p>
+                )}
+              </div>
+              
+              {/* Pro Section - Always visible */}
+              <div className="text-center space-y-4 mt-8">
+                <h2 className="text-2xl font-bold text-foreground">
+                  Utvid fullstendig bankrapport
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Få tilgang til alle analysemodulene
+                </p>
+                <Button 
+                  size="lg" 
+                  className="px-8 py-4 bg-gradient-primary hover:opacity-90"
+                  onClick={() => {
+                    const moduleSelectionElement = document.querySelector('.module-selection-section');
+                    if (moduleSelectionElement) {
+                      moduleSelectionElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Utvid fullstendig bankrapport
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Alle 5 analysemoduler • <span className="text-orange-600">⚡ Pro-abonnement</span>
+                </p>
+              </div>
             </div>
 
 
-            {/* Module Selection Section */}
-            {canShowResults && (
-              <div className="space-y-6">
+            {/* Module Selection Section - Always visible */}
+            <div className="space-y-6 module-selection-section">
                 {/* Show attached modules if any */}
                 {selectedModules.length > 0 && (
                   <Card className="bg-accent/5 border-accent/20">
@@ -633,8 +672,7 @@ const Calculator = () => {
                     </CardContent>
                   </Card>
                 )}
-              </div>
-            )}
+            </div>
           </TabsContent>
           
           <TabsContent value="library">
