@@ -9,6 +9,7 @@ import { Eye, Plus, TrendingUp, MapPin, Zap, Hand } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import PropertyValuationAPI from '@/components/PropertyValuationAPI';
 import { useSubscription } from '@/hooks/useSubscription';
 import PropertyLeaseHistory from './PropertyLeaseHistory';
@@ -336,28 +337,31 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
                 )}
 
                 {chartData.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis 
-                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
-                        />
-                        <Tooltip 
-                          formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Verdi']}
-                          labelFormatter={(label) => `Dato: ${label}`}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="value" 
-                          stroke="hsl(var(--primary))" 
-                          strokeWidth={2}
-                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer
+                    config={{
+                      value: {
+                        label: "Verdi",
+                        color: "hsl(var(--primary))",
+                      },
+                    }}
+                    className="h-64"
+                  >
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis 
+                        tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="var(--color-value)" 
+                        strokeWidth={2}
+                        dot={{ fill: "var(--color-value)", strokeWidth: 2, r: 4 }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useState, useMemo } from "react";
 import { TrendingUp, Calculator, AlertTriangle, DollarSign, Target, BarChart3 } from "lucide-react";
 
@@ -306,22 +307,38 @@ const AdvancedCalculations = ({
                   <CardTitle className="text-base">Kontantstrøm over 10 år</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ChartContainer
+                    config={{
+                      beforeTaxCashFlow: {
+                        label: "Før skatt",
+                        color: "#10b981",
+                      },
+                      afterTaxCashFlow: {
+                        label: "Etter skatt",
+                        color: "#3b82f6",
+                      },
+                    }}
+                    className="h-[300px]"
+                  >
                     <LineChart data={cashFlowProjections}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="year" />
                       <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
-                      <Tooltip 
-                         formatter={(value, name) => [
-                           `${Math.round(value as number).toLocaleString()} kr`, 
-                            name === 'beforeTaxCashFlow' ? 'Før skatt' : 'Etter skatt'
-                         ]}
-                        labelFormatter={(label) => `År ${label}`}
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="beforeTaxCashFlow" 
+                        stroke="var(--color-beforeTaxCashFlow)" 
+                        strokeWidth={2}
                       />
-                      <Line type="monotone" dataKey="beforeTaxCashFlow" stroke="#10b981" strokeWidth={2} name="beforeTaxCashFlow" />
-                      <Line type="monotone" dataKey="afterTaxCashFlow" stroke="#3b82f6" strokeWidth={2} name="afterTaxCashFlow" />
+                      <Line 
+                        type="monotone" 
+                        dataKey="afterTaxCashFlow" 
+                        stroke="var(--color-afterTaxCashFlow)" 
+                        strokeWidth={2}
+                      />
                     </LineChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 </CardContent>
               </Card>
 
@@ -437,18 +454,28 @@ const AdvancedCalculations = ({
                   <CardDescription>Debt Service Coverage Ratio (NOI / Årlig lånebetalinger)</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ChartContainer
+                    config={{
+                      dscr: {
+                        label: "DSCR",
+                        color: "#f59e0b",
+                      },
+                    }}
+                    className="h-[300px]"
+                  >
                     <LineChart data={cashFlowProjections}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="year" />
                       <YAxis />
-                      <Tooltip 
-                        formatter={(value) => [parseFloat(value as string).toFixed(2), 'DSCR']}
-                        labelFormatter={(label) => `År ${label}`}
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="dscr" 
+                        stroke="var(--color-dscr)" 
+                        strokeWidth={3}
                       />
-                      <Line type="monotone" dataKey="dscr" stroke="#f59e0b" strokeWidth={3} />
                     </LineChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                   <div className="mt-2 text-xs text-muted-foreground">
                     DSCR over 1.2 regnes som akseptabelt av de fleste banker
                   </div>

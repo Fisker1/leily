@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TrendingUp, Calculator } from "lucide-react";
 
 interface PropertyProfitabilityChartProps {
@@ -101,56 +102,52 @@ export const PropertyProfitabilityChart = ({
           </div>
         </div>
 
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis 
-                dataKey="year" 
-                className="text-muted-foreground"
-              />
-              <YAxis 
-                className="text-muted-foreground"
-                tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-              />
-              <Tooltip 
-                formatter={(value: number, name: string) => [
-                  `${value.toLocaleString()} kr`,
-                  name === 'propertyValue' ? 'Eiendomsverdi' :
-                  name === 'equity' ? 'Egenkapital' :
-                  name === 'remainingLoan' ? 'Restgjeld' : name
-                ]}
-                labelFormatter={(label) => `Tidspunkt: ${label}`}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="propertyValue" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={3}
-                name="Eiendomsverdi"
-                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="equity" 
-                stroke="hsl(var(--accent))" 
-                strokeWidth={2}
-                name="Egenkapital"
-                dot={{ fill: "hsl(var(--accent))", strokeWidth: 2 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="remainingLoan" 
-                stroke="hsl(var(--destructive))" 
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                name="Restgjeld"
-                dot={{ fill: "hsl(var(--destructive))", strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer
+          config={{
+            propertyValue: {
+              label: "Eiendomsverdi",
+              color: "hsl(var(--primary))",
+            },
+            equity: {
+              label: "Egenkapital", 
+              color: "hsl(var(--accent))",
+            },
+            remainingLoan: {
+              label: "Restgjeld",
+              color: "hsl(var(--destructive))",
+            },
+          }}
+          className="h-80"
+        >
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="year" />
+            <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line 
+              type="monotone" 
+              dataKey="propertyValue" 
+              stroke="var(--color-propertyValue)"
+              strokeWidth={3}
+              dot={{ fill: "var(--color-propertyValue)", strokeWidth: 2 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="equity" 
+              stroke="var(--color-equity)"
+              strokeWidth={2}
+              dot={{ fill: "var(--color-equity)", strokeWidth: 2 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="remainingLoan" 
+              stroke="var(--color-remainingLoan)"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={{ fill: "var(--color-remainingLoan)", strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
