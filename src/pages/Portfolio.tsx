@@ -29,10 +29,9 @@ import {
   Eye,
   Edit,
   Trash,
-  Download,
-  Gauge,
-  Zap
+  Download
 } from "lucide-react";
+import Gauge from "@/components/ui/gauge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -633,7 +632,7 @@ const Portfolio = () => {
               </CardContent>
             </Card>
 
-            <Card className={`shadow-medium transition-all duration-300 relative ${autoValuationEnabled && isPro ? 'ring-2 ring-blue-400 shadow-blue-400/20 animate-pulse-slow' : ''}`}>
+            <Card className={`shadow-medium transition-all duration-300 ${autoValuationEnabled && isPro ? 'ring-2 ring-blue-400 shadow-blue-400/20' : ''}`}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
@@ -646,11 +645,7 @@ const Portfolio = () => {
                       onClick={() => toggleAutoValuation()}
                       disabled={isUpdatingValues}
                     >
-                      {isUpdatingValues ? (
-                        <Zap className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Gauge className="h-3 w-3" />
-                      )}
+                      <Gauge className="h-3 w-3" animated={isUpdatingValues} />
                     </Button>
                   )}
                 </CardTitle>
@@ -659,7 +654,7 @@ const Portfolio = () => {
                 <div className="text-2xl font-bold text-primary">{currentPortfolioValue.toLocaleString()} kr</div>
                 {autoValuationEnabled && isPro && (
                   <div className="flex items-center gap-1 mt-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <p className="text-xs text-blue-600">Automatisk oppdatering aktiv</p>
                   </div>
                 )}
@@ -785,11 +780,7 @@ const Portfolio = () => {
                                   }}
                                   disabled={isUpdatingValues}
                                 >
-                                  {isUpdatingValues ? (
-                                    <Zap className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Gauge className="h-3 w-3" />
-                                  )}
+                                  <Gauge className="h-3 w-3" animated={isUpdatingValues} />
                                 </Button>
                               )}
                             </div>
@@ -797,7 +788,7 @@ const Portfolio = () => {
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
                             {autoValuationEnabled && isPro && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
                             )}
                           </div>
                           <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[90px]">
