@@ -24,8 +24,6 @@ const DEMO_ADDRESSES = {
 };
 
 const PropertyImage = ({ imageUrl, address, city, className = "", alt }: PropertyImageProps) => {
-  console.log('PropertyImage called with:', { address, imageUrl, city });
-  
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
@@ -36,20 +34,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   const isDemoAddress = DEMO_ADDRESSES[address as keyof typeof DEMO_ADDRESSES];
   const shouldShowSatellite = user && !imageUrl && !isDemoAddress;
 
-  console.log('PropertyImage debug:', {
-    address,
-    user: !!user,
-    imageUrl: !!imageUrl,
-    isDemoAddress: !!isDemoAddress,
-    shouldShowSatellite
-  });
-
   useEffect(() => {
     if (shouldShowSatellite) {
-      console.log('Attempting to fetch Mapbox token for address:', address);
       const fetchMapboxToken = async () => {
         try {
-          console.log('Calling get-mapbox-token function...');
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
@@ -58,7 +46,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           if (data?.token) {
-            console.log('Mapbox token received:', data.token.substring(0, 10) + '...');
             setMapboxToken(data.token);
           }
         } catch (error) {
@@ -72,10 +59,8 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   }, [shouldShowSatellite, address]);
 
   useEffect(() => {
-    console.log('Map creation useEffect called:', { showMap, mapboxToken: !!mapboxToken, mapContainer: !!mapContainer.current, existingMap: !!map.current });
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
 
-    console.log('Creating Mapbox GL map for address:', address);
     mapboxgl.accessToken = mapboxToken;
     
     // Geocode the address to get coordinates
@@ -91,7 +76,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       .then(data => {
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
-          console.log('Creating map at coordinates:', lng, lat);
           
           try {
             map.current = new mapboxgl.Map({
@@ -104,10 +88,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
             map.current.on('error', (e) => {
               console.error('Mapbox GL error:', e);
-            });
-
-            map.current.on('load', () => {
-              console.log('Map loaded successfully for:', address);
             });
           } catch (error) {
             console.error('Error creating Mapbox GL map:', error);
