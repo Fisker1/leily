@@ -167,31 +167,50 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
     console.log('📊 Attempting to fetch rental data from SSB API...');
     console.log('📋 Parameters:', { municipality, propertyType, sizeSqm });
     
-    // First, let's try a simpler approach - just get general rental data for Norway
-    const ssbApiUrl = 'https://data.ssb.no/api/v0/no/table/07241';
+    // Use the correct SSB table for rental prices: 09897 - Predikert månedlig leie
+    const ssbApiUrl = 'https://data.ssb.no/api/v0/no/table/09897';
     
-    // Simple request for national data
+    // Map municipality to SSB price zones (prissone)
+    const municipalityToPriceZone: { [key: string]: string } = {
+      'Oslo': '01',
+      'Bergen': '02', 
+      'Trondheim': '03',
+      'Stavanger': '04',
+      'Kristiansand': '05',
+      // Add more mappings as needed
+    };
+    
+    const priceZone = municipalityToPriceZone[municipality] || '01'; // Default to Oslo
+    
+    // Map size to room categories (approximate)
+    let roomCategory = '3'; // Default to 3 rooms
+    if (sizeSqm < 40) roomCategory = '1';
+    else if (sizeSqm < 60) roomCategory = '2';
+    else if (sizeSqm < 80) roomCategory = '3';
+    else if (sizeSqm < 100) roomCategory = '4';
+    else roomCategory = '5';
+    
     const requestBody = {
       "query": [
         {
-          "code": "Region", 
+          "code": "Prissone",
           "selection": {
             "filter": "item",
-            "values": ["0301"] // Oslo as default
+            "values": [priceZone]
           }
         },
         {
-          "code": "Boligtype",
+          "code": "AntRom",
           "selection": {
             "filter": "item",
-            "values": ["01"] // Leiligheter
+            "values": [roomCategory]
           }
         },
         {
-          "code": "ContentsCode",
+          "code": "Bruksareal",
           "selection": {
             "filter": "item",
-            "values": ["LeieKrPerMnd"]
+            "values": ["alle"] // All areas - we'll adjust by size later
           }
         }
       ],
@@ -200,14 +219,15 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
       }
     };
     
-    console.log('🌐 Making request to SSB API...');
+    console.log('🌐 Making request to SSB API table 09897...');
     console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
     
     const response = await fetch(ssbApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'User-Agent': 'Leily-Property-Analysis'
       },
       body: JSON.stringify(requestBody)
     });
@@ -224,27 +244,23 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
         const latestRent = data.value[data.value.length - 1];
         
         if (latestRent && typeof latestRent === 'number' && latestRent > 0) {
-          console.log('💰 Latest rent from SSB:', latestRent);
-          
-          // Adjust for property size (SSB gives average rent, we adjust for size)
-          const avgSize = 70; // Average apartment size in Norway
-          const sizeAdjustedRent = Math.round((latestRent * sizeSqm) / avgSize);
+          console.log('💰 Latest rent from SSB table 09897:', latestRent);
           
           const result = {
-            averageRent: sizeAdjustedRent,
-            medianRent: Math.round(sizeAdjustedRent * 0.95),
+            averageRent: latestRent,
+            medianRent: Math.round(latestRent * 0.95),
             rentRange: {
-              min: Math.round(sizeAdjustedRent * 0.85),
-              max: Math.round(sizeAdjustedRent * 1.15)
+              min: Math.round(latestRent * 0.85),
+              max: Math.round(latestRent * 1.15)
             },
             marketTrend: "stabil",
-            dataSource: `SSB (Statistisk sentralbyrå) - Tabell 07241 - Leiepriser for boliger`,
+            dataSource: `SSB (Statistisk sentralbyrå) - Tabell 09897 - Predikert månedlig leie`,
             lastUpdated: new Date().toISOString(),
             municipality,
             propertyType
           };
           
-          console.log('🎯 Final SSB result:', JSON.stringify(result, null, 2));
+          console.log('🎯 Final SSB result from table 09897:', JSON.stringify(result, null, 2));
           return result;
         } else {
           console.log('⚠️ No valid rent value in SSB response:', latestRent);
