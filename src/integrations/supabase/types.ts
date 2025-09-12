@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      calculation_history: {
+        Row: {
+          calculation_data: Json
+          calculation_name: string | null
+          created_at: string
+          finn_code: string | null
+          id: string
+          property_address: string | null
+          results_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_data: Json
+          calculation_name?: string | null
+          created_at?: string
+          finn_code?: string | null
+          id?: string
+          property_address?: string | null
+          results_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_data?: Json
+          calculation_name?: string | null
+          created_at?: string
+          finn_code?: string | null
+          id?: string
+          property_address?: string | null
+          results_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deposit_accounts: {
         Row: {
           account_number: string | null

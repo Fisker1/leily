@@ -7,14 +7,17 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
 import CalculatorModules from '@/components/calculator/CalculatorModules';
 import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
+import CalculationLibrary from '@/components/CalculationLibrary';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
+import { useCalculationHistory } from '@/hooks/useCalculationHistory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -36,6 +39,13 @@ const Calculator = () => {
   const { isAdmin } = useUserRole();
   const { isPro } = useSubscription();
   const { toast } = useToast();
+  const { saveCalculation } = useCalculationHistory();
+
+  // States for save dialog
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [calculationName, setCalculationName] = useState('');
+  const [finnCode, setFinnCode] = useState('');
+  const [propertyAddress, setPropertyAddress] = useState('');
 
   // Access control
   const canAccessBuildingPlanner = isPro;
@@ -45,18 +55,85 @@ const Calculator = () => {
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
-  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner
+  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
   
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
       toast({
         title: "Byggeplanlegger (Pro)",
-        description: "Oppgrader til Pro for å få tilgang til den avanserte byggeplanleggeren.",
+        description: "Oppgrader til Pro för å få tilgang til den avanserte byggeplanleggeren.",
         duration: 4000,
       });
       return;
     }
     setActiveTab(value);
+  };
+
+  const handleSaveCalculation = async () => {
+    if (!user) {
+      toast({
+        title: "Logg inn påkrevd",
+        description: "Du må logge inn for å lagre kalkulasjoner",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Prepare calculation data
+    const calculationData = {
+      ...calculatorData,
+      finnCode: finnCode || null,
+      propertyAddress: propertyAddress || null
+    };
+
+    // Prepare results data
+    const resultsData = {
+      totalPrice: parseFloat(calculatorData.totalPrice) || 0,
+      monthlyRent: calculatorData.isRental ? parseFloat(calculatorData.expectedAnnualRent) / 12 || 0 : 0,
+      yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0 
+        ? (parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice) * 100) 
+        : 0,
+      monthlyCashFlow: calculatorData.isRental 
+        ? parseFloat(calculatorData.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment 
+        : -totalExpenses - monthlyLoanPayment,
+      monthlyLoanPayment,
+      totalExpenses,
+      isRental: calculatorData.isRental
+    };
+
+    const saved = await saveCalculation(
+      calculationName || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`,
+      finnCode || null,
+      propertyAddress || null,
+      calculationData,
+      resultsData
+    );
+
+    if (saved) {
+      setSaveDialogOpen(false);
+      setCalculationName('');
+      setFinnCode('');
+      setPropertyAddress('');
+    }
+  };
+
+  const handleLoadCalculation = (calculation: any) => {
+    // Load the calculation data into the form
+    const data = calculation.calculation_data;
+    Object.keys(data).forEach(key => {
+      if (key === 'finnCode') {
+        setFinnCode(data[key] || '');
+      } else if (key === 'propertyAddress') {
+        setPropertyAddress(data[key] || '');
+      } else {
+        updateField(key, data[key]);
+      }
+    });
+
+    toast({
+      title: "Kalkulasjon lastet",
+      description: "Kalkulasjonen er lastet inn i skjemaet",
+    });
   };
   
   useEffect(() => {
@@ -203,13 +280,20 @@ const Calculator = () => {
 
         {/* Tab selector */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto mb-8 h-auto p-2 gap-2">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 max-w-3xl mx-auto mb-8 h-auto p-2 gap-2">
             <TabsTrigger 
               value="calculator" 
               className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium"
             >
               <CalcIcon className="h-5 w-5" />
               <span>Eiendomskalkulator</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="library" 
+              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium"
+            >
+              <Library className="h-5 w-5" />
+              <span>Bibliotek</span>
             </TabsTrigger>
             <TabsTrigger 
               value="building-planner" 
@@ -232,6 +316,31 @@ const Calculator = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Finn Code */}
+                  <div className="space-y-2">
+                    <Label htmlFor="finnCode">Finn-kode (valgfritt)</Label>
+                    <Input 
+                      id="finnCode" 
+                      value={finnCode} 
+                      onChange={e => setFinnCode(e.target.value)} 
+                      placeholder="123456789" 
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Legg inn Finn-kode for å koble kalkulasjonen til en spesifikk annonse
+                    </p>
+                  </div>
+
+                  {/* Property Address */}
+                  <div className="space-y-2">
+                    <Label htmlFor="propertyAddress">Eiendomsadresse (valgfritt)</Label>
+                    <Input 
+                      id="propertyAddress" 
+                      value={propertyAddress} 
+                      onChange={e => setPropertyAddress(e.target.value)} 
+                      placeholder="Storgata 1, 0155 Oslo" 
+                    />
+                  </div>
+
                   {/* Property Type */}
                   <div className="space-y-2">
                     <Label htmlFor="propertyType">Type bolig</Label>
@@ -396,11 +505,50 @@ const Calculator = () => {
 
               {/* Generate Report Button */}
               {canShowResults && (
-                <div className="mt-6 text-center">
-                  <Button size="lg" className="px-8" onClick={handleGenerateReport}>
-                    Generer grunnleggende bankrapport
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
+                <div className="mt-6 text-center space-y-4">
+                  <div className="flex gap-4 justify-center">
+                    <Button size="lg" className="px-8" onClick={handleGenerateReport}>
+                      Generer grunnleggende bankrapport
+                    </Button>
+                    {user && (
+                      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button size="lg" variant="outline" className="px-8">
+                            <Save className="h-4 w-4 mr-2" />
+                            Lagre kalkulasjon
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Lagre kalkulasjon</DialogTitle>
+                            <DialogDescription>
+                              Lagre denne kalkulasjonen til biblioteket ditt for senere bruk
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="calc-name">Kalkulasjonsnavn</Label>
+                              <Input 
+                                id="calc-name"
+                                value={calculationName}
+                                onChange={e => setCalculationName(e.target.value)}
+                                placeholder="Gi kalkulasjonen et navn..."
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                                Avbryt
+                              </Button>
+                              <Button onClick={handleSaveCalculation}>
+                                Lagre
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
                     Gratis rapport basert på dine grunnleggende eiendomsdata
                   </p>
                 </div>
@@ -556,6 +704,14 @@ const Calculator = () => {
                 )}
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="library">
+            <CalculationLibrary 
+              onLoadCalculation={handleLoadCalculation}
+              onSaveCurrentCalculation={() => setSaveDialogOpen(true)}
+              currentCalculationData={canShowResults ? calculatorData : null}
+            />
           </TabsContent>
           
           <TabsContent value="building-planner">
