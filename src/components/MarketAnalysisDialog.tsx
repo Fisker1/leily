@@ -131,11 +131,11 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
         setMarketData(data.marketData);
         
         // Show appropriate toast based on actual data source
-        const isRealSSBData = data.marketData.dataSource.includes('Tabell 09897');
+        const isRealSSBData = data.marketData.dataSource.includes('Tabell 07241');
         toast({
           title: "Analyse fullført",
           description: isRealSSBData 
-            ? "Markedsdata hentet fra SSB (ekte data)" 
+            ? "Markedsdata hentet fra SSB (offisielle data)" 
             : "Markedsanalyse basert på beregnet estimat",
         });
       } else {

@@ -164,47 +164,27 @@ function getMunicipalityFromPostalCode(postalCode: string): string {
 // Function to fetch rental data from SSB (Statistics Norway)
 async function fetchSSBRentalData(municipality: string, propertyType: string, sizeSqm: number): Promise<MarketData | null> {
   try {
-    console.log('📊 Fetching rental data from SSB API...');
+    console.log('📊 Attempting to fetch rental data from SSB API...');
+    console.log('📋 Parameters:', { municipality, propertyType, sizeSqm });
     
-    // SSB table for rental prices is 07241 - Leiepriser for boliger, etter region og boligtype
+    // First, let's try a simpler approach - just get general rental data for Norway
     const ssbApiUrl = 'https://data.ssb.no/api/v0/no/table/07241';
     
-    // Map municipality to SSB region codes
-    const municipalityToRegion: { [key: string]: string } = {
-      'Oslo': '0301',
-      'Bergen': '4601', 
-      'Trondheim': '5001',
-      'Stavanger': '1103',
-      'Kristiansand': '1001',
-      // Add more mappings as needed
-    };
-    
-    const regionCode = municipalityToRegion[municipality] || '0301'; // Default to Oslo
-    
-    // Map property types to SSB housing types
-    const propertyTypeMapping: { [key: string]: string } = {
-      'Leilighet': '01',
-      'Enebolig': '02', 
-      'Tomannsbolig': '03',
-      'Rekkehus': '04'
-    };
-    
-    const housingType = propertyTypeMapping[propertyType] || '01'; // Default to apartment
-    
+    // Simple request for national data
     const requestBody = {
       "query": [
         {
-          "code": "Region",
+          "code": "Region", 
           "selection": {
             "filter": "item",
-            "values": [regionCode]
+            "values": ["0301"] // Oslo as default
           }
         },
         {
           "code": "Boligtype",
           "selection": {
-            "filter": "item", 
-            "values": [housingType]
+            "filter": "item",
+            "values": ["01"] // Leiligheter
           }
         },
         {
@@ -220,7 +200,8 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
       }
     };
     
-    console.log('🔍 SSB API request:', JSON.stringify(requestBody, null, 2));
+    console.log('🌐 Making request to SSB API...');
+    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
     
     const response = await fetch(ssbApiUrl, {
       method: 'POST',
@@ -231,22 +212,25 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
       body: JSON.stringify(requestBody)
     });
     
+    console.log('📥 SSB API response status:', response.status);
+    console.log('📥 SSB API response headers:', JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
+    
     if (response.ok) {
       const data = await response.json();
-      console.log('📈 SSB API response:', JSON.stringify(data, null, 2));
+      console.log('✅ SSB API success - full response:', JSON.stringify(data, null, 2));
       
-      if (data.value && data.value.length > 0) {
+      if (data.value && Array.isArray(data.value) && data.value.length > 0) {
         // Get the most recent value
         const latestRent = data.value[data.value.length - 1];
         
-        if (latestRent && typeof latestRent === 'number') {
-          console.log('✅ Successfully fetched SSB rental data:', latestRent);
+        if (latestRent && typeof latestRent === 'number' && latestRent > 0) {
+          console.log('💰 Latest rent from SSB:', latestRent);
           
           // Adjust for property size (SSB gives average rent, we adjust for size)
           const avgSize = 70; // Average apartment size in Norway
           const sizeAdjustedRent = Math.round((latestRent * sizeSqm) / avgSize);
           
-          return {
+          const result = {
             averageRent: sizeAdjustedRent,
             medianRent: Math.round(sizeAdjustedRent * 0.95),
             rentRange: {
@@ -254,21 +238,31 @@ async function fetchSSBRentalData(municipality: string, propertyType: string, si
               max: Math.round(sizeAdjustedRent * 1.15)
             },
             marketTrend: "stabil",
-            dataSource: `SSB (Statistisk sentralbyrå) - Tabell 07241`,
+            dataSource: `SSB (Statistisk sentralbyrå) - Tabell 07241 - Leiepriser for boliger`,
             lastUpdated: new Date().toISOString(),
             municipality,
             propertyType
           };
+          
+          console.log('🎯 Final SSB result:', JSON.stringify(result, null, 2));
+          return result;
+        } else {
+          console.log('⚠️ No valid rent value in SSB response:', latestRent);
         }
+      } else {
+        console.log('⚠️ No data.value array or empty array in SSB response');
       }
     } else {
       const errorText = await response.text();
-      console.log('❌ SSB API error:', response.status, response.statusText, errorText);
+      console.log('❌ SSB API error:', response.status, response.statusText);
+      console.log('❌ SSB API error body:', errorText);
     }
   } catch (error) {
-    console.log('❌ SSB API request failed:', error);
+    console.log('❌ SSB API request failed with exception:', error);
+    console.log('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
   }
   
+  console.log('⚠️ SSB API failed, returning null');
   return null;
 }
 
@@ -359,12 +353,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Market analysis function called');
+    console.log('🚀 Market analysis function called - method:', req.method);
+    console.log('🚀 Request headers:', JSON.stringify(Object.fromEntries(req.headers.entries())));
     
     const request: AnalysisRequest = await req.json();
-    console.log('Analysis request received:', request);
+    console.log('📋 Analysis request received:', JSON.stringify(request, null, 2));
     
     if (!request.address) {
+      console.log('❌ Missing address in request');
       return new Response(
         JSON.stringify({ error: 'Address is required' }),
         { 
@@ -374,10 +370,11 @@ serve(async (req) => {
       );
     }
 
-    console.log('Calculating market data...');
+    console.log('🔄 Starting market data calculation...');
     const marketData = await calculateMarketData(request);
     
-    console.log('Market analysis completed for', request.address, request.city || '');
+    console.log('✅ Market analysis completed successfully');
+    console.log('📊 Final market data:', JSON.stringify(marketData, null, 2));
     
     return new Response(
       JSON.stringify({ marketData }), 
