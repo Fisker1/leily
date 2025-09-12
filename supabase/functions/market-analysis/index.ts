@@ -237,12 +237,146 @@ function getMunicipalityFromPostalCode(postalCode: string): string {
   return postalCodeMunicipalities[postalCode] || 'Ukjent kommune';
 }
 
-// Mock function to simulate SSB API call and calculate market data
-function calculateMarketData(request: AnalysisRequest): MarketData {
+// Function to fetch real rental data from SSB API
+async function fetchSSBRentalData(municipality: string, propertyType: string, sizeSqm: number): Promise<MarketData | null> {
+  try {
+    // Map municipality to SSB region codes
+    const regionMapping: { [key: string]: string } = {
+      'Oslo': '0301',
+      'Bergen': '1201', 
+      'Trondheim': '5001',
+      'Stavanger': '1103',
+    };
+    
+    const regionCode = regionMapping[municipality];
+    if (!regionCode) {
+      console.log(`No SSB region mapping for municipality: ${municipality}`);
+      return null;
+    }
+
+    // Map property type to SSB categories
+    const propertyMapping: { [key: string]: string } = {
+      'Leilighet': '01',
+      'Enebolig': '02', 
+      'Rekkehus': '03',
+      'Tomannsbolig': '04'
+    };
+    
+    const propertyCode = propertyMapping[propertyType] || '01';
+    
+    // Determine room category based on size
+    let roomCategory = '2';
+    if (sizeSqm < 40) roomCategory = '1'; 
+    else if (sizeSqm < 70) roomCategory = '2';
+    else if (sizeSqm < 100) roomCategory = '3';
+    else roomCategory = '4';
+
+    // Construct SSB API query for table 09897 (Predicted monthly rent)
+    const ssbQuery = {
+      "query": [
+        {
+          "code": "Region",
+          "selection": {
+            "filter": "item",
+            "values": [regionCode]
+          }
+        },
+        {
+          "code": "BoligType",
+          "selection": {
+            "filter": "item", 
+            "values": [propertyCode]
+          }
+        },
+        {
+          "code": "AntRom",
+          "selection": {
+            "filter": "item",
+            "values": [roomCategory]
+          }
+        }
+      ],
+      "response": {
+        "format": "json-stat2"
+      }
+    };
+
+    console.log('SSB API Query:', JSON.stringify(ssbQuery, null, 2));
+
+    const response = await fetch('https://data.ssb.no/api/v0/no/table/09897/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ssbQuery)
+    });
+
+    if (!response.ok) {
+      console.log(`SSB API returned status: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('Raw SSB API Response:', JSON.stringify(data, null, 2));
+    
+    // Parse JSON-stat format
+    if (data.value && data.value.length > 0) {
+      // Get the most recent non-null value
+      const values = data.value.filter((v: any) => v !== null && v !== undefined);
+      if (values.length === 0) {
+        console.log('No valid values found in SSB data');
+        return null;
+      }
+      
+      const latestValue = values[values.length - 1];
+      const averageRent = Math.round(latestValue);
+      const medianRent = Math.round(averageRent * 0.95);
+      const rentVariation = averageRent * 0.25;
+      
+      console.log(`SSB data found - Average rent: ${averageRent} NOK`);
+      
+      return {
+        averageRent,
+        medianRent, 
+        rentRange: {
+          min: Math.round(averageRent - rentVariation),
+          max: Math.round(averageRent + rentVariation)
+        },
+        marketTrend: 'stabil',
+        dataSource: 'Statistisk sentralbyrå (SSB) - Leiemarkedsundersøkelse (Tabell 09897)',
+        lastUpdated: new Date().toISOString(),
+        municipality,
+        propertyType
+      };
+    }
+    
+    console.log('No rental data found in SSB response');
+    return null;
+    
+  } catch (error) {
+    console.error('Error fetching SSB data:', error);
+    return null;
+  }
+}
+
+// Function to fetch real market data from SSB API and calculate market data
+async function calculateMarketData(request: AnalysisRequest): Promise<MarketData> {
   console.log('Calculating market data for:', request);
 
   const municipality = request.postal_code ? getMunicipalityFromPostalCode(request.postal_code) : (request.city || 'Ukjent');
   const propertyType = request.property_type || 'Leilighet';
+  
+  // Try to fetch real data from SSB API first
+  try {
+    console.log('Attempting to fetch real SSB data...');
+    const ssbData = await fetchSSBRentalData(municipality, propertyType, request.size_sqm || 70);
+    if (ssbData) {
+      console.log('Successfully fetched SSB data:', ssbData);
+      return ssbData;
+    }
+  } catch (error) {
+    console.log('SSB API call failed, falling back to calculated estimates:', error);
+  }
   
   // Base rent calculations based on location and property type - adjusted for realistic Norwegian market
   let baseRent = 8000; // More realistic base rent for Norwegian market
@@ -313,7 +447,7 @@ function calculateMarketData(request: AnalysisRequest): MarketData {
     medianRent,
     rentRange,
     marketTrend,
-    dataSource: 'Statistisk sentralbyrå (SSB) - Leiemarkedsundersøkelse',
+    dataSource: 'Beregnet estimat basert på markedsdata (SSB API ikke tilgjengelig)',
     lastUpdated: new Date().toISOString(),
     municipality,
     propertyType
@@ -348,7 +482,7 @@ serve(async (req) => {
 
     // Calculate market data (simulating SSB API call)
     console.log('Calculating market data...');
-    const marketData = calculateMarketData(request);
+    const marketData = await calculateMarketData(request);
     console.log('Market data calculated:', marketData);
 
     // Log for debugging
