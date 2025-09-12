@@ -45,7 +45,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   });
 
   useEffect(() => {
-    console.log('useEffect for Mapbox token triggered, shouldShowSatellite:', shouldShowSatellite);
+    console.log('useEffect ALWAYS triggered, shouldShowSatellite:', shouldShowSatellite, 'address:', address);
     // Only fetch Mapbox token if we need to show satellite for logged in users
     if (shouldShowSatellite) {
       console.log('Attempting to fetch Mapbox token for address:', address);
@@ -73,7 +73,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       fetchMapboxToken();
       setShowMap(true);
     }
-  }, [shouldShowSatellite, address]);
+  });
 
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
