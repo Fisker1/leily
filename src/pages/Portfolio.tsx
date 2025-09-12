@@ -686,8 +686,8 @@ const Portfolio = () => {
                       variant="ghost"
                       size="sm"
                       className={`ml-auto h-8 w-8 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
-                      onClick={() => toggleAutoValuation()}
-                      disabled={isUpdatingValues}
+                      onClick={toggleAutoValuation}
+                      disabled={false}
                     >
                       <Gauge className="h-5 w-5" animated={isUpdatingValues} />
                     </Button>

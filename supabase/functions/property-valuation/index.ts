@@ -62,7 +62,7 @@ serve(async (req) => {
       };
 
       // Basic estimation logic based on area, type, and location
-      const estimatedValue = calculateEstimatedValue(propertyData.data, postalCode);
+      const estimatedValue = calculateEstimatedValue(propertyData.data, postalCode, address);
       if (estimatedValue > 0) {
         valuation.estimatedValue = estimatedValue;
         valuation.confidence = 'medium';
@@ -279,103 +279,180 @@ async function basicKartverketSearch(address: string, postalCode?: string) {
   }
 }
 
-function calculateEstimatedValue(propertyData: any, postalCode?: string): number {
+function calculateEstimatedValue(propertyData: any, postalCode?: string, address?: string): number {
   try {
-    console.log('Calculating property value with data:', propertyData);
+    console.log('Calculating property value with data:', propertyData, 'Address:', address, 'Postal code:', postalCode);
     
-    // Updated 2024/2025 Norwegian housing market data (NOK per sqm)
-    const regionalPrices: { [key: string]: number } = {
-      // Oslo detailed areas
-      '0': 95000,   // Oslo centrum (increased from 80k)
-      '1': 85000,   // Oslo west  
-      '2': 75000,   // Oslo east
-      '3': 70000,   // Oslo north/south
+    // Mer detaljerte priser basert på 4-sifret postnummer for bedre oppløsning
+    const detailedRegionalPrices: { [key: string]: number } = {
+      // Oslo - svært detaljert
+      '0101': 120000, '0102': 115000, '0103': 110000, '0104': 105000, '0105': 100000,
+      '0150': 110000, '0151': 105000, '0152': 100000, '0153': 98000, '0154': 96000, '0155': 102000,
+      '0160': 95000, '0161': 92000, '0162': 90000, '0163': 88000, '0164': 85000, '0165': 83000,
+      '0170': 88000, '0171': 86000, '0172': 84000, '0173': 82000, '0174': 80000, '0175': 78000,
+      '0180': 85000, '0181': 83000, '0182': 81000, '0183': 79000, '0184': 77000, '0185': 75000,
+      '0190': 82000, '0191': 80000, '0192': 78000, '0193': 76000, '0194': 74000, '0195': 72000,
+      '0250': 92000, '0251': 90000, '0252': 88000, '0253': 86000, '0254': 84000, '0255': 82000,
+      '0260': 80000, '0261': 78000, '0262': 76000, '0263': 74000, '0264': 72000, '0265': 70000,
+      '0270': 75000, '0271': 73000, '0272': 71000, '0273': 69000, '0274': 67000, '0275': 65000,
+      '0280': 72000, '0281': 70000, '0282': 68000, '0283': 66000, '0284': 64000, '0285': 62000,
+      '0290': 69000, '0291': 67000, '0292': 65000, '0293': 63000, '0294': 61000, '0295': 59000,
       
-      // Major cities (updated prices)
-      '40': 55000,  // Stavanger/Sandnes
-      '41': 50000,  // Haugesund
-      '50': 60000,  // Bergen (increased due to market growth)
-      '51': 45000,  // Bergen surroundings
-      '60': 42000,  // Ålesund
-      '70': 50000,  // Trondheim (increased)
-      '71': 40000,  // Trondheim area
-      '80': 38000,  // Bodø
-      '90': 45000,  // Tromsø (increased due to scarcity)
+      // Bergen detaljert
+      '5003': 75000, '5004': 73000, '5005': 71000, '5006': 69000, '5007': 67000,
+      '5010': 65000, '5011': 63000, '5012': 61000, '5013': 59000, '5014': 57000, '5015': 55000,
+      '5020': 58000, '5021': 56000, '5022': 54000, '5023': 52000, '5024': 50000, '5025': 48000,
+      '5030': 53000, '5031': 51000, '5032': 49000, '5033': 47000, '5034': 45000, '5035': 43000,
       
-      // Additional areas
-      '15': 60000,  // Asker/Bærum
-      '16': 55000,  // Romerike
-      '17': 50000,  // Follo
-      '30': 48000,  // Drammen
-      '35': 45000,  // Halden/Sarpsborg
-      '47': 42000,  // Kristiansand
+      // Stavanger detaljert
+      '4001': 68000, '4002': 66000, '4003': 64000, '4004': 62000, '4005': 60000, '4006': 58000,
+      '4010': 56000, '4011': 54000, '4012': 52000, '4013': 50000, '4014': 48000, '4015': 46000,
+      '4020': 49000, '4021': 47000, '4022': 45000, '4023': 43000, '4024': 41000, '4025': 39000,
+      
+      // Trondheim detaljert
+      '7001': 58000, '7002': 56000, '7003': 54000, '7004': 52000, '7005': 50000, '7006': 48000,
+      '7010': 46000, '7011': 44000, '7012': 42000, '7013': 40000, '7014': 38000, '7015': 36000,
+      
+      // Andre byer
+      '3001': 55000, '3002': 53000, '3003': 51000, // Drammen
+      '1400': 52000, '1401': 50000, '1402': 48000, // Ski/Follo
+      '2000': 49000, '2001': 47000, '2002': 45000, // Lillestrøm
     };
 
-    // Default base price for smaller towns/rural areas
-    let pricePerSqm = 38000; // Increased from 35k
+    // Fallback til 2-sifret postnummer
+    const broadRegionalPrices: { [key: string]: number } = {
+      '01': 85000, '02': 75000, '03': 70000, '04': 65000, '05': 60000,
+      '10': 55000, '11': 52000, '12': 50000, '13': 48000, '14': 52000, '15': 60000,
+      '20': 50000, '21': 48000, '22': 46000, '23': 44000, '24': 42000, '25': 40000,
+      '30': 48000, '31': 46000, '32': 44000, '33': 42000, '34': 40000, '35': 45000,
+      '40': 55000, '41': 50000, '42': 48000, '43': 46000, '44': 44000, '45': 42000,
+      '50': 60000, '51': 45000, '52': 43000, '53': 41000, '54': 39000, '55': 37000,
+      '60': 42000, '61': 40000, '62': 38000, '63': 36000, '64': 34000, '65': 32000,
+      '70': 50000, '71': 40000, '72': 38000, '73': 36000, '74': 34000, '75': 32000,
+      '80': 38000, '81': 36000, '82': 34000, '83': 32000, '84': 30000, '85': 28000,
+      '90': 45000, '91': 30000, '92': 28000, '93': 26000, '94': 24000, '95': 22000,
+    };
+
+    // Start med standard pris
+    let pricePerSqm = 38000;
     
     if (postalCode) {
-      // Try exact postal code first (for very specific areas)
-      if (regionalPrices[postalCode.substring(0, 2)]) {
-        pricePerSqm = regionalPrices[postalCode.substring(0, 2)];
-      } else if (regionalPrices[postalCode.substring(0, 1)]) {
-        pricePerSqm = regionalPrices[postalCode.substring(0, 1)];
+      // Prøv først 4-sifret postnummer for høy oppløsning
+      if (detailedRegionalPrices[postalCode]) {
+        pricePerSqm = detailedRegionalPrices[postalCode];
+      } else if (broadRegionalPrices[postalCode.substring(0, 2)]) {
+        pricePerSqm = broadRegionalPrices[postalCode.substring(0, 2)];
       }
     }
 
-    // Determine property area (priority order: building area > plot area > default)
-    let estimatedArea = 85; // Updated average apartment size in Norway
+    // Bestem areal med bedre logikk
+    let estimatedArea = 85;
     
-    if (propertyData.propertyUse && propertyData.propertyUse > 30) {
-      estimatedArea = propertyData.propertyUse; // Building area
-    } else if (propertyData.area && propertyData.area < 2000 && propertyData.area > 30) {
-      estimatedArea = propertyData.area; // Use area if reasonable size for dwelling
+    if (propertyData.propertyUse && propertyData.propertyUse > 30 && propertyData.propertyUse < 500) {
+      estimatedArea = propertyData.propertyUse;
+    } else if (propertyData.area && propertyData.area > 30 && propertyData.area < 300) {
+      estimatedArea = propertyData.area;
     }
 
-    // Property type adjustments (more nuanced)
+    // Avanserte justeringer basert på adresse
+    let locationMultiplier = 1.0;
+    let ageMultiplier = 1.0;
     let typeMultiplier = 1.0;
-    const propertyType = propertyData.propertyType?.toLowerCase() || '';
     
-    if (propertyType.includes('enebolig') || propertyType.includes('villa')) {
-      typeMultiplier = 1.15; // Premium for houses
-      estimatedArea = Math.max(estimatedArea, 120); // Min area for houses
-    } else if (propertyType.includes('rekkehus') || propertyType.includes('tomannsbolig')) {
-      typeMultiplier = 1.08;
-      estimatedArea = Math.max(estimatedArea, 100);
-    } else if (propertyType.includes('leilighet')) {
-      typeMultiplier = 1.0; // Base price for apartments
-    } else if (propertyType.includes('hytte') || propertyType.includes('fritid')) {
-      typeMultiplier = 0.6; // Cabins are cheaper per sqm
-      pricePerSqm *= 0.7;
+    if (address) {
+      const addr = address.toLowerCase();
+      
+      // Prestisjegater i Oslo
+      if (addr.includes('karl johans gate') || addr.includes('stortingsgata') || 
+          addr.includes('drammensveien') || addr.includes('frognerveien')) {
+        locationMultiplier *= 1.25;
+      } else if (addr.includes('grünerløkka') || addr.includes('majorstuen') || 
+                addr.includes('frogner') || addr.includes('st. hanshaugen')) {
+        locationMultiplier *= 1.15;
+      } else if (addr.includes('sentrum') || addr.includes('centrum') || 
+                addr.includes('torget') || addr.includes('storgata')) {
+        locationMultiplier *= 1.08;
+      }
+      
+      // Byggeår estimering basert på gatenavn/område (norsk navnemønster)
+      if (addr.includes('nye ') || addr.includes('modern') || addr.includes('campus')) {
+        ageMultiplier = 1.1; // Nyere bygg
+      } else if (addr.includes('gamle ') || addr.includes('historisk')) {
+        ageMultiplier = 0.95; // Eldre bygg
+      }
     }
 
-    // Location-specific adjustments
+    // Eiendomstype-justeringer
+    const propertyType = propertyData.propertyType?.toLowerCase() || '';
+    if (propertyType.includes('enebolig') || propertyType.includes('villa')) {
+      typeMultiplier = 1.2;
+      estimatedArea = Math.max(estimatedArea, 130);
+    } else if (propertyType.includes('rekkehus') || propertyType.includes('tomannsbolig')) {
+      typeMultiplier = 1.1;
+      estimatedArea = Math.max(estimatedArea, 110);
+    } else if (propertyType.includes('leilighet')) {
+      typeMultiplier = 1.0;
+      // Juster basert på størrelse
+      if (estimatedArea < 50) typeMultiplier *= 0.9; // Små leiligheter
+      else if (estimatedArea > 120) typeMultiplier *= 1.1; // Store leiligheter
+    }
+
+    // Kommunal justering
     const municipality = propertyData.municipality?.toLowerCase() || '';
     if (municipality.includes('oslo')) {
-      typeMultiplier *= 1.05; // Oslo premium
+      locationMultiplier *= 1.08;
+    } else if (municipality.includes('bærum') || municipality.includes('asker')) {
+      locationMultiplier *= 1.12;
     } else if (municipality.includes('bergen') || municipality.includes('stavanger')) {
-      typeMultiplier *= 1.02; // Other major city premium
+      locationMultiplier *= 1.04;
     }
 
-    // Calculate final estimated value
-    const baseValue = pricePerSqm * estimatedArea * typeMultiplier;
+    // Koordinat-baserte justeringer (nærhet til sentrum)
+    if (propertyData.coordinates) {
+      const { lat, lng } = propertyData.coordinates;
+      
+      // Oslo sentrum koordinater
+      if (lat >= 59.9 && lat <= 59.92 && lng >= 10.7 && lng <= 10.77) {
+        locationMultiplier *= 1.15; // Nær Oslo sentrum
+      }
+      // Bergen sentrum
+      else if (lat >= 60.38 && lat <= 60.4 && lng >= 5.31 && lng <= 5.33) {
+        locationMultiplier *= 1.1; // Nær Bergen sentrum
+      }
+    }
+
+    // Beregn endelig verdi
+    const baseValue = pricePerSqm * estimatedArea * typeMultiplier * locationMultiplier * ageMultiplier;
     
-    // Add some market variance (±5%)
-    const marketVariance = 0.95 + (Math.random() * 0.1);
-    const estimatedValue = Math.round(baseValue * marketVariance);
+    // Mer deterministisk variasjon basert på adresse (ikke tilfeldig)
+    let addressVariance = 1.0;
+    if (address) {
+      // Bruk hash av adresse for konsistent variasjon
+      const hash = address.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      addressVariance = 0.92 + ((Math.abs(hash) % 160) / 1000); // 0.92-1.08
+    }
     
-    console.log('Value calculation details:', {
+    const estimatedValue = Math.round(baseValue * addressVariance);
+    
+    console.log('Detaljert verdiberegning:', {
+      address,
+      postalCode,
       pricePerSqm,
       estimatedArea,
       typeMultiplier,
+      locationMultiplier,
+      ageMultiplier,
+      addressVariance,
       baseValue,
-      marketVariance,
       estimatedValue,
       propertyType: propertyData.propertyType,
       municipality: propertyData.municipality
     });
 
-    return estimatedValue;
+    return Math.max(estimatedValue, 100000); // Minimum verdi
 
   } catch (error) {
     console.error('Value calculation error:', error);
