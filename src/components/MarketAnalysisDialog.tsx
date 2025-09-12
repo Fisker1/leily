@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -183,6 +183,9 @@ const MarketAnalysisDialog = ({ open, onOpenChange, properties }: MarketAnalysis
             <TrendingUp className="h-5 w-5" />
             Markedsanalyse
           </DialogTitle>
+          <DialogDescription>
+            Analyserer leiemarkedet for å gi deg innsikt i prisforventninger og markedstrender for utleieeiendommer.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

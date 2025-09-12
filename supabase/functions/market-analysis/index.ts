@@ -402,19 +402,85 @@ async function calculateMarketData(request: AnalysisRequest): Promise<MarketData
   const municipality = request.postal_code ? getMunicipalityFromPostalCode(request.postal_code) : (request.city || 'Ukjent');
   const propertyType = request.property_type || 'Leilighet';
   
-  // Try to fetch real data from SSB API first
-  try {
+    // Try to fetch real data from SSB API first
     console.log('Attempting to fetch real SSB data...');
     const ssbData = await fetchSSBRentalData(municipality, propertyType, request.size_sqm || 70);
     if (ssbData) {
-      console.log('Successfully fetched SSB data:', ssbData);
+      console.log('✅ Successfully fetched real SSB data');
       return ssbData;
     }
-  } catch (error) {
-    console.log('SSB API call failed, falling back to calculated estimates:', error);
-  }
+    
+    console.log('⚠️ SSB API unavailable, using calculated market estimates');
+    
+    // Use AI-powered market analysis if available, otherwise fall back to calculations
+    try {
+      const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+      
+      if (perplexityApiKey) {
+        console.log('🤖 Attempting AI-powered market analysis...');
+        
+        const aiResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${perplexityApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-sonar-small-128k-online',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a Norwegian real estate market expert. Provide accurate current rental prices in NOK for Norwegian properties. Always respond in JSON format with numeric values only.'
+              },
+              {
+                role: 'user',
+                content: `What is the current average monthly rent for a ${request.size_sqm}m² ${propertyType} in ${municipality}, ${request.city || 'Norway'}? Please provide: average rent, rent range (min/max), and market trend. Respond in JSON format like: {"averageRent": 15000, "minRent": 12000, "maxRent": 18000, "trend": "stigende"}`
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 300,
+            return_images: false,
+            return_related_questions: false,
+            search_recency_filter: 'month'
+          }),
+        });
+        
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          const content = aiData.choices?.[0]?.message?.content;
+          
+          if (content) {
+            try {
+              const aiMarketData = JSON.parse(content);
+              console.log('✅ AI market analysis successful:', aiMarketData);
+              
+              if (aiMarketData.averageRent && typeof aiMarketData.averageRent === 'number') {
+                return {
+                  averageRent: Math.round(aiMarketData.averageRent),
+                  medianRent: Math.round(aiMarketData.averageRent * 0.95),
+                  rentRange: {
+                    min: Math.round(aiMarketData.minRent || aiMarketData.averageRent * 0.8),
+                    max: Math.round(aiMarketData.maxRent || aiMarketData.averageRent * 1.2)
+                  },
+                  marketTrend: aiMarketData.trend || 'stabil',
+                  dataSource: 'AI-drevet markedsanalyse basert på oppdaterte kilder',
+                  lastUpdated: new Date().toISOString(),
+                  municipality,
+                  propertyType
+                };
+              }
+            } catch (parseError) {
+              console.log('⚠️ Could not parse AI response, falling back to calculations');
+            }
+          }
+        }
+      }
+    } catch (aiError) {
+      console.log('⚠️ AI market analysis failed, using calculations:', aiError);
+    }
   
-  // Base rent calculations based on location and property type - adjusted for realistic Norwegian market
+  // If no real data available, calculate market estimates
+  console.log('📊 Calculating market estimates using formula-based approach');
   let baseRent = 8000; // More realistic base rent for Norwegian market
   
   // Location multipliers (adjusted to reflect actual Norwegian rental market)
