@@ -7,7 +7,7 @@ import { Loader2, MapPin, TrendingUp, Home, DollarSign, Calculator } from "lucid
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { usePropertyData } from "@/hooks/usePropertyData";
+import { useOptimizedPropertyData } from "@/hooks/useOptimizedPropertyData";
 import { formatNumberWithSpaces } from "@/lib/utils";
 
 const RentalMap = () => {
@@ -26,7 +26,7 @@ const RentalMap = () => {
   const [showCalculationProperties, setShowCalculationProperties] = useState(true);
   const [showMarketData, setShowMarketData] = useState(false);
 
-  const { properties, calculationProperties, loading: dataLoading } = usePropertyData();
+  const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
 
   // Load Mapbox GL
   useEffect(() => {
@@ -334,10 +334,14 @@ const RentalMap = () => {
 
   // Update markers when data or layer settings change
   useEffect(() => {
-    if (map.current && mapboxToken) {
-      addMarkersToMap();
+    if (map.current && mapboxgl && mapboxToken) {
+      const timeoutId = setTimeout(() => {
+        addMarkersToMap();
+      }, 100); // Debounce marker updates
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxgl]);
+  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
 
   if (!isPro) {
     return (

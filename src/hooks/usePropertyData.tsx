@@ -32,25 +32,49 @@ export const usePropertyData = () => {
   const [calculationProperties, setCalculationProperties] = useState<CalculationProperty[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Simple geocoding function using Nominatim (free alternative to Google)
+  // Cache for geocoded addresses to prevent duplicate API calls
+  const geocodeCache = useState(new Map<string, [number, number] | null>())[0];
+
+  // Simple geocoding function with caching and rate limiting
   const geocodeAddress = async (address: string, city?: string, postalCode?: string): Promise<[number, number] | null> => {
+    const fullAddress = `${address}${city ? `, ${city}` : ''}${postalCode ? `, ${postalCode}` : ''}, Norge`;
+    
+    // Check cache first
+    if (geocodeCache.has(fullAddress)) {
+      return geocodeCache.get(fullAddress) || null;
+    }
+
     try {
-      const fullAddress = `${address}${city ? `, ${city}` : ''}${postalCode ? `, ${postalCode}` : ''}, Norge`;
       const encodedAddress = encodeURIComponent(fullAddress);
       
+      // Add delay to respect rate limits
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`,
+        {
+          headers: {
+            'User-Agent': 'Leily Property App'
+          }
+        }
       );
       
-      if (!response.ok) return null;
+      if (!response.ok) {
+        geocodeCache.set(fullAddress, null);
+        return null;
+      }
       
       const data = await response.json();
-      if (data && data.length > 0) {
-        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-      }
-      return null;
+      const coords = data && data.length > 0 
+        ? [parseFloat(data[0].lon), parseFloat(data[0].lat)] as [number, number]
+        : null;
+      
+      // Cache the result
+      geocodeCache.set(fullAddress, coords);
+      return coords;
     } catch (error) {
       console.error('Geocoding error for address:', address, error);
+      geocodeCache.set(fullAddress, null);
       return null;
     }
   };
