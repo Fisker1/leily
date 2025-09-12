@@ -8,7 +8,7 @@ interface GaugeProps {
 
 const Gauge: React.FC<GaugeProps> = ({ className, animated = false }) => {
   return (
-    <div className={cn("relative w-3 h-3", className)}>
+    <div className={cn("relative w-4 h-4 flex items-center justify-center", className)}>
       <svg viewBox="0 0 24 24" className="w-full h-full">
         {/* Gauge background arc */}
         <path

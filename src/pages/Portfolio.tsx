@@ -243,6 +243,7 @@ const Portfolio = () => {
     }
 
     if (!autoValuationEnabled) {
+      // Aktiverer automatisk verdiestimering
       setAutoValuationEnabled(true);
       setIsUpdatingValues(true);
       
@@ -264,7 +265,9 @@ const Portfolio = () => {
         setIsUpdatingValues(false);
       }
     } else {
+      // Deaktiverer automatisk verdiestimering
       setAutoValuationEnabled(false);
+      setIsUpdatingValues(false);
       toast({
         title: "Automatisk verdiestimering deaktivert",
         description: "Eiendomsverdier oppdateres ikke lenger automatisk",
@@ -641,11 +644,11 @@ const Portfolio = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`ml-auto h-6 w-6 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
+                      className={`ml-auto h-7 w-7 p-0 transition-colors ${autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
                       onClick={() => toggleAutoValuation()}
                       disabled={isUpdatingValues}
                     >
-                      <Gauge className="h-3 w-3" animated={isUpdatingValues} />
+                      <Gauge className="h-4 w-4" animated={isUpdatingValues} />
                     </Button>
                   )}
                 </CardTitle>
@@ -654,7 +657,6 @@ const Portfolio = () => {
                 <div className="text-2xl font-bold text-primary">{currentPortfolioValue.toLocaleString()} kr</div>
                 {autoValuationEnabled && isPro && (
                   <div className="flex items-center gap-1 mt-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <p className="text-xs text-blue-600">Automatisk oppdatering aktiv</p>
                   </div>
                 )}
@@ -771,7 +773,7 @@ const Portfolio = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className={`h-4 w-4 p-0 transition-colors ${
+                                  className={`h-5 w-5 p-0 transition-colors ${
                                     autoValuationEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-muted-foreground hover:text-foreground'
                                   }`}
                                   onClick={(e) => {
@@ -780,16 +782,13 @@ const Portfolio = () => {
                                   }}
                                   disabled={isUpdatingValues}
                                 >
-                                  <Gauge className="h-3 w-3" animated={isUpdatingValues} />
+                                  <Gauge className="h-4 w-4" animated={isUpdatingValues} />
                                 </Button>
                               )}
                             </div>
                             <p className="font-semibold text-xs text-blue-600 dark:text-blue-400">
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
-                            {autoValuationEnabled && isPro && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
-                            )}
                           </div>
                           <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[90px]">
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
