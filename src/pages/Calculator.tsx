@@ -280,28 +280,28 @@ const Calculator = () => {
 
         {/* Tab selector */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 max-w-3xl mx-auto mb-8 h-auto p-2 gap-2">
+          <TabsList className="grid w-full grid-cols-3 sm:max-w-3xl mx-auto mb-8 h-auto p-2 gap-2">
             <TabsTrigger 
               value="calculator" 
-              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium"
+              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
             >
               <CalcIcon className="h-5 w-5" />
-              <span>Eiendomskalkulator</span>
+              <span className="hidden sm:inline">Eiendomskalkulator</span>
             </TabsTrigger>
             <TabsTrigger 
               value="library" 
-              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium"
+              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
             >
               <Library className="h-5 w-5" />
-              <span>Bibliotek</span>
+              <span className="hidden sm:inline">Bibliotek</span>
             </TabsTrigger>
             <TabsTrigger 
               value="building-planner" 
-              className="flex items-center justify-center gap-3 py-4 px-6 text-sm font-medium bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
+              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 data-[state=active]:bg-blue-500/25 dark:text-blue-300 dark:hover:bg-blue-500/30 dark:data-[state=active]:bg-blue-500/25"
             >
               <Ruler className="h-5 w-5" />
-              <span>Byggeplanlegger</span>
-              {!isPro && <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>}
+              <span className="hidden sm:inline">Byggeplanlegger</span>
+              {!isPro && <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs hidden sm:inline-flex">Pro</Badge>}
             </TabsTrigger>
           </TabsList>
           
