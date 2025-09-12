@@ -164,17 +164,13 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
   // Show satellite map only for logged in users with real addresses
   if (shouldShowSatellite) {
-    console.log('Rendering satellite map container for:', address);
     return (
-      <div className={`relative ${className}`}>
+      <div className={`relative ${className} bg-muted`}>
         <div 
           ref={mapContainer} 
-          className="absolute inset-0 rounded-lg border-2 border-blue-500" 
-          style={{ minHeight: '160px' }}
+          className="w-full h-full rounded-lg overflow-hidden" 
+          style={{ minHeight: '120px' }}
         />
-        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          Map: {address}
-        </div>
       </div>
     );
   }
