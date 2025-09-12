@@ -68,83 +68,7 @@ function getMunicipalityFromPostalCode(postalCode: string): string {
     '0582': 'Oslo', '0583': 'Oslo', '0584': 'Oslo', '0585': 'Oslo', '0586': 'Oslo',
     '0587': 'Oslo', '0588': 'Oslo', '0589': 'Oslo', '0590': 'Oslo', '0591': 'Oslo',
     '0592': 'Oslo', '0593': 'Oslo', '0594': 'Oslo', '0595': 'Oslo', '0596': 'Oslo',
-    '0597': 'Oslo', '0598': 'Oslo', '0599': 'Oslo', '0601': 'Oslo', '0602': 'Oslo',
-    '0603': 'Oslo', '0604': 'Oslo', '0605': 'Oslo', '0606': 'Oslo', '0607': 'Oslo',
-    '0608': 'Oslo', '0609': 'Oslo', '0610': 'Oslo', '0611': 'Oslo', '0612': 'Oslo',
-    '0613': 'Oslo', '0614': 'Oslo', '0615': 'Oslo', '0616': 'Oslo', '0617': 'Oslo',
-    '0618': 'Oslo', '0619': 'Oslo', '0620': 'Oslo', '0621': 'Oslo', '0622': 'Oslo',
-    '0623': 'Oslo', '0624': 'Oslo', '0625': 'Oslo', '0626': 'Oslo', '0627': 'Oslo',
-    '0628': 'Oslo', '0629': 'Oslo', '0630': 'Oslo', '0631': 'Oslo', '0632': 'Oslo',
-    '0633': 'Oslo', '0634': 'Oslo', '0635': 'Oslo', '0636': 'Oslo', '0637': 'Oslo',
-    '0638': 'Oslo', '0639': 'Oslo', '0640': 'Oslo', '0641': 'Oslo', '0642': 'Oslo',
-    '0643': 'Oslo', '0644': 'Oslo', '0645': 'Oslo', '0646': 'Oslo', '0647': 'Oslo',
-    '0648': 'Oslo', '0649': 'Oslo', '0650': 'Oslo', '0651': 'Oslo', '0652': 'Oslo',
-    '0653': 'Oslo', '0654': 'Oslo', '0655': 'Oslo', '0656': 'Oslo', '0657': 'Oslo',
-    '0658': 'Oslo', '0659': 'Oslo', '0660': 'Oslo', '0661': 'Oslo', '0662': 'Oslo',
-    '0663': 'Oslo', '0664': 'Oslo', '0665': 'Oslo', '0666': 'Oslo', '0667': 'Oslo',
-    '0668': 'Oslo', '0669': 'Oslo', '0670': 'Oslo', '0671': 'Oslo', '0672': 'Oslo',
-    '0673': 'Oslo', '0674': 'Oslo', '0675': 'Oslo', '0676': 'Oslo', '0677': 'Oslo',
-    '0678': 'Oslo', '0679': 'Oslo', '0680': 'Oslo', '0681': 'Oslo', '0682': 'Oslo',
-    '0683': 'Oslo', '0684': 'Oslo', '0685': 'Oslo', '0686': 'Oslo', '0687': 'Oslo',
-    '0688': 'Oslo', '0689': 'Oslo', '0690': 'Oslo', '0691': 'Oslo', '0692': 'Oslo',
-    '0693': 'Oslo', '0694': 'Oslo', '0695': 'Oslo', '0696': 'Oslo', '0697': 'Oslo',
-    '0698': 'Oslo', '0699': 'Oslo', '0701': 'Oslo', '0702': 'Oslo', '0703': 'Oslo',
-    '0704': 'Oslo', '0705': 'Oslo', '0706': 'Oslo', '0707': 'Oslo', '0708': 'Oslo',
-    '0709': 'Oslo', '0710': 'Oslo', '0712': 'Oslo', '0713': 'Oslo', '0714': 'Oslo',
-    '0715': 'Oslo', '0716': 'Oslo', '0717': 'Oslo', '0718': 'Oslo', '0719': 'Oslo',
-    '0720': 'Oslo', '0721': 'Oslo', '0722': 'Oslo', '0723': 'Oslo', '0724': 'Oslo',
-    '0725': 'Oslo', '0726': 'Oslo', '0727': 'Oslo', '0728': 'Oslo', '0729': 'Oslo',
-    '0730': 'Oslo', '0731': 'Oslo', '0732': 'Oslo', '0733': 'Oslo', '0734': 'Oslo',
-    '0735': 'Oslo', '0736': 'Oslo', '0737': 'Oslo', '0738': 'Oslo', '0739': 'Oslo',
-    '0740': 'Oslo', '0741': 'Oslo', '0742': 'Oslo', '0743': 'Oslo', '0744': 'Oslo',
-    '0745': 'Oslo', '0746': 'Oslo', '0747': 'Oslo', '0748': 'Oslo', '0749': 'Oslo',
-    '0750': 'Oslo', '0751': 'Oslo', '0752': 'Oslo', '0753': 'Oslo', '0754': 'Oslo',
-    '0755': 'Oslo', '0756': 'Oslo', '0757': 'Oslo', '0758': 'Oslo', '0759': 'Oslo',
-    '0760': 'Oslo', '0761': 'Oslo', '0762': 'Oslo', '0763': 'Oslo', '0764': 'Oslo',
-    '0765': 'Oslo', '0766': 'Oslo', '0767': 'Oslo', '0768': 'Oslo', '0770': 'Oslo',
-    '0771': 'Oslo', '0772': 'Oslo', '0773': 'Oslo', '0774': 'Oslo', '0775': 'Oslo',
-    '0776': 'Oslo', '0777': 'Oslo', '0778': 'Oslo', '0779': 'Oslo', '0780': 'Oslo',
-    '0781': 'Oslo', '0782': 'Oslo', '0783': 'Oslo', '0784': 'Oslo', '0785': 'Oslo',
-    '0786': 'Oslo', '0787': 'Oslo', '0788': 'Oslo', '0789': 'Oslo', '0790': 'Oslo',
-    '0791': 'Oslo', '0792': 'Oslo', '0793': 'Oslo', '0794': 'Oslo', '0795': 'Oslo',
-    '0796': 'Oslo', '0801': 'Oslo', '0802': 'Oslo', '0805': 'Oslo', '0806': 'Oslo',
-    '0807': 'Oslo', '0808': 'Oslo', '0809': 'Oslo', '0810': 'Oslo', '0812': 'Oslo',
-    '0813': 'Oslo', '0814': 'Oslo', '0815': 'Oslo', '0816': 'Oslo', '0817': 'Oslo',
-    '0818': 'Oslo', '0819': 'Oslo', '0820': 'Oslo', '0821': 'Oslo', '0822': 'Oslo',
-    '0823': 'Oslo', '0824': 'Oslo', '0825': 'Oslo', '0826': 'Oslo', '0827': 'Oslo',
-    '0828': 'Oslo', '0829': 'Oslo', '0830': 'Oslo', '0831': 'Oslo', '0832': 'Oslo',
-    '0833': 'Oslo', '0834': 'Oslo', '0840': 'Oslo', '0841': 'Oslo', '0842': 'Oslo',
-    '0843': 'Oslo', '0844': 'Oslo', '0845': 'Oslo', '0846': 'Oslo', '0847': 'Oslo',
-    '0848': 'Oslo', '0849': 'Oslo', '0850': 'Oslo', '0851': 'Oslo', '0852': 'Oslo',
-    '0853': 'Oslo', '0854': 'Oslo', '0855': 'Oslo', '0856': 'Oslo', '0857': 'Oslo',
-    '0858': 'Oslo', '0859': 'Oslo', '0860': 'Oslo', '0861': 'Oslo', '0862': 'Oslo',
-    '0863': 'Oslo', '0864': 'Oslo', '0870': 'Oslo', '0871': 'Oslo', '0872': 'Oslo',
-    '0873': 'Oslo', '0874': 'Oslo', '0875': 'Oslo', '0876': 'Oslo', '0877': 'Oslo',
-    '0878': 'Oslo', '0879': 'Oslo', '0880': 'Oslo', '0881': 'Oslo', '0882': 'Oslo',
-    '0883': 'Oslo', '0884': 'Oslo', '0885': 'Oslo', '0886': 'Oslo', '0887': 'Oslo',
-    '0888': 'Oslo', '0889': 'Oslo', '0890': 'Oslo', '0891': 'Oslo', '0892': 'Oslo',
-    '0893': 'Oslo', '0894': 'Oslo', '0895': 'Oslo', '0896': 'Oslo', '0897': 'Oslo',
-    '0898': 'Oslo', '0899': 'Oslo', '0900': 'Oslo', '0901': 'Oslo', '0902': 'Oslo',
-    '0903': 'Oslo', '0904': 'Oslo', '0905': 'Oslo', '0906': 'Oslo', '0907': 'Oslo',
-    '0908': 'Oslo', '0909': 'Oslo', '0910': 'Oslo', '0911': 'Oslo', '0912': 'Oslo',
-    '0913': 'Oslo', '0914': 'Oslo', '0915': 'Oslo', '0916': 'Oslo', '0917': 'Oslo',
-    '0918': 'Oslo', '0919': 'Oslo', '0920': 'Oslo', '0921': 'Oslo', '0922': 'Oslo',
-    '0923': 'Oslo', '0924': 'Oslo', '0925': 'Oslo', '0926': 'Oslo', '0927': 'Oslo',
-    '0928': 'Oslo', '0929': 'Oslo', '0930': 'Oslo', '0931': 'Oslo', '0932': 'Oslo',
-    '0933': 'Oslo', '0934': 'Oslo', '0935': 'Oslo', '0936': 'Oslo', '0937': 'Oslo',
-    '0938': 'Oslo', '0939': 'Oslo', '0940': 'Oslo', '0941': 'Oslo', '0942': 'Oslo',
-    '0943': 'Oslo', '0944': 'Oslo', '0945': 'Oslo', '0946': 'Oslo', '0947': 'Oslo',
-    '0948': 'Oslo', '0949': 'Oslo', '0950': 'Oslo', '0951': 'Oslo', '0952': 'Oslo',
-    '0953': 'Oslo', '0954': 'Oslo', '0955': 'Oslo', '0956': 'Oslo', '0957': 'Oslo',
-    '0958': 'Oslo', '0959': 'Oslo', '0960': 'Oslo', '0961': 'Oslo', '0962': 'Oslo',
-    '0963': 'Oslo', '0964': 'Oslo', '0965': 'Oslo', '0966': 'Oslo', '0967': 'Oslo',
-    '0968': 'Oslo', '0969': 'Oslo', '0970': 'Oslo', '0971': 'Oslo', '0972': 'Oslo',
-    '0973': 'Oslo', '0974': 'Oslo', '0975': 'Oslo', '0976': 'Oslo', '0977': 'Oslo',
-    '0978': 'Oslo', '0979': 'Oslo', '0980': 'Oslo', '0981': 'Oslo', '0982': 'Oslo',
-    '0983': 'Oslo', '0984': 'Oslo', '0985': 'Oslo', '0986': 'Oslo', '0987': 'Oslo',
-    '0988': 'Oslo', '0989': 'Oslo', '0990': 'Oslo', '0991': 'Oslo', '0992': 'Oslo',
-    '0993': 'Oslo', '0994': 'Oslo', '0995': 'Oslo', '0996': 'Oslo', '0997': 'Oslo',
-    '0998': 'Oslo', '0999': 'Oslo',
+    '0597': 'Oslo', '0598': 'Oslo', '0599': 'Oslo',
     // Bergen
     '5003': 'Bergen', '5004': 'Bergen', '5005': 'Bergen', '5006': 'Bergen', '5007': 'Bergen',
     '5008': 'Bergen', '5009': 'Bergen', '5010': 'Bergen', '5011': 'Bergen', '5012': 'Bergen',
@@ -237,253 +161,112 @@ function getMunicipalityFromPostalCode(postalCode: string): string {
   return postalCodeMunicipalities[postalCode] || 'Ukjent kommune';
 }
 
-// Function to fetch real rental data from SSB API
-async function fetchSSBRentalData(municipality: string, propertyType: string, sizeSqm: number): Promise<MarketData | null> {
+// AI-powered market analysis using Perplexity
+async function fetchAIMarketData(municipality: string, propertyType: string, sizeSqm: number): Promise<MarketData | null> {
   try {
-    // Map municipality to SSB region codes (updated with more regions)
-    const regionMapping: { [key: string]: string } = {
-      'Oslo': '0301',
-      'Bergen': '1201', 
-      'Trondheim': '5001',
-      'Stavanger': '1103',
-      'Kristiansand': '1001',
-      'Fredrikstad': '0104', 
-      'Sandnes': '1108',
-      'Tromsø': '5401',
-      'Sarpsborg': '0105',
-      'Skien': '0806',
-      'Ålesund': '1507',
-      'Sandefjord': '0704',
-      'Haugesund': '1106',
-      'Tønsberg': '0704',
-      'Moss': '0104',
-      'Lørenskog': '0230',
-      'Bærum': '0219',
-      'Asker': '0220',
-    };
+    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     
-    const regionCode = regionMapping[municipality];
-    if (!regionCode) {
-      console.log(`❌ No SSB region mapping for municipality: ${municipality}`);
-      console.log(`Available regions:`, Object.keys(regionMapping));
+    if (!perplexityApiKey) {
+      console.log('❌ Perplexity API key not configured');
       return null;
     }
 
-    console.log(`✅ Mapped ${municipality} to region code: ${regionCode}`);
-
-    // Map property type to SSB categories
-    const propertyMapping: { [key: string]: string } = {
-      'Leilighet': '01',
-      'Enebolig': '02', 
-      'Rekkehus': '03',
-      'Tomannsbolig': '04',
-      'Hybel': '01' // Hybler behandles som leiligheter i SSB
-    };
+    console.log('🤖 Fetching AI-powered market analysis...');
     
-    const propertyCode = propertyMapping[propertyType] || '01';
-    
-    // Determine room category based on size (more granular)
-    let roomCategory = '2';
-    if (sizeSqm < 30) roomCategory = '1';       // Studio/hybel 
-    else if (sizeSqm < 55) roomCategory = '2';  // 1-2 rom
-    else if (sizeSqm < 85) roomCategory = '3';  // 2-3 rom
-    else if (sizeSqm < 120) roomCategory = '4'; // 3-4 rom
-    else roomCategory = '5';                    // 4+ rom
-
-    console.log(`✅ Property analysis: ${propertyType} (${propertyCode}), ${sizeSqm}m² → ${roomCategory} rooms`);
-
-    // Construct SSB API query for table 09897 (Predicted monthly rent)
-    const ssbQuery = {
-      "query": [
-        {
-          "code": "Region",
-          "selection": {
-            "filter": "item",
-            "values": [regionCode]
-          }
-        },
-        {
-          "code": "BoligType",
-          "selection": {
-            "filter": "item", 
-            "values": [propertyCode]
-          }
-        },
-        {
-          "code": "AntRom",
-          "selection": {
-            "filter": "item",
-            "values": [roomCategory]
-          }
-        }
-      ],
-      "response": {
-        "format": "json-stat2"
-      }
-    };
-
-    console.log('SSB API Query:', JSON.stringify(ssbQuery, null, 2));
-
-    const response = await fetch('https://data.ssb.no/api/v0/no/table/09897/', {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${perplexityApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(ssbQuery)
+      body: JSON.stringify({
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: 'Du er en norsk eiendomsmarkedsekspert. Gi nøyaktige og oppdaterte leiepriser i NOK for norske eiendommer. Svar alltid i JSON-format med kun numeriske verdier og norske tekster for trend.'
+          },
+          {
+            role: 'user',
+            content: `Hva er gjeldende gjennomsnittlig månedlig leie for en ${sizeSqm}m² ${propertyType.toLowerCase()} i ${municipality}, Norge? Gi meg: gjennomsnittlig leie, leieområde (min/maks), og markedstrend. Svar i JSON-format som: {"averageRent": 15000, "minRent": 12000, "maxRent": 18000, "trend": "stigende", "confidence": "høy"}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 400,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: 'month'
+      }),
     });
 
-    console.log(`SSB API Response Status: ${response.status} ${response.statusText}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SSB API Error - Status: ${response.status}, Response: ${errorText}`);
-      return null;
-    }
-
-    const data = await response.json();
-    console.log('Raw SSB API Response structure:', {
-      hasValue: !!data.value,
-      valueLength: data.value?.length || 0,
-      hasLabel: !!data.label,
-      hasDimension: !!data.dimension,
-      sampleValue: data.value?.slice(0, 5)
-    });
-    
-    // Parse JSON-stat format
-    if (data.value && data.value.length > 0) {
-      // Get the most recent non-null value
-      const values = data.value.filter((v: any) => v !== null && v !== undefined);
-      console.log(`Found ${values.length} non-null values out of ${data.value.length} total values`);
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
       
-      if (values.length === 0) {
-        console.log('No valid values found in SSB data');
-        return null;
+      if (content) {
+        try {
+          // Clean up the response to extract JSON
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const aiMarketData = JSON.parse(jsonMatch[0]);
+            
+            if (aiMarketData.averageRent && typeof aiMarketData.averageRent === 'number') {
+              console.log('✅ AI market analysis successful:', aiMarketData);
+              
+              return {
+                averageRent: Math.round(aiMarketData.averageRent),
+                medianRent: Math.round(aiMarketData.averageRent * 0.95),
+                rentRange: {
+                  min: Math.round(aiMarketData.minRent || aiMarketData.averageRent * 0.8),
+                  max: Math.round(aiMarketData.maxRent || aiMarketData.averageRent * 1.2)
+                },
+                marketTrend: aiMarketData.trend || 'stabil',  
+                dataSource: `AI-drevet markedsanalyse basert på oppdaterte kilder (${aiMarketData.confidence || 'medium'} konfidens)`,
+                lastUpdated: new Date().toISOString(),
+                municipality,
+                propertyType
+              };
+            }
+          }
+        } catch (parseError) {
+          console.log('⚠️ Could not parse AI response:', parseError);
+          console.log('Raw AI response:', content);
+        }
       }
-      
-      const latestValue = values[values.length - 1];
-      const averageRent = Math.round(latestValue);
-      const medianRent = Math.round(averageRent * 0.95);
-      const rentVariation = averageRent * 0.25;
-      
-      console.log(`✅ SSB data found - Municipality: ${municipality}, Type: ${propertyType}, Size: ${sizeSqm}m²`);
-      console.log(`   Average rent: ${averageRent} NOK, Values used: ${values.length}`);
-      
-      return {
-        averageRent,
-        medianRent, 
-        rentRange: {
-          min: Math.round(averageRent - rentVariation),
-          max: Math.round(averageRent + rentVariation)
-        },
-        marketTrend: 'stabil',
-        dataSource: 'Statistisk sentralbyrå (SSB) - Leiemarkedsundersøkelse (Tabell 09897)',
-        lastUpdated: new Date().toISOString(),
-        municipality,
-        propertyType
-      };
     } else {
-      console.log('❌ No rental data found in SSB response - missing data.value or empty array');
-      return null;
+      console.log('❌ AI API request failed:', response.status, response.statusText);
     }
-    
   } catch (error) {
-    console.error('❌ Error fetching SSB data:', error);
-    if (error instanceof Error) {
-      console.error('   Error details:', error.message, error.stack);
-    }
-    return null;
+    console.log('❌ AI market analysis error:', error);
   }
+  
+  return null;
 }
 
-// Function to fetch real market data from SSB API and calculate market data
+// Function to calculate market data with multiple fallbacks
 async function calculateMarketData(request: AnalysisRequest): Promise<MarketData> {
   console.log('Calculating market data for:', request);
 
   const municipality = request.postal_code ? getMunicipalityFromPostalCode(request.postal_code) : (request.city || 'Ukjent');
   const propertyType = request.property_type || 'Leilighet';
   
-    // Try to fetch real data from SSB API first
-    console.log('Attempting to fetch real SSB data...');
-    const ssbData = await fetchSSBRentalData(municipality, propertyType, request.size_sqm || 70);
-    if (ssbData) {
-      console.log('✅ Successfully fetched real SSB data');
-      return ssbData;
+  // Try AI-powered analysis first
+  try {
+    const aiData = await fetchAIMarketData(municipality, propertyType, request.size_sqm || 70);
+    if (aiData) {
+      console.log('✅ Using AI-powered market data');
+      return aiData;
     }
-    
-    console.log('⚠️ SSB API unavailable, using calculated market estimates');
-    
-    // Use AI-powered market analysis if available, otherwise fall back to calculations
-    try {
-      const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
-      
-      if (perplexityApiKey) {
-        console.log('🤖 Attempting AI-powered market analysis...');
-        
-        const aiResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${perplexityApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-sonar-small-128k-online',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a Norwegian real estate market expert. Provide accurate current rental prices in NOK for Norwegian properties. Always respond in JSON format with numeric values only.'
-              },
-              {
-                role: 'user',
-                content: `What is the current average monthly rent for a ${request.size_sqm}m² ${propertyType} in ${municipality}, ${request.city || 'Norway'}? Please provide: average rent, rent range (min/max), and market trend. Respond in JSON format like: {"averageRent": 15000, "minRent": 12000, "maxRent": 18000, "trend": "stigende"}`
-              }
-            ],
-            temperature: 0.2,
-            max_tokens: 300,
-            return_images: false,
-            return_related_questions: false,
-            search_recency_filter: 'month'
-          }),
-        });
-        
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          const content = aiData.choices?.[0]?.message?.content;
-          
-          if (content) {
-            try {
-              const aiMarketData = JSON.parse(content);
-              console.log('✅ AI market analysis successful:', aiMarketData);
-              
-              if (aiMarketData.averageRent && typeof aiMarketData.averageRent === 'number') {
-                return {
-                  averageRent: Math.round(aiMarketData.averageRent),
-                  medianRent: Math.round(aiMarketData.averageRent * 0.95),
-                  rentRange: {
-                    min: Math.round(aiMarketData.minRent || aiMarketData.averageRent * 0.8),
-                    max: Math.round(aiMarketData.maxRent || aiMarketData.averageRent * 1.2)
-                  },
-                  marketTrend: aiMarketData.trend || 'stabil',
-                  dataSource: 'AI-drevet markedsanalyse basert på oppdaterte kilder',
-                  lastUpdated: new Date().toISOString(),
-                  municipality,
-                  propertyType
-                };
-              }
-            } catch (parseError) {
-              console.log('⚠️ Could not parse AI response, falling back to calculations');
-            }
-          }
-        }
-      }
-    } catch (aiError) {
-      console.log('⚠️ AI market analysis failed, using calculations:', aiError);
-    }
+  } catch (error) {
+    console.log('⚠️ AI analysis failed, falling back to calculations:', error);
+  }
   
-  // If no real data available, calculate market estimates
-  console.log('📊 Calculating market estimates using formula-based approach');
-  let baseRent = 8000; // More realistic base rent for Norwegian market
+  // Fall back to formula-based calculations
+  console.log('📊 Using formula-based market estimates');
   
-  // Location multipliers (adjusted to reflect actual Norwegian rental market)
+  let baseRent = 8000; // Realistic base rent for Norwegian market
+  
+  // Location multipliers (adjusted for realistic Norwegian market)
   const locationMultipliers: { [key: string]: number } = {
     'Oslo': 2.2,       // Oslo is significantly more expensive
     'Bergen': 1.6,     // Bergen is expensive but less than Oslo
@@ -494,62 +277,46 @@ async function calculateMarketData(request: AnalysisRequest): Promise<MarketData
     'Leknes': 0.8,     // Smaller town
   };
 
-  // Property type multipliers (more conservative)
+  // Property type multipliers
   const propertyTypeMultipliers: { [key: string]: number } = {
     'Leilighet': 1.0,
     'Enebolig': 1.4,     // Whole house is more expensive
     'Rekkehus': 1.2,     // Townhouse
-    'Tomannsbolig': 1.1, // Duplex - not as expensive as full house
+    'Tomannsbolig': 1.1, // Duplex
   };
 
-  // Size adjustments (more conservative scaling)
+  // Size adjustments
   let sizeMultiplier = 1.0;
   if (request.size_sqm) {
-    if (request.size_sqm < 40) sizeMultiplier = 0.7;      // Very small apartments
-    else if (request.size_sqm < 60) sizeMultiplier = 0.85; // Small apartments
-    else if (request.size_sqm < 80) sizeMultiplier = 1.0;  // Standard size
-    else if (request.size_sqm < 100) sizeMultiplier = 1.15; // Larger properties
-    else if (request.size_sqm < 130) sizeMultiplier = 1.3;  // Large properties
-    else sizeMultiplier = 1.45; // Very large properties
+    if (request.size_sqm < 40) sizeMultiplier = 0.7;
+    else if (request.size_sqm < 60) sizeMultiplier = 0.85;
+    else if (request.size_sqm < 80) sizeMultiplier = 1.0;
+    else if (request.size_sqm < 100) sizeMultiplier = 1.15;
+    else if (request.size_sqm < 130) sizeMultiplier = 1.3;
+    else sizeMultiplier = 1.45;
   }
 
   const locationMultiplier = locationMultipliers[municipality] || 0.8;
-  const typeMultiplier = propertyTypeMultipliers[propertyType] || 1.0;
-
-  baseRent = Math.round(baseRent * locationMultiplier * typeMultiplier * sizeMultiplier);
+  const propertyTypeMultiplier = propertyTypeMultipliers[propertyType] || 1.0;
   
-  // Log calculation breakdown for debugging
-  console.log(`Calculation breakdown:
-    - Base rent: 8000 NOK
-    - Location (${municipality}): x${locationMultiplier}
-    - Property type (${propertyType}): x${typeMultiplier}  
-    - Size (${request.size_sqm}m²): x${sizeMultiplier}
-    - Final average rent: ${baseRent} NOK`);
-
-  // Calculate market statistics
-  const averageRent = baseRent;
-  const medianRent = Math.round(baseRent * 0.95); // Median typically slightly lower
-  const rentVariation = baseRent * 0.3; // 30% variation
+  const calculatedRent = Math.round(baseRent * locationMultiplier * propertyTypeMultiplier * sizeMultiplier);
   
-  const rentRange = {
-    min: Math.round(baseRent - rentVariation),
-    max: Math.round(baseRent + rentVariation)
-  };
-
-  // Determine market trend based on location
-  let marketTrend = 'stabil';
-  if (['Oslo', 'Bergen', 'Stavanger'].includes(municipality)) {
-    marketTrend = 'stigende';
-  } else if (['Svolvær', 'Reine', 'Leknes'].includes(municipality)) {
-    marketTrend = 'stabil';
-  }
+  console.log('Calculation breakdown:');
+  console.log(`  - Base rent: ${baseRent} NOK`);
+  console.log(`  - Location (${municipality}): x${locationMultiplier}`);
+  console.log(`  - Property type (${propertyType}): x${propertyTypeMultiplier}`);  
+  console.log(`  - Size (${request.size_sqm || 70}m²): x${sizeMultiplier}`);
+  console.log(`  - Final average rent: ${calculatedRent} NOK`);
 
   return {
-    averageRent,
-    medianRent,
-    rentRange,
-    marketTrend,
-    dataSource: 'Beregnet estimat basert på markedsdata (SSB API ikke tilgjengelig)',
+    averageRent: calculatedRent,
+    medianRent: Math.round(calculatedRent * 0.95),
+    rentRange: {
+      min: Math.round(calculatedRent * 0.7),
+      max: Math.round(calculatedRent * 1.3)
+    },
+    marketTrend: "stigende",
+    dataSource: "Beregnet estimat basert på markedsdata (SSB API ikke tilgjengelig)",
     lastUpdated: new Date().toISOString(),
     municipality,
     propertyType
@@ -562,19 +329,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('Market analysis function called');
-
   try {
+    console.log('Market analysis function called');
+    
     const request: AnalysisRequest = await req.json();
     console.log('Analysis request received:', request);
-
-    // Validate required fields
+    
     if (!request.address) {
-      console.log('Missing required field: address');
       return new Response(
-        JSON.stringify({ 
-          error: 'Adresse er påkrevd for markedsanalyse' 
-        }),
+        JSON.stringify({ error: 'Address is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -582,34 +345,24 @@ serve(async (req) => {
       );
     }
 
-    // Calculate market data (simulating SSB API call)
     console.log('Calculating market data...');
     const marketData = await calculateMarketData(request);
-    console.log('Market data calculated:', marketData);
-
-    // Log for debugging
-    console.log(`Market analysis completed for ${request.address}, ${request.city}`);
-    console.log(`Average rent: ${marketData.averageRent} NOK`);
-    console.log(`Municipality: ${marketData.municipality}`);
-    console.log(`Property type: ${marketData.propertyType}`);
-
+    
+    console.log('Market analysis completed for', request.address, request.city || '');
+    
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        marketData 
-      }),
+      JSON.stringify({ marketData }), 
       { 
-        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
-
+    
   } catch (error) {
     console.error('Error in market analysis function:', error);
-    
     return new Response(
       JSON.stringify({ 
-        error: 'Det oppstod en feil ved markedsanalysen. Prøv igjen senere.' 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
       }),
       { 
         status: 500, 
