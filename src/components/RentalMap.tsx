@@ -299,14 +299,29 @@ const RentalMap = () => {
       });
 
       map.current.on('error', (e) => {
-        console.error('Map error:', e);
+        console.error('Mapbox error:', e);
+        toast({
+          title: "Kartfeil",
+          description: `Mapbox feil: ${e.error?.message || 'Ukjent feil'}`,
+          variant: "destructive",
+        });
+      });
+
+      map.current.on('styledata', () => {
+        console.log('Map style loaded');
+      });
+
+      map.current.on('sourcedata', (e) => {
+        if (e.isSourceLoaded) {
+          console.log('Map source loaded');
+        }
       });
 
     } catch (error) {
       console.error('Map initialization error:', error);
       toast({
         title: "Kartfeil",
-        description: "Kunne ikke initialisere kartet",
+        description: `Kunne ikke initialisere kartet: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
         variant: "destructive",
       });
     }
