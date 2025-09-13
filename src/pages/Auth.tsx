@@ -249,7 +249,7 @@ const Auth = () => {
                       onClick={() => {
                         setFormData({
                           ...formData,
-                          email: 'stager@vipps.no',
+                          email: 'anderslundoy@protonmail.com',
                           password: 'blåmeis'
                         });
                       }}
