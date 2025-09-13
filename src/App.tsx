@@ -37,8 +37,9 @@ const App = () => (
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
-      enableSystem={false}
+      enableSystem={true}
       disableTransitionOnChange={false}
+      storageKey="leily-theme"
     >
       <TooltipProvider>
         <LanguageProvider>
