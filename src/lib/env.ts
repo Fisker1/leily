@@ -1,4 +1,9 @@
 // Environment configuration for staging/production deployment
+console.log('🔧 Environment Debug Info:');
+console.log('VITE_ENVIRONMENT:', import.meta.env.VITE_ENVIRONMENT);
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('VITE_SUPABASE_PROJECT_ID:', import.meta.env.VITE_SUPABASE_PROJECT_ID);
+
 export const ENV_CONFIG = {
   // Current environment detection
   isDevelopment: import.meta.env.MODE === 'development',
