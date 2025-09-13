@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import LanguageToggle from "./LanguageToggle";
+import ThemeToggle from "./ThemeToggle";
 import LeilyLogo from "./LeilyLogo";
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +59,9 @@ const Navigation = () => {
           <div className="flex items-center space-x-2 flex-shrink-0">
             <div className="hidden sm:block">
               <LanguageToggle />
+            </div>
+            <div className="hidden sm:block">
+              <ThemeToggle />
             </div>
             {user ? (
               <>
@@ -139,6 +143,13 @@ const Navigation = () => {
                 </Link>
               </nav>
               <div className="space-y-4 pt-4 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Språk og tema</span>
+                  <div className="flex items-center space-x-2">
+                    <LanguageToggle />
+                    <ThemeToggle />
+                  </div>
+                </div>
                 {user ? (
                   <>
                      <Button variant="outline" className="w-full justify-start" size="lg" asChild>
