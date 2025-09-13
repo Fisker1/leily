@@ -21,11 +21,11 @@ const Hero = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6 px-2">
-              Din komplette eiendomsportal
+              Profesjonell eiendomsforvaltning
             </h1>
             <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8 px-4 leading-relaxed">
-              Enkelt å eie, enkelt å leie. Forenkle forvaltning og investering av eiendom med profesjonelle verktøy for kalkulasjoner, 
-              utleieadministrasjon og markedsanalyse.
+              Digitaliser din eiendomsportefølje med avanserte analyser, automatisert utleieadministrasjon og 
+              databaserte investeringsbeslutninger. Leily gir deg verktøyene som profesjonelle eiendomsaktører bruker.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
