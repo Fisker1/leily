@@ -188,6 +188,43 @@ const SimpleAuth = () => {
               Fortsett med Vipps
             </Button>
 
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'stager@vipps.no',
+                    password: 'blåmeis'
+                  });
+                  
+                  if (error) {
+                    console.error('Test login error:', error);
+                    alert('Test login feilet: ' + error.message);
+                  } else {
+                    console.log('Test login success:', data);
+                    navigate('/dashboard');
+                  }
+                } catch (err) {
+                  console.error('Unexpected error:', err);
+                  alert('Uventet feil: ' + (err as Error).message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <div className="w-4 h-4 mr-2 text-slate-700">
+                  🥷
+                </div>
+              )}
+              Test Bruker (Stager)
+            </Button>
+
             <div className="text-center mt-6">
               <p className="text-sm text-muted-foreground">
                 Ved å logge inn godtar du våre{' '}
@@ -199,58 +236,6 @@ const SimpleAuth = () => {
                   personvernerklæring
                 </Link>
               </p>
-            </div>
-
-            {/* Quick test login section for Vipps */}
-            <div className="mt-6 pt-4 border-t border-border">
-              <div className="text-center mb-3">
-                <span className="text-xs text-muted-foreground bg-background px-2">
-                  Vipps Test Login
-                </span>
-              </div>
-              <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-                <div className="text-xs text-center text-muted-foreground">
-                  🥷 Test bruker for Vipps (staging)
-                </div>
-                <div className="text-xs text-center font-mono">
-                  <div>Telefon: +47 40000000</div>
-                  <div>PIN: 1234</div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs mt-2"
-                  onClick={async () => {
-                    setLoading(true);
-                    try {
-                      // Simuler Vipps login med test bruker
-                      const { data, error } = await supabase.auth.signInWithPassword({
-                        email: 'stager@vipps.no',
-                        password: 'blåmeis'
-                      });
-                      
-                      if (error) {
-                        console.error('Test login error:', error);
-                        alert('Test login feilet: ' + error.message);
-                      } else {
-                        console.log('Test login success:', data);
-                        navigate('/dashboard');
-                      }
-                    } catch (err) {
-                      console.error('Unexpected error:', err);
-                      alert('Uventet feil: ' + (err as Error).message);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : null}
-                  Logg inn som test-bruker
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
