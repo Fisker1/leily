@@ -122,7 +122,26 @@ export const useOptimizedPropertyData = () => {
       // Only geocode properties that don't have coordinates yet
       const propertiesWithCoordinates = await Promise.all(
         (data || []).map(async (property: any) => {
+          // Use existing coordinates from database if available
+          if (property.coordinates && Array.isArray(property.coordinates) && property.coordinates.length === 2) {
+            return { ...property, coordinates: property.coordinates as [number, number] };
+          }
+          
+          // Otherwise geocode the address
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
+          
+          // Update the database with the geocoded coordinates
+          if (coords) {
+            try {
+              await supabase
+                .from('properties')
+                .update({ coordinates: coords })
+                .eq('id', property.id);
+            } catch (updateError) {
+              console.error('Error updating property coordinates:', updateError);
+            }
+          }
+          
           return { ...property, coordinates: coords };
         })
       );
@@ -154,8 +173,27 @@ export const useOptimizedPropertyData = () => {
       // Geocode calculation addresses with batching
       const calculationsWithCoordinates = await Promise.all(
         (data || []).slice(0, 20).map(async (calc: any) => { // Further limit to 20 for performance
+          // Use existing coordinates from database if available
+          if (calc.coordinates && Array.isArray(calc.coordinates) && calc.coordinates.length === 2) {
+            return { ...calc, coordinates: calc.coordinates as [number, number] };
+          }
+          
+          // Otherwise geocode the address if it exists
           if (calc.property_address) {
             const coords = await geocodeAddress(calc.property_address);
+            
+            // Update the database with the geocoded coordinates
+            if (coords) {
+              try {
+                await supabase
+                  .from('calculation_history')
+                  .update({ coordinates: coords })
+                  .eq('id', calc.id);
+              } catch (updateError) {
+                console.error('Error updating calculation coordinates:', updateError);
+              }
+            }
+            
             return { ...calc, coordinates: coords };
           }
           return calc;

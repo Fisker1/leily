@@ -285,9 +285,10 @@ const RentalMap = () => {
     try {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/mapbox/streets-v11', // Use v11 which is more stable
         center: [10.7522, 59.9139], // Oslo
         zoom: 6,
+        attributionControl: false, // Disable attribution to prevent issues
       });
 
       map.current.addControl(
@@ -307,7 +308,9 @@ const RentalMap = () => {
         const errorMessage = e.error?.message || e.message || 'Ukjent feil';
         const isRecoverableError = errorMessage.includes('NetworkError') || 
                                  errorMessage.includes('timeout') ||
-                                 errorMessage.includes('Failed to fetch');
+                                 errorMessage.includes('Failed to fetch') ||
+                                 errorMessage.includes('StyleError') ||
+                                 errorMessage.includes('RequestManager');
         
         if (!isRecoverableError) {
           toast({
