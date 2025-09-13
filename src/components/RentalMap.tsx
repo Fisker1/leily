@@ -49,14 +49,9 @@ const RentalMap = () => {
 
   // Fetch Mapbox token
   useEffect(() => {
-    console.log('Token fetch effect - isPro:', isPro);
+    console.log('Token fetch effect - user authenticated');
     
-    if (!isPro) {
-      console.log('User not Pro, setting loading to false');
-      setLoading(false);
-      return;
-    }
-
+    // Always try to get the token for authenticated users
     const fetchToken = async () => {
       console.log('Fetching Mapbox token...');
       try {
@@ -90,7 +85,7 @@ const RentalMap = () => {
     };
 
     fetchToken();
-  }, [isPro, toast]);
+  }, [toast]);
 
   // Clear all markers
   const clearMarkers = () => {
@@ -270,7 +265,7 @@ const RentalMap = () => {
 
   // Initialize map
   useEffect(() => {
-    if (!isPro || !mapboxToken || !mapboxgl || !mapContainer.current) {
+    if (!mapboxToken || !mapboxgl || !mapContainer.current) {
       return;
     }
 
@@ -330,7 +325,7 @@ const RentalMap = () => {
         map.current.remove();
       }
     };
-  }, [isPro, mapboxToken, mapboxgl, toast]);
+  }, [mapboxToken, mapboxgl, toast]);
 
   // Update markers when data or layer settings change
   useEffect(() => {
@@ -343,43 +338,7 @@ const RentalMap = () => {
     }
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
 
-  if (!isPro) {
-    return (
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Leiekart - Pro-funksjon
-          </CardTitle>
-          <CardDescription>
-            Visualiser avkastning og leiepriser geografisk
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/50 p-6 rounded-lg text-center">
-            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Oppgrader til Pro</h3>
-            <p className="text-muted-foreground mb-4">
-              Få tilgang til interaktive kart med markedsdata og avkastning
-            </p>
-            <Badge variant="secondary">Pro-funksjon</Badge>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 text-sm">
-              <div className="bg-background p-4 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600 mb-2" />
-                <h4 className="font-medium">Markedsanalyser</h4>
-                <p className="text-muted-foreground">Se avkastning per område</p>
-              </div>
-              <div className="bg-background p-4 rounded-lg">
-                <MapPin className="h-5 w-5 text-blue-600 mb-2" />
-                <h4 className="font-medium">Geografisk oversikt</h4>
-                <p className="text-muted-foreground">Interaktive kart</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Map is now available to all logged-in users
 
   return (
     <div className="space-y-6">
