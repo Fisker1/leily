@@ -105,11 +105,11 @@
     --accent: 142 80% 52%;
     --accent-foreground: 0 0% 100%;
 
-    /* Orange highlight system for featured plans */
-    --orange: 25 95% 53%;
+    /* Orange highlight system for featured plans - dimmed for dark mode */
+    --orange: 25 70% 45%;
     --orange-foreground: 0 0% 100%;
-    --orange-muted: 25 50% 18%;
-    --orange-border: 25 85% 60%;
+    --orange-muted: 25 40% 15%;
+    --orange-border: 25 65% 50%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 210 15% 92%;
