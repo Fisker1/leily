@@ -14,13 +14,13 @@ Deno.serve(async (req) => {
   try {
     console.log('Starting production data copy to staging...');
     
-    // Production database client
+    // Production database client (rkhzyzuttsvsjcgzrokt)
     const prodClient = createClient(
       'https://rkhzyzuttsvsjcgzrokt.supabase.co',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
-    // Staging database client (current environment)  
+    // Staging database client (current environment - wdwjmapvuibsqiifslno)  
     const stagingClient = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
