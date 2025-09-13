@@ -200,6 +200,27 @@ const SimpleAuth = () => {
                 </Link>
               </p>
             </div>
+
+            {/* Quick test login section for Vipps */}
+            <div className="mt-6 pt-4 border-t border-border">
+              <div className="text-center mb-3">
+                <span className="text-xs text-muted-foreground bg-background px-2">
+                  Vipps Test Bruker
+                </span>
+              </div>
+              <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                <div className="text-xs text-center text-muted-foreground">
+                  🥷 Test bruker for Vipps (staging)
+                </div>
+                <div className="text-xs text-center font-mono">
+                  <div>Telefon: +47 40000000</div>
+                  <div>PIN: 1234</div>
+                </div>
+                <div className="text-xs text-center text-muted-foreground mt-2">
+                  Bruk disse detaljene i Vipps-appen for testing
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
