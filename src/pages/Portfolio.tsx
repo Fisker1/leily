@@ -633,11 +633,6 @@ const Portfolio = () => {
                 </Button>
               </PropertyAddDialog>
             )}
-            {showExampleProperty && (
-              <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                Eksempeleiendom - Legg til din første eiendom
-              </Badge>
-            )}
           </div>
 
           {/* Portfolio Summary */}
@@ -651,11 +646,6 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">{displayProperties.length}</div>
-                {(!user || showExampleProperty) && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo eiendommer" : "Eksempeleiendom"}
-                  </p>
-                )}
               </CardContent>
             </Card>
 
@@ -668,11 +658,6 @@ const Portfolio = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{totalInvestment.toLocaleString()} kr</div>
-                {(!user || showExampleProperty) && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo beløp" : "Eksempelverdi"}
-                  </p>
-                )}
               </CardContent>
             </Card>
 
@@ -701,11 +686,6 @@ const Portfolio = () => {
                     <p className="text-xs text-blue-600">Automatisk oppdatering aktiv</p>
                   </div>
                 )}
-                {(!user || showExampleProperty) && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo verdi" : "Eksempelverdi"}
-                  </p>
-                )}
               </CardContent>
             </Card>
 
@@ -717,17 +697,12 @@ const Portfolio = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-accent">
+                <div className="text-2xl font-bold text-primary">
                   {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
                   {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                 </div>
-                {(!user || showExampleProperty) && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!user ? "Demo avkastning" : "Eksempelberegning"}
-                  </p>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -829,21 +804,21 @@ const Portfolio = () => {
                             </p>
                           </div>
                           <div className={`text-center p-2 rounded-lg min-w-[90px] ${
-                            roiPercentage >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                            roiPercentage >= 0 ? 'bg-primary-soft' : 'bg-red-50 dark:bg-red-900/20'
                           }`}>
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
                             <p className={`font-semibold text-xs ${
-                              roiPercentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                              roiPercentage >= 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'
                             }`}>
                               {roiPercentage >= 0 ? '+' : ''}{roiPercentage.toFixed(1)}%
                             </p>
                           </div>
                           <div className={`text-center p-2 rounded-lg min-w-[90px] ${
-                            totalReturn >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                            totalReturn >= 0 ? 'bg-primary-soft' : 'bg-red-50 dark:bg-red-900/20'
                           }`}>
                             <p className="text-xs text-muted-foreground mb-1">Gevinst</p>
                             <p className={`font-semibold text-xs ${
-                              totalReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                              totalReturn >= 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'
                             }`}>
                               {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                             </p>
