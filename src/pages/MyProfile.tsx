@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const MyProfile = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -287,6 +288,23 @@ const MyProfile = () => {
                     />
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Innstillinger</CardTitle>
+              <CardDescription>
+                Tilpass din opplevelse på plattformen
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Tema</Label>
+                <div className="flex items-center space-x-2">
+                  <ThemeToggle />
+                  <span className="text-sm text-muted-foreground">Bytt mellom lys og mørk modus</span>
+                </div>
               </div>
             </CardContent>
           </Card>
