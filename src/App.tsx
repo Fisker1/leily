@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -32,6 +32,20 @@ const PageLoader = () => (
 
 const queryClient = new QueryClient();
 
+// Force light theme initialization
+const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
+  useEffect(() => {
+    // Force light theme on mount if no theme is stored
+    const storedTheme = localStorage.getItem('leily-theme');
+    if (!storedTheme) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('leily-theme', 'light');
+    }
+  }, []);
+
+  return <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider
@@ -40,36 +54,37 @@ const App = () => (
       enableSystem={false}
       disableTransitionOnChange={false}
       storageKey="leily-theme"
-      forcedTheme={undefined}
     >
-      <TooltipProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<SimpleAuth />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/utleie" element={<Rental />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/calculator" element={<Calculator />} />
-                <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
-                <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
-                <Route path="/bank-report" element={<BankReport />} />
-                <Route path="/min-side" element={<MyProfile />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </AuthProvider>
-      </LanguageProvider>
-    </TooltipProvider>
+      <ForceDefaultTheme>
+        <TooltipProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<SimpleAuth />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/utleie" element={<Rental />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/calculator" element={<Calculator />} />
+                  <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
+                  <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
+                  <Route path="/bank-report" element={<BankReport />} />
+                  <Route path="/min-side" element={<MyProfile />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </AuthProvider>
+        </LanguageProvider>
+      </TooltipProvider>
+      </ForceDefaultTheme>
     </ThemeProvider>
   </QueryClientProvider>
 );
