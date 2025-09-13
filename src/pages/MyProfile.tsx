@@ -177,8 +177,20 @@ const MyProfile = () => {
     return null;
   };
 
+  // Redirect to auth if no user
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-[400px]">
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground mb-4">Din session har utløpt. Vennligst logg inn på nytt.</p>
+            <Button asChild>
+              <a href="/auth">Logg inn</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const initials = profile?.full_name

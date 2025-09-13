@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2, MapPin, TrendingUp, Home, DollarSign, Calculator } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOptimizedPropertyData } from "@/hooks/useOptimizedPropertyData";
@@ -12,6 +14,7 @@ import { formatNumberWithSpaces } from "@/lib/utils";
 
 const RentalMap = () => {
   const { isPro } = useSubscription();
+  const { user } = useAuth();
   const { toast } = useToast();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
@@ -49,9 +52,15 @@ const RentalMap = () => {
 
   // Fetch Mapbox token
   useEffect(() => {
+    // Only fetch token if user is authenticated
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
     console.log('Token fetch effect - user authenticated');
     
-    // Always try to get the token for authenticated users
+    // Only fetch token if user is authenticated
     const fetchToken = async () => {
       console.log('Fetching Mapbox token...');
       try {
@@ -85,7 +94,7 @@ const RentalMap = () => {
     };
 
     fetchToken();
-  }, [toast]);
+  }, [toast, user]);
 
   // Clear all markers
   const clearMarkers = () => {
@@ -339,6 +348,20 @@ const RentalMap = () => {
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
 
   // Map is now available to all logged-in users
+  
+  // Show message if user is not authenticated
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground mb-4">Du må være logget inn for å se kartet.</p>
+          <Button asChild>
+            <a href="/auth">Logg inn</a>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
