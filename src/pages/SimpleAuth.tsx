@@ -216,7 +216,7 @@ const SimpleAuth = () => {
                       options: {
                         emailRedirectTo: `${window.location.origin}/dashboard`,
                         data: {
-                          full_name: 'Stager User'
+                          full_name: 'Stager'
                         }
                       }
                     });
