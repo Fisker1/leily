@@ -302,11 +302,20 @@ const RentalMap = () => {
 
       map.current.on('error', (e) => {
         console.error('Mapbox error:', e);
-        toast({
-          title: "Kartfeil",
-          description: `Mapbox feil: ${e.error?.message || 'Ukjent feil'}`,
-          variant: "destructive",
-        });
+        
+        // Only show error toast for critical errors, not recoverable ones
+        const errorMessage = e.error?.message || e.message || 'Ukjent feil';
+        const isRecoverableError = errorMessage.includes('NetworkError') || 
+                                 errorMessage.includes('timeout') ||
+                                 errorMessage.includes('Failed to fetch');
+        
+        if (!isRecoverableError) {
+          toast({
+            title: "Kartfeil",
+            description: `Mapbox feil: ${errorMessage}`,
+            variant: "destructive",
+          });
+        }
       });
 
       map.current.on('styledata', () => {
