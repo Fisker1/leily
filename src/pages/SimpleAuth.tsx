@@ -200,12 +200,37 @@ const SimpleAuth = () => {
                 
                 setLoading(true);
                 try {
-                  const { data, error } = await supabase.auth.signInWithPassword({
+                  // First try to sign in
+                  let { data, error } = await supabase.auth.signInWithPassword({
                     email: 'stager@vipps.no',
                     password: 'blåmeis'
                   });
                   
-                  if (error) {
+                  // If user doesn't exist, try to create them
+                  if (error && error.message.includes('Invalid login credentials')) {
+                    console.log('Stager user does not exist, creating...');
+                    
+                    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                      email: 'stager@vipps.no',
+                      password: 'blåmeis',
+                      options: {
+                        emailRedirectTo: `${window.location.origin}/dashboard`,
+                        data: {
+                          full_name: 'Stager User'
+                        }
+                      }
+                    });
+                    
+                    if (signUpError) {
+                      console.error('Stager signup error:', signUpError);
+                      alert('Kunne ikke opprette Stager-bruker: ' + signUpError.message);
+                    } else if (signUpData.user && !signUpData.session) {
+                      alert('Stager-bruker opprettet! Email-bekreftelse kreves. Sjekk innboksen til stager@vipps.no eller deaktiver email-bekreftelse i Supabase.');
+                    } else {
+                      console.log('Stager user created and signed in:', signUpData);
+                      navigate('/dashboard');
+                    }
+                  } else if (error) {
                     console.error('Stager login error:', error);
                     alert('Innlogging feilet: ' + error.message);
                   } else {
