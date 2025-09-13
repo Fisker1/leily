@@ -401,7 +401,6 @@ const Rental = () => {
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Ny leieavtale
-                {!canCreateRentalAgreement && <Badge variant="secondary" className="ml-2 text-xs">Kommer snart</Badge>}
               </Button>
             )}
           </div>
@@ -787,7 +786,6 @@ const Rental = () => {
             <CardHeader>
               <CardTitle className="text-primary flex items-center gap-2">
                 Ny leieavtale
-                {!canCreateRentalAgreement && <Badge variant="secondary" className="text-xs">Kommer snart</Badge>}
               </CardTitle>
               <CardDescription>
                 {canCreateRentalAgreement 
