@@ -192,6 +192,12 @@ const SimpleAuth = () => {
               variant="outline"
               className="w-full"
               onClick={async () => {
+                const password = prompt('Skriv inn passordet for Stager:');
+                if (password !== 'blåmeis') {
+                  alert('Feil passord!');
+                  return;
+                }
+                
                 setLoading(true);
                 try {
                   const { data, error } = await supabase.auth.signInWithPassword({
@@ -200,10 +206,10 @@ const SimpleAuth = () => {
                   });
                   
                   if (error) {
-                    console.error('Test login error:', error);
-                    alert('Test login feilet: ' + error.message);
+                    console.error('Stager login error:', error);
+                    alert('Innlogging feilet: ' + error.message);
                   } else {
-                    console.log('Test login success:', data);
+                    console.log('Stager login success:', data);
                     navigate('/dashboard');
                   }
                 } catch (err) {
@@ -222,7 +228,7 @@ const SimpleAuth = () => {
                   🥷
                 </div>
               )}
-              Test Bruker (Stager)
+              Stager
             </Button>
 
             <div className="text-center mt-6">
