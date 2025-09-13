@@ -45,6 +45,7 @@ export type Database = {
         Row: {
           calculation_data: Json
           calculation_name: string | null
+          coordinates: number[] | null
           created_at: string
           finn_code: string | null
           id: string
@@ -56,6 +57,7 @@ export type Database = {
         Insert: {
           calculation_data: Json
           calculation_name?: string | null
+          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -67,6 +69,7 @@ export type Database = {
         Update: {
           calculation_data?: Json
           calculation_name?: string | null
+          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -276,6 +279,7 @@ export type Database = {
           address: string
           bedrooms: number | null
           city: string | null
+          coordinates: number[] | null
           created_at: string
           current_value: number | null
           id: string
@@ -299,6 +303,7 @@ export type Database = {
           address: string
           bedrooms?: number | null
           city?: string | null
+          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string
@@ -322,6 +327,7 @@ export type Database = {
           address?: string
           bedrooms?: number | null
           city?: string | null
+          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string
