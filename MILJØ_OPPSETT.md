@@ -1,5 +1,40 @@
 # Miljøoppsett Guide - Staging og Produksjon
 
+## ✅ PROBLEM LØST! 
+
+**Jeg har identifisert og løst problemet med at alle endringer gikk til produksjonsdatabasen i stedet for staging.**
+
+### Hva var problemet?
+I `src/integrations/supabase/client.ts` var det hardkodede fallback-verdier som pekte til produksjonsdatabasen (`wdwjmapvuibsqiifslno.supabase.co`) i stedet for å bruke miljøvariablene korrekt.
+
+### Hva jeg har fikset:
+1. **Oppdatert Supabase-klienten** til å bruke `ENV_CONFIG` fra `src/lib/env.ts`
+2. **Fjernet hardkodede fallback-verdier** som pekte til feil database
+3. **Sørget for at miljødetektering fungerer** korrekt
+
+### Slik bytter du mellom miljøer nå:
+
+**For Staging:**
+```bash
+cp .env.staging.example .env
+```
+Deretter oppdater `.env` med dine staging Supabase-detaljer.
+
+**For Production:**
+```bash
+cp .env.production.example .env
+```
+Deretter oppdater `.env` med dine production Supabase-detaljer.
+
+**Sjekk hvilket miljø du bruker:**
+Åpne browser developer tools (F12) og kjør:
+```javascript
+console.log('Environment:', import.meta.env.VITE_ENVIRONMENT || 'development');
+console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+```
+
+---
+
 ## Oversikt
 Koden er nå forberedt for å støtte staging og produksjonsmiljøer. Her er hva som må gjøres for å fullføre oppsettet.
 
