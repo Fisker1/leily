@@ -20,7 +20,7 @@ const Navigation = () => {
   const {
     isAdmin
   } = useUserRole();
-  return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border">
+  return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sticky top-0 z-50 w-full border-b border-border/50">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Left Section */}
@@ -114,7 +114,7 @@ const Navigation = () => {
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 border-b border-border bg-background backdrop-blur supports-[backdrop-filter]:bg-background/95 shadow-lg z-50">
+          <div className="md:hidden absolute top-full left-0 right-0 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 shadow-lg z-50">
             <div className="container mx-auto px-4 py-6 space-y-6">
               <nav className="flex flex-col space-y-4">
                 <Link 
