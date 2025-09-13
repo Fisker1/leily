@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Starting production data copy to staging...');
+    console.log('Starting production data copy to staging environment...');
     
     // Production database client (rkhzyzuttsvsjcgzrokt)
     const prodClient = createClient(
