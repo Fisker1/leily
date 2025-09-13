@@ -145,7 +145,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   // Show satellite map only for logged in users with real addresses
   if (shouldShowSatellite) {
     return (
-      <div className={`relative ${className} bg-muted`}>
+      <div className={`relative ${className} bg-muted aspect-square`}>
         <div 
           ref={mapContainer} 
           className="w-full h-full rounded-lg overflow-hidden" 
@@ -157,7 +157,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
   // Fallback for non-logged in users with real addresses
   return (
-    <div className={`relative ${className} bg-muted flex items-center justify-center`}>
+    <div className={`relative ${className} bg-muted flex items-center justify-center aspect-square`}>
       <p className="text-muted-foreground text-sm">Logg inn for satellittbilde</p>
     </div>
   );

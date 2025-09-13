@@ -781,9 +781,6 @@ const Portfolio = () => {
                               className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg"
                               alt={`Eiendom på ${property.address}`}
                             />
-                            {isPrimaryHome && isUserProperty && (
-                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-pulse shadow-lg shadow-orange-400/50"></div>
-                            )}
                           </div>
                           <div className="min-w-0 flex-1 overflow-hidden">
                             <h3 className="font-semibold text-foreground text-sm sm:text-base mb-1 truncate">
@@ -831,16 +828,24 @@ const Portfolio = () => {
                               {(property.current_value || property.purchase_price)?.toLocaleString() || '3.200.000'} kr
                             </p>
                           </div>
-                          <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg min-w-[90px]">
+                          <div className={`text-center p-2 rounded-lg min-w-[90px] ${
+                            roiPercentage >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                          }`}>
                             <p className="text-xs text-muted-foreground mb-1">Total avkastning</p>
-                            <p className="font-semibold text-xs text-green-600 dark:text-green-400">
-                              +{roiPercentage.toFixed(1)}%
+                            <p className={`font-semibold text-xs ${
+                              roiPercentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {roiPercentage >= 0 ? '+' : ''}{roiPercentage.toFixed(1)}%
                             </p>
                           </div>
-                          <div className="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg min-w-[90px]">
+                          <div className={`text-center p-2 rounded-lg min-w-[90px] ${
+                            totalReturn >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                          }`}>
                             <p className="text-xs text-muted-foreground mb-1">Gevinst</p>
-                            <p className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">
-                              +{totalReturn.toLocaleString()} kr
+                            <p className={`font-semibold text-xs ${
+                              totalReturn >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {totalReturn >= 0 ? '+' : ''}{totalReturn.toLocaleString()} kr
                             </p>
                           </div>
                         </div>
