@@ -113,10 +113,8 @@ export default function BuildingPlannerBasic() {
 
       fabricCanvasRef.current = canvas;
 
-      // Add grid if no floor plan
-      if (!floorPlanImage) {
-        addGrid(canvas);
-      }
+      // Add touch controls once during canvas initialization
+      addTouchControls(canvas);
 
       // Handle object placement
       canvas.on('mouse:down', (options) => {
@@ -227,16 +225,16 @@ export default function BuildingPlannerBasic() {
       const imageUrl = e.target?.result as string;
       setFloorPlanImage(imageUrl);
       
-      // Add image to canvas using the correct v6 approach
       if (fabricCanvasRef.current) {
         const canvas = fabricCanvasRef.current;
         
-        console.log('Loading image with v6 method...');
-        
         try {
+          console.log('Loading image with v6 method...');
+          
           // Clear canvas first
           canvas.clear();
           canvas.backgroundColor = '#ffffff';
+          canvas.renderAll();
           
           // Use the correct v6 FabricImage.fromURL method
           const fabricImg = await FabricImage.fromURL(imageUrl);
@@ -269,9 +267,6 @@ export default function BuildingPlannerBasic() {
           canvas.renderAll();
           
           console.log('Image added successfully');
-          
-          // Add touch controls for mobile
-          addTouchControls(canvas);
           
           toast({
             title: "Plantegning lastet opp",
