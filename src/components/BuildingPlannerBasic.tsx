@@ -446,6 +446,9 @@ export default function BuildingPlannerBasic() {
   const clearCanvas = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
+      fabricCanvasRef.current.backgroundColor = '#ffffff';
+      fabricCanvasRef.current.renderAll();
+      
       if (!floorPlanImage) {
         addGrid(fabricCanvasRef.current);
       } else if (floorPlanImage) {
@@ -624,7 +627,7 @@ export default function BuildingPlannerBasic() {
                     variant={selectedProfessions.includes(profession.id) ? "default" : "outline"}
                     className={`h-20 flex flex-col items-center justify-center space-y-2 ${
                       !selectedProfessions.includes(profession.id) 
-                        ? 'bg-white border-white hover:bg-white/90' 
+                        ? 'bg-background border-border hover:bg-accent hover:text-accent-foreground' 
                         : ''
                     }`}
                     onClick={() => {
@@ -635,11 +638,11 @@ export default function BuildingPlannerBasic() {
                       );
                     }}
                   >
-                    <div className={selectedProfessions.includes(profession.id) ? 'text-white' : 'text-white'}>
+                    <div className={selectedProfessions.includes(profession.id) ? 'text-primary-foreground' : 'text-foreground'}>
                       {profession.icon}
                     </div>
                     <div className="text-center">
-                      <div className={`font-semibold text-xs ${selectedProfessions.includes(profession.id) ? 'text-white' : 'text-white'}`}>
+                      <div className={`font-semibold text-xs ${selectedProfessions.includes(profession.id) ? 'text-primary-foreground' : 'text-foreground'}`}>
                         {profession.name}
                       </div>
                     </div>
