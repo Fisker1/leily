@@ -239,7 +239,7 @@ const Auth = () => {
                       🥷 Test bruker for staging
                     </div>
                     <div className="text-xs text-center font-mono">
-                      <div>Email: stager@vipps.no</div>
+                      <div>Email: anderslundoy@protonmail.com</div>
                       <div>Passord: blåmeis</div>
                     </div>
                     <Button
