@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect, Group, Line, Ellipse } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, Group, Line, Ellipse, FabricImage } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet } from 'lucide-react';
+import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet, ImageIcon, FileImage } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FloorPlan {
@@ -15,6 +15,7 @@ interface FloorPlan {
   historyIndex: number;
   isUndoing: boolean;
   isEditingName: boolean;
+  backgroundImage?: string;
 }
 
 interface PlacedItem {
@@ -31,6 +32,11 @@ const itemPrices = {
   outlet: { name: 'Stikkontakt', price: 500 },
   lightSwitch: { name: 'Lysbryter', price: 300 },
   light: { name: 'Lysarmatur', price: 800 },
+  electricalPanel: { name: 'Sikringsskap', price: 3500 },
+  
+  // Snekker/Tømrer
+  window: { name: 'Vindu', price: 4500 },
+  door: { name: 'Dør', price: 2800 },
   
   // Rørlegger
   sink: { name: 'Vask', price: 3000 },
@@ -60,6 +66,7 @@ export default function BuildingPlannerBasic() {
   const [plumberTool, setPlumberTool] = useState<string | null>(null);
   const [overlayFlashing, setOverlayFlashing] = useState(false);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset overlay flash when tools change
   useEffect(() => {
@@ -192,7 +199,6 @@ export default function BuildingPlannerBasic() {
   }, [selectedTool, floorPlans]);
 
   const handleCarpenterTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
-    console.log('handleCarpenterTool called with tool:', tool);
     let shape;
     let itemData;
 
@@ -221,10 +227,29 @@ export default function BuildingPlannerBasic() {
           originX: 'center',
           originY: 'center',
         });
-        canvas.add(windowGroup);
-        canvas.renderAll();
-        toast("Vindu lagt til!");
-        return;
+        shape = windowGroup;
+        itemData = itemPrices.window;
+        break;
+      case 'door':
+        // Door icon - rectangle with handle
+        const doorGroup = new Group([
+          new Rect({
+            width: 30,
+            height: 60,
+            fill: 'burlywood',
+            stroke: 'brown',
+            strokeWidth: 2,
+          }),
+          new Circle({ radius: 2, left: 8, top: 0, fill: 'gold' }) // Handle
+        ], {
+          left: pointer.x,
+          top: pointer.y,
+          originX: 'center',
+          originY: 'center',
+        });
+        shape = doorGroup;
+        itemData = itemPrices.door;
+        break;
       case 'wall':
         // Enable drawing mode for walls
         canvas.isDrawingMode = true;
@@ -233,10 +258,26 @@ export default function BuildingPlannerBasic() {
         toast("Tegningsmodus aktivert - tegn vegger!");
         return;
     }
+
+    if (shape && itemData) {
+      canvas.add(shape);
+      canvas.renderAll();
+      
+      const newItem: PlacedItem = {
+        id: Date.now().toString(),
+        category: 'carpenter',
+        type: tool,
+        name: itemData.name,
+        price: itemData.price,
+        floorPlanId: floorPlanId,
+      };
+      setPlacedItems(prev => [...prev, newItem]);
+      
+      toast(`${itemData.name} lagt til!`);
+    }
   };
 
   const handleElectricianTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
-    console.log('handleElectricianTool called with tool:', tool);
     let shape;
     let itemData;
 
@@ -312,6 +353,39 @@ export default function BuildingPlannerBasic() {
         });
         shape = lightGroup;
         itemData = itemPrices.light;
+        break;
+      case 'electricalPanel':
+        // Electrical panel - large rectangle with electrical symbol
+        const panelGroup = new Group([
+          new Rect({
+            width: 60,
+            height: 80,
+            fill: 'lightgray',
+            stroke: 'black',
+            strokeWidth: 3,
+          }),
+          new Rect({
+            width: 50,
+            height: 70,
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 1,
+          }),
+          // Electrical symbol
+          new Circle({ radius: 3, left: -10, top: -20, fill: 'red' }),
+          new Circle({ radius: 3, left: 0, top: -20, fill: 'black' }),
+          new Circle({ radius: 3, left: 10, top: -20, fill: 'blue' }),
+          new Line([-15, -10, 15, -10], { stroke: 'black', strokeWidth: 2 }),
+          new Line([-15, 0, 15, 0], { stroke: 'black', strokeWidth: 2 }),
+          new Line([-15, 10, 15, 10], { stroke: 'black', strokeWidth: 2 })
+        ], {
+          left: pointer.x,
+          top: pointer.y,
+          originX: 'center',
+          originY: 'center',
+        });
+        shape = panelGroup;
+        itemData = itemPrices.electricalPanel;
         break;
     }
 
@@ -601,6 +675,71 @@ export default function BuildingPlannerBasic() {
     toast("Lerret tømt!");
   };
 
+  // Handle background image upload
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast("Vennligst velg en bildefil (PNG, JPG, etc.)");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      const currentFloor = getCurrentFloorPlan();
+      
+      if (!currentFloor?.canvas) return;
+
+      // Create Fabric image from uploaded file
+      FabricImage.fromURL(imageUrl).then((img) => {
+        const canvas = currentFloor.canvas!;
+        
+        // Scale image to fit canvas while maintaining aspect ratio
+        const canvasAspect = canvas.width / canvas.height;
+        const imageAspect = img.width / img.height;
+        
+        if (imageAspect > canvasAspect) {
+          // Image is wider - fit to canvas width
+          img.scaleToWidth(canvas.width);
+        } else {
+          // Image is taller - fit to canvas height  
+          img.scaleToHeight(canvas.height);
+        }
+        
+        // Center the image
+        img.set({
+          left: canvas.width / 2,
+          top: canvas.height / 2,
+          originX: 'center',
+          originY: 'center',
+          opacity: 0.7
+        });
+        
+        // Set as background image directly
+        canvas.backgroundImage = img;
+        canvas.renderAll();
+        
+        // Update floor plan with background image URL
+        updateFloorPlan(currentFloor.id, { 
+          backgroundImage: imageUrl 
+        });
+        
+        toast("Bakgrunnsbilde lastet opp!");
+      }).catch((error) => {
+        console.error('Error loading image:', error);
+        toast("Feil ved opplasting av bilde");
+      });
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   const totalCost = placedItems
     .filter(item => item.floorPlanId === activeFloorPlan)
     .reduce((sum, item) => sum + item.price, 0);
@@ -718,99 +857,161 @@ export default function BuildingPlannerBasic() {
                     </div>
                   </div>
 
-                  {selectedTool === 'carpenter' && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Velg tømrerarbeid:</div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant={carpenterTool === 'window' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setCarpenterTool('window')}
-                        >
-                          Vindu
-                        </Button>
-                        <Button
-                          variant={carpenterTool === 'wall' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setCarpenterTool('wall')}
-                        >
-                          Tegn vegg
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                   {selectedTool === 'carpenter' && (
+                     <div className="space-y-2">
+                       <div className="text-sm font-medium">Velg snekkerarbeid:</div>
+                       <div className="grid grid-cols-2 gap-2">
+                         <Button
+                           variant={carpenterTool === 'window' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setCarpenterTool('window')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-3 border border-current" />
+                             <span className="text-xs">Vindu</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={carpenterTool === 'door' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setCarpenterTool('door')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-3 h-4 border border-current rounded-r" />
+                             <span className="text-xs">Dør</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={carpenterTool === 'wall' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setCarpenterTool('wall')}
+                           className="h-auto py-2 px-3 col-span-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-6 h-1 bg-current" />
+                             <span className="text-xs">Tegn vegg</span>
+                           </div>
+                         </Button>
+                       </div>
+                     </div>
+                   )}
 
-                  {selectedTool === 'electrician' && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant={electricianTool === 'outlet' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setElectricianTool('outlet')}
-                        >
-                          Stikkontakt
-                        </Button>
-                        <Button
-                          variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setElectricianTool('lightSwitch')}
-                        >
-                          Lysbryter
-                        </Button>
-                        <Button
-                          variant={electricianTool === 'light' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setElectricianTool('light')}
-                        >
-                          Lysarmatur
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                   {selectedTool === 'electrician' && (
+                     <div className="space-y-2">
+                       <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
+                       <div className="grid grid-cols-2 gap-2">
+                         <Button
+                           variant={electricianTool === 'outlet' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setElectricianTool('outlet')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <Zap className="h-4 w-4" />
+                             <span className="text-xs">Stikkontakt</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setElectricianTool('lightSwitch')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-4 border border-current rounded-sm" />
+                             <span className="text-xs">Lysbryter</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={electricianTool === 'light' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setElectricianTool('light')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-4 border border-current rounded-full" />
+                             <span className="text-xs">Lysarmatur</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={electricianTool === 'electricalPanel' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setElectricianTool('electricalPanel')}
+                           className="h-auto py-2 px-3"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-5 border-2 border-current rounded-sm" />
+                             <span className="text-xs">Sikringsskap</span>
+                           </div>
+                         </Button>
+                       </div>
+                     </div>
+                   )}
 
-                  {selectedTool === 'plumber' && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant={plumberTool === 'sink' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setPlumberTool('sink')}
-                        >
-                          Vask
-                        </Button>
-                        <Button
-                          variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setPlumberTool('dishwasher')}
-                        >
-                          Oppvaskmaskin
-                        </Button>
-                        <Button
-                          variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setPlumberTool('washingMachine')}
-                        >
-                          Vaskemaskin
-                        </Button>
-                        <Button
-                          variant={plumberTool === 'shower' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setPlumberTool('shower')}
-                        >
-                          Dusj
-                        </Button>
-                        <Button
-                          variant={plumberTool === 'toilet' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setPlumberTool('toilet')}
-                        >
-                          Toalett
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                   {selectedTool === 'plumber' && (
+                     <div className="space-y-2">
+                       <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
+                       <div className="grid grid-cols-3 gap-2">
+                         <Button
+                           variant={plumberTool === 'sink' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setPlumberTool('sink')}
+                           className="h-auto py-2 px-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-3 border border-current rounded-t" />
+                             <span className="text-xs">Vask</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={plumberTool === 'shower' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setPlumberTool('shower')}
+                           className="h-auto py-2 px-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-4 border border-current rounded" />
+                             <span className="text-xs">Dusj</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={plumberTool === 'toilet' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setPlumberTool('toilet')}
+                           className="h-auto py-2 px-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-3 h-4 border border-current rounded-full" />
+                             <span className="text-xs">Toalett</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setPlumberTool('dishwasher')}
+                           className="h-auto py-2 px-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-4 border border-current rounded" />
+                             <span className="text-xs">Oppvask</span>
+                           </div>
+                         </Button>
+                         <Button
+                           variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
+                           size="sm"
+                           onClick={() => setPlumberTool('washingMachine')}
+                           className="h-auto py-2 px-2"
+                         >
+                           <div className="flex flex-col items-center gap-1">
+                             <div className="w-4 h-4 border border-current rounded-full" />
+                             <span className="text-xs">Vask.maskin</span>
+                           </div>
+                         </Button>
+                       </div>
+                     </div>
+                   )}
 
                   {/* Visual feedback for selected tools */}
                   {selectedTool === 'carpenter' && carpenterTool && (
@@ -827,8 +1028,9 @@ export default function BuildingPlannerBasic() {
                   {selectedTool === 'electrician' && electricianTool && (
                     <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg">
                       <p className="text-sm text-blue-800 font-medium">
-                        ✅ {electricianTool === 'outlet' ? 'Stikkontakt' : 
-                            electricianTool === 'lightSwitch' ? 'Lysbryter' : 'Lysarmatur'} klar
+                         ✅ {electricianTool === 'outlet' ? 'Stikkontakt' : 
+                             electricianTool === 'lightSwitch' ? 'Lysbryter' : 
+                             electricianTool === 'light' ? 'Lysarmatur' : 'Sikringsskap'} klar
                       </p>
                       <p className="text-xs text-blue-600">Trykk på det grønne området på lerretet</p>
                     </div>
@@ -864,16 +1066,28 @@ export default function BuildingPlannerBasic() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex gap-2 mb-4">
-                    <Button onClick={undo} variant="outline" size="sm">
-                      <Undo className="h-4 w-4 mr-2" />
-                      Angre
-                    </Button>
-                    <Button onClick={clearCanvas} variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Tøm
-                    </Button>
-                  </div>
+                   <div className="flex gap-2 mb-4 flex-wrap">
+                     <Button onClick={undo} variant="outline" size="sm">
+                       <Undo className="h-4 w-4 mr-2" />
+                       Angre
+                     </Button>
+                     <Button onClick={clearCanvas} variant="outline" size="sm">
+                       <Trash2 className="h-4 w-4 mr-2" />
+                       Tøm
+                     </Button>
+                     <Button onClick={triggerImageUpload} variant="outline" size="sm">
+                       <Upload className="h-4 w-4 mr-2" />
+                       Last opp plantegning
+                     </Button>
+                   </div>
+                   
+                   <input
+                     ref={fileInputRef}
+                     type="file"
+                     accept="image/*"
+                     onChange={handleImageUpload}
+                     className="hidden"
+                   />
 
                   {/* Canvas with touch overlay */}
                   <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden bg-white relative">
@@ -908,17 +1122,19 @@ export default function BuildingPlannerBasic() {
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-center">
                              <div className="text-sm font-medium">
-                               Trykk her for å plassere {
-                                 selectedTool === 'carpenter' ? 
-                                   (carpenterTool === 'window' ? 'vindu' : 'vegg') :
-                                 selectedTool === 'electrician' ? 
-                                   (electricianTool === 'outlet' ? 'stikkontakt' : 
-                                    electricianTool === 'lightSwitch' ? 'lysbryter' : 'lysarmatur') :
-                                   (plumberTool === 'sink' ? 'vask' : 
-                                    plumberTool === 'shower' ? 'dusj' : 
-                                    plumberTool === 'toilet' ? 'toalett' :
-                                    plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
-                               }
+                                Trykk her for å plassere {
+                                  selectedTool === 'carpenter' ? 
+                                    (carpenterTool === 'window' ? 'vindu' : 
+                                     carpenterTool === 'door' ? 'dør' : 'vegg') :
+                                  selectedTool === 'electrician' ? 
+                                    (electricianTool === 'outlet' ? 'stikkontakt' : 
+                                     electricianTool === 'lightSwitch' ? 'lysbryter' : 
+                                     electricianTool === 'light' ? 'lysarmatur' : 'sikringsskap') :
+                                    (plumberTool === 'sink' ? 'vask' : 
+                                     plumberTool === 'shower' ? 'dusj' : 
+                                     plumberTool === 'toilet' ? 'toalett' :
+                                     plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
+                                }
                              </div>
                           </div>
                         </div>
