@@ -105,7 +105,7 @@ const CalculationLibrary = ({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
           <Library className="h-12 w-12 text-muted-foreground" />
-          <h3 className="text-xl font-semibold">Kalkulasjonsbibliotek</h3>
+          <h3 className="text-xl font-semibold">Bibliotek</h3>
           <p className="text-muted-foreground">
             Logg inn for å lagre og gjenbruke dine eiendomskalkulasjoner
           </p>
@@ -120,7 +120,7 @@ const CalculationLibrary = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Library className="h-5 w-5" />
-            Kalkulasjonsbibliotek
+            Bibliotek
           </CardTitle>
           <CardDescription>
             Se, gjenbruk og administrer dine tidligere eiendomskalkulasjoner

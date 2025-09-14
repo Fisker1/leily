@@ -35,6 +35,18 @@ const processGeocodingQueue = async () => {
   
   isProcessingQueue = true;
   
+  // Try to get Mapbox token first for better geocoding accuracy
+  let mapboxToken = null;
+  try {
+    const { data } = await supabase.functions.invoke('get-mapbox-token');
+    if (data?.token) {
+      mapboxToken = data.token;
+      console.log('🔑 Using Mapbox for geocoding');
+    }
+  } catch (error) {
+    console.log('⚠️ Falling back to Nominatim for geocoding');
+  }
+  
   while (geocodingQueue.length > 0) {
     const { resolve, address } = geocodingQueue.shift()!;
     
@@ -44,33 +56,59 @@ const processGeocodingQueue = async () => {
     }
     
     try {
-      const encodedAddress = encodeURIComponent(address);
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`,
-        {
-          headers: {
-            'User-Agent': 'Leily Property App'
+      let coords = null;
+      
+      // Try Mapbox first if token is available
+      if (mapboxToken) {
+        try {
+          const encodedAddress = encodeURIComponent(address);
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&country=NO&limit=1`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.features && data.features.length > 0) {
+              const [lng, lat] = data.features[0].center;
+              coords = [lng, lat] as [number, number];
+              console.log(`✅ Mapbox geocoded "${address}":`, coords);
+            }
+          }
+        } catch (mapboxError) {
+          console.warn('Mapbox geocoding failed, trying Nominatim:', mapboxError);
+        }
+      }
+      
+      // Fallback to Nominatim if Mapbox failed or unavailable
+      if (!coords) {
+        const encodedAddress = encodeURIComponent(address);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`,
+          {
+            headers: {
+              'User-Agent': 'Leily Property App'
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            coords = [parseFloat(data[0].lon), parseFloat(data[0].lat)] as [number, number];
+            console.log(`✅ Nominatim geocoded "${address}":`, coords);
+          } else {
+            console.warn(`❌ No results found for "${address}"`);
           }
         }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        const coords = data && data.length > 0 
-          ? [parseFloat(data[0].lon), parseFloat(data[0].lat)] as [number, number]
-          : null;
-        
-        geocodeCache.set(address, coords);
-        resolve(coords);
-      } else {
-        geocodeCache.set(address, null);
-        resolve(null);
       }
+      
+      geocodeCache.set(address, coords);
+      resolve(coords);
       
       // Rate limiting - wait 300ms between requests
       await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('Geocoding error for', address, ':', error);
       geocodeCache.set(address, null);
       resolve(null);
     }
@@ -188,27 +226,36 @@ export const useOptimizedPropertyData = () => {
       if (error) throw error;
 
       // Geocode calculation addresses with batching
+      console.log('🔍 Processing calculations for map display...');
       const calculationsWithCoordinates = await Promise.all(
         (data || []).slice(0, 20).map(async (calc: any) => { // Further limit to 20 for performance
+          console.log(`Processing calculation: ${calc.property_address || 'Unnamed'}`);
+          
           // Use existing coordinates from database if available
           if (calc.coordinates && Array.isArray(calc.coordinates) && calc.coordinates.length === 2) {
+            console.log(`✅ Using existing coordinates for ${calc.property_address}:`, calc.coordinates);
             return { ...calc, coordinates: calc.coordinates as [number, number] };
           }
           
           // Otherwise geocode the address if it exists
           if (calc.property_address) {
+            console.log(`🌐 Geocoding calculation address: ${calc.property_address}`);
             const coords = await geocodeAddress(calc.property_address);
             
-            // Update the database with the geocoded coordinates
             if (coords) {
+              console.log(`✅ Got coordinates for ${calc.property_address}:`, coords);
+              // Update the database with the geocoded coordinates
               try {
                 await supabase
                   .from('calculation_history')
                   .update({ coordinates: coords })
                   .eq('id', calc.id);
+                console.log(`💾 Saved coordinates to database for ${calc.property_address}`);
               } catch (updateError) {
-                console.error('Error updating calculation coordinates:', updateError);
+                console.error('❌ Error updating calculation coordinates:', updateError);
               }
+            } else {
+              console.warn(`❌ Failed to geocode: ${calc.property_address}`);
             }
             
             return { ...calc, coordinates: coords };
