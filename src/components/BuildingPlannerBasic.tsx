@@ -499,17 +499,6 @@ export default function BuildingPlannerBasic() {
                 Velg yrke og plasser elementer på plantegning
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={clearCanvas}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Tøm
-              </Button>
-
-              <Button variant="outline" size="sm" onClick={resetAll}>
-                <Plus className="h-4 w-4 mr-2" />
-                Start på nytt
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -601,8 +590,12 @@ export default function BuildingPlannerBasic() {
                 {PROFESSIONS.map((profession) => (
                   <Button
                     key={profession.id}
-                    variant={selectedProfessions.includes(profession.id) ? "default" : "outline"}
-                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                    variant={selectedProfessions.includes(profession.id) ? "default" : "secondary"}
+                    className={`h-20 flex flex-col items-center justify-center space-y-2 ${
+                      selectedProfessions.includes(profession.id) 
+                        ? '' 
+                        : 'bg-white text-white border-white hover:bg-white/90'
+                    }`}
                     onClick={() => {
                       setSelectedProfessions(prev => 
                         prev.includes(profession.id) 
@@ -611,11 +604,11 @@ export default function BuildingPlannerBasic() {
                       );
                     }}
                   >
-                    <div style={{ color: selectedProfessions.includes(profession.id) ? 'currentColor' : profession.color }}>
+                    <div className="text-white">
                       {profession.icon}
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold text-xs">{profession.name}</div>
+                      <div className="font-semibold text-xs text-white">{profession.name}</div>
                     </div>
                   </Button>
                 ))}
@@ -692,6 +685,19 @@ export default function BuildingPlannerBasic() {
               <p className="text-sm text-muted-foreground">
                 Last opp en plantegning (JPG, PNG) for å plassere elementer på
               </p>
+            </div>
+
+            {/* Canvas Controls */}
+            <div className="flex justify-end gap-2 mb-4">
+              <Button variant="outline" size="sm" onClick={clearCanvas}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Tøm
+              </Button>
+
+              <Button variant="outline" size="sm" onClick={resetAll}>
+                <Plus className="h-4 w-4 mr-2" />
+                Start på nytt
+              </Button>
             </div>
 
             {/* Canvas */}
