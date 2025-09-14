@@ -103,13 +103,15 @@ export const useOptimizedPropertyData = () => {
   const fetchUserProperties = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
-    // Prevent excessive API calls - minimum 5 seconds between fetches unless forced
+    // Prevent excessive API calls - minimum 10 seconds between fetches unless forced
     const now = Date.now();
-    if (!forceRefresh && now - lastFetchTime < 5000) {
+    if (!forceRefresh && now - lastFetchTime < 10000) {
+      console.log('Skipping property fetch - too recent');
       return;
     }
     setLastFetchTime(now);
 
+    console.log('Fetching user properties...');
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -118,6 +120,7 @@ export const useOptimizedPropertyData = () => {
         .eq('owner_id', user.id);
 
       if (error) throw error;
+      console.log('Properties fetched:', data?.length || 0);
 
       // Only geocode properties that don't have coordinates yet
       const propertiesWithCoordinates = await Promise.all(
@@ -126,10 +129,12 @@ export const useOptimizedPropertyData = () => {
           if (property.coordinates && Array.isArray(property.coordinates) && property.coordinates.length === 2) {
             const [lng, lat] = property.coordinates;
             if (typeof lng === 'number' && typeof lat === 'number' && !isNaN(lng) && !isNaN(lat)) {
+              console.log(`Using existing coordinates for ${property.address}:`, property.coordinates);
               return { ...property, coordinates: property.coordinates as [number, number] };
             }
           }
           
+          console.log(`Geocoding ${property.address}...`);
           // Otherwise geocode the address
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
           
@@ -141,6 +146,7 @@ export const useOptimizedPropertyData = () => {
                 .update({ coordinates: coords })
                 .eq('id', property.id);
               
+              console.log(`Updated coordinates for ${property.address}:`, coords);
               return { ...property, coordinates: coords };
             } catch (updateError) {
               console.error('Error updating property coordinates:', updateError);
@@ -152,6 +158,7 @@ export const useOptimizedPropertyData = () => {
       );
 
       setProperties(propertiesWithCoordinates);
+      console.log('Properties with coordinates set:', propertiesWithCoordinates.length);
       
       // Store successful fetch timestamp
       localStorage.setItem('propertyData_lastFetch', now.toString());
@@ -162,6 +169,8 @@ export const useOptimizedPropertyData = () => {
         description: "Kunne ikke hente eiendommer for kart",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   }, [user, toast, lastFetchTime]);
 
