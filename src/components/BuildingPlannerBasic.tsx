@@ -320,108 +320,61 @@ export default function BuildingPlannerBasic() {
 
     switch (tool) {
       case 'outlet':
-        // Outlet icon - circle with two lines
-        const outletGroup = new Group([
-          new Circle({
-            radius: 12,
-            fill: 'white',
-            stroke: 'black',
-            strokeWidth: 2,
-          }),
-          new Line([-4, -6, -4, 6], {
-            stroke: 'black',
-            strokeWidth: 3,
-          }),
-          new Line([4, -6, 4, 6], {
-            stroke: 'black',
-            strokeWidth: 3,
-          })
-        ], {
+        // Simple outlet icon - single circle with slots
+        shape = new Circle({
+          radius: 15,
           left: pointer.x,
           top: pointer.y,
+          fill: 'white',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = outletGroup;
         itemData = itemPrices.outlet;
         break;
       case 'lightSwitch':
-        // Light switch icon - rectangle with line
-        const switchGroup = new Group([
-          new Rect({
-            width: 16,
-            height: 24,
-            fill: 'white',
-            stroke: 'black',
-            strokeWidth: 2,
-          }),
-          new Line([0, -8, 0, 8], {
-            stroke: 'black',
-            strokeWidth: 2,
-          })
-        ], {
+        // Simple switch icon - rectangle
+        shape = new Rect({
+          width: 20,
+          height: 30,
           left: pointer.x,
           top: pointer.y,
+          fill: 'white',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = switchGroup;
         itemData = itemPrices.lightSwitch;
         break;
       case 'light':
-        // Light icon - circle with rays
-        const lightGroup = new Group([
-          new Circle({
-            radius: 10,
-            fill: 'lightyellow',
-            stroke: 'orange',
-            strokeWidth: 2,
-          }),
-          // Light rays
-          new Line([0, -15, 0, -20], { stroke: 'orange', strokeWidth: 2 }),
-          new Line([0, 15, 0, 20], { stroke: 'orange', strokeWidth: 2 }),
-          new Line([-15, 0, -20, 0], { stroke: 'orange', strokeWidth: 2 }),
-          new Line([15, 0, 20, 0], { stroke: 'orange', strokeWidth: 2 }),
-        ], {
+        // Simple light icon - filled circle
+        shape = new Circle({
+          radius: 12,
           left: pointer.x,
           top: pointer.y,
+          fill: '#FFD700',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = lightGroup;
         itemData = itemPrices.light;
         break;
       case 'electricalPanel':
-        // Electrical panel - large rectangle with electrical symbol
-        const panelGroup = new Group([
-          new Rect({
-            width: 60,
-            height: 80,
-            fill: 'lightgray',
-            stroke: 'black',
-            strokeWidth: 3,
-          }),
-          new Rect({
-            width: 50,
-            height: 70,
-            fill: 'white',
-            stroke: 'black',
-            strokeWidth: 1,
-          }),
-          // Electrical symbol
-          new Circle({ radius: 3, left: -10, top: -20, fill: 'red' }),
-          new Circle({ radius: 3, left: 0, top: -20, fill: 'black' }),
-          new Circle({ radius: 3, left: 10, top: -20, fill: 'blue' }),
-          new Line([-15, -10, 15, -10], { stroke: 'black', strokeWidth: 2 }),
-          new Line([-15, 0, 15, 0], { stroke: 'black', strokeWidth: 2 }),
-          new Line([-15, 10, 15, 10], { stroke: 'black', strokeWidth: 2 })
-        ], {
+        // Simple panel icon - larger rectangle
+        shape = new Rect({
+          width: 40,
+          height: 60,
           left: pointer.x,
           top: pointer.y,
+          fill: '#E5E5E5',
+          stroke: '#333',
+          strokeWidth: 3,
           originX: 'center',
           originY: 'center',
         });
-        shape = panelGroup;
         itemData = itemPrices.electricalPanel;
         break;
     }
@@ -445,131 +398,82 @@ export default function BuildingPlannerBasic() {
   };
 
   const handlePlumberTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
-    console.log('handlePlumberTool called with tool:', tool);
     let shape;
     let itemData;
 
     switch (tool) {
       case 'sink':
-        // Sink icon - rectangle with faucet
-        const sinkGroup = new Group([
-          new Rect({
-            width: 50,
-            height: 30,
-            fill: 'white',
-            stroke: 'blue',
-            strokeWidth: 2,
-          }),
-          // Faucet
-          new Line([0, -15, 0, -25], { stroke: 'silver', strokeWidth: 4 }),
-          new Circle({ radius: 3, top: -25, fill: 'silver' })
-        ], {
+        // Simple sink icon - rectangle
+        shape = new Rect({
+          width: 35,
+          height: 25,
           left: pointer.x,
           top: pointer.y,
+          fill: 'lightblue',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = sinkGroup;
         itemData = itemPrices.sink;
         break;
       case 'dishwasher':
-        // Dishwasher icon - rectangle with door
-        const dishwasherGroup = new Group([
-          new Rect({
-            width: 50,
-            height: 50,
-            fill: 'white',
-            stroke: 'gray',
-            strokeWidth: 2,
-          }),
-          new Line([-20, 20, 20, 20], { stroke: 'gray', strokeWidth: 2 }),
-          new Circle({ radius: 2, left: 15, top: 15, fill: 'gray' })
-        ], {
+        // Simple dishwasher icon - square
+        shape = new Rect({
+          width: 30,
+          height: 30,
           left: pointer.x,
           top: pointer.y,
+          fill: 'white',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = dishwasherGroup;
         itemData = itemPrices.dishwasher;
         break;
       case 'washingMachine':
-        // Washing machine icon - circle with door
-        const washingMachineGroup = new Group([
-          new Circle({
-            radius: 20,
-            fill: 'white',
-            stroke: 'gray',
-            strokeWidth: 3,
-          }),
-          new Circle({
-            radius: 12,
-            fill: 'lightblue',
-            stroke: 'blue',
-            strokeWidth: 2,
-          }),
-          new Circle({ radius: 2, left: -10, top: -10, fill: 'gray' }),
-          new Circle({ radius: 2, left: 0, top: -10, fill: 'gray' })
-        ], {
+        // Simple washing machine icon - circle
+        shape = new Circle({
+          radius: 18,
           left: pointer.x,
           top: pointer.y,
+          fill: 'lightgray',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = washingMachineGroup;
         itemData = itemPrices.washingMachine;
         break;
       case 'shower':
-        // Shower icon - rectangle with shower head
-        const showerGroup = new Group([
-          new Rect({
-            width: 60,
-            height: 60,
-            fill: 'lightblue',
-            stroke: 'blue',
-            strokeWidth: 2,
-          }),
-          // Shower head
-          new Line([-20, -30, -20, -20], { stroke: 'silver', strokeWidth: 4 }),
-          new Rect({ width: 15, height: 5, left: -20, top: -20, fill: 'silver' }),
-          // Water drops
-          new Circle({ radius: 1, left: -25, top: -10, fill: 'blue' }),
-          new Circle({ radius: 1, left: -20, top: -8, fill: 'blue' }),
-          new Circle({ radius: 1, left: -15, top: -12, fill: 'blue' })
-        ], {
+        // Simple shower icon - larger square
+        shape = new Rect({
+          width: 40,
+          height: 40,
           left: pointer.x,
           top: pointer.y,
+          fill: 'lightblue',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = showerGroup;
         itemData = itemPrices.shower;
         break;
       case 'toilet':
-        // Toilet icon - oval with tank
-        const toiletGroup = new Group([
-          new Ellipse({
-            rx: 15,
-            ry: 20,
-            fill: 'white',
-            stroke: 'gray',
-            strokeWidth: 2,
-          }),
-          new Rect({
-            width: 20,
-            height: 15,
-            top: -15,
-            fill: 'white',
-            stroke: 'gray',
-            strokeWidth: 2,
-          })
-        ], {
+        // Simple toilet icon - oval
+        shape = new Ellipse({
+          rx: 12,
+          ry: 18,
           left: pointer.x,
           top: pointer.y,
+          fill: 'white',
+          stroke: '#333',
+          strokeWidth: 2,
           originX: 'center',
           originY: 'center',
         });
-        shape = toiletGroup;
         itemData = itemPrices.toilet;
         break;
     }
@@ -907,201 +811,177 @@ export default function BuildingPlannerBasic() {
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-4">
                     <div className="text-sm font-medium">Velg verktøy:</div>
-                    <div className="flex justify-center gap-4">
-                      <Button
-                        variant={selectedTool === 'carpenter' ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSelectedTool(selectedTool === 'carpenter' ? 'none' : 'carpenter');
-                          setCarpenterTool(null);
-                          setElectricianTool(null);
-                          setPlumberTool(null);
-                        }}
-                        className="flex flex-col items-center justify-center aspect-square p-4"
-                      >
-                        <Hammer className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
-                        {!isMobile && <span className="text-xs">Tømrer</span>}
-                      </Button>
-                      <Button
-                        variant={selectedTool === 'electrician' ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSelectedTool('electrician');
-                          setCarpenterTool(null);
-                          setPlumberTool(null);
-                        }}
-                        className="flex flex-col items-center justify-center aspect-square p-4"
-                      >
-                        <Zap className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
-                        {!isMobile && <span className="text-xs">Elektriker</span>}
-                      </Button>
-                      <Button
-                        variant={selectedTool === 'plumber' ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSelectedTool('plumber');
-                          setCarpenterTool(null);
-                          setElectricianTool(null);
-                        }}
-                        className="flex flex-col items-center justify-center aspect-square p-4"
-                      >
-                        <Droplet className={`${isMobile ? 'h-8 w-8' : 'h-6 w-6'} mb-2`} />
-                        {!isMobile && <span className="text-xs">Rørlegger</span>}
-                      </Button>
-                    </div>
+                     <div className="flex justify-center gap-4">
+                       <Button
+                         variant={selectedTool === 'carpenter' ? 'default' : 'outline'}
+                         onClick={() => {
+                           setSelectedTool(selectedTool === 'carpenter' ? 'none' : 'carpenter');
+                           setCarpenterTool(null);
+                           setElectricianTool(null);
+                           setPlumberTool(null);
+                         }}
+                         className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                       >
+                         <Hammer className="h-6 w-6 mb-1" />
+                         {!isMobile && <span className="text-xs">Tømrer</span>}
+                       </Button>
+                       <Button
+                         variant={selectedTool === 'electrician' ? 'default' : 'outline'}
+                         onClick={() => {
+                           setSelectedTool('electrician');
+                           setCarpenterTool(null);
+                           setPlumberTool(null);
+                         }}
+                         className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                       >
+                         <Zap className="h-6 w-6 mb-1" />
+                         {!isMobile && <span className="text-xs">Elektriker</span>}
+                       </Button>
+                       <Button
+                         variant={selectedTool === 'plumber' ? 'default' : 'outline'}
+                         onClick={() => {
+                           setSelectedTool('plumber');
+                           setCarpenterTool(null);
+                           setElectricianTool(null);
+                         }}
+                         className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                       >
+                         <Droplet className="h-6 w-6 mb-1" />
+                         {!isMobile && <span className="text-xs">Rørlegger</span>}
+                       </Button>
+                     </div>
                   </div>
 
                    {selectedTool === 'carpenter' && (
-                     <div className="space-y-2">
-                       <div className="text-sm font-medium">Velg snekkerarbeid:</div>
-                       <div className="grid grid-cols-2 gap-2">
-                         <Button
-                           variant={carpenterTool === 'window' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setCarpenterTool('window')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-3 border border-current" />
-                             <span className="text-xs">Vindu</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={carpenterTool === 'door' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setCarpenterTool('door')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-3 h-4 border border-current rounded-r" />
-                             <span className="text-xs">Dør</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={carpenterTool === 'wall' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setCarpenterTool('wall')}
-                           className="h-auto py-2 px-3 col-span-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-6 h-1 bg-current" />
-                             <span className="text-xs">Tegn vegg</span>
-                           </div>
-                         </Button>
-                       </div>
-                     </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Velg snekkerarbeid:</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant={carpenterTool === 'window' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCarpenterTool('window')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-3 border border-current mb-1" />
+                            <span className="text-xs">Vindu</span>
+                          </Button>
+                          <Button
+                            variant={carpenterTool === 'door' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCarpenterTool('door')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-3 h-4 border border-current rounded-r mb-1" />
+                            <span className="text-xs">Dør</span>
+                          </Button>
+                          <Button
+                            variant={carpenterTool === 'wall' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCarpenterTool('wall')}
+                            className="flex flex-col items-center justify-center h-16 p-2 col-span-2"
+                          >
+                            <div className="w-6 h-1 bg-current mb-1" />
+                            <span className="text-xs">Tegn vegg</span>
+                          </Button>
+                        </div>
+                      </div>
                    )}
 
                    {selectedTool === 'electrician' && (
-                     <div className="space-y-2">
-                       <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
-                       <div className="grid grid-cols-2 gap-2">
-                         <Button
-                           variant={electricianTool === 'outlet' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setElectricianTool('outlet')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <Zap className="h-4 w-4" />
-                             <span className="text-xs">Stikkontakt</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setElectricianTool('lightSwitch')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-4 border border-current rounded-sm" />
-                             <span className="text-xs">Lysbryter</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={electricianTool === 'light' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setElectricianTool('light')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-4 border border-current rounded-full" />
-                             <span className="text-xs">Lysarmatur</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={electricianTool === 'electricalPanel' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setElectricianTool('electricalPanel')}
-                           className="h-auto py-2 px-3"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-5 border-2 border-current rounded-sm" />
-                             <span className="text-xs">Sikringsskap</span>
-                           </div>
-                         </Button>
-                       </div>
-                     </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant={electricianTool === 'outlet' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setElectricianTool('outlet')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <Zap className="h-4 w-4 mb-1" />
+                            <span className="text-xs">Stikkontakt</span>
+                          </Button>
+                          <Button
+                            variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setElectricianTool('lightSwitch')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-4 border border-current rounded-sm mb-1" />
+                            <span className="text-xs">Lysbryter</span>
+                          </Button>
+                          <Button
+                            variant={electricianTool === 'light' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setElectricianTool('light')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-4 border border-current rounded-full mb-1" />
+                            <span className="text-xs">Lysarmatur</span>
+                          </Button>
+                          <Button
+                            variant={electricianTool === 'electricalPanel' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setElectricianTool('electricalPanel')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-5 border-2 border-current rounded-sm mb-1" />
+                            <span className="text-xs">Sikringsskap</span>
+                          </Button>
+                        </div>
+                      </div>
                    )}
 
                    {selectedTool === 'plumber' && (
-                     <div className="space-y-2">
-                       <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
-                       <div className="grid grid-cols-3 gap-2">
-                         <Button
-                           variant={plumberTool === 'sink' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setPlumberTool('sink')}
-                           className="h-auto py-2 px-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-3 border border-current rounded-t" />
-                             <span className="text-xs">Vask</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={plumberTool === 'shower' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setPlumberTool('shower')}
-                           className="h-auto py-2 px-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-4 border border-current rounded" />
-                             <span className="text-xs">Dusj</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={plumberTool === 'toilet' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setPlumberTool('toilet')}
-                           className="h-auto py-2 px-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-3 h-4 border border-current rounded-full" />
-                             <span className="text-xs">Toalett</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setPlumberTool('dishwasher')}
-                           className="h-auto py-2 px-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-4 border border-current rounded" />
-                             <span className="text-xs">Oppvask</span>
-                           </div>
-                         </Button>
-                         <Button
-                           variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
-                           size="sm"
-                           onClick={() => setPlumberTool('washingMachine')}
-                           className="h-auto py-2 px-2"
-                         >
-                           <div className="flex flex-col items-center gap-1">
-                             <div className="w-4 h-4 border border-current rounded-full" />
-                             <span className="text-xs">Vask.maskin</span>
-                           </div>
-                         </Button>
-                       </div>
-                     </div>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Button
+                            variant={plumberTool === 'sink' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPlumberTool('sink')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-3 border border-current rounded-t mb-1" />
+                            <span className="text-xs">Vask</span>
+                          </Button>
+                          <Button
+                            variant={plumberTool === 'shower' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPlumberTool('shower')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-4 border border-current rounded mb-1" />
+                            <span className="text-xs">Dusj</span>
+                          </Button>
+                          <Button
+                            variant={plumberTool === 'toilet' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPlumberTool('toilet')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-3 h-4 border border-current rounded-full mb-1" />
+                            <span className="text-xs">Toalett</span>
+                          </Button>
+                          <Button
+                            variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPlumberTool('dishwasher')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-4 border border-current rounded mb-1" />
+                            <span className="text-xs">Oppvask</span>
+                          </Button>
+                          <Button
+                            variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPlumberTool('washingMachine')}
+                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
+                          >
+                            <div className="w-4 h-4 border border-current rounded-full mb-1" />
+                            <span className="text-xs">Vask.maskin</span>
+                          </Button>
+                        </div>
+                      </div>
                    )}
 
                 </div>
