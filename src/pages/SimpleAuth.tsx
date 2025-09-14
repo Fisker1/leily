@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 const SimpleAuth = () => {
   const navigate = useNavigate();
   const { translations } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Automatic redirect when user is authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('User authenticated, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -212,7 +222,8 @@ const SimpleAuth = () => {
                     alert('Innlogging feilet: ' + error.message);
                   } else {
                     console.log('Stager login success:', data);
-                    navigate('/dashboard');
+                    // Let AuthContext handle the redirect automatically
+                    // Don't navigate manually to avoid race conditions
                   }
                 } catch (err) {
                   console.error('Unexpected error:', err);

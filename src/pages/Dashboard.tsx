@@ -162,7 +162,7 @@ const Dashboard = () => {
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground mb-4">Din session har utløpt. Vennligst logg inn på nytt.</p>
             <Button asChild>
-              <a href="/auth">Logg inn</a>
+              <Link to="/auth">Logg inn</Link>
             </Button>
           </CardContent>
         </Card>
