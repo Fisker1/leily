@@ -1,9 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-// Import Fabric.js components individually for better debugging
-import { Canvas } from 'fabric';
-import { Rect } from 'fabric';  
-import { Line } from 'fabric';
-import { FabricImage } from 'fabric';
+import { Canvas as FabricCanvas, Rect, Line, FabricImage } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +79,7 @@ const PROFESSIONS: ProfessionData[] = [
 
 export default function BuildingPlannerBasic() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<Canvas | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { projects, loading, saveProject, updateProject, deleteProject } = useBuildingProjects();
   const { toast } = useToast();
@@ -105,7 +101,7 @@ export default function BuildingPlannerBasic() {
       const canvasWidth = Math.min(containerWidth - 32, 800); // 32px for padding
       const canvasHeight = Math.min(canvasWidth * 0.75, 600); // Maintain aspect ratio on mobile
       
-      const canvas = new Canvas(canvasRef.current, {
+      const canvas = new FabricCanvas(canvasRef.current, {
         width: canvasWidth,
         height: canvasHeight,
         backgroundColor: '#ffffff'
@@ -174,7 +170,7 @@ export default function BuildingPlannerBasic() {
     };
   }, [selectedTool, floorPlanImage]);
 
-  const addGrid = (canvas: Canvas) => {
+  const addGrid = (canvas: FabricCanvas) => {
     const gridSize = 20;
     for (let i = 0; i <= canvas.width! / gridSize; i++) {
       const line = new Line([i * gridSize, 0, i * gridSize, canvas.height!], {
@@ -257,7 +253,7 @@ export default function BuildingPlannerBasic() {
     reader.readAsDataURL(file);
   };
 
-  const addTouchControls = (canvas: Canvas) => {
+  const addTouchControls = (canvas: FabricCanvas) => {
     let isPanning = false;
     let lastPanPoint = { x: 0, y: 0 };
     let initialDistance = 0;
