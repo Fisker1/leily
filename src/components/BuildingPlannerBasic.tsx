@@ -62,7 +62,7 @@ export default function BuildingPlannerBasic() {
   const [showNewProjectInput, setShowNewProjectInput] = useState(false);
   const [showLinkProjectInput, setShowLinkProjectInput] = useState(false);
   const [tempProjectName, setTempProjectName] = useState('');
-  
+
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([
     {
       id: '1',
@@ -89,6 +89,76 @@ export default function BuildingPlannerBasic() {
   
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate total cost
+  const totalCost = placedItems
+    .reduce((sum, item) => sum + item.price, 0);
+
+  // Project management functions
+  const handleCreateNewProject = async () => {
+    if (!tempProjectName.trim()) return;
+    
+    setProjectName(tempProjectName);
+    const saved = await saveProject(
+      tempProjectName,
+      null, // No linked calculation
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowNewProjectInput(false);
+      setTempProjectName('');
+      toast.success(`Prosjekt "${tempProjectName}" opprettet`);
+    }
+  };
+
+  const handleLinkToCalculation = async () => {
+    if (!linkedCalculationId) return;
+    
+    const selectedCalc = calculations.find(c => c.id === linkedCalculationId);
+    if (!selectedCalc) return;
+    
+    const projectName = selectedCalc.calculation_name || selectedCalc.property_address || `Kalkyle ${selectedCalc.id.slice(0, 8)}`;
+    setProjectName(projectName);
+    
+    const saved = await saveProject(
+      projectName,
+      linkedCalculationId,
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowLinkProjectInput(false);
+      toast.success(`Prosjekt koblet til kalkyle "${projectName}"`);
+    }
+  };
+
+  const startNewProject = () => {
+    setCurrentProject(null);
+    setProjectName('');
+    setLinkedCalculationId(null);
+    setShowNewProjectInput(false);
+    setShowLinkProjectInput(false);
+    setTempProjectName('');
+    setFloorPlans([{
+      id: '1',
+      name: 'Etasje 1',
+      canvas: null,
+      history: [],
+      historyIndex: -1,
+      isUndoing: false,
+      isEditingName: false,
+    }]);
+    setActiveFloorPlan('1');
+    setPlacedItems([]);
+    toast.success('Nytt prosjekt startet');
+  };
 
   // Reset overlay flash when tools change
   useEffect(() => {
@@ -501,7 +571,7 @@ export default function BuildingPlannerBasic() {
           height: 60,
           left: pointer.x,
           top: pointer.y,
-          fill: '#E5E5E5',
+          fill: 'lightgray',
           stroke: '#333',
           strokeWidth: 3,
           originX: 'center',
@@ -535,29 +605,60 @@ export default function BuildingPlannerBasic() {
 
     switch (tool) {
       case 'sink':
-        // Simple sink icon - rectangle
+        // Simple sink icon - rounded rectangle
         shape = new Rect({
-          width: 35,
-          height: 25,
+          width: 40,
+          height: 30,
           left: pointer.x,
           top: pointer.y,
           fill: 'lightblue',
-          stroke: '#333',
+          stroke: '#4682B4',
           strokeWidth: 2,
+          rx: 5,
+          ry: 5,
           originX: 'center',
           originY: 'center',
         });
         itemData = itemPrices.sink;
         break;
-      case 'dishwasher':
-        // Simple dishwasher icon - square
-        shape = new Rect({
-          width: 30,
-          height: 30,
+      case 'shower':
+        // Simple shower icon - circle
+        shape = new Circle({
+          radius: 20,
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'lightcyan',
+          stroke: '#4682B4',
+          strokeWidth: 2,
+          originX: 'center',
+          originY: 'center',
+        });
+        itemData = itemPrices.shower;
+        break;
+      case 'toilet':
+        // Simple toilet icon - ellipse
+        shape = new Ellipse({
+          rx: 15,
+          ry: 20,
           left: pointer.x,
           top: pointer.y,
           fill: 'white',
-          stroke: '#333',
+          stroke: '#4682B4',
+          strokeWidth: 2,
+          originX: 'center',
+          originY: 'center',
+        });
+        itemData = itemPrices.toilet;
+        break;
+      case 'dishwasher':
+        // Simple dishwasher icon - square
+        shape = new Rect({
+          width: 35,
+          height: 35,
+          left: pointer.x,
+          top: pointer.y,
+          fill: 'silver',
+          stroke: '#4682B4',
           strokeWidth: 2,
           originX: 'center',
           originY: 'center',
@@ -570,43 +671,13 @@ export default function BuildingPlannerBasic() {
           radius: 18,
           left: pointer.x,
           top: pointer.y,
-          fill: 'lightgray',
-          stroke: '#333',
-          strokeWidth: 2,
+          fill: 'white',
+          stroke: '#4682B4',
+          strokeWidth: 3,
           originX: 'center',
           originY: 'center',
         });
         itemData = itemPrices.washingMachine;
-        break;
-      case 'shower':
-        // Simple shower icon - larger square
-        shape = new Rect({
-          width: 40,
-          height: 40,
-          left: pointer.x,
-          top: pointer.y,
-          fill: 'lightblue',
-          stroke: '#333',
-          strokeWidth: 2,
-          originX: 'center',
-          originY: 'center',
-        });
-        itemData = itemPrices.shower;
-        break;
-      case 'toilet':
-        // Simple toilet icon - oval
-        shape = new Ellipse({
-          rx: 12,
-          ry: 18,
-          left: pointer.x,
-          top: pointer.y,
-          fill: 'white',
-          stroke: '#333',
-          strokeWidth: 2,
-          originX: 'center',
-          originY: 'center',
-        });
-        itemData = itemPrices.toilet;
         break;
     }
 
@@ -628,83 +699,6 @@ export default function BuildingPlannerBasic() {
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Prevent multiple rapid clicks
-    if (overlayFlashing) return;
-    
-    let clientX, clientY;
-    
-    if ('touches' in e.nativeEvent && e.nativeEvent.changedTouches.length > 0) {
-      const touch = e.nativeEvent.changedTouches[0];
-      clientX = touch.clientX;
-      clientY = touch.clientY;
-    } else if ('clientX' in e.nativeEvent) {
-      clientX = e.nativeEvent.clientX;
-      clientY = e.nativeEvent.clientY;
-    } else {
-      return;
-    }
-    
-    const canvas = getCurrentFloorPlan()?.canvas;
-    if (!canvas) {
-      toast("Lerret ikke klart. Prøv å velg verktøy på nytt.");
-      return;
-    }
-    
-    // Get canvas element to calculate coordinates
-    const canvasElement = canvasRefs.current[floorPlanId];
-    if (!canvasElement) return;
-    
-    const rect = canvasElement.getBoundingClientRect();
-    
-    // Calculate coordinates accounting for zoom and pan
-    const zoom = canvas.getZoom();
-    const vpt = canvas.viewportTransform!;
-    
-    // Convert client coordinates to canvas coordinates
-    const x = ((clientX - rect.left) - vpt[4]) / zoom;
-    const y = ((clientY - rect.top) - vpt[5]) / zoom;
-    
-    // Flash briefly to show click registered
-    setOverlayFlashing(true);
-    setTimeout(() => setOverlayFlashing(false), 200);
-    
-    // Handle tool placement
-    try {
-      if (selectedTool === 'carpenter' && carpenterTool) {
-        if (carpenterTool === 'wall') {
-          // Handle wall waypoint clicking
-          handleWallClick(canvas, {x, y});
-        } else {
-          handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
-        }
-      } else if (selectedTool === 'electrician' && electricianTool) {
-        handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
-      } else if (selectedTool === 'plumber' && plumberTool) {
-        handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
-      }
-    } catch (error) {
-      console.error('Error placing item:', error);
-      toast("Feil ved plassering av objekt");
-    }
-  };
-
-  // Handle long press for finishing walls
-  const handleOverlayLongPress = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
-    if (selectedTool === 'carpenter' && carpenterTool === 'wall' && isDrawingWall) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const canvas = getCurrentFloorPlan()?.canvas;
-      if (canvas) {
-        handleLongPress(canvas);
-      }
-    }
-  };
-
   const addNewFloorPlan = () => {
     const newId = (floorPlans.length + 1).toString();
     const newFloorPlan: FloorPlan = {
@@ -723,16 +717,17 @@ export default function BuildingPlannerBasic() {
   };
 
   const removeFloorPlan = (id: string) => {
-    if (floorPlans.length <= 1) {
-      toast("Kan ikke fjerne siste etasjeplan");
-      return;
-    }
-
+    if (floorPlans.length <= 1) return;
+    
     const floorPlan = floorPlans.find(fp => fp.id === id);
     if (floorPlan?.canvas) {
-      floorPlan.canvas.dispose();
+      try {
+        floorPlan.canvas.dispose();
+      } catch (error) {
+        console.log('Error disposing canvas:', error);
+      }
     }
-
+    
     setFloorPlans(prev => prev.filter(fp => fp.id !== id));
     setPlacedItems(prev => prev.filter(item => item.floorPlanId !== id));
     
@@ -750,15 +745,14 @@ export default function BuildingPlannerBasic() {
 
     updateFloorPlan(currentFloor.id, { isUndoing: true });
     
-    const newIndex = currentFloor.historyIndex - 1;
-    const previousState = currentFloor.history[newIndex];
+    const previousState = currentFloor.history[currentFloor.historyIndex - 1];
     
     currentFloor.canvas.loadFromJSON(previousState, () => {
+      currentFloor.canvas?.renderAll();
       updateFloorPlan(currentFloor.id, {
-        historyIndex: newIndex,
+        historyIndex: currentFloor.historyIndex - 1,
         isUndoing: false,
       });
-      currentFloor.canvas?.renderAll();
     });
   };
 
@@ -770,31 +764,28 @@ export default function BuildingPlannerBasic() {
     currentFloor.canvas.backgroundColor = "#ffffff";
     currentFloor.canvas.renderAll();
     
+    // Clear placed items for this floor
+    setPlacedItems(prev => prev.filter(item => item.floorPlanId !== currentFloor.id));
+    
+    // Save state
     const newState = JSON.stringify(currentFloor.canvas.toJSON());
     updateFloorPlan(currentFloor.id, {
       history: [newState],
       historyIndex: 0,
-      backgroundImage: undefined, // Clear from floor plan data too
     });
-    
-    setPlacedItems(prev => prev.filter(item => item.floorPlanId !== currentFloor.id));
-    
-    toast("Lerret tømt!");
   };
 
-  // Handle background image upload
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast("Vennligst velg en bildefil (PNG, JPG, etc.)");
-      return;
-    }
-
     const currentFloor = getCurrentFloorPlan();
     if (!currentFloor?.canvas) {
-      toast("Lerret ikke initialisert. Prøv igjen om et øyeblikk.");
+      toast("Lerret ikke klart. Prøv på nytt.");
       return;
     }
 
@@ -802,124 +793,112 @@ export default function BuildingPlannerBasic() {
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string;
       
-      try {
-        const canvas = currentFloor.canvas!;
-        
-        // Create an HTML image element to load the image first
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = () => {
-          try {
-            // Create Fabric image from the loaded HTML image element
-            const fabricImg = new FabricImage(img);
-            
-                // Scale image to fit canvas while maintaining aspect ratio - stretch to fill
-                fabricImg.scaleToWidth(canvas.width * 0.95);
-                fabricImg.scaleToHeight(canvas.height * 0.95);
-                
-                // Center the image and make it selectable for manipulation
-                fabricImg.set({
-                  left: canvas.width / 2,
-                  top: canvas.height / 2,
-                  originX: 'center',
-                  originY: 'center',
-                  opacity: 0.7,
-                  selectable: true,  // Make selectable so user can move/scale it
-                  evented: true      // Enable events for interaction
-                });
-              
-              // Clear any existing background images
-              const existingBg = canvas.getObjects().find(obj => (obj as any).isBackgroundImage);
-              if (existingBg) {
-                canvas.remove(existingBg);
-              }
-              
-              // Mark this as background image
-              (fabricImg as any).isBackgroundImage = true;
-              
-              // Add image to canvas and send it to back
-              canvas.add(fabricImg);
-              canvas.sendObjectToBack(fabricImg);
-              canvas.renderAll();
-            
-            // Update floor plan with background image URL
-            updateFloorPlan(currentFloor.id, { 
-              backgroundImage: imageUrl 
-            });
-            
-            console.log('Background image loaded successfully', {
-              imageSize: { width: fabricImg.width, height: fabricImg.height },
-              canvasSize: { width: canvas.width, height: canvas.height },
-              scaledSize: { width: fabricImg.getScaledWidth(), height: fabricImg.getScaledHeight() }
-            });
-            
-            toast("Bakgrunnsbilde lastet opp og synlig på lerrettet!");
-          } catch (fabricError) {
-            console.error('Error creating Fabric image:', fabricError);
-            toast("Feil ved opprettelse av bakgrunnsbilde.");
+      // Store the image URL for later restoration
+      updateFloorPlan(currentFloor.id, { backgroundImage: imageUrl });
+      
+      // Create HTML image element first
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        try {
+          // Create Fabric image from the loaded HTML image element
+          const fabricImg = new FabricImage(img);
+          
+          // Scale and center the image
+          const canvasAspect = currentFloor.canvas!.width / currentFloor.canvas!.height;
+          const imageAspect = fabricImg.width / fabricImg.height;
+          
+          if (imageAspect > canvasAspect) {
+            fabricImg.scaleToWidth(currentFloor.canvas!.width * 0.9);
+          } else {
+            fabricImg.scaleToHeight(currentFloor.canvas!.height * 0.9);
           }
-        };
-        
-        img.onerror = () => {
-          console.error('Error loading image');
-          toast("Feil ved lasting av bakgrunnsbilde. Prøv et annet bildeformat.");
-        };
-        
-        img.src = imageUrl;
-        
-      } catch (error) {
-        console.error('Error in image loading:', error);
-        toast("Feil ved lasting av bakgrunnsbilde.");
-      }
+          
+          fabricImg.set({
+            left: currentFloor.canvas!.width / 2,
+            top: currentFloor.canvas!.height / 2,
+            originX: 'center',
+            originY: 'center',
+            opacity: 0.7,
+            selectable: true,  // Make selectable so user can move/scale it
+            evented: true      // Enable events for interaction
+          });
+          
+          // Mark this as background image
+          (fabricImg as any).isBackgroundImage = true;
+          
+          // Add image to canvas and send it to back
+          currentFloor.canvas!.add(fabricImg);
+          currentFloor.canvas!.sendObjectToBack(fabricImg);
+          currentFloor.canvas!.renderAll();
+          
+          toast("Plantegning lastet opp! Du kan dra og endre størrelse på bildet.");
+        } catch (error) {
+          console.error('Failed to create Fabric image:', error);
+          toast("Feil ved lasting av plantegning. Prøv et annet bildformat.");
+        }
+      };
+      
+      img.onerror = () => {
+        toast("Kunne ikke laste bildet. Prøv et annet bildformat.");
+      };
+      
+      img.src = imageUrl;
     };
     
     reader.onerror = () => {
-      toast("Feil ved lesing av fil.");
+      toast("Feil ved lesing av fil. Prøv på nytt.");
     };
     
     reader.readAsDataURL(file);
     
-    // Clear the input so the same file can be uploaded again
-    event.target.value = '';
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
-  // Zoom functions
-  const zoomIn = () => {
-    const currentFloor = getCurrentFloorPlan();
+  const handleOverlayClick = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
+    const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
     if (!currentFloor?.canvas) return;
-    
-    const newZoom = Math.min(zoomLevel * 1.2, 3);
-    setZoomLevel(newZoom);
-    currentFloor.canvas.setZoom(newZoom);
-    currentFloor.canvas.renderAll();
+
+    let clientX, clientY;
+    if ('touches' in e.nativeEvent && e.nativeEvent.touches.length > 0) {
+      clientX = e.nativeEvent.touches[0].clientX;
+      clientY = e.nativeEvent.touches[0].clientY;
+    } else {
+      clientX = (e.nativeEvent as MouseEvent).clientX;
+      clientY = (e.nativeEvent as MouseEvent).clientY;
+    }
+
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const canvasPointer = {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+
+    // Handle wall drawing with waypoints
+    if (selectedTool === 'carpenter' && carpenterTool === 'wall') {
+      handleWallDrawing(currentFloor.canvas, canvasPointer);
+      return;
+    }
+
+    // Flash overlay for feedback
+    setOverlayFlashing(true);
+    setTimeout(() => setOverlayFlashing(false), 150);
+
+    // Handle tool placement
+    if (selectedTool === 'carpenter' && carpenterTool) {
+      handleCarpenterTool(currentFloor.canvas, canvasPointer, carpenterTool, floorPlanId);
+    } else if (selectedTool === 'electrician' && electricianTool) {
+      handleElectricianTool(currentFloor.canvas, canvasPointer, electricianTool, floorPlanId);
+    } else if (selectedTool === 'plumber' && plumberTool) {
+      handlePlumberTool(currentFloor.canvas, canvasPointer, plumberTool, floorPlanId);
+    }
   };
 
-  const zoomOut = () => {
-    const currentFloor = getCurrentFloorPlan();
-    if (!currentFloor?.canvas) return;
-    
-    const newZoom = Math.max(zoomLevel * 0.8, 0.3);
-    setZoomLevel(newZoom);
-    currentFloor.canvas.setZoom(newZoom);
-    currentFloor.canvas.renderAll();
-  };
-
-  const resetZoom = () => {
-    const currentFloor = getCurrentFloorPlan();
-    if (!currentFloor?.canvas) return;
-    
-    setZoomLevel(1);
-    currentFloor.canvas.setZoom(1);
-    currentFloor.canvas.renderAll();
-  };
-
-  // Handle wall drawing with waypoints
-  const handleWallClick = (canvas: FabricCanvas, pointer: any) => {
-    if (selectedTool !== 'carpenter' || carpenterTool !== 'wall') return;
-    
-    const point = { x: pointer.x, y: pointer.y };
-    
+  const handleWallDrawing = (canvas: FabricCanvas, point: {x: number, y: number}) => {
     if (!isDrawingWall) {
       // Start new wall
       setIsDrawingWall(true);
@@ -933,35 +912,30 @@ export default function BuildingPlannerBasic() {
       // Draw line from previous point to current point
       if (newPoints.length > 1) {
         const prevPoint = newPoints[newPoints.length - 2];
-        const line = new Line([prevPoint.x, prevPoint.y, point.x, point.y], {
-          stroke: '#8B4513',
-          strokeWidth: 8,
-          selectable: false,
-          evented: false
-        });
-        
+        const line = new Line(
+          [prevPoint.x, prevPoint.y, point.x, point.y],
+          {
+            stroke: '#8B4513',
+            strokeWidth: 8,
+            selectable: true,
+            evented: true
+          }
+        );
         canvas.add(line);
         canvas.renderAll();
       }
       
-      // Add a small circle at the waypoint
-      const waypoint = new Circle({
-        left: point.x,
-        top: point.y,
-        radius: 4,
-        fill: '#8B4513',
-        selectable: false,
-        evented: false,
-        originX: 'center',
-        originY: 'center'
-      });
-      
-      canvas.add(waypoint);
-      canvas.renderAll();
+      toast(`Veggpunkt ${newPoints.length} lagt til. Hold inne for å fullføre.`);
     }
   };
 
-  // Handle long press to finish wall
+  const handleOverlayLongPress = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
+    const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+    if (!currentFloor?.canvas) return;
+    
+    handleLongPress(currentFloor.canvas);
+  };
+
   const handleLongPress = (canvas: FabricCanvas) => {
     if (isDrawingWall && wallPoints.length > 1) {
       setIsDrawingWall(false);
@@ -970,120 +944,31 @@ export default function BuildingPlannerBasic() {
     }
   };
 
-  const triggerImageUpload = () => {
-    fileInputRef.current?.click();
+  const zoomIn = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
+    
+    const newZoom = Math.min(currentFloor.canvas.getZoom() * 1.1, 20);
+    currentFloor.canvas.setZoom(newZoom);
+    setZoomLevel(newZoom);
   };
 
-  const totalCost = placedItems
-    .filter(item => item.floorPlanId === activeFloorPlan)
-    .reduce((sum, item) => sum + item.price, 0);
-
-  // Project management functions
-  const handleCreateNewProject = async () => {
-    if (!tempProjectName.trim()) return;
+  const zoomOut = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
     
-    setProjectName(tempProjectName);
-    const saved = await saveProject(
-      tempProjectName,
-      null, // No linked calculation
-      floorPlans,
-      placedItems,
-      totalCost
-    );
-    
-    if (saved) {
-      setCurrentProject(saved);
-      setShowNewProjectInput(false);
-      setTempProjectName('');
-      toast.success(`Prosjekt "${tempProjectName}" opprettet`);
-    }
+    const newZoom = Math.max(currentFloor.canvas.getZoom() * 0.9, 0.01);
+    currentFloor.canvas.setZoom(newZoom);
+    setZoomLevel(newZoom);
   };
 
-  const handleLinkToCalculation = async () => {
-    if (!linkedCalculationId) return;
+  const resetZoom = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
     
-    const selectedCalc = calculations.find(c => c.id === linkedCalculationId);
-    if (!selectedCalc) return;
-    
-    const projectName = selectedCalc.calculation_name || selectedCalc.property_address || `Kalkyle ${selectedCalc.id.slice(0, 8)}`;
-    setProjectName(projectName);
-    
-    const saved = await saveProject(
-      projectName,
-      linkedCalculationId,
-      floorPlans,
-      placedItems,
-      totalCost
-    );
-    
-    if (saved) {
-      setCurrentProject(saved);
-      setShowLinkProjectInput(false);
-      toast.success(`Prosjekt koblet til kalkyle "${projectName}"`);
-    }
-  };
-    if (!tempProjectName.trim()) return;
-    
-    setProjectName(tempProjectName);
-    const saved = await saveProject(
-      tempProjectName,
-      null, // No linked calculation
-      floorPlans,
-      placedItems,
-      totalCost
-    );
-    
-    if (saved) {
-      setCurrentProject(saved);
-      setShowNewProjectInput(false);
-      setTempProjectName('');
-      toast.success(`Prosjekt "${tempProjectName}" opprettet`);
-    }
-  };
-
-  const handleLinkToCalculation = async () => {
-    if (!linkedCalculationId) return;
-    
-    const selectedCalc = calculations.find(c => c.id === linkedCalculationId);
-    if (!selectedCalc) return;
-    
-    const projectName = selectedCalc.calculation_name || selectedCalc.property_address || `Kalkyle ${selectedCalc.id.slice(0, 8)}`;
-    setProjectName(projectName);
-    
-    const saved = await saveProject(
-      projectName,
-      linkedCalculationId,
-      floorPlans,
-      placedItems,
-      totalCost
-    );
-    
-    if (saved) {
-      setCurrentProject(saved);
-      setShowLinkProjectInput(false);
-      toast.success(`Prosjekt koblet til kalkyle "${projectName}"`);
-    }
-  };
-
-  const startNewProject = () => {
-    setCurrentProject(null);
-    setProjectName('');
-    setLinkedCalculationId(null);
-    setShowNewProjectInput(false);
-    setShowLinkProjectInput(false);
-    setTempProjectName('');
-    setFloorPlans([{
-      id: '1',
-      name: 'Etasje 1',
-      canvas: null,
-      history: [],
-      historyIndex: -1,
-      isUndoing: false,
-      isEditingName: false,
-    }]);
-    setActiveFloorPlan('1');
-    setPlacedItems([]);
-    toast.success('Nytt prosjekt startet');
+    currentFloor.canvas.setZoom(1);
+    currentFloor.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    setZoomLevel(1);
   };
 
   const isMobile = window.innerWidth < 768;
@@ -1606,7 +1491,6 @@ export default function BuildingPlannerBasic() {
                        </CardHeader>
                        <CardContent>
                          <div className="space-y-4">
-                           {/* Group items by profession */}
                            {(() => {
                              const floorItems = placedItems.filter(item => item.floorPlanId === plan.id);
                              const groupedByProfession = floorItems.reduce((acc, item) => {
@@ -1711,12 +1595,12 @@ export default function BuildingPlannerBasic() {
                     const professionNames = {
                       carpenter: 'Snekker',
                       electrician: 'Elektriker',
-                      plumber: 'Rørlegger'
+                      plumber: 'Rörlegger'
                     };
 
-                    let grandTotal = 0;
+                    const grandTotal = placedItems.reduce((sum, item) => sum + item.price, 0);
 
-                    return Object.entries(allItemsByProfession).map(([profession, items]) => {
+                    const professionElements = Object.entries(allItemsByProfession).map(([profession, items]) => {
                       // Group items by type within profession
                       const itemsByType = items.reduce((acc, item) => {
                         const existing = acc.find(i => i.type === item.type);
@@ -1736,7 +1620,6 @@ export default function BuildingPlannerBasic() {
                       }, [] as Array<{type: string, name: string, count: number, unitPrice: number, totalPrice: number}>);
 
                       const professionTotal = itemsByType.reduce((sum, item) => sum + item.totalPrice, 0);
-                      grandTotal += professionTotal;
 
                       return (
                         <div key={profession} className="border rounded-lg p-4 bg-muted/30">
@@ -1763,14 +1646,17 @@ export default function BuildingPlannerBasic() {
                           </div>
                         </div>
                       );
-                    }).concat([
+                    });
+
+                    return [
+                      ...professionElements,
                       <div key="grand-total" className="border-t-2 border-primary pt-4 mt-6">
                         <div className="flex justify-between items-center font-bold text-xl">
                           <span>TOTALKOSTNAD:</span>
                           <span className="text-primary text-2xl">{grandTotal.toLocaleString()} kr</span>
                         </div>
                       </div>
-                    ]);
+                    ];
                   })()}
                 </div>
               </CardContent>
@@ -1781,5 +1667,3 @@ export default function BuildingPlannerBasic() {
     </div>
   );
 }
-
-// Fixed project management UI with simplified options
