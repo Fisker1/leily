@@ -26,22 +26,26 @@ const RentalMap = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [lastTokenFetch, setLastTokenFetch] = useState<number>(0);
 
-  // Layer toggles with localStorage persistence
+  // Layer toggles with localStorage persistence - RESET TO ENSURE THEY'RE ON
   const [showMyProperties, setShowMyProperties] = useState(() => {
-    const saved = localStorage.getItem('rentalMap_showMyProperties');
-    return saved !== null ? JSON.parse(saved) : true;
+    // Reset localStorage for debugging
+    localStorage.removeItem('rentalMap_showMyProperties');
+    return true; // Force to true
   });
   const [showRentalProperties, setShowRentalProperties] = useState(() => {
-    const saved = localStorage.getItem('rentalMap_showRentalProperties');
-    return saved !== null ? JSON.parse(saved) : true;
+    // Reset localStorage for debugging  
+    localStorage.removeItem('rentalMap_showRentalProperties');
+    return true; // Force to true
   });
   const [showCalculationProperties, setShowCalculationProperties] = useState(() => {
-    const saved = localStorage.getItem('rentalMap_showCalculationProperties');
-    return saved !== null ? JSON.parse(saved) : true;
+    // Reset localStorage for debugging
+    localStorage.removeItem('rentalMap_showCalculationProperties'); 
+    return true; // Force to true
   });
   const [showMarketData, setShowMarketData] = useState(() => {
-    const saved = localStorage.getItem('rentalMap_showMarketData');
-    return saved !== null ? JSON.parse(saved) : false;
+    // Reset localStorage for debugging
+    localStorage.removeItem('rentalMap_showMarketData');
+    return false; // Keep false for now
   });
 
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
@@ -236,6 +240,13 @@ const RentalMap = () => {
     }
     
     clearMarkers();
+    console.log('🗺️ Adding markers. States:', {
+      showMyProperties,
+      showRentalProperties, 
+      showCalculationProperties,
+      showMarketData,
+      totalProperties: properties.length
+    });
 
     // Add user's properties that are NOT for rent (blue pins)
     if (showMyProperties && properties.length > 0) {
