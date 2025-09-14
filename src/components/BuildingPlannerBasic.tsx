@@ -231,10 +231,8 @@ export default function BuildingPlannerBasic() {
         try {
           console.log('Loading image with v6 method...');
           
-          // Clear canvas first
+          // Clear canvas first but don't change background yet
           canvas.clear();
-          canvas.backgroundColor = '#ffffff';
-          canvas.renderAll();
           
           // Use the correct v6 FabricImage.fromURL method
           const fabricImg = await FabricImage.fromURL(imageUrl);
@@ -245,32 +243,47 @@ export default function BuildingPlannerBasic() {
           const canvasWidth = canvas.width || 800;
           const canvasHeight = canvas.height || 600;
           
+          console.log('Canvas dimensions:', canvasWidth, 'x', canvasHeight);
+          
           const scaleX = canvasWidth / fabricImg.width!;
           const scaleY = canvasHeight / fabricImg.height!;
-          const scale = Math.min(scaleX, scaleY, 1);
+          const scale = Math.min(scaleX, scaleY, 0.9); // Use 0.9 to ensure it fits with margin
+          
+          console.log('Calculated scale:', scale);
+          
+          // Calculate final dimensions and position
+          const finalWidth = fabricImg.width! * scale;
+          const finalHeight = fabricImg.height! * scale;
+          const left = (canvasWidth - finalWidth) / 2;
+          const top = (canvasHeight - finalHeight) / 2;
+          
+          console.log('Final position and size:', { left, top, width: finalWidth, height: finalHeight });
           
           // Configure the image
           fabricImg.set({
-            left: (canvasWidth - fabricImg.width! * scale) / 2,
-            top: (canvasHeight - fabricImg.height! * scale) / 2,
+            left: left,
+            top: top,
             scaleX: scale,
             scaleY: scale,
-            selectable: false,
-            evented: false,
-            hasControls: false,
-            hoverCursor: 'default',
+            selectable: true, // Make it selectable temporarily for debugging
+            evented: true,
+            hasControls: true,
             name: 'floorPlan'
           });
           
           console.log('Adding image to canvas...');
           canvas.add(fabricImg);
+          
+          // Set white background after adding image
+          canvas.backgroundColor = '#ffffff';
           canvas.renderAll();
           
-          console.log('Image added successfully');
+          console.log('Image added successfully, canvas objects count:', canvas.size());
+          canvas.renderAll();
           
           toast({
             title: "Plantegning lastet opp",
-            description: "Du kan nå dra og zoome med touch-kontroller",
+            description: `Bilde vist på lerretet (${Math.round(finalWidth)}x${Math.round(finalHeight)})`,
           });
         } catch (error) {
           console.error('Error loading image:', error);
