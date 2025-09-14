@@ -95,9 +95,15 @@ export default function BuildingPlannerBasic() {
 
   useEffect(() => {
     if (canvasRef.current && !fabricCanvasRef.current) {
+      // Get responsive canvas dimensions
+      const container = canvasRef.current.parentElement;
+      const containerWidth = container?.clientWidth || 800;
+      const canvasWidth = Math.min(containerWidth - 32, 800); // 32px for padding
+      const canvasHeight = Math.min(canvasWidth * 0.75, 600); // Maintain aspect ratio on mobile
+      
       const canvas = new Canvas(canvasRef.current, {
-        width: 800,
-        height: 600,
+        width: canvasWidth,
+        height: canvasHeight,
         backgroundColor: '#f8f9fa'
       });
 
@@ -156,6 +162,10 @@ export default function BuildingPlannerBasic() {
 
     return () => {
       if (fabricCanvasRef.current) {
+        // Cleanup touch events if they exist
+        if ((fabricCanvasRef.current as any).touchCleanup) {
+          (fabricCanvasRef.current as any).touchCleanup();
+        }
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
       }
@@ -217,33 +227,156 @@ export default function BuildingPlannerBasic() {
       if (fabricCanvasRef.current) {
         FabricImage.fromURL(imageUrl).then((img) => {
           if (fabricCanvasRef.current) {
-            // Scale image to fit canvas
             const canvas = fabricCanvasRef.current;
-            const scaleX = canvas.width! / img.width!;
-            const scaleY = canvas.height! / img.height!;
+            
+            // Clear canvas first
+            canvas.clear();
+            
+            // Calculate proper scaling to fit within canvas bounds
+            const canvasWidth = canvas.width || 800;
+            const canvasHeight = canvas.height || 600;
+            const imgWidth = img.width || 1;
+            const imgHeight = img.height || 1;
+            
+            const scaleX = canvasWidth / imgWidth;
+            const scaleY = canvasHeight / imgHeight;
             const scale = Math.min(scaleX, scaleY, 1);
             
+            // Scale the image
             img.scale(scale);
+            
+            // Center the image properly
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
+            
             img.set({
-              left: (canvas.width! - img.width! * scale) / 2,
-              top: (canvas.height! - img.height! * scale) / 2,
+              left: (canvasWidth - scaledWidth) / 2,
+              top: (canvasHeight - scaledHeight) / 2,
               selectable: false,
-              evented: false
+              evented: false,
+              name: 'floorPlan'
             });
             
-            canvas.clear();
             canvas.add(img);
             canvas.renderAll();
+            
+            // Add touch controls for mobile
+            addTouchControls(canvas);
           }
         });
       }
       
       toast({
         title: "Plantegning lastet opp",
-        description: "Du kan nå plassere elementer på plantegningen"
+        description: "Du kan nå dra og zoome med touch-kontroller"
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const addTouchControls = (canvas: Canvas) => {
+    let isPanning = false;
+    let lastPanPoint = { x: 0, y: 0 };
+    let initialDistance = 0;
+    let initialScale = 1;
+    
+    const canvasElement = canvas.getElement();
+    
+    // Touch start handler
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      
+      if (e.touches.length === 1) {
+        // Single touch - start panning
+        isPanning = true;
+        const touch = e.touches[0];
+        const rect = canvasElement.getBoundingClientRect();
+        lastPanPoint = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+      } else if (e.touches.length === 2) {
+        // Two touches - start zooming
+        isPanning = false;
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        initialDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        initialScale = canvas.getZoom();
+      }
+    };
+    
+    // Touch move handler
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      
+      if (e.touches.length === 1 && isPanning) {
+        // Single touch - pan
+        const touch = e.touches[0];
+        const rect = canvasElement.getBoundingClientRect();
+        const currentPoint = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+        
+        const deltaX = currentPoint.x - lastPanPoint.x;
+        const deltaY = currentPoint.y - lastPanPoint.y;
+        
+        const vpt = canvas.viewportTransform;
+        if (vpt) {
+          vpt[4] += deltaX;
+          vpt[5] += deltaY;
+          canvas.requestRenderAll();
+        }
+        
+        lastPanPoint = currentPoint;
+      } else if (e.touches.length === 2) {
+        // Two touches - zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        const scale = (currentDistance / initialDistance) * initialScale;
+        const minScale = 0.5;
+        const maxScale = 3;
+        const clampedScale = Math.min(Math.max(scale, minScale), maxScale);
+        
+        // Calculate center point between fingers
+        const centerX = (touch1.clientX + touch2.clientX) / 2;
+        const centerY = (touch1.clientY + touch2.clientY) / 2;
+        const rect = canvasElement.getBoundingClientRect();
+        
+        canvas.setZoom(clampedScale);
+      }
+    };
+    
+    // Touch end handler
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      isPanning = false;
+      
+      if (e.touches.length === 0) {
+        initialDistance = 0;
+        initialScale = canvas.getZoom();
+      }
+    };
+    
+    // Add touch event listeners
+    canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Store cleanup function
+    (canvas as any).touchCleanup = () => {
+      canvasElement.removeEventListener('touchstart', handleTouchStart);
+      canvasElement.removeEventListener('touchmove', handleTouchMove);
+      canvasElement.removeEventListener('touchend', handleTouchEnd);
+    };
   };
 
   const calculateTotalCost = () => {
@@ -562,8 +695,8 @@ export default function BuildingPlannerBasic() {
             </div>
 
             {/* Canvas */}
-            <div className="border rounded-lg overflow-hidden">
-              <canvas ref={canvasRef} className="block max-w-full" />
+            <div className="border rounded-lg overflow-hidden w-full">
+              <canvas ref={canvasRef} className="block w-full h-auto touch-none" style={{ maxWidth: '100%' }} />
             </div>
 
             {/* Placed Items and Cost Estimate */}
