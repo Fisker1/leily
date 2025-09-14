@@ -233,7 +233,7 @@ const RentalMap = () => {
     return el;
   };
 
-  // Add markers to map
+  // Add markers to map with dynamic zoom behavior
   const addMarkersToMap = () => {
     if (!map.current || !mapboxgl) {
       return;
@@ -248,10 +248,20 @@ const RentalMap = () => {
       totalProperties: properties.length
     });
 
+    let shouldZoomToPrimary = false;
+    let primaryProperty = null;
+
     // Add user's properties that are NOT for rent (blue pins)
     if (showMyProperties && properties.length > 0) {
       const myProps = properties.filter(p => p.show_in_rental !== true);
       console.log('🔵 Adding my property markers for:', myProps.length, 'properties');
+      
+      // Find primary residence for zoom target
+      primaryProperty = myProps.find(p => p.primary_residence === true);
+      if (primaryProperty && primaryProperty.coordinates) {
+        shouldZoomToPrimary = true;
+        console.log('🏠 Found primary residence:', primaryProperty.address);
+      }
       
       myProps.forEach((property) => {
         if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
@@ -264,7 +274,7 @@ const RentalMap = () => {
         
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
           <div class="font-medium text-sm p-2">
-            <h3 class="font-bold text-blue-600">Min eiendom</h3>
+            <h3 class="font-bold text-blue-600">Min eiendom ${property.primary_residence ? '🏠 (Primærbolig)' : ''}</h3>
             <p class="font-semibold">${property.address}</p>
             ${property.city ? `<p class="text-gray-600">${property.city}</p>` : ''}
             <div class="mt-2 space-y-1">
@@ -284,15 +294,6 @@ const RentalMap = () => {
           .addTo(map.current!);
           
         markers.current.push(marker);
-        
-        // Center map on first property
-        if (markers.current.length === 1) {
-          map.current!.flyTo({
-            center: [property.coordinates[0], property.coordinates[1]],
-            zoom: 12,
-            duration: 2000
-          });
-        }
       });
     }
 
@@ -407,6 +408,39 @@ const RentalMap = () => {
           
         markers.current.push(marker);
       });
+    }
+
+    // Zoom to primary residence if available, otherwise zoom to first property or fit all markers
+    if (shouldZoomToPrimary && primaryProperty && primaryProperty.coordinates) {
+      console.log('🎯 Zooming to primary residence:', primaryProperty.address);
+      map.current!.flyTo({
+        center: [primaryProperty.coordinates[0], primaryProperty.coordinates[1]],
+        zoom: 13,
+        duration: 2000
+      });
+    } else if (markers.current.length > 0) {
+      // Fit bounds to show all markers
+      const bounds = new mapboxgl.LngLatBounds();
+      markers.current.forEach(marker => {
+        bounds.extend(marker.getLngLat());
+      });
+      
+      if (markers.current.length === 1) {
+        // Single marker, center on it
+        const markerLngLat = markers.current[0].getLngLat();
+        map.current!.flyTo({
+          center: [markerLngLat.lng, markerLngLat.lat],
+          zoom: 12,
+          duration: 2000
+        });
+      } else {
+        // Multiple markers, fit bounds
+        map.current!.fitBounds(bounds, {
+          padding: 50,
+          duration: 2000,
+          maxZoom: 12
+        });
+      }
     }
   };
 
@@ -528,7 +562,65 @@ const RentalMap = () => {
     };
   }, []);
 
-  // Update markers when data or layer settings change
+  // Handle dynamic zoom when toggles change
+  const handleCategoryToggle = (category: string, isEnabled: boolean) => {
+    if (!map.current) return;
+    
+    if (isEnabled) {
+      // Zoom in when enabling a category
+      setTimeout(() => {
+        if (markers.current.length > 0) {
+          const bounds = new mapboxgl.LngLatBounds();
+          markers.current.forEach(marker => {
+            bounds.extend(marker.getLngLat());
+          });
+          
+          if (markers.current.length === 1) {
+            const markerLngLat = markers.current[0].getLngLat();
+            map.current!.flyTo({
+              center: [markerLngLat.lng, markerLngLat.lat],
+              zoom: 12,
+              duration: 1500
+            });
+          } else {
+            map.current!.fitBounds(bounds, {
+              padding: 50,
+              duration: 1500,
+              maxZoom: 12
+            });
+          }
+        }
+      }, 100);
+    } else {
+      // Zoom out slightly when disabling a category
+      const currentZoom = map.current.getZoom();
+      map.current.flyTo({
+        zoom: Math.max(currentZoom - 1, 6),
+        duration: 1000
+      });
+    }
+  };
+
+  // Layer toggle handlers with dynamic zoom
+  const handleMyPropertiesToggle = (checked: boolean) => {
+    setShowMyProperties(checked);
+    handleCategoryToggle('my-properties', checked);
+  };
+
+  const handleRentalPropertiesToggle = (checked: boolean) => {
+    setShowRentalProperties(checked);
+    handleCategoryToggle('rental-properties', checked);
+  };
+
+  const handleCalculationPropertiesToggle = (checked: boolean) => {
+    setShowCalculationProperties(checked);
+    handleCategoryToggle('calculation-properties', checked);
+  };
+
+  const handleMarketDataToggle = (checked: boolean) => {
+    setShowMarketData(checked);
+    handleCategoryToggle('market-data', checked);
+  };
   useEffect(() => {
     if (!map.current || !mapboxgl || !mapboxToken || loading || dataLoading) {
       return;
@@ -587,7 +679,7 @@ const RentalMap = () => {
                 <Switch 
                   id="my-properties" 
                   checked={showMyProperties} 
-                  onCheckedChange={setShowMyProperties}
+                  onCheckedChange={handleMyPropertiesToggle}
                 />
                 <Label htmlFor="my-properties" className="text-sm flex items-center gap-1">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -598,7 +690,7 @@ const RentalMap = () => {
                 <Switch 
                   id="rental-properties" 
                   checked={showRentalProperties} 
-                  onCheckedChange={setShowRentalProperties}
+                  onCheckedChange={handleRentalPropertiesToggle}
                 />
                 <Label htmlFor="rental-properties" className="text-sm flex items-center gap-1">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -609,7 +701,7 @@ const RentalMap = () => {
                 <Switch 
                   id="calculation-properties" 
                   checked={showCalculationProperties} 
-                  onCheckedChange={setShowCalculationProperties}
+                  onCheckedChange={handleCalculationPropertiesToggle}
                 />
                 <Label htmlFor="calculation-properties" className="text-sm flex items-center gap-1">
                   <div className="w-3 h-3 bg-white border border-gray-400 rounded-full"></div>
@@ -620,7 +712,7 @@ const RentalMap = () => {
                 <Switch 
                   id="market-data" 
                   checked={showMarketData} 
-                  onCheckedChange={setShowMarketData}
+                  onCheckedChange={handleMarketDataToggle}
                 />
                 <Label htmlFor="market-data" className="text-sm flex items-center gap-1">
                   <div className="w-3 h-3 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"></div>

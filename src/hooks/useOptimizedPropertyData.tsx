@@ -12,6 +12,7 @@ export interface Property {
   monthly_rent?: number;
   current_value?: number;
   show_in_rental?: boolean;
+  primary_residence?: boolean;
   owner_id: string;
   coordinates?: [number, number];
 }
