@@ -719,9 +719,9 @@ const RentalMap = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-blue-600">
-              {properties.filter(p => p.show_in_rental !== true).length}
+              {properties.length}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Mine eiendommer (ikke utleid)</p>
+            <p className="text-xs text-muted-foreground">Mine eiendommer</p>
           </CardHeader>
         </Card>
         
@@ -730,7 +730,7 @@ const RentalMap = () => {
             <CardTitle className="text-lg text-green-600">
               {properties.filter(p => p.show_in_rental === true).length}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Utleie-enheter</p>
+            <p className="text-xs text-muted-foreground">Utleid</p>
           </CardHeader>
         </Card>
         
