@@ -100,12 +100,12 @@ export const useOptimizedPropertyData = () => {
   const [loading, setLoading] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  const fetchUserProperties = useCallback(async () => {
+  const fetchUserProperties = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
-    // Prevent excessive API calls - minimum 5 seconds between fetches
+    // Prevent excessive API calls - minimum 5 seconds between fetches unless forced
     const now = Date.now();
-    if (now - lastFetchTime < 5000) {
+    if (!forceRefresh && now - lastFetchTime < 5000) {
       return;
     }
     setLastFetchTime(now);
@@ -147,6 +147,9 @@ export const useOptimizedPropertyData = () => {
       );
 
       setProperties(propertiesWithCoordinates);
+      
+      // Store successful fetch timestamp
+      localStorage.setItem('propertyData_lastFetch', now.toString());
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast({
@@ -157,7 +160,7 @@ export const useOptimizedPropertyData = () => {
     }
   }, [user, toast, lastFetchTime]);
 
-  const fetchCalculationProperties = useCallback(async () => {
+  const fetchCalculationProperties = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
     try {
@@ -208,6 +211,18 @@ export const useOptimizedPropertyData = () => {
     }
   }, [user]);
 
+  // Check if data should be refreshed based on last fetch time
+  const shouldRefreshData = useCallback(() => {
+    const lastFetch = localStorage.getItem('propertyData_lastFetch');
+    if (!lastFetch) return true;
+    
+    const now = Date.now();
+    const timeSinceLastFetch = now - parseInt(lastFetch);
+    
+    // Refresh if more than 1 hour has passed
+    return timeSinceLastFetch > 60 * 60 * 1000;
+  }, []);
+
   // Memoize the fetch function to prevent unnecessary re-renders
   const memoizedFetch = useMemo(() => ({
     fetchUserProperties,
@@ -217,8 +232,9 @@ export const useOptimizedPropertyData = () => {
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
-        await memoizedFetch.fetchUserProperties();
-        await memoizedFetch.fetchCalculationProperties();
+        const shouldRefresh = shouldRefreshData();
+        await memoizedFetch.fetchUserProperties(shouldRefresh);
+        await memoizedFetch.fetchCalculationProperties(shouldRefresh);
       };
       fetchData();
     } else {
@@ -226,12 +242,12 @@ export const useOptimizedPropertyData = () => {
       setCalculationProperties([]);
       setLoading(false);
     }
-  }, [user, memoizedFetch]);
+  }, [user, memoizedFetch, shouldRefreshData]);
 
   const refetch = useCallback(() => {
     if (user) {
-      fetchUserProperties();
-      fetchCalculationProperties();
+      fetchUserProperties(true); // Force refresh
+      fetchCalculationProperties(true); // Force refresh
     }
   }, [user, fetchUserProperties, fetchCalculationProperties]);
 

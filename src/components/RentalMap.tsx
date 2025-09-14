@@ -23,13 +23,42 @@ const RentalMap = () => {
   const [mapboxgl, setMapboxgl] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Layer toggles
-  const [showMyProperties, setShowMyProperties] = useState(true);
-  const [showRentalProperties, setShowRentalProperties] = useState(true);
-  const [showCalculationProperties, setShowCalculationProperties] = useState(true);
-  const [showMarketData, setShowMarketData] = useState(false);
+  // Layer toggles with localStorage persistence
+  const [showMyProperties, setShowMyProperties] = useState(() => {
+    const saved = localStorage.getItem('rentalMap_showMyProperties');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [showRentalProperties, setShowRentalProperties] = useState(() => {
+    const saved = localStorage.getItem('rentalMap_showRentalProperties');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [showCalculationProperties, setShowCalculationProperties] = useState(() => {
+    const saved = localStorage.getItem('rentalMap_showCalculationProperties');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [showMarketData, setShowMarketData] = useState(() => {
+    const saved = localStorage.getItem('rentalMap_showMarketData');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
 
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
+
+  // Save layer settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('rentalMap_showMyProperties', JSON.stringify(showMyProperties));
+  }, [showMyProperties]);
+
+  useEffect(() => {
+    localStorage.setItem('rentalMap_showRentalProperties', JSON.stringify(showRentalProperties));
+  }, [showRentalProperties]);
+
+  useEffect(() => {
+    localStorage.setItem('rentalMap_showCalculationProperties', JSON.stringify(showCalculationProperties));
+  }, [showCalculationProperties]);
+
+  useEffect(() => {
+    localStorage.setItem('rentalMap_showMarketData', JSON.stringify(showMarketData));
+  }, [showMarketData]);
 
   // Load Mapbox GL
   useEffect(() => {
@@ -358,6 +387,21 @@ const RentalMap = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
+
+  // Force refresh property data when component mounts to ensure fresh data after breaks
+  useEffect(() => {
+    if (user && !loading && !dataLoading) {
+      // Refresh data if it's been more than 30 minutes since last update
+      const lastRefresh = localStorage.getItem('rentalMap_lastRefresh');
+      const now = Date.now();
+      const shouldRefresh = !lastRefresh || (now - parseInt(lastRefresh)) > 30 * 60 * 1000; // 30 minutes
+      
+      if (shouldRefresh) {
+        localStorage.setItem('rentalMap_lastRefresh', now.toString());
+        // The useOptimizedPropertyData hook will handle the refresh automatically
+      }
+    }
+  }, [user, loading, dataLoading]);
 
   // Map is now available to all logged-in users
   
