@@ -227,8 +227,11 @@ const RentalMap = () => {
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
-    el.style.overflow = 'hidden'; // Prevent overflow
-    el.style.position = 'relative'; // Ensure proper positioning
+    el.style.overflow = 'hidden';
+    el.style.position = 'absolute';
+    el.style.transformOrigin = 'center center';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.style.pointerEvents = 'auto';
     
     return el;
   };
