@@ -14,19 +14,38 @@ serve(async (req) => {
     const MAPBOX_PUBLIC_TOKEN = Deno.env.get('MAPBOX_PUBLIC_TOKEN')
     
     if (!MAPBOX_PUBLIC_TOKEN) {
+      console.error('MAPBOX_PUBLIC_TOKEN is not configured in Supabase secrets')
       throw new Error('MAPBOX_PUBLIC_TOKEN is not set')
     }
 
+    // Validate token format (should start with pk. for public tokens)
+    if (!MAPBOX_PUBLIC_TOKEN.startsWith('pk.')) {
+      console.error('Invalid Mapbox token format. Public tokens should start with pk.')
+      throw new Error('Invalid Mapbox token format. Use a public token starting with pk.')
+    }
+
+    console.log('Successfully returning Mapbox token')
+    
     return new Response(
-      JSON.stringify({ token: MAPBOX_PUBLIC_TOKEN }),
+      JSON.stringify({ 
+        token: MAPBOX_PUBLIC_TOKEN,
+        timestamp: new Date().toISOString(),
+        tokenPrefix: MAPBOX_PUBLIC_TOKEN.substring(0, 20) + '...'
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     )
   } catch (error) {
+    console.error('Mapbox token error:', error.message)
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        suggestion: 'Check your Mapbox token configuration in the dashboard'
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
