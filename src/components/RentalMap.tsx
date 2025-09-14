@@ -63,17 +63,12 @@ const RentalMap = () => {
 
   // Load Mapbox GL
   useEffect(() => {
-    console.log('Loading Mapbox GL...');
     const loadMapbox = async () => {
       try {
-        console.log('Importing mapbox-gl...');
         const mapboxModule = await import('mapbox-gl');
-        console.log('Importing mapbox-gl CSS...');
         await import('mapbox-gl/dist/mapbox-gl.css');
-        console.log('Mapbox GL loaded successfully');
         setMapboxgl(mapboxModule.default);
       } catch (error) {
-        console.error('Failed to load Mapbox GL:', error);
         setError('Kunne ikke laste Mapbox GL biblioteket');
         toast({
           title: "Kartfeil",
@@ -87,52 +82,38 @@ const RentalMap = () => {
 
   // Fetch Mapbox token
   useEffect(() => {
-    // Only fetch token if user is authenticated
     if (!user) {
-      console.log('No user, skipping token fetch');
       setLoading(false);
       return;
     }
     
-    console.log('Token fetch effect - user authenticated');
-    
-    // Only fetch token if user is authenticated
     const fetchToken = async () => {
-      console.log('Fetching Mapbox token...');
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
-        console.log('Token response:', { data, error });
-        
         if (error) {
-          console.error('Supabase function error:', error);
           setError(`Token fetch error: ${error.message}`);
           throw error;
         }
 
         if (data?.token) {
-          console.log('Token received, length:', data.token.length);
           setMapboxToken(data.token);
         } else {
-          console.error('No token in response:', data);
-          setError('Ingen token mottatt');
+          setError('Ingen token mottatt fra server');
           throw new Error('Ingen token mottatt');
         }
-      } catch (error) {
-        console.error('Token fetch error:', error);
-        setError(`Token fetch failed: ${error.message}`);
+      } catch (error: any) {
+        setError(`Kunne ikke hente Mapbox token: ${error.message}`);
         toast({
-          title: "Kartfeil",
-          description: `Kunne ikke hente Mapbox token: ${error.message}`,
+          title: "Kartfeil", 
+          description: `Kunne ikke laste kartet. Kontroller Mapbox token konfigurasjonen.`,
           variant: "destructive",
         });
       } finally {
-        console.log('Token fetch complete, setting loading to false');
         setLoading(false);
       }
     };
 
-    // Only fetch token once
     if (!mapboxToken) {
       fetchToken();
     } else {
@@ -189,11 +170,8 @@ const RentalMap = () => {
   // Add markers to map
   const addMarkersToMap = () => {
     if (!map.current || !mapboxgl) {
-      console.log('Map or mapboxgl not ready');
       return;
     }
-    
-    console.log('Adding markers to map. Properties:', properties.length, 'Calculations:', calculationProperties.length);
     
     clearMarkers();
 
@@ -201,11 +179,8 @@ const RentalMap = () => {
     if (showMyProperties) {
       properties.forEach((property) => {
         if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
-          console.log('Property missing coordinates:', property.address);
           return;
         }
-        
-        console.log('Adding property marker:', property.address, property.coordinates);
         
         const el = createMarkerElement('my-property');
         
@@ -337,32 +312,14 @@ const RentalMap = () => {
         markers.current.push(marker);
       });
     }
-    
-    console.log('Added', markers.current.length, 'markers to map');
   };
 
   // Initialize map - only run once when requirements are met
   useEffect(() => {
-    console.log('Map initialization effect triggered', {
-      mapboxToken: !!mapboxToken,
-      mapboxgl: !!mapboxgl,
-      mapContainer: !!mapContainer.current,
-      mapExists: !!map.current
-    });
-
     // Only initialize if we have requirements and no existing map
-    if (!mapboxToken || !mapboxgl || !mapContainer.current) {
-      console.log('Map initialization skipped - missing requirements');
+    if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
       return;
     }
-
-    // Don't reinitialize if map already exists
-    if (map.current) {
-      console.log('Map already exists, skipping initialization');
-      return;
-    }
-
-    console.log('Initializing map with token:', mapboxToken.substring(0, 10) + '...');
 
     try {
       mapboxgl.accessToken = mapboxToken;
@@ -375,26 +332,18 @@ const RentalMap = () => {
         attributionControl: false,
       });
 
-      console.log('Map created, adding controls...');
-
       map.current.addControl(
         new mapboxgl.NavigationControl(),
         'top-right'
       );
 
       map.current.on('load', () => {
-        console.log('Map loaded successfully!');
-        // Small delay to ensure map is fully ready
         setTimeout(() => {
-          console.log('Calling addMarkersToMap after map load');
           addMarkersToMap();
         }, 100);
       });
 
       map.current.on('error', (e) => {
-        console.error('Mapbox error:', e);
-        
-        // Only show error toast for critical errors, not recoverable ones
         const errorMessage = e.error?.message || e.message || 'Ukjent feil';
         const isRecoverableError = errorMessage.includes('NetworkError') || 
                                  errorMessage.includes('timeout') ||
@@ -413,12 +362,7 @@ const RentalMap = () => {
         }
       });
 
-      map.current.on('styledata', () => {
-        console.log('Map style loaded');
-      });
-
     } catch (error) {
-      console.error('Map initialization error:', error);
       setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
         title: "Kartfeil",
@@ -427,17 +371,14 @@ const RentalMap = () => {
       });
     }
 
-    // Cleanup function - only run when component unmounts
     return () => {
-      console.log('Map effect cleanup triggered');
-      // Don't clean up the map here, only when component unmounts
+      // Cleanup handled in separate effect
     };
   }, [mapboxToken, mapboxgl, toast]);
 
   // Cleanup map only when component unmounts
   useEffect(() => {
     return () => {
-      console.log('Component unmounting, cleaning up map...');
       clearMarkers();
       if (map.current) {
         map.current.remove();
@@ -570,6 +511,14 @@ const RentalMap = () => {
                 <p className="text-muted-foreground">
                   {loading ? 'Laster inn kart...' : 'Henter eiendommer...'}
                 </p>
+              </div>
+            </div>
+          ) : !user ? (
+            <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="font-medium mb-2">Logg inn for å se kartet</p>
+                <p className="text-muted-foreground text-sm">Kartfunksjonen krever innlogging</p>
               </div>
             </div>
           ) : error ? (
