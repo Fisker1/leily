@@ -82,8 +82,30 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
               container: mapContainer.current!,
               style: 'mapbox://styles/mapbox/satellite-v9',
               center: [lng, lat],
-              zoom: 16,
-              attributionControl: false
+              zoom: 17, // Increased zoom for better detail
+              bearing: 0,
+              pitch: 0,
+              attributionControl: false,
+              logoPosition: 'bottom-right'
+            });
+
+            // Wait for map to load before disabling interactions
+            map.current.on('load', () => {
+              if (map.current) {
+                // Add a red marker at the property location
+                new mapboxgl.Marker({ color: '#ff0000' })
+                  .setLngLat([lng, lat])
+                  .addTo(map.current);
+                
+                // Disable all interactions for a static look
+                map.current.dragPan.disable();
+                map.current.scrollZoom.disable();
+                map.current.boxZoom.disable();
+                map.current.dragRotate.disable();
+                map.current.keyboard.disable();
+                map.current.doubleClickZoom.disable();
+                map.current.touchZoomRotate.disable();
+              }
             });
 
             map.current.on('error', (e) => {
@@ -92,20 +114,6 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           } catch (error) {
             console.error('Error creating Mapbox GL map:', error);
           }
-
-          // Add a marker at the property location
-          new mapboxgl.Marker({ color: '#ff0000' })
-            .setLngLat([lng, lat])
-            .addTo(map.current);
-
-           // Disable all interactions for a static look
-           map.current.dragPan.disable();
-           map.current.scrollZoom.disable();
-           map.current.boxZoom.disable();
-           map.current.dragRotate.disable();
-           map.current.keyboard.disable();
-           map.current.doubleClickZoom.disable();
-           map.current.touchZoomRotate.disable();
         }
       })
       .catch(error => {
@@ -145,11 +153,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   // Show satellite map only for logged in users with real addresses
   if (shouldShowSatellite) {
     return (
-      <div className={`relative ${className} bg-muted aspect-square`}>
+      <div className={`relative ${className} bg-muted aspect-square overflow-hidden rounded-lg`}>
         <div 
           ref={mapContainer} 
-          className="w-full h-full rounded-lg overflow-hidden" 
-          style={{ minHeight: '120px' }}
+          className="absolute inset-0 w-full h-full" 
         />
       </div>
     );
