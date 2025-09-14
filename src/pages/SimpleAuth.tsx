@@ -192,45 +192,16 @@ const SimpleAuth = () => {
               variant="outline"
               className="w-full"
               onClick={async () => {
-                const password = prompt('Skriv inn passordet for Stager:');
-                if (password !== 'blåmeis') {
-                  alert('Feil passord!');
-                  return;
-                }
-                
+                console.log('Stager button clicked');
                 setLoading(true);
                 try {
-                  // First try to sign in
-                  let { data, error } = await supabase.auth.signInWithPassword({
+                  console.log('Trying to sign in with Stager credentials...');
+                  const { data, error } = await supabase.auth.signInWithPassword({
                     email: 'anderslundoy@protonmail.com',
                     password: 'blåmeis'
                   });
                   
-                  // If user doesn't exist, try to create them
-                  if (error && error.message.includes('Invalid login credentials')) {
-                    console.log('Stager user does not exist, creating...');
-                    
-                    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                      email: 'anderslundoy@protonmail.com',
-                      password: 'blåmeis',
-                      options: {
-                        emailRedirectTo: `${window.location.origin}/dashboard`,
-                        data: {
-                          full_name: 'Stager'
-                        }
-                      }
-                    });
-                    
-                    if (signUpError) {
-                      console.error('Stager signup error:', signUpError);
-                      alert('Kunne ikke opprette Stager-bruker: ' + signUpError.message);
-                    } else if (signUpData.user && !signUpData.session) {
-                      alert('Stager-bruker opprettet! Email-bekreftelse kreves. Sjekk innboksen til anderslundoy@protonmail.com eller deaktiver email-bekreftelse i Supabase.');
-                    } else {
-                      console.log('Stager user created and signed in:', signUpData);
-                      navigate('/dashboard');
-                    }
-                  } else if (error) {
+                  if (error) {
                     console.error('Stager login error:', error);
                     alert('Innlogging feilet: ' + error.message);
                   } else {
