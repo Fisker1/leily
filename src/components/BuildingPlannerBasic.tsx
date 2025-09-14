@@ -108,7 +108,7 @@ export default function BuildingPlannerBasic() {
       const canvas = new Canvas(canvasRef.current, {
         width: canvasWidth,
         height: canvasHeight,
-        backgroundColor: '#f8f9fa'
+        backgroundColor: '#ffffff'
       });
 
       fabricCanvasRef.current = canvas;
@@ -635,11 +635,11 @@ export default function BuildingPlannerBasic() {
                       );
                     }}
                   >
-                    <div className={selectedProfessions.includes(profession.id) ? 'text-white' : 'text-gray-600'}>
+                    <div className={selectedProfessions.includes(profession.id) ? 'text-white' : 'text-white'}>
                       {profession.icon}
                     </div>
                     <div className="text-center">
-                      <div className={`font-semibold text-xs ${selectedProfessions.includes(profession.id) ? 'text-white' : 'text-gray-600'}`}>
+                      <div className={`font-semibold text-xs ${selectedProfessions.includes(profession.id) ? 'text-white' : 'text-white'}`}>
                         {profession.name}
                       </div>
                     </div>
