@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
 
 const SimpleAuth = () => {
   const navigate = useNavigate();
   const { translations } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showStagerPassword, setShowStagerPassword] = useState(false);
+  const [stagerPassword, setStagerPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Automatic redirect when user is authenticated
   useEffect(() => {
@@ -20,6 +24,44 @@ const SimpleAuth = () => {
       navigate('/dashboard');
     }
   }, [user, authLoading, navigate]);
+
+  const handleStagerLogin = async () => {
+    console.log('🥷 Stager login attempt with password:', stagerPassword);
+    
+    if (stagerPassword !== 'blåmeis') {
+      alert('Feil passord!');
+      return;
+    }
+    
+    console.log('🥷 Correct password, starting login...');
+    setLoading(true);
+    try {
+      console.log('🥷 Trying to sign in with Stager credentials...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'anderslundoy@protonmail.com',
+        password: 'blåmeis'
+      });
+      
+      console.log('🥷 Login result:', { data: !!data, error: error?.message });
+      
+      if (error) {
+        console.error('🥷 Stager login error:', error);
+        alert('Innlogging feilet: ' + error.message);
+      } else {
+        console.log('🥷 Stager login success:', data);
+        // Reset password input
+        setStagerPassword('');
+        setShowStagerPassword(false);
+        // Let AuthContext handle the redirect automatically
+      }
+    } catch (err) {
+      console.error('🥷 Unexpected error:', err);
+      alert('Uventet feil: ' + (err as Error).message);
+    } finally {
+      console.log('🥷 Login attempt finished');
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -201,39 +243,9 @@ const SimpleAuth = () => {
             <Button
               variant="outline"
               className="w-full"
-              onClick={async () => {
-                console.log('🥷 STAGER BUTTON CLICKED! Function is working!');
-                console.log('🥷 Stager button clicked - start');
-                
-                // Skip password prompt for mobile compatibility
-                console.log('🥷 Skipping password prompt, logging in directly...');
-                
-                console.log('🥷 Correct password, starting login...');
-                setLoading(true);
-                try {
-                  console.log('🥷 Trying to sign in with Stager credentials...');
-                  const { data, error } = await supabase.auth.signInWithPassword({
-                    email: 'anderslundoy@protonmail.com',
-                    password: 'blåmeis'
-                  });
-                  
-                  console.log('🥷 Login result:', { data: !!data, error: error?.message });
-                  
-                  if (error) {
-                    console.error('🥷 Stager login error:', error);
-                    alert('Innlogging feilet: ' + error.message);
-                  } else {
-                    console.log('🥷 Stager login success:', data);
-                    // Let AuthContext handle the redirect automatically
-                    // Don't navigate manually to avoid race conditions
-                  }
-                } catch (err) {
-                  console.error('🥷 Unexpected error:', err);
-                  alert('Uventet feil: ' + (err as Error).message);
-                } finally {
-                  console.log('🥷 Login attempt finished');
-                  setLoading(false);
-                }
+              onClick={() => {
+                console.log('🥷 Stager button clicked - showing password input');
+                setShowStagerPassword(true);
               }}
               disabled={loading}
             >
@@ -246,6 +258,67 @@ const SimpleAuth = () => {
               )}
               Stager
             </Button>
+
+            {/* Stager Password Input */}
+            {showStagerPassword && (
+              <Card className="bg-muted/50 border-2 border-primary/20">
+                <CardContent className="p-4 space-y-3">
+                  <div className="text-sm font-medium text-foreground">
+                    Skriv inn passordet for Stager:
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Passord..."
+                      value={stagerPassword}
+                      onChange={(e) => setStagerPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleStagerLogin();
+                        }
+                      }}
+                      className="pr-10"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={handleStagerLogin}
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
+                      Logg inn
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowStagerPassword(false);
+                        setStagerPassword('');
+                      }}
+                      disabled={loading}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="text-center mt-6">
               <p className="text-sm text-muted-foreground">
