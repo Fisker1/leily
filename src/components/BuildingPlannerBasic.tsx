@@ -1,51 +1,100 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Rect, Line } from 'fabric';
+import { Canvas as FabricCanvas, Rect, Line, FabricImage } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Square, Minus, Save, FolderOpen, Trash2, Plus, Link2, Calculator } from 'lucide-react';
+import { Hammer, Zap, Wrench, Save, FolderOpen, Trash2, Plus, Upload, Calculator } from 'lucide-react';
 import { useBuildingProjects } from '@/hooks/useBuildingProjects';
-import { useCalculationHistory } from '@/hooks/useCalculationHistory';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
 
-interface BuildingItem {
+type Profession = 'carpenter' | 'electrician' | 'plumber';
+
+interface ProfessionData {
+  id: Profession;
+  name: string;
+  icon: React.ReactNode;
+  color: string;
+  tools: BuildingTool[];
+}
+
+interface BuildingTool {
   id: string;
-  type: 'wall' | 'room' | 'door' | 'window';
+  name: string;
   cost: number;
+  color: string;
   description: string;
 }
 
-const BUILDING_ITEMS: BuildingItem[] = [
-  { id: 'wall', type: 'wall', cost: 2500, description: 'Vegg (per meter)' },
-  { id: 'room', type: 'room', cost: 15000, description: 'Rom (grunnfundament)' },
-  { id: 'door', type: 'door', cost: 8000, description: 'Dør' },
-  { id: 'window', type: 'window', cost: 12000, description: 'Vindu' },
+interface PlacedItem {
+  id: string;
+  type: string;
+  name: string;
+  cost: number;
+  description: string;
+  profession: Profession;
+}
+
+const PROFESSIONS: ProfessionData[] = [
+  {
+    id: 'carpenter',
+    name: 'Snekker',
+    icon: <Hammer className="h-6 w-6" />,
+    color: '#8B4513',
+    tools: [
+      { id: 'wall', name: 'Vegg', cost: 2500, color: '#8B4513', description: 'Trevegg per meter' },
+      { id: 'window', name: 'Vindu', cost: 12000, color: '#87CEEB', description: 'Vindu med karm' },
+      { id: 'door', name: 'Dør', cost: 8000, color: '#D2691E', description: 'Innendørsdør' },
+      { id: 'floor', name: 'Gulv', cost: 1500, color: '#DEB887', description: 'Gulvbelegg per m²' },
+    ]
+  },
+  {
+    id: 'electrician',
+    name: 'Elektriker',
+    icon: <Zap className="h-6 w-6" />,
+    color: '#FFD700',
+    tools: [
+      { id: 'outlet', name: 'Stikkontakt', cost: 800, color: '#FFD700', description: 'Standard stikkontakt' },
+      { id: 'switch', name: 'Bryter', cost: 600, color: '#FFA500', description: 'Lysbryter' },
+      { id: 'light', name: 'Taklampe', cost: 2500, color: '#FFFF00', description: 'LED taklampe' },
+      { id: 'cable', name: 'Kabel', cost: 150, color: '#FF4500', description: 'Elektrisk kabel per meter' },
+    ]
+  },
+  {
+    id: 'plumber',
+    name: 'Rørlegger',
+    icon: <Wrench className="h-6 w-6" />,
+    color: '#4682B4',
+    tools: [
+      { id: 'pipe', name: 'Rør', cost: 200, color: '#4682B4', description: 'Vanntilførsel per meter' },
+      { id: 'drain', name: 'Avløp', cost: 350, color: '#2F4F4F', description: 'Avløpsrør per meter' },
+      { id: 'faucet', name: 'Kran', cost: 1500, color: '#C0C0C0', description: 'Standard vannkran' },
+      { id: 'toilet', name: 'Toalett', cost: 8000, color: '#F0F8FF', description: 'Komplett toalett' },
+    ]
+  }
 ];
 
 export default function BuildingPlannerBasic() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const { projects, loading, saveProject, updateProject, deleteProject, loadProject } = useBuildingProjects();
-  const { calculations } = useCalculationHistory();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { projects, loading, saveProject, updateProject, deleteProject } = useBuildingProjects();
   const { toast } = useToast();
 
-  const [projectType, setProjectType] = useState<'new' | 'link' | null>(null);
-  const [selectedTool, setSelectedTool] = useState<string>('wall');
+  const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null);
+  const [selectedTool, setSelectedTool] = useState<string>('');
   const [projectName, setProjectName] = useState('');
-  const [selectedCalculation, setSelectedCalculation] = useState<string>('');
   const [currentProject, setCurrentProject] = useState<any>(null);
-  const [placedItems, setPlacedItems] = useState<any[]>([]);
+  const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [floorPlanImage, setFloorPlanImage] = useState<string>('');
 
   useEffect(() => {
-    if (canvasRef.current && !fabricCanvasRef.current && projectType === 'new') {
+    if (canvasRef.current && !fabricCanvasRef.current && selectedProfession) {
       const canvas = new FabricCanvas(canvasRef.current, {
         width: 800,
         height: 600,
@@ -54,93 +103,43 @@ export default function BuildingPlannerBasic() {
 
       fabricCanvasRef.current = canvas;
 
-      // Add grid
-      const gridSize = 20;
-      for (let i = 0; i <= canvas.width! / gridSize; i++) {
-        const line = new Line([i * gridSize, 0, i * gridSize, canvas.height!], {
-          stroke: '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        });
-        canvas.add(line);
-      }
-      for (let i = 0; i <= canvas.height! / gridSize; i++) {
-        const line = new Line([0, i * gridSize, canvas.width!, i * gridSize], {
-          stroke: '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        });
-        canvas.add(line);
+      // Add grid if no floor plan
+      if (!floorPlanImage) {
+        addGrid(canvas);
       }
 
-      // Handle object selection
-      canvas.on('object:added', (e) => {
-        if (e.target && e.target.type === 'rect') {
-          const item = BUILDING_ITEMS.find(item => item.type === selectedTool);
-          if (item) {
-            const newItem = {
-              id: Date.now().toString(),
-              type: item.type,
-              cost: item.cost,
-              description: item.description
-            };
-            setPlacedItems(prev => [...prev, newItem]);
-          }
-        }
-      });
-
-      // Mouse down handler for drawing
+      // Handle object placement
       canvas.on('mouse:down', (options) => {
-        if (!options.e.target) return;
+        if (!options.e.target || !selectedTool) return;
         
         const pointer = canvas.getPointer(options.e);
-        const item = BUILDING_ITEMS.find(item => item.type === selectedTool);
+        const profession = PROFESSIONS.find(p => p.id === selectedProfession);
+        const tool = profession?.tools.find(t => t.id === selectedTool);
         
-        if (item && selectedTool !== 'room') {
-          let shape: Rect;
-          
-          switch (selectedTool) {
-            case 'wall':
-              shape = new Rect({
-                left: pointer.x,
-                top: pointer.y,
-                width: 100,
-                height: 10,
-                fill: '#8B4513',
-                stroke: '#654321',
-                strokeWidth: 2
-              });
-              break;
-            case 'door':
-              shape = new Rect({
-                left: pointer.x,
-                top: pointer.y,
-                width: 80,
-                height: 10,
-                fill: '#D2691E',
-                stroke: '#B8860B',
-                strokeWidth: 2
-              });
-              break;
-            case 'window':
-              shape = new Rect({
-                left: pointer.x,
-                top: pointer.y,
-                width: 80,
-                height: 10,
-                fill: '#87CEEB',
-                stroke: '#4682B4',
-                strokeWidth: 2
-              });
-              break;
-            default:
-              return;
-          }
+        if (tool) {
+          const shape = new Rect({
+            left: pointer.x,
+            top: pointer.y,
+            width: 30,
+            height: 30,
+            fill: tool.color,
+            stroke: '#000',
+            strokeWidth: 2
+          });
           
           canvas.add(shape);
           canvas.renderAll();
+          
+          // Add to placed items
+          const newItem: PlacedItem = {
+            id: Date.now().toString(),
+            type: tool.id,
+            name: tool.name,
+            cost: tool.cost,
+            description: tool.description,
+            profession: selectedProfession
+          };
+          setPlacedItems(prev => [...prev, newItem]);
         }
       });
     }
@@ -151,7 +150,91 @@ export default function BuildingPlannerBasic() {
         fabricCanvasRef.current = null;
       }
     };
-  }, [selectedTool, projectType]);
+  }, [selectedProfession, selectedTool, floorPlanImage]);
+
+  const addGrid = (canvas: FabricCanvas) => {
+    const gridSize = 20;
+    for (let i = 0; i <= canvas.width! / gridSize; i++) {
+      const line = new Line([i * gridSize, 0, i * gridSize, canvas.height!], {
+        stroke: '#e0e0e0',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+    }
+    for (let i = 0; i <= canvas.height! / gridSize; i++) {
+      const line = new Line([0, i * gridSize, canvas.width!, i * gridSize], {
+        stroke: '#e0e0e0',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+    }
+  };
+
+  const handleFloorPlanUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ugyldig filtype",
+        description: "Velg en bildefil (JPG, PNG, etc.).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Fil for stor",
+        description: "Velg et bilde som er mindre enn 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      setFloorPlanImage(imageUrl);
+      
+      // Add image to canvas
+      if (fabricCanvasRef.current) {
+        FabricImage.fromURL(imageUrl).then((img) => {
+          if (fabricCanvasRef.current) {
+            // Scale image to fit canvas
+            const canvas = fabricCanvasRef.current;
+            const scaleX = canvas.width! / img.width!;
+            const scaleY = canvas.height! / img.height!;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            img.scale(scale);
+            img.set({
+              left: (canvas.width! - img.width! * scale) / 2,
+              top: (canvas.height! - img.height! * scale) / 2,
+              selectable: false,
+              evented: false
+            });
+            
+            canvas.clear();
+            canvas.add(img);
+            canvas.renderAll();
+          }
+        });
+      }
+      
+      toast({
+        title: "Plantegning lastet opp",
+        description: "Du kan nå plassere elementer på plantegningen"
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const calculateTotalCost = () => {
     return placedItems.reduce((total, item) => total + item.cost, 0);
@@ -170,22 +253,20 @@ export default function BuildingPlannerBasic() {
     try {
       const floorPlans = fabricCanvasRef.current?.toJSON() || {};
       const totalCost = calculateTotalCost();
-      const calculationId = projectType === 'link' ? selectedCalculation : null;
 
       if (currentProject) {
         await updateProject(currentProject.id, {
           project_name: projectName,
           floor_plans: floorPlans,
           placed_items: placedItems,
-          total_cost: totalCost,
-          calculation_id: calculationId
+          total_cost: totalCost
         });
         toast({
           title: "Prosjekt oppdatert",
           description: `${projectName} er oppdatert`
         });
       } else {
-        await saveProject(projectName, calculationId, floorPlans, placedItems, totalCost);
+        await saveProject(projectName, null, floorPlans, placedItems, totalCost);
         toast({
           title: "Prosjekt lagret",
           description: `${projectName} er lagret`
@@ -202,83 +283,66 @@ export default function BuildingPlannerBasic() {
     }
   };
 
-  const handleLoadProject = async (project: any) => {
-    try {
-      setCurrentProject(project);
-      setProjectName(project.project_name);
-      setPlacedItems(project.placed_items || []);
-      
-      if (fabricCanvasRef.current && project.floor_plans) {
-        fabricCanvasRef.current.loadFromJSON(project.floor_plans, () => {
-          fabricCanvasRef.current?.renderAll();
-        });
-      }
-      
-      setLoadDialogOpen(false);
-      toast({
-        title: "Prosjekt lastet",
-        description: `${project.project_name} er lastet`
-      });
-    } catch (error) {
-      toast({
-        title: "Feil ved lasting",
-        description: "Kunne ikke laste prosjektet",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeleteProject = async (projectId: string) => {
-    try {
-      await deleteProject(projectId);
-      toast({
-        title: "Prosjekt slettet",
-        description: "Prosjektet er slettet"
-      });
-    } catch (error) {
-      toast({
-        title: "Feil ved sletting",
-        description: "Kunne ikke slette prosjektet",
-        variant: "destructive"
-      });
-    }
-  };
-
   const clearCanvas = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.clear();
-      // Re-add grid
-      const canvas = fabricCanvasRef.current;
-      const gridSize = 20;
-      for (let i = 0; i <= canvas.width! / gridSize; i++) {
-        const line = new Line([i * gridSize, 0, i * gridSize, canvas.height!], {
-          stroke: '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
+      if (!floorPlanImage) {
+        addGrid(fabricCanvasRef.current);
+      } else if (floorPlanImage) {
+        // Re-add floor plan image
+        FabricImage.fromURL(floorPlanImage).then((img) => {
+          if (fabricCanvasRef.current) {
+            const canvas = fabricCanvasRef.current;
+            const scaleX = canvas.width! / img.width!;
+            const scaleY = canvas.height! / img.height!;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            img.scale(scale);
+            img.set({
+              left: (canvas.width! - img.width! * scale) / 2,
+              top: (canvas.height! - img.height! * scale) / 2,
+              selectable: false,
+              evented: false
+            });
+            
+            canvas.add(img);
+            canvas.renderAll();
+          }
         });
-        canvas.add(line);
-      }
-      for (let i = 0; i <= canvas.height! / gridSize; i++) {
-        const line = new Line([0, i * gridSize, canvas.width!, i * gridSize], {
-          stroke: '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        });
-        canvas.add(line);
       }
     }
     setPlacedItems([]);
-    setCurrentProject(null);
-    setProjectName('');
   };
 
-  const resetProject = () => {
-    setProjectType(null);
+  const resetAll = () => {
+    setSelectedProfession(null);
+    setSelectedTool('');
     setProjectName('');
-    setSelectedCalculation('');
-    clearCanvas();
+    setFloorPlanImage('');
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.dispose();
+      fabricCanvasRef.current = null;
+    }
+    setPlacedItems([]);
+  };
+
+  const getItemSummary = () => {
+    const summary: Record<string, { count: number; cost: number; total: number }> = {};
+    
+    placedItems.forEach(item => {
+      if (summary[item.name]) {
+        summary[item.name].count += 1;
+        summary[item.name].total += item.cost;
+      } else {
+        summary[item.name] = {
+          count: 1,
+          cost: item.cost,
+          total: item.cost
+        };
+      }
+    });
+    
+    return summary;
   };
 
   return (
@@ -289,10 +353,10 @@ export default function BuildingPlannerBasic() {
             <div>
               <CardTitle>Byggeplanlegger</CardTitle>
               <CardDescription>
-                Tegn og planlegg ditt byggeprosjekt med interaktiv tegning
+                Velg yrke og plasser elementer på plantegning
               </CardDescription>
             </div>
-            {projectType === 'new' && (
+            {selectedProfession && (
               <div className="flex gap-2">
                 <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
                   <DialogTrigger asChild>
@@ -305,7 +369,7 @@ export default function BuildingPlannerBasic() {
                     <DialogHeader>
                       <DialogTitle>Lagre prosjekt</DialogTitle>
                       <DialogDescription>
-                        Gi prosjektet ditt et navn for å lagre det
+                        Gi prosjektet ditt et navn
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -328,279 +392,177 @@ export default function BuildingPlannerBasic() {
                   </DialogContent>
                 </Dialog>
 
-                <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Last inn
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Last inn prosjekt</DialogTitle>
-                      <DialogDescription>
-                        Velg et eksisterende prosjekt å jobbe videre med
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                      {loading ? (
-                        <p>Laster prosjekter...</p>
-                      ) : projects.length === 0 ? (
-                        <p className="text-muted-foreground">Ingen lagrede prosjekter</p>
-                      ) : (
-                        projects.map((project) => (
-                          <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                              <h4 className="font-semibold">{project.project_name}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Totalkostnad: {formatNumberWithSpaces(project.total_cost || 0)} NOK
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Sist oppdatert: {new Date(project.updated_at).toLocaleDateString('no-NO')}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleLoadProject(project)}>
-                                Last inn
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive" 
-                                onClick={() => handleDeleteProject(project.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
                 <Button variant="outline" size="sm" onClick={clearCanvas}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Tøm
+                </Button>
+
+                <Button variant="outline" size="sm" onClick={resetAll}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Nytt
+                  Start på nytt
                 </Button>
               </div>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {!projectType ? (
+          {!selectedProfession ? (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Velg prosjekttype</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col items-center justify-center space-y-2"
-                  onClick={() => setProjectType('new')}
-                >
-                  <Plus className="h-8 w-8" />
-                  <div className="text-center">
-                    <div className="font-semibold">Ny</div>
-                    <div className="text-sm text-muted-foreground">Start nytt prosjekt</div>
-                  </div>
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col items-center justify-center space-y-2"
-                  onClick={() => setProjectType('link')}
-                >
-                  <Link2 className="h-8 w-8" />
-                  <div className="text-center">
-                    <div className="font-semibold">Knytt prosjekt</div>
-                    <div className="text-sm text-muted-foreground">Bruk eksisterende beregning</div>
-                  </div>
-                </Button>
+              <h3 className="text-lg font-semibold">Velg yrke</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {PROFESSIONS.map((profession) => (
+                  <Button
+                    key={profession.id}
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center space-y-2"
+                    onClick={() => setSelectedProfession(profession.id)}
+                  >
+                    <div style={{ color: profession.color }}>
+                      {profession.icon}
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold">{profession.name}</div>
+                    </div>
+                  </Button>
+                ))}
               </div>
             </div>
-          ) : projectType === 'new' ? (
-            <div className="space-y-4">
+          ) : (
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Nytt byggeprosjekt</h3>
-                <Button variant="ghost" size="sm" onClick={resetProject}>
-                  Tilbake
+                <div className="flex items-center gap-3">
+                  <div style={{ color: PROFESSIONS.find(p => p.id === selectedProfession)?.color }}>
+                    {PROFESSIONS.find(p => p.id === selectedProfession)?.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold">
+                    {PROFESSIONS.find(p => p.id === selectedProfession)?.name}
+                  </h3>
+                </div>
+                <Button variant="ghost" size="sm" onClick={resetAll}>
+                  Bytt yrke
                 </Button>
               </div>
 
+              {/* Project Name Input */}
               <div>
-                <Label htmlFor="project-name">Prosjektnavn</Label>
+                <Label htmlFor="project-name-input">Prosjektnavn</Label>
                 <Input
-                  id="project-name"
+                  id="project-name-input"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="Mitt byggeprosjekt"
                 />
               </div>
 
-              <Tabs defaultValue="draw" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="draw">Tegn</TabsTrigger>
-                  <TabsTrigger value="items">Elementer</TabsTrigger>
-                  <TabsTrigger value="cost">Kostnad</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="draw" className="space-y-4">
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {BUILDING_ITEMS.map((item) => (
-                      <Button
-                        key={item.id}
-                        variant={selectedTool === item.type ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedTool(item.type)}
-                      >
-                        {item.type === 'wall' && <Minus className="h-4 w-4 mr-2" />}
-                        {item.type === 'room' && <Square className="h-4 w-4 mr-2" />}
-                        {item.type === 'door' && <Square className="h-4 w-4 mr-2" />}
-                        {item.type === 'window' && <Square className="h-4 w-4 mr-2" />}
-                        {item.description}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <div className="border rounded-lg overflow-hidden">
-                    <canvas ref={canvasRef} className="block" />
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    <p>Klikk på lerretet for å plassere valgte element. Dra elementer for å flytte dem.</p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="items" className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Plasserte elementer</h4>
-                    {placedItems.length === 0 ? (
-                      <p className="text-muted-foreground">Ingen elementer plassert ennå</p>
-                    ) : (
-                      <div className="space-y-2">
+              {/* Floor Plan Upload */}
+              <div className="space-y-2">
+                <Label>Last opp plantegning</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {floorPlanImage ? 'Bytt plantegning' : 'Velg plantegning'}
+                  </Button>
+                  {floorPlanImage && (
+                    <Badge variant="secondary">Plantegning lastet</Badge>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFloorPlanUpload}
+                  className="hidden"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Last opp en plantegning (JPG, PNG) for å plassere elementer på
+                </p>
+              </div>
+
+              {/* Tools Selection */}
+              <div className="space-y-3">
+                <Label>Velg verktøy/element</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PROFESSIONS.find(p => p.id === selectedProfession)?.tools.map((tool) => (
+                    <Button
+                      key={tool.id}
+                      variant={selectedTool === tool.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedTool(tool.id)}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded mr-2" 
+                        style={{ backgroundColor: tool.color }}
+                      />
+                      {tool.name}
+                    </Button>
+                  ))}
+                </div>
+                {selectedTool && (
+                  <p className="text-sm text-muted-foreground">
+                    Klikk på {floorPlanImage ? 'plantegningen' : 'lerretet'} for å plassere{' '}
+                    {PROFESSIONS.find(p => p.id === selectedProfession)?.tools.find(t => t.id === selectedTool)?.name.toLowerCase()}
+                  </p>
+                )}
+              </div>
+
+              {/* Canvas */}
+              <div className="border rounded-lg overflow-hidden">
+                <canvas ref={canvasRef} className="block" />
+              </div>
+
+              {/* Placed Items and Cost Estimate */}
+              {placedItems.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Plasserte elementer og prisestimat</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Elementer på plantegning</Label>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
                         {placedItems.map((item, index) => (
                           <div key={item.id} className="flex justify-between items-center p-2 border rounded">
-                            <div>
-                              <span className="font-medium">{item.description}</span>
-                              <Badge variant="secondary" className="ml-2">
-                                {item.type}
-                              </Badge>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded" 
+                                style={{ backgroundColor: PROFESSIONS.find(p => p.id === item.profession)?.tools.find(t => t.id === item.type)?.color }}
+                              />
+                              <span className="text-sm">{item.name}</span>
                             </div>
-                            <span className="font-semibold">
+                            <span className="text-sm font-medium">
                               {formatNumberWithSpaces(item.cost)} NOK
                             </span>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="cost" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Kostnadssammendrag</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {BUILDING_ITEMS.map((item) => {
-                        const count = placedItems.filter(p => p.type === item.type).length;
-                        const totalCost = count * item.cost;
-                        
-                        return (
-                          <div key={item.type} className="flex justify-between items-center">
-                            <div>
-                              <span className="font-medium">{item.description}</span>
-                              <span className="text-sm text-muted-foreground ml-2">
-                                ({count} stk)
-                              </span>
+                    </div>
+                    
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Calculator className="h-4 w-4" />
+                          Prisestimat
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2">
+                          {Object.entries(getItemSummary()).map(([name, data]) => (
+                            <div key={name} className="flex justify-between text-sm">
+                              <span>{name} ({data.count} stk)</span>
+                              <span>{formatNumberWithSpaces(data.total)} NOK</span>
                             </div>
-                            <span className="font-semibold">
-                              {formatNumberWithSpaces(totalCost)} NOK
-                            </span>
+                          ))}
+                          <div className="border-t pt-2 mt-2">
+                            <div className="flex justify-between font-bold">
+                              <span>Total estimat</span>
+                              <span>{formatNumberWithSpaces(calculateTotalCost())} NOK</span>
+                            </div>
                           </div>
-                        );
-                      })}
-                      
-                      <div className="border-t pt-4">
-                        <div className="flex justify-between items-center text-lg font-bold">
-                          <span>Totalt</span>
-                          <span>{formatNumberWithSpaces(calculateTotalCost())} NOK</span>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Knytt til kalkulator</h3>
-                <Button variant="ghost" size="sm" onClick={resetProject}>
-                  Tilbake
-                </Button>
-              </div>
-
-              <div>
-                <Label htmlFor="calculation-select">Velg kalkulator-beregning</Label>
-                <Select value={selectedCalculation} onValueChange={setSelectedCalculation}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg en beregning" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {calculations.length === 0 ? (
-                      <SelectItem value="no-calculations" disabled>
-                        Ingen lagrede beregninger
-                      </SelectItem>
-                    ) : (
-                      calculations.map((calc) => (
-                        <SelectItem key={calc.id} value={calc.id}>
-                          <div className="flex flex-col">
-                            <span>{calc.calculation_name || 'Uten navn'}</span>
-                            {calc.property_address && (
-                              <span className="text-xs text-muted-foreground">
-                                {calc.property_address}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedCalculation && selectedCalculation !== 'no-calculations' && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="linked-project-name">Prosjektnavn</Label>
-                    <Input
-                      id="linked-project-name"
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      placeholder="Byggeprosjekt basert på kalkulator"
-                    />
-                  </div>
-
-                  <div className="p-4 border rounded-lg bg-muted/50">
-                    <h4 className="font-semibold mb-2">Tilknyttet kalkulator</h4>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Beregning:</strong> {
-                        calculations.find(c => c.id === selectedCalculation)?.calculation_name || 'Valgt beregning'
-                      }
-                    </p>
-                    {calculations.find(c => c.id === selectedCalculation)?.property_address && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Adresse:</strong> {
-                          calculations.find(c => c.id === selectedCalculation)?.property_address
-                        }
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button onClick={() => setSaveDialogOpen(true)} disabled={!projectName.trim()}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Lagre prosjekt
-                    </Button>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               )}
@@ -608,36 +570,6 @@ export default function BuildingPlannerBasic() {
           )}
         </CardContent>
       </Card>
-
-      {/* Save dialog for linked projects */}
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Lagre tilknyttet prosjekt</DialogTitle>
-            <DialogDescription>
-              Dette prosjektet vil bli knyttet til den valgte kalkulatoren
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Prosjektnavn</Label>
-              <p className="text-sm font-medium">{projectName}</p>
-            </div>
-            <div>
-              <Label>Tilknyttet kalkulator</Label>
-              <p className="text-sm font-medium">
-                {calculations.find(c => c.id === selectedCalculation)?.calculation_name || 'Valgt beregning'}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-              Avbryt
-            </Button>
-            <Button onClick={handleSaveProject}>Lagre</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
