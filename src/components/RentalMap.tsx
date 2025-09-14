@@ -163,6 +163,8 @@ const RentalMap = () => {
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
+    el.style.overflow = 'hidden'; // Prevent overflow
+    el.style.position = 'relative'; // Ensure proper positioning
     
     return el;
   };
@@ -197,7 +199,10 @@ const RentalMap = () => {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker(el)
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center'
+        })
           .setLngLat([property.coordinates[0], property.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
@@ -240,7 +245,10 @@ const RentalMap = () => {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker(el)
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center'
+        })
           .setLngLat([property.coordinates[0], property.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
@@ -274,7 +282,10 @@ const RentalMap = () => {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker(el)
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center'
+        })
           .setLngLat([calc.coordinates[0], calc.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
@@ -304,7 +315,10 @@ const RentalMap = () => {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker(el)
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center'
+        })
           .setLngLat(location.coordinates as [number, number])
           .setPopup(popup)
           .addTo(map.current!);
@@ -527,7 +541,11 @@ const RentalMap = () => {
             </div>
           ) : (
             <div className="relative">
-              <div ref={mapContainer} className="h-96 w-full rounded-lg border" />
+              <div 
+                ref={mapContainer} 
+                className="h-96 w-full rounded-lg border overflow-hidden"
+                style={{ position: 'relative' }}
+              />
               
               {/* Legend - Hidden on mobile */}
               <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
