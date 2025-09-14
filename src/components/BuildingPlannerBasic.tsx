@@ -239,6 +239,7 @@ export default function BuildingPlannerBasic() {
         imageElement.onload = () => {
           // Clear canvas first
           canvas.clear();
+          canvas.backgroundColor = '#ffffff';
           
           // Calculate proper scaling to fit within canvas bounds
           const canvasWidth = canvas.width || 800;
@@ -272,6 +273,11 @@ export default function BuildingPlannerBasic() {
           
           // Add touch controls for mobile
           addTouchControls(canvas);
+          
+          toast({
+            title: "Plantegning lastet opp",
+            description: "Du kan nå dra og zoome med touch-kontroller",
+          });
         };
         
         imageElement.onerror = () => {
@@ -444,48 +450,57 @@ export default function BuildingPlannerBasic() {
   };
 
   const clearCanvas = () => {
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.clear();
-      fabricCanvasRef.current.backgroundColor = '#ffffff';
-      fabricCanvasRef.current.renderAll();
-      
-      if (!floorPlanImage) {
-        addGrid(fabricCanvasRef.current);
-      } else if (floorPlanImage) {
-        // Re-add floor plan image using v6 approach
-        const canvas = fabricCanvasRef.current;
-        const imageElement = document.createElement('img');
-        imageElement.src = floorPlanImage;
-        imageElement.crossOrigin = 'anonymous';
+    if (fabricCanvasRef.current && fabricCanvasRef.current.getContext) {
+      try {
+        fabricCanvasRef.current.clear();
+        fabricCanvasRef.current.backgroundColor = '#ffffff';
+        fabricCanvasRef.current.renderAll();
         
-        imageElement.onload = () => {
-          const canvasWidth = canvas.width || 800;
-          const canvasHeight = canvas.height || 600;
-          const imgWidth = imageElement.naturalWidth;
-          const imgHeight = imageElement.naturalHeight;
+        if (!floorPlanImage) {
+          addGrid(fabricCanvasRef.current);
+        } else if (floorPlanImage) {
+          // Re-add floor plan image using v6 approach
+          const canvas = fabricCanvasRef.current;
+          const imageElement = document.createElement('img');
+          imageElement.src = floorPlanImage;
+          imageElement.crossOrigin = 'anonymous';
           
-          const scaleX = canvasWidth / imgWidth;
-          const scaleY = canvasHeight / imgHeight;
-          const scale = Math.min(scaleX, scaleY, 1);
-          
-          const scaledWidth = imgWidth * scale;
-          const scaledHeight = imgHeight * scale;
-          
-          const fabricImg = new FabricImage(imageElement, {
-            left: (canvasWidth - scaledWidth) / 2,
-            top: (canvasHeight - scaledHeight) / 2,
-            scaleX: scale,
-            scaleY: scale,
-            selectable: false,
-            evented: false,
-            hasControls: false,
-            hoverCursor: 'default',
-            name: 'floorPlan'
-          });
-          
-          canvas.add(fabricImg);
-          canvas.renderAll();
-        };
+          imageElement.onload = () => {
+            const canvasWidth = canvas.width || 800;
+            const canvasHeight = canvas.height || 600;
+            const imgWidth = imageElement.naturalWidth;
+            const imgHeight = imageElement.naturalHeight;
+            
+            const scaleX = canvasWidth / imgWidth;
+            const scaleY = canvasHeight / imgHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
+            
+            const fabricImg = new FabricImage(imageElement, {
+              left: (canvasWidth - scaledWidth) / 2,
+              top: (canvasHeight - scaledHeight) / 2,
+              scaleX: scale,
+              scaleY: scale,
+              selectable: false,
+              evented: false,
+              hasControls: false,
+              hoverCursor: 'default',
+              name: 'floorPlan'
+            });
+            
+            canvas.add(fabricImg);
+            canvas.renderAll();
+          };
+        }
+      } catch (error) {
+        console.error('Error clearing canvas:', error);
+        toast({
+          title: "Feil",
+          description: "Kunne ikke tømme lerretet",
+          variant: "destructive"
+        });
       }
     }
     setPlacedItems([]);
