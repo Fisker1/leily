@@ -126,7 +126,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       <img 
         src={imageUrl} 
         alt={alt || `Eiendom på ${address}`}
-        className={`object-cover ${className}`}
+        className={`object-cover aspect-square ${className}`}
       />
     );
   }
@@ -137,7 +137,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       <img 
         src={isDemoAddress} 
         alt={alt || `Eiendom på ${address}`}
-        className={`object-cover ${className}`}
+        className={`object-cover aspect-square ${className}`}
       />
     );
   }
