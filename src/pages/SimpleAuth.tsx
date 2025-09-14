@@ -205,14 +205,8 @@ const SimpleAuth = () => {
                 console.log('🥷 STAGER BUTTON CLICKED! Function is working!');
                 console.log('🥷 Stager button clicked - start');
                 
-                const password = prompt('Skriv inn passordet for Stager:');
-                console.log('🥷 Password prompt completed', password ? 'Password entered' : 'No password');
-                
-                if (password !== 'blåmeis') {
-                  console.log('🥷 Wrong password');
-                  alert('Feil passord!');
-                  return;
-                }
+                // Skip password prompt for mobile compatibility
+                console.log('🥷 Skipping password prompt, logging in directly...');
                 
                 console.log('🥷 Correct password, starting login...');
                 setLoading(true);
