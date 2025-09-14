@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet, ImageIcon, FileImage, ZoomIn, ZoomOut, Save, FolderOpen, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBuildingProjects } from '@/hooks/useBuildingProjects';
@@ -60,8 +59,9 @@ export default function BuildingPlannerBasic() {
   const [currentProject, setCurrentProject] = useState<any>(null);
   const [projectName, setProjectName] = useState('');
   const [linkedCalculationId, setLinkedCalculationId] = useState<string | null>(null);
-  const [showProjectDialog, setShowProjectDialog] = useState(false);
-  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+  const [showLinkProjectInput, setShowLinkProjectInput] = useState(false);
+  const [tempProjectName, setTempProjectName] = useState('');
   
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([
     {
@@ -979,90 +979,89 @@ export default function BuildingPlannerBasic() {
     .reduce((sum, item) => sum + item.price, 0);
 
   // Project management functions
-  const handleSaveProject = async () => {
-    if (!user) {
-      toast.error('Du må logge inn for å lagre prosjekter');
-      return;
-    }
+  const handleCreateNewProject = async () => {
+    if (!tempProjectName.trim()) return;
     
-    if (!projectName.trim()) {
-      toast.error('Vennligst gi prosjektet et navn');
-      return;
+    setProjectName(tempProjectName);
+    const saved = await saveProject(
+      tempProjectName,
+      null, // No linked calculation
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowNewProjectInput(false);
+      setTempProjectName('');
+      toast.success(`Prosjekt "${tempProjectName}" opprettet`);
     }
-
-    const projectData = {
-      floor_plans: floorPlans.map(fp => ({
-        id: fp.id,
-        name: fp.name,
-        backgroundImage: fp.backgroundImage
-      })),
-      placed_items: placedItems,
-      total_cost: totalCost
-    };
-
-    if (currentProject) {
-      // Update existing project
-      const updated = await updateProject(currentProject.id, {
-        project_name: projectName,
-        calculation_id: linkedCalculationId,
-        floor_plans: projectData.floor_plans,
-        placed_items: projectData.placed_items,
-        total_cost: projectData.total_cost
-      });
-      if (updated) {
-        setCurrentProject(updated);
-      }
-    } else {
-      // Create new project
-      const saved = await saveProject(
-        projectName,
-        linkedCalculationId,
-        projectData.floor_plans,
-        projectData.placed_items,
-        projectData.total_cost
-      );
-      if (saved) {
-        setCurrentProject(saved);
-      }
-    }
-    setShowProjectDialog(false);
   };
 
-  const handleLoadProject = async (project: any) => {
-    try {
-      const loadedProject = await loadProject(project.id);
-      if (!loadedProject) return;
+  const handleLinkToCalculation = async () => {
+    if (!linkedCalculationId) return;
+    
+    const selectedCalc = calculations.find(c => c.id === linkedCalculationId);
+    if (!selectedCalc) return;
+    
+    const projectName = selectedCalc.calculation_name || selectedCalc.property_address || `Kalkyle ${selectedCalc.id.slice(0, 8)}`;
+    setProjectName(projectName);
+    
+    const saved = await saveProject(
+      projectName,
+      linkedCalculationId,
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowLinkProjectInput(false);
+      toast.success(`Prosjekt koblet til kalkyle "${projectName}"`);
+    }
+  };
+    if (!tempProjectName.trim()) return;
+    
+    setProjectName(tempProjectName);
+    const saved = await saveProject(
+      tempProjectName,
+      null, // No linked calculation
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowNewProjectInput(false);
+      setTempProjectName('');
+      toast.success(`Prosjekt "${tempProjectName}" opprettet`);
+    }
+  };
 
-      setCurrentProject(loadedProject);
-      setProjectName(loadedProject.project_name);
-      setLinkedCalculationId(loadedProject.calculation_id);
-      
-      // Load floor plans
-      if (loadedProject.floor_plans && Array.isArray(loadedProject.floor_plans)) {
-        const loadedFloorPlans = loadedProject.floor_plans.map((fp: any) => ({
-          ...fp,
-          canvas: null,
-          history: [],
-          historyIndex: -1,
-          isUndoing: false,
-          isEditingName: false,
-        }));
-        setFloorPlans(loadedFloorPlans);
-        if (loadedFloorPlans.length > 0) {
-          setActiveFloorPlan(loadedFloorPlans[0].id);
-        }
-      }
-
-      // Load placed items
-      if (loadedProject.placed_items && Array.isArray(loadedProject.placed_items)) {
-        setPlacedItems(loadedProject.placed_items as unknown as PlacedItem[]);
-      }
-
-      setShowLoadDialog(false);
-      toast.success(`Prosjekt "${loadedProject.project_name}" lastet`);
-    } catch (error) {
-      console.error('Error loading project:', error);
-      toast.error('Kunne ikke laste prosjekt');
+  const handleLinkToCalculation = async () => {
+    if (!linkedCalculationId) return;
+    
+    const selectedCalc = calculations.find(c => c.id === linkedCalculationId);
+    if (!selectedCalc) return;
+    
+    const projectName = selectedCalc.calculation_name || selectedCalc.property_address || `Kalkyle ${selectedCalc.id.slice(0, 8)}`;
+    setProjectName(projectName);
+    
+    const saved = await saveProject(
+      projectName,
+      linkedCalculationId,
+      floorPlans,
+      placedItems,
+      totalCost
+    );
+    
+    if (saved) {
+      setCurrentProject(saved);
+      setShowLinkProjectInput(false);
+      toast.success(`Prosjekt koblet til kalkyle "${projectName}"`);
     }
   };
 
@@ -1070,6 +1069,9 @@ export default function BuildingPlannerBasic() {
     setCurrentProject(null);
     setProjectName('');
     setLinkedCalculationId(null);
+    setShowNewProjectInput(false);
+    setShowLinkProjectInput(false);
+    setTempProjectName('');
     setFloorPlans([{
       id: '1',
       name: 'Etasje 1',
@@ -1094,28 +1096,116 @@ export default function BuildingPlannerBasic() {
           <div className="flex flex-col space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Byggeplanlegger</CardTitle>
+                <CardTitle>
+                  {currentProject 
+                    ? (linkedCalculationId 
+                        ? calculations.find(c => c.id === linkedCalculationId)?.calculation_name || currentProject.project_name
+                        : currentProject.project_name)
+                    : 'Byggeplanlegger'}
+                </CardTitle>
                 <CardDescription>
                   {currentProject 
-                    ? `Prosjekt: ${currentProject.project_name}${linkedCalculationId ? ' (knyttet til kalkyle)' : ''}`
+                    ? (linkedCalculationId ? 'Knyttet til kalkyle' : 'Selvstendig prosjekt')
                     : 'Lag nytt prosjekt eller koble til eksisterende kalkyle'}
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setShowLoadDialog(true)} variant="outline" size="sm">
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Last prosjekt
-                </Button>
-                <Button onClick={() => setShowProjectDialog(true)} variant="outline" size="sm">
-                  <Save className="h-4 w-4 mr-2" />
-                  {currentProject ? 'Oppdater' : 'Lagre'} prosjekt
-                </Button>
+              
+              {!currentProject && (
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowNewProjectInput(true)} variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ny
+                  </Button>
+                  <Button onClick={() => setShowLinkProjectInput(true)} variant="outline" size="sm">
+                    <Link className="h-4 w-4 mr-2" />
+                    Knytt prosjekt
+                  </Button>
+                </div>
+              )}
+              
+              {currentProject && (
                 <Button onClick={startNewProject} variant="outline" size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Nytt prosjekt
                 </Button>
-              </div>
+              )}
             </div>
+            
+            {/* New Project Input */}
+            {showNewProjectInput && (
+              <div className="bg-muted p-4 rounded-lg space-y-3">
+                <div className="text-sm font-medium">Gi prosjektet et navn:</div>
+                <div className="flex gap-2">
+                  <Input
+                    value={tempProjectName}
+                    onChange={(e) => setTempProjectName(e.target.value)}
+                    placeholder="Prosjektnavn..."
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={() => handleCreateNewProject()}
+                    disabled={!tempProjectName.trim()}
+                    size="sm"
+                  >
+                    Opprett
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowNewProjectInput(false);
+                      setTempProjectName('');
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Avbryt
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Link Project Input */}
+            {showLinkProjectInput && (
+              <div className="bg-muted p-4 rounded-lg space-y-3">
+                <div className="text-sm font-medium">Velg kalkyle fra biblioteket:</div>
+                {calculations.length > 0 ? (
+                  <div className="flex gap-2">
+                    <Select onValueChange={(value) => setLinkedCalculationId(value)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Velg kalkyle..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {calculations.map((calc) => (
+                          <SelectItem key={calc.id} value={calc.id}>
+                            {calc.calculation_name || calc.property_address || `Kalkyle ${calc.id.slice(0, 8)}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={() => handleLinkToCalculation()}
+                      disabled={!linkedCalculationId}
+                      size="sm"
+                    >
+                      Koble
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setShowLinkProjectInput(false);
+                        setLinkedCalculationId(null);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Ingen kalkulasjoner funnet i biblioteket. Opprett først en kalkyle i eiendomskalkulatoren.
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Project Info Summary */}
             {currentProject && (
@@ -1691,3 +1781,5 @@ export default function BuildingPlannerBasic() {
     </div>
   );
 }
+
+// Fixed project management UI with simplified options
