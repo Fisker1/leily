@@ -192,6 +192,12 @@ const SimpleAuth = () => {
               variant="outline"
               className="w-full"
               onClick={async () => {
+                const password = prompt('Skriv inn passordet for Stager:');
+                if (password !== 'blåmeis') {
+                  alert('Feil passord!');
+                  return;
+                }
+                
                 console.log('Stager button clicked');
                 setLoading(true);
                 try {
