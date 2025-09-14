@@ -65,10 +65,13 @@ const RentalMap = () => {
   useEffect(() => {
     const loadMapbox = async () => {
       try {
+        console.log('🗺️ Loading Mapbox GL...');
         const mapboxModule = await import('mapbox-gl');
         await import('mapbox-gl/dist/mapbox-gl.css');
+        console.log('✅ Mapbox GL loaded successfully');
         setMapboxgl(mapboxModule.default);
       } catch (error) {
+        console.error('❌ Failed to load Mapbox GL:', error);
         setError('Kunne ikke laste Mapbox GL biblioteket');
         toast({
           title: "Kartfeil",
@@ -89,20 +92,25 @@ const RentalMap = () => {
     
     const fetchToken = async () => {
       try {
+        console.log('🔑 Fetching Mapbox token...');
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
         if (error) {
+          console.error('❌ Token fetch error:', error);
           setError(`Token fetch error: ${error.message}`);
           throw error;
         }
 
         if (data?.token) {
+          console.log('✅ Mapbox token received');
           setMapboxToken(data.token);
         } else {
+          console.error('❌ No token received from server');
           setError('Ingen token mottatt fra server');
           throw new Error('Ingen token mottatt');
         }
       } catch (error: any) {
+        console.error('❌ Failed to fetch token:', error);
         setError(`Kunne ikke hente Mapbox token: ${error.message}`);
         toast({
           title: "Kartfeil", 
@@ -330,12 +338,21 @@ const RentalMap = () => {
 
   // Initialize map - only run once when requirements are met
   useEffect(() => {
+    console.log('🗺️ Map initialization check:', {
+      hasToken: !!mapboxToken,
+      hasMapboxgl: !!mapboxgl,
+      hasContainer: !!mapContainer.current,
+      hasExistingMap: !!map.current
+    });
+
     // Only initialize if we have requirements and no existing map
     if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
+      console.log('❌ Map initialization requirements not met');
       return;
     }
 
     try {
+      console.log('🚀 Initializing map...');
       mapboxgl.accessToken = mapboxToken;
 
       map.current = new mapboxgl.Map({
@@ -346,15 +363,19 @@ const RentalMap = () => {
         attributionControl: false,
       });
 
+      console.log('✅ Map instance created');
+
       map.current.addControl(
         new mapboxgl.NavigationControl(),
         'top-right'
       );
 
       map.current.on('load', () => {
+        console.log('✅ Map loaded successfully');
         // Wait longer for map to be fully ready
         setTimeout(() => {
           if (map.current && map.current.isStyleLoaded()) {
+            console.log('✅ Map style loaded, adding markers');
             addMarkersToMap();
           }
         }, 500);
@@ -362,6 +383,8 @@ const RentalMap = () => {
 
       map.current.on('error', (e) => {
         const errorMessage = e.error?.message || e.message || 'Ukjent feil';
+        console.error('❌ Map error:', errorMessage);
+        
         const isRecoverableError = errorMessage.includes('NetworkError') || 
                                  errorMessage.includes('timeout') ||
                                  errorMessage.includes('Failed to fetch') ||
@@ -380,6 +403,7 @@ const RentalMap = () => {
       });
 
     } catch (error) {
+      console.error('❌ Map initialization failed:', error);
       setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
         title: "Kartfeil",
