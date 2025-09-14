@@ -198,7 +198,7 @@ export default function BuildingPlannerBasic() {
     }
   };
 
-  const handleFloorPlanUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFloorPlanUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -223,7 +223,7 @@ export default function BuildingPlannerBasic() {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const imageUrl = e.target?.result as string;
       setFloorPlanImage(imageUrl);
       
@@ -231,34 +231,30 @@ export default function BuildingPlannerBasic() {
       if (fabricCanvasRef.current) {
         const canvas = fabricCanvasRef.current;
         
-        // Create HTML image element
-        const imageElement = document.createElement('img');
-        imageElement.src = imageUrl;
-        imageElement.crossOrigin = 'anonymous';
+        console.log('Loading image with v6 method...');
         
-        imageElement.onload = () => {
+        try {
           // Clear canvas first
           canvas.clear();
           canvas.backgroundColor = '#ffffff';
           
+          // Use the correct v6 FabricImage.fromURL method
+          const fabricImg = await FabricImage.fromURL(imageUrl);
+          
+          console.log('Image loaded, dimensions:', fabricImg.width, 'x', fabricImg.height);
+          
           // Calculate proper scaling to fit within canvas bounds
           const canvasWidth = canvas.width || 800;
           const canvasHeight = canvas.height || 600;
-          const imgWidth = imageElement.naturalWidth;
-          const imgHeight = imageElement.naturalHeight;
           
-          const scaleX = canvasWidth / imgWidth;
-          const scaleY = canvasHeight / imgHeight;
+          const scaleX = canvasWidth / fabricImg.width!;
+          const scaleY = canvasHeight / fabricImg.height!;
           const scale = Math.min(scaleX, scaleY, 1);
           
-          // Calculate centered position
-          const scaledWidth = imgWidth * scale;
-          const scaledHeight = imgHeight * scale;
-          
-          // Create FabricImage with the loaded image element
-          const fabricImg = new FabricImage(imageElement, {
-            left: (canvasWidth - scaledWidth) / 2,
-            top: (canvasHeight - scaledHeight) / 2,
+          // Configure the image
+          fabricImg.set({
+            left: (canvasWidth - fabricImg.width! * scale) / 2,
+            top: (canvasHeight - fabricImg.height! * scale) / 2,
             scaleX: scale,
             scaleY: scale,
             selectable: false,
@@ -268,8 +264,11 @@ export default function BuildingPlannerBasic() {
             name: 'floorPlan'
           });
           
+          console.log('Adding image to canvas...');
           canvas.add(fabricImg);
           canvas.renderAll();
+          
+          console.log('Image added successfully');
           
           // Add touch controls for mobile
           addTouchControls(canvas);
@@ -278,21 +277,15 @@ export default function BuildingPlannerBasic() {
             title: "Plantegning lastet opp",
             description: "Du kan nå dra og zoome med touch-kontroller",
           });
-        };
-        
-        imageElement.onerror = () => {
+        } catch (error) {
+          console.error('Error loading image:', error);
           toast({
-            title: "Feil ved lasting",
+            title: "Feil ved lasting av bilde",
             description: "Kunne ikke laste bildet",
             variant: "destructive"
           });
-        };
+        }
       }
-      
-      toast({
-        title: "Plantegning lastet opp",
-        description: "Du kan nå dra og zoome med touch-kontroller"
-      });
     };
     reader.readAsDataURL(file);
   };
@@ -465,22 +458,21 @@ export default function BuildingPlannerBasic() {
           imageElement.src = floorPlanImage;
           imageElement.crossOrigin = 'anonymous';
           
-          imageElement.onload = () => {
+        imageElement.onload = async () => {
+          try {
             const canvasWidth = canvas.width || 800;
             const canvasHeight = canvas.height || 600;
-            const imgWidth = imageElement.naturalWidth;
-            const imgHeight = imageElement.naturalHeight;
             
-            const scaleX = canvasWidth / imgWidth;
-            const scaleY = canvasHeight / imgHeight;
+            // Use v6 fromURL method
+            const fabricImg = await FabricImage.fromURL(floorPlanImage);
+            
+            const scaleX = canvasWidth / fabricImg.width!;
+            const scaleY = canvasHeight / fabricImg.height!;
             const scale = Math.min(scaleX, scaleY, 1);
             
-            const scaledWidth = imgWidth * scale;
-            const scaledHeight = imgHeight * scale;
-            
-            const fabricImg = new FabricImage(imageElement, {
-              left: (canvasWidth - scaledWidth) / 2,
-              top: (canvasHeight - scaledHeight) / 2,
+            fabricImg.set({
+              left: (canvasWidth - fabricImg.width! * scale) / 2,
+              top: (canvasHeight - fabricImg.height! * scale) / 2,
               scaleX: scale,
               scaleY: scale,
               selectable: false,
@@ -492,7 +484,12 @@ export default function BuildingPlannerBasic() {
             
             canvas.add(fabricImg);
             canvas.renderAll();
-          };
+            
+            console.log('Floor plan re-added to canvas');
+          } catch (error) {
+            console.error('Error re-adding floor plan:', error);
+          }
+        };
         }
       } catch (error) {
         console.error('Error clearing canvas:', error);
