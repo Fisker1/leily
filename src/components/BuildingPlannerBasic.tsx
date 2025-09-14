@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet, ImageIcon, FileImage } from 'lucide-react';
+import { Upload, Hammer, Zap, Undo, Trash2, Plus, X, Droplet, ImageIcon, FileImage, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FloorPlan {
@@ -65,6 +65,12 @@ export default function BuildingPlannerBasic() {
   const [electricianTool, setElectricianTool] = useState<string | null>(null);
   const [plumberTool, setPlumberTool] = useState<string | null>(null);
   const [overlayFlashing, setOverlayFlashing] = useState(false);
+  
+  // State for drawing walls with waypoints
+  const [wallPoints, setWallPoints] = useState<{x: number, y: number}[]>([]);
+  const [isDrawingWall, setIsDrawingWall] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -270,12 +276,18 @@ export default function BuildingPlannerBasic() {
     floorPlans.forEach(fp => {
       if (fp.canvas && fp.canvas.freeDrawingBrush) {
         try {
+          // Disable drawing mode for wall tool - we'll handle waypoints manually
           if (selectedTool === 'carpenter' && carpenterTool === 'wall') {
-            fp.canvas.isDrawingMode = true;
-            fp.canvas.freeDrawingBrush.color = '#8B4513';
-            fp.canvas.freeDrawingBrush.width = 8;
+            fp.canvas.isDrawingMode = false;
+            // Reset wall drawing state when switching away from wall tool
+            if (!isDrawingWall) {
+              setWallPoints([]);
+            }
           } else {
             fp.canvas.isDrawingMode = false;
+            // Reset wall drawing state when switching tools
+            setWallPoints([]);
+            setIsDrawingWall(false);
           }
           fp.canvas.renderAll();
         } catch (error) {
@@ -283,7 +295,7 @@ export default function BuildingPlannerBasic() {
         }
       }
     });
-  }, [selectedTool, carpenterTool, floorPlans]);
+  }, [selectedTool, carpenterTool, floorPlans, isDrawingWall]);
 
   const handleCarpenterTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
     let shape;
@@ -593,13 +605,8 @@ export default function BuildingPlannerBasic() {
     try {
       if (selectedTool === 'carpenter' && carpenterTool) {
         if (carpenterTool === 'wall') {
-          // Don't place items for wall drawing - just enable drawing mode
-          if (canvas.freeDrawingBrush) {
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush.color = '#8B4513';
-            canvas.freeDrawingBrush.width = 8;
-            canvas.renderAll();
-          }
+          // Handle wall waypoint clicking
+          handleWallClick(canvas, {x, y});
         } else {
           handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
         }
@@ -611,6 +618,19 @@ export default function BuildingPlannerBasic() {
     } catch (error) {
       console.error('Error placing item:', error);
       toast("Feil ved plassering av objekt");
+    }
+  };
+
+  // Handle long press for finishing walls
+  const handleOverlayLongPress = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
+    if (selectedTool === 'carpenter' && carpenterTool === 'wall' && isDrawingWall) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const canvas = getCurrentFloorPlan()?.canvas;
+      if (canvas) {
+        handleLongPress(canvas);
+      }
     }
   };
 
@@ -723,42 +743,34 @@ export default function BuildingPlannerBasic() {
             // Create Fabric image from the loaded HTML image element
             const fabricImg = new FabricImage(img);
             
-            // Scale image to fit canvas while maintaining aspect ratio
-            const canvasAspect = canvas.width / canvas.height;
-            const imageAspect = fabricImg.width / fabricImg.height;
+                // Scale image to fit canvas while maintaining aspect ratio - stretch to fill
+                fabricImg.scaleToWidth(canvas.width * 0.95);
+                fabricImg.scaleToHeight(canvas.height * 0.95);
             
-            if (imageAspect > canvasAspect) {
-              // Image is wider - fit to canvas width
-              fabricImg.scaleToWidth(canvas.width * 0.9);
-            } else {
-              // Image is taller - fit to canvas height  
-              fabricImg.scaleToHeight(canvas.height * 0.9);
-            }
-            
-            // Center the image and make it non-selectable
-            fabricImg.set({
-              left: canvas.width / 2,
-              top: canvas.height / 2,
-              originX: 'center',
-              originY: 'center',
-              opacity: 0.7,
-              selectable: false,
-              evented: false
-            });
-            
-            // Clear any existing background images
-            const existingBg = canvas.getObjects().find(obj => (obj as any).isBackgroundImage);
-            if (existingBg) {
-              canvas.remove(existingBg);
-            }
-            
-            // Mark this as background image
-            (fabricImg as any).isBackgroundImage = true;
-            
-            // Add image to canvas and send it to back
-            canvas.add(fabricImg);
-            canvas.sendObjectToBack(fabricImg);
-            canvas.renderAll();
+              // Center the image and make it non-selectable
+              fabricImg.set({
+                left: canvas.width / 2,
+                top: canvas.height / 2,
+                originX: 'center',
+                originY: 'center',
+                opacity: 0.7,
+                selectable: false,
+                evented: false
+              });
+              
+              // Clear any existing background images
+              const existingBg = canvas.getObjects().find(obj => (obj as any).isBackgroundImage);
+              if (existingBg) {
+                canvas.remove(existingBg);
+              }
+              
+              // Mark this as background image
+              (fabricImg as any).isBackgroundImage = true;
+              
+              // Add image to canvas and send it to back
+              canvas.add(fabricImg);
+              canvas.sendObjectToBack(fabricImg);
+              canvas.renderAll();
             
             // Update floor plan with background image URL
             updateFloorPlan(currentFloor.id, { 
@@ -799,6 +811,92 @@ export default function BuildingPlannerBasic() {
     
     // Clear the input so the same file can be uploaded again
     event.target.value = '';
+  };
+
+  // Zoom functions
+  const zoomIn = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
+    
+    const newZoom = Math.min(zoomLevel * 1.2, 3);
+    setZoomLevel(newZoom);
+    currentFloor.canvas.setZoom(newZoom);
+    currentFloor.canvas.renderAll();
+  };
+
+  const zoomOut = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
+    
+    const newZoom = Math.max(zoomLevel * 0.8, 0.3);
+    setZoomLevel(newZoom);
+    currentFloor.canvas.setZoom(newZoom);
+    currentFloor.canvas.renderAll();
+  };
+
+  const resetZoom = () => {
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) return;
+    
+    setZoomLevel(1);
+    currentFloor.canvas.setZoom(1);
+    currentFloor.canvas.renderAll();
+  };
+
+  // Handle wall drawing with waypoints
+  const handleWallClick = (canvas: FabricCanvas, pointer: any) => {
+    if (selectedTool !== 'carpenter' || carpenterTool !== 'wall') return;
+    
+    const point = { x: pointer.x, y: pointer.y };
+    
+    if (!isDrawingWall) {
+      // Start new wall
+      setIsDrawingWall(true);
+      setWallPoints([point]);
+      toast("Klikk for å legge til flere punkter. Hold inne for å fullføre veggen.");
+    } else {
+      // Add waypoint
+      const newPoints = [...wallPoints, point];
+      setWallPoints(newPoints);
+      
+      // Draw line from previous point to current point
+      if (newPoints.length > 1) {
+        const prevPoint = newPoints[newPoints.length - 2];
+        const line = new Line([prevPoint.x, prevPoint.y, point.x, point.y], {
+          stroke: '#8B4513',
+          strokeWidth: 8,
+          selectable: false,
+          evented: false
+        });
+        
+        canvas.add(line);
+        canvas.renderAll();
+      }
+      
+      // Add a small circle at the waypoint
+      const waypoint = new Circle({
+        left: point.x,
+        top: point.y,
+        radius: 4,
+        fill: '#8B4513',
+        selectable: false,
+        evented: false,
+        originX: 'center',
+        originY: 'center'
+      });
+      
+      canvas.add(waypoint);
+      canvas.renderAll();
+    }
+  };
+
+  // Handle long press to finish wall
+  const handleLongPress = (canvas: FabricCanvas) => {
+    if (isDrawingWall && wallPoints.length > 1) {
+      setIsDrawingWall(false);
+      setWallPoints([]);
+      toast("Vegg fullført!");
+    }
   };
 
   const triggerImageUpload = () => {
@@ -1059,20 +1157,33 @@ export default function BuildingPlannerBasic() {
                 </div>
 
                 <div className="space-y-4">
-                   <div className="flex gap-2 mb-4 flex-wrap">
-                     <Button onClick={undo} variant="outline" size="sm">
-                       <Undo className="h-4 w-4 mr-2" />
-                       Angre
-                     </Button>
-                     <Button onClick={clearCanvas} variant="outline" size="sm">
-                       <Trash2 className="h-4 w-4 mr-2" />
-                       Tøm
-                     </Button>
-                     <Button onClick={triggerImageUpload} variant="outline" size="sm">
-                       <Upload className="h-4 w-4 mr-2" />
-                       Last opp plantegning
-                     </Button>
-                   </div>
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      <Button onClick={undo} variant="outline" size="sm">
+                        <Undo className="h-4 w-4 mr-2" />
+                        Angre
+                      </Button>
+                      <Button onClick={clearCanvas} variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Tøm
+                      </Button>
+                      <Button onClick={triggerImageUpload} variant="outline" size="sm">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Last opp plantegning
+                      </Button>
+                      
+                      {/* Zoom controls */}
+                      <div className="flex gap-1 border rounded-md">
+                        <Button onClick={zoomOut} variant="ghost" size="sm" className="px-2">
+                          <ZoomOut className="h-4 w-4" />
+                        </Button>
+                        <Button onClick={resetZoom} variant="ghost" size="sm" className="px-2 text-xs">
+                          {Math.round(zoomLevel * 100)}%
+                        </Button>
+                        <Button onClick={zoomIn} variant="ghost" size="sm" className="px-2">
+                          <ZoomIn className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                    
                    <input
                      ref={fileInputRef}
@@ -1099,22 +1210,54 @@ export default function BuildingPlannerBasic() {
                         height: 'auto'
                       }}
                     />
-                     {/* Touch overlay for mobile placement */}
-                     {((selectedTool === 'carpenter' && carpenterTool && carpenterTool !== 'wall') || 
-                       (selectedTool === 'electrician' && electricianTool) || 
-                       (selectedTool === 'plumber' && plumberTool)) && (
-                        <div className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
-                          style={{ 
-                            backgroundColor: overlayFlashing ? 'rgba(59, 130, 246, 0.3)' : 'rgba(0, 0, 0, 0)',
-                            touchAction: 'none'
-                          }}
-                          onClick={(e) => handleOverlayClick(e, plan.id)}
-                          onTouchEnd={(e) => {
-                            e.preventDefault();
-                            handleOverlayClick(e, plan.id);
-                          }}
-                        />
-                     )}
+                      {/* Touch overlay for tool placement and wall drawing */}
+                      {((selectedTool === 'carpenter' && carpenterTool) || 
+                        (selectedTool === 'electrician' && electricianTool) || 
+                        (selectedTool === 'plumber' && plumberTool)) && (
+                         <div className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
+                           style={{ 
+                             backgroundColor: overlayFlashing ? 'rgba(59, 130, 246, 0.3)' : 
+                                             (isDrawingWall && selectedTool === 'carpenter' && carpenterTool === 'wall') ? 
+                                             'rgba(139, 69, 19, 0.1)' : 'rgba(0, 0, 0, 0)',
+                             touchAction: 'none'
+                           }}
+                           onClick={(e) => handleOverlayClick(e, plan.id)}
+                           onMouseDown={(e) => {
+                             if (selectedTool === 'carpenter' && carpenterTool === 'wall' && isDrawingWall) {
+                               // Set up long press timer
+                               const timer = setTimeout(() => {
+                                 handleOverlayLongPress(e, plan.id);
+                               }, 800);
+                               
+                               const cleanup = () => {
+                                 clearTimeout(timer);
+                                 document.removeEventListener('mouseup', cleanup);
+                               };
+                               
+                               document.addEventListener('mouseup', cleanup);
+                             }
+                           }}
+                           onTouchStart={(e) => {
+                             if (selectedTool === 'carpenter' && carpenterTool === 'wall' && isDrawingWall) {
+                               // Set up long press timer for touch
+                               const timer = setTimeout(() => {
+                                 handleOverlayLongPress(e, plan.id);
+                               }, 800);
+                               
+                               const cleanup = () => {
+                                 clearTimeout(timer);
+                                 document.removeEventListener('touchend', cleanup);
+                               };
+                               
+                               document.addEventListener('touchend', cleanup);
+                             }
+                           }}
+                           onTouchEnd={(e) => {
+                             e.preventDefault();
+                             handleOverlayClick(e, plan.id);
+                           }}
+                         />
+                      )}
                   </div>
 
                    {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
