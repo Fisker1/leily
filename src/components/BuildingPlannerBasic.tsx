@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Rect, Group, Line, Ellipse, FabricImage } from 'fabric';
+import { Canvas as FabricCanvas, Circle, Rect, Group, Line, Ellipse, FabricImage, Point } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -169,6 +169,55 @@ export default function BuildingPlannerBasic() {
             canvas.freeDrawingBrush.width = 3;
           }
           
+          // Enable zoom with mouse wheel
+          canvas.on('mouse:wheel', (opt) => {
+            const delta = opt.e.deltaY;
+            let zoom = canvas.getZoom();
+            zoom *= 0.999 ** delta;
+            if (zoom > 20) zoom = 20;
+            if (zoom < 0.01) zoom = 0.01;
+            
+            const point = new Point(opt.e.offsetX, opt.e.offsetY);
+            canvas.zoomToPoint(point, zoom);
+            setZoomLevel(zoom);
+            
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+          });
+          
+          // Simple panning with Alt+drag
+          let isDragging = false;
+          let lastPosX = 0;
+          let lastPosY = 0;
+          
+          canvas.on('mouse:down', (opt) => {
+            const evt = opt.e as MouseEvent;
+            if (evt.altKey === true) {
+              isDragging = true;
+              canvas.selection = false;
+              lastPosX = evt.clientX;
+              lastPosY = evt.clientY;
+            }
+          });
+          
+          canvas.on('mouse:move', (opt) => {
+            if (isDragging) {
+              const e = opt.e as MouseEvent;
+              const vpt = canvas.viewportTransform!;
+              vpt[4] += e.clientX - lastPosX;
+              vpt[5] += e.clientY - lastPosY;
+              canvas.requestRenderAll();
+              lastPosX = e.clientX;
+              lastPosY = e.clientY;
+            }
+          });
+          
+          canvas.on('mouse:up', () => {
+            canvas.setViewportTransform(canvas.viewportTransform!);
+            isDragging = false;
+            canvas.selection = true;
+          });
+          
           console.log('Canvas initialized successfully for', floorPlanId);
           
           // Restore background image if it exists
@@ -201,8 +250,8 @@ export default function BuildingPlannerBasic() {
                   originX: 'center',
                   originY: 'center',
                   opacity: 0.7,
-                  selectable: false,
-                  evented: false
+                  selectable: true,  // Make selectable so user can move/scale it
+                  evented: true      // Enable events for interaction
                 });
                 
                 // Mark this as background image
@@ -594,8 +643,14 @@ export default function BuildingPlannerBasic() {
     if (!canvasElement) return;
     
     const rect = canvasElement.getBoundingClientRect();
-    const x = (clientX - rect.left) * (canvas.width / rect.width);
-    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    
+    // Calculate coordinates accounting for zoom and pan
+    const zoom = canvas.getZoom();
+    const vpt = canvas.viewportTransform!;
+    
+    // Convert client coordinates to canvas coordinates
+    const x = ((clientX - rect.left) - vpt[4]) / zoom;
+    const y = ((clientY - rect.top) - vpt[5]) / zoom;
     
     // Flash briefly to show click registered
     setOverlayFlashing(true);
@@ -746,17 +801,17 @@ export default function BuildingPlannerBasic() {
                 // Scale image to fit canvas while maintaining aspect ratio - stretch to fill
                 fabricImg.scaleToWidth(canvas.width * 0.95);
                 fabricImg.scaleToHeight(canvas.height * 0.95);
-            
-              // Center the image and make it non-selectable
-              fabricImg.set({
-                left: canvas.width / 2,
-                top: canvas.height / 2,
-                originX: 'center',
-                originY: 'center',
-                opacity: 0.7,
-                selectable: false,
-                evented: false
-              });
+                
+                // Center the image and make it selectable for manipulation
+                fabricImg.set({
+                  left: canvas.width / 2,
+                  top: canvas.height / 2,
+                  originX: 'center',
+                  originY: 'center',
+                  opacity: 0.7,
+                  selectable: true,  // Make selectable so user can move/scale it
+                  evented: true      // Enable events for interaction
+                });
               
               // Clear any existing background images
               const existingBg = canvas.getObjects().find(obj => (obj as any).isBackgroundImage);
@@ -1054,6 +1109,11 @@ export default function BuildingPlannerBasic() {
                              <span className="text-xs leading-tight">Tegn vegg</span>
                            </Button>
                          </div>
+                         {carpenterTool === 'wall' && (
+                           <div className="text-xs text-muted-foreground mt-2">
+                             Klikk for å plassere veggpunkter. Hold inne for å fullføre veggen.
+                           </div>
+                         )}
                        </div>
                     )}
 
@@ -1170,6 +1230,13 @@ export default function BuildingPlannerBasic() {
                         <Upload className="h-4 w-4 mr-2" />
                         Last opp plantegning
                       </Button>
+                      
+                      <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                        <div>• Rull mushjulet for å zoome inn/ut</div>
+                        <div>• Hold Alt og dra for å panorere</div>
+                        <div>• Bruk to fingre på mobil for å zoome og panorere</div>
+                        <div>• Dra bakgrunnsbildet for å posisjonere det</div>
+                      </div>
                       
                       {/* Zoom controls */}
                       <div className="flex gap-1 border rounded-md">
