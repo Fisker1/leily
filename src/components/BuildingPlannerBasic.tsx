@@ -1165,32 +1165,152 @@ export default function BuildingPlannerBasic() {
                      )}
                   </div>
 
-                  {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Kostnadsoversikt - {plan.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {placedItems
-                            .filter(item => item.floorPlanId === plan.id)
-                            .reduce((acc, item) => {
-                              const existing = acc.find(i => i.type === item.type);
-                              if (existing) {
-                                existing.count++;
-                                existing.totalPrice += item.price;
-                              } else {
-                                acc.push({
-                                  type: item.type,
-                                  name: item.name,
-                                  count: 1,
-                                  unitPrice: item.price,
-                                  totalPrice: item.price,
-                                });
-                              }
-                              return acc;
-                            }, [] as Array<{type: string, name: string, count: number, unitPrice: number, totalPrice: number}>)
-                            .map((item) => (
+                   {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
+                     <Card>
+                       <CardHeader>
+                         <CardTitle className="text-lg">Kostnadsoversikt - {plan.name}</CardTitle>
+                       </CardHeader>
+                       <CardContent>
+                         <div className="space-y-4">
+                           {/* Group items by profession */}
+                           {(() => {
+                             const floorItems = placedItems.filter(item => item.floorPlanId === plan.id);
+                             const groupedByProfession = floorItems.reduce((acc, item) => {
+                               if (!acc[item.category]) {
+                                 acc[item.category] = [];
+                               }
+                               acc[item.category].push(item);
+                               return acc;
+                             }, {} as Record<string, PlacedItem[]>);
+
+                             const professionNames = {
+                               carpenter: 'Snekker',
+                               electrician: 'Elektriker', 
+                               plumber: 'Rørlegger'
+                             };
+
+                             let floorTotal = 0;
+
+                             return Object.entries(groupedByProfession).map(([profession, items]) => {
+                               // Group items by type within profession
+                               const itemsByType = items.reduce((acc, item) => {
+                                 const existing = acc.find(i => i.type === item.type);
+                                 if (existing) {
+                                   existing.count++;
+                                   existing.totalPrice += item.price;
+                                 } else {
+                                   acc.push({
+                                     type: item.type,
+                                     name: item.name,
+                                     count: 1,
+                                     unitPrice: item.price,
+                                     totalPrice: item.price,
+                                   });
+                                 }
+                                 return acc;
+                               }, [] as Array<{type: string, name: string, count: number, unitPrice: number, totalPrice: number}>);
+
+                               const professionTotal = itemsByType.reduce((sum, item) => sum + item.totalPrice, 0);
+                               floorTotal += professionTotal;
+
+                               return (
+                                 <div key={profession} className="border rounded-lg p-3 bg-muted/50">
+                                   <h4 className="font-semibold text-base mb-3 text-primary">
+                                     {professionNames[profession as keyof typeof professionNames]}
+                                   </h4>
+                                   <div className="space-y-2 mb-3">
+                                     {itemsByType.map((item) => (
+                                       <div key={item.type} className="flex justify-between items-center py-1">
+                                         <span className="text-sm">
+                                           {item.name} x {item.count}
+                                         </span>
+                                         <span className="text-sm font-medium">
+                                           {item.totalPrice.toLocaleString()} kr
+                                         </span>
+                                       </div>
+                                     ))}
+                                   </div>
+                                   <div className="border-t pt-2">
+                                     <div className="flex justify-between items-center font-medium text-sm">
+                                       <span>Sum {professionNames[profession as keyof typeof professionNames]}:</span>
+                                       <span className="text-primary">{professionTotal.toLocaleString()} kr</span>
+                                     </div>
+                                   </div>
+                                 </div>
+                               );
+                             }).concat([
+                               <div key="floor-total" className="border-t-2 pt-4 mt-4">
+                                 <div className="flex justify-between items-center font-bold text-lg">
+                                   <span>Sum {plan.name}:</span>
+                                   <span className="text-primary">{floorTotal.toLocaleString()} kr</span>
+                                 </div>
+                               </div>
+                             ]);
+                           })()}
+                         </div>
+                       </CardContent>
+                     </Card>
+                   )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+          
+          {/* Grand Total for all floors */}
+          {placedItems.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-xl">Totalkostnad hele boligen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {(() => {
+                    // Group all items by profession across all floors
+                    const allItemsByProfession = placedItems.reduce((acc, item) => {
+                      if (!acc[item.category]) {
+                        acc[item.category] = [];
+                      }
+                      acc[item.category].push(item);
+                      return acc;
+                    }, {} as Record<string, PlacedItem[]>);
+
+                    const professionNames = {
+                      carpenter: 'Snekker',
+                      electrician: 'Elektriker',
+                      plumber: 'Rørlegger'
+                    };
+
+                    let grandTotal = 0;
+
+                    return Object.entries(allItemsByProfession).map(([profession, items]) => {
+                      // Group items by type within profession
+                      const itemsByType = items.reduce((acc, item) => {
+                        const existing = acc.find(i => i.type === item.type);
+                        if (existing) {
+                          existing.count++;
+                          existing.totalPrice += item.price;
+                        } else {
+                          acc.push({
+                            type: item.type,
+                            name: item.name,
+                            count: 1,
+                            unitPrice: item.price,
+                            totalPrice: item.price,
+                          });
+                        }
+                        return acc;
+                      }, [] as Array<{type: string, name: string, count: number, unitPrice: number, totalPrice: number}>);
+
+                      const professionTotal = itemsByType.reduce((sum, item) => sum + item.totalPrice, 0);
+                      grandTotal += professionTotal;
+
+                      return (
+                        <div key={profession} className="border rounded-lg p-4 bg-muted/30">
+                          <h3 className="font-bold text-lg mb-3 text-primary">
+                            {professionNames[profession as keyof typeof professionNames]}
+                          </h3>
+                          <div className="space-y-2 mb-3">
+                            {itemsByType.map((item) => (
                               <div key={item.type} className="flex justify-between items-center py-1">
                                 <span className="text-sm">
                                   {item.name} x {item.count}
@@ -1200,20 +1320,28 @@ export default function BuildingPlannerBasic() {
                                 </span>
                               </div>
                             ))}
-                          <div className="border-t pt-2 mt-2">
+                          </div>
+                          <div className="border-t pt-2">
                             <div className="flex justify-between items-center font-semibold">
-                              <span>Total:</span>
-                              <span>{totalCost.toLocaleString()} kr</span>
+                              <span>Sum {professionNames[profession as keyof typeof professionNames]}:</span>
+                              <span className="text-primary text-lg">{professionTotal.toLocaleString()} kr</span>
                             </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                      );
+                    }).concat([
+                      <div key="grand-total" className="border-t-2 border-primary pt-4 mt-6">
+                        <div className="flex justify-between items-center font-bold text-xl">
+                          <span>TOTALKOSTNAD:</span>
+                          <span className="text-primary text-2xl">{grandTotal.toLocaleString()} kr</span>
+                        </div>
+                      </div>
+                    ]);
+                  })()}
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>
