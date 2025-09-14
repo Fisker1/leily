@@ -84,7 +84,7 @@ export default function BuildingPlannerBasic() {
   const { projects, loading, saveProject, updateProject, deleteProject } = useBuildingProjects();
   const { toast } = useToast();
 
-  const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null);
+  const [selectedProfessions, setSelectedProfessions] = useState<Profession[]>([]);
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [projectName, setProjectName] = useState('');
   const [currentProject, setCurrentProject] = useState<any>(null);
@@ -94,7 +94,7 @@ export default function BuildingPlannerBasic() {
   const [floorPlanImage, setFloorPlanImage] = useState<string>('');
 
   useEffect(() => {
-    if (canvasRef.current && !fabricCanvasRef.current && selectedProfession) {
+    if (canvasRef.current && !fabricCanvasRef.current) {
       const canvas = new FabricCanvas(canvasRef.current, {
         width: 800,
         height: 600,
@@ -113,10 +113,20 @@ export default function BuildingPlannerBasic() {
         if (!options.e.target || !selectedTool) return;
         
         const pointer = canvas.getPointer(options.e);
-        const profession = PROFESSIONS.find(p => p.id === selectedProfession);
-        const tool = profession?.tools.find(t => t.id === selectedTool);
+        let tool: BuildingTool | undefined;
+        let profession: Profession | undefined;
         
-        if (tool) {
+        // Find the tool across all professions
+        for (const prof of PROFESSIONS) {
+          const foundTool = prof.tools.find(t => t.id === selectedTool);
+          if (foundTool) {
+            tool = foundTool;
+            profession = prof.id;
+            break;
+          }
+        }
+        
+        if (tool && profession) {
           const shape = new Rect({
             left: pointer.x,
             top: pointer.y,
@@ -137,7 +147,7 @@ export default function BuildingPlannerBasic() {
             name: tool.name,
             cost: tool.cost,
             description: tool.description,
-            profession: selectedProfession
+            profession: profession
           };
           setPlacedItems(prev => [...prev, newItem]);
         }
@@ -150,7 +160,7 @@ export default function BuildingPlannerBasic() {
         fabricCanvasRef.current = null;
       }
     };
-  }, [selectedProfession, selectedTool, floorPlanImage]);
+  }, [selectedTool, floorPlanImage]);
 
   const addGrid = (canvas: FabricCanvas) => {
     const gridSize = 20;
@@ -315,7 +325,7 @@ export default function BuildingPlannerBasic() {
   };
 
   const resetAll = () => {
-    setSelectedProfession(null);
+    setSelectedProfessions([]);
     setSelectedTool('');
     setProjectName('');
     setFloorPlanImage('');
@@ -356,8 +366,65 @@ export default function BuildingPlannerBasic() {
                 Velg yrke og plasser elementer på plantegning
               </CardDescription>
             </div>
-            {selectedProfession && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={clearCanvas}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Tøm
+              </Button>
+
+              <Button variant="outline" size="sm" onClick={resetAll}>
+                <Plus className="h-4 w-4 mr-2" />
+                Start på nytt
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-6">
+            {/* Project Name and Connect Button */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Label htmlFor="project-name-input">Prosjektnavn</Label>
+                <Input
+                  id="project-name-input"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="Mitt byggeprosjekt"
+                />
+              </div>
               <div className="flex gap-2">
+                <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="whitespace-nowrap">
+                      Knytt prosjekt
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Velg eksisterende prosjekt</DialogTitle>
+                      <DialogDescription>
+                        Knytt tegningen til et eksisterende prosjekt
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {projects.map((project) => (
+                        <Button
+                          key={project.id}
+                          variant="outline"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setProjectName(project.project_name);
+                            setCurrentProject(project);
+                            setLoadDialogOpen(false);
+                          }}
+                        >
+                          {project.project_name}
+                        </Button>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
                 <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
@@ -374,9 +441,9 @@ export default function BuildingPlannerBasic() {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="project-name">Prosjektnavn</Label>
+                        <Label htmlFor="save-project-name">Prosjektnavn</Label>
                         <Input
-                          id="project-name"
+                          id="save-project-name"
                           value={projectName}
                           onChange={(e) => setProjectName(e.target.value)}
                           placeholder="Mitt byggeprosjekt"
@@ -391,183 +458,167 @@ export default function BuildingPlannerBasic() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-
-                <Button variant="outline" size="sm" onClick={clearCanvas}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Tøm
-                </Button>
-
-                <Button variant="outline" size="sm" onClick={resetAll}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start på nytt
-                </Button>
               </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {!selectedProfession ? (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Velg yrke</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            </div>
+
+            {/* Profession Selection */}
+            <div className="space-y-3">
+              <Label>Velg yrke</Label>
+              <div className="grid grid-cols-3 gap-3">
                 {PROFESSIONS.map((profession) => (
                   <Button
                     key={profession.id}
-                    variant="outline"
-                    className="h-24 flex flex-col items-center justify-center space-y-2"
-                    onClick={() => setSelectedProfession(profession.id)}
+                    variant={selectedProfessions.includes(profession.id) ? "default" : "outline"}
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                    onClick={() => {
+                      setSelectedProfessions(prev => 
+                        prev.includes(profession.id) 
+                          ? prev.filter(p => p !== profession.id)
+                          : [...prev, profession.id]
+                      );
+                    }}
                   >
-                    <div style={{ color: profession.color }}>
+                    <div style={{ color: selectedProfessions.includes(profession.id) ? 'currentColor' : profession.color }}>
                       {profession.icon}
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold">{profession.name}</div>
+                      <div className="font-semibold text-xs">{profession.name}</div>
                     </div>
                   </Button>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div style={{ color: PROFESSIONS.find(p => p.id === selectedProfession)?.color }}>
-                    {PROFESSIONS.find(p => p.id === selectedProfession)?.icon}
-                  </div>
-                  <h3 className="text-lg font-semibold">
-                    {PROFESSIONS.find(p => p.id === selectedProfession)?.name}
-                  </h3>
-                </div>
-                <Button variant="ghost" size="sm" onClick={resetAll}>
-                  Bytt yrke
-                </Button>
-              </div>
 
-              {/* Project Name Input */}
-              <div>
-                <Label htmlFor="project-name-input">Prosjektnavn</Label>
-                <Input
-                  id="project-name-input"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="Mitt byggeprosjekt"
-                />
-              </div>
-
-              {/* Floor Plan Upload */}
-              <div className="space-y-2">
-                <Label>Last opp plantegning</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {floorPlanImage ? 'Bytt plantegning' : 'Velg plantegning'}
-                  </Button>
-                  {floorPlanImage && (
-                    <Badge variant="secondary">Plantegning lastet</Badge>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFloorPlanUpload}
-                  className="hidden"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Last opp en plantegning (JPG, PNG) for å plassere elementer på
-                </p>
-              </div>
-
-              {/* Tools Selection */}
+            {/* Tools Selection */}
+            {selectedProfessions.length > 0 && (
               <div className="space-y-3">
                 <Label>Velg verktøy/element</Label>
-                <div className="flex flex-wrap gap-2">
-                  {PROFESSIONS.find(p => p.id === selectedProfession)?.tools.map((tool) => (
-                    <Button
-                      key={tool.id}
-                      variant={selectedTool === tool.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedTool(tool.id)}
-                    >
-                      <div 
-                        className="w-3 h-3 rounded mr-2" 
-                        style={{ backgroundColor: tool.color }}
-                      />
-                      {tool.name}
-                    </Button>
-                  ))}
+                <div className="space-y-3">
+                  {selectedProfessions.map(professionId => {
+                    const profession = PROFESSIONS.find(p => p.id === professionId);
+                    return (
+                      <div key={professionId} className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <div style={{ color: profession?.color }}>
+                            {profession?.icon}
+                          </div>
+                          {profession?.name}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {profession?.tools.map((tool) => (
+                            <Button
+                              key={tool.id}
+                              variant={selectedTool === tool.id ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setSelectedTool(tool.id)}
+                            >
+                              <div 
+                                className="w-3 h-3 rounded mr-2" 
+                                style={{ backgroundColor: tool.color }}
+                              />
+                              {tool.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 {selectedTool && (
                   <p className="text-sm text-muted-foreground">
                     Klikk på {floorPlanImage ? 'plantegningen' : 'lerretet'} for å plassere{' '}
-                    {PROFESSIONS.find(p => p.id === selectedProfession)?.tools.find(t => t.id === selectedTool)?.name.toLowerCase()}
+                    {PROFESSIONS.flatMap(p => p.tools).find(t => t.id === selectedTool)?.name.toLowerCase()}
                   </p>
                 )}
               </div>
+            )}
 
-              {/* Canvas */}
-              <div className="border rounded-lg overflow-hidden">
-                <canvas ref={canvasRef} className="block" />
+            {/* Floor Plan Upload */}
+            <div className="space-y-2">
+              <Label>Last opp plantegning</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {floorPlanImage ? 'Bytt plantegning' : 'Velg plantegning'}
+                </Button>
+                {floorPlanImage && (
+                  <Badge variant="secondary">Plantegning lastet</Badge>
+                )}
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFloorPlanUpload}
+                className="hidden"
+              />
+              <p className="text-sm text-muted-foreground">
+                Last opp en plantegning (JPG, PNG) for å plassere elementer på
+              </p>
+            </div>
 
-              {/* Placed Items and Cost Estimate */}
-              {placedItems.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Plasserte elementer og prisestimat</h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>Elementer på plantegning</Label>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
-                        {placedItems.map((item, index) => (
-                          <div key={item.id} className="flex justify-between items-center p-2 border rounded">
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded" 
-                                style={{ backgroundColor: PROFESSIONS.find(p => p.id === item.profession)?.tools.find(t => t.id === item.type)?.color }}
-                              />
-                              <span className="text-sm">{item.name}</span>
-                            </div>
-                            <span className="text-sm font-medium">
-                              {formatNumberWithSpaces(item.cost)} NOK
-                            </span>
+            {/* Canvas */}
+            <div className="border rounded-lg overflow-hidden">
+              <canvas ref={canvasRef} className="block max-w-full" />
+            </div>
+
+            {/* Placed Items and Cost Estimate */}
+            {placedItems.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-semibold">Plasserte elementer og prisestimat</h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Elementer på plantegning</Label>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {placedItems.map((item, index) => (
+                        <div key={item.id} className="flex justify-between items-center p-2 border rounded">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded" 
+                              style={{ backgroundColor: PROFESSIONS.find(p => p.id === item.profession)?.tools.find(t => t.id === item.type)?.color }}
+                            />
+                            <span className="text-sm">{item.name}</span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {formatNumberWithSpaces(item.cost)} NOK
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Calculator className="h-4 w-4" />
+                        Prisestimat
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        {Object.entries(getItemSummary()).map(([name, data]) => (
+                          <div key={name} className="flex justify-between text-sm">
+                            <span>{name} ({data.count} stk)</span>
+                            <span>{formatNumberWithSpaces(data.total)} NOK</span>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                    
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Calculator className="h-4 w-4" />
-                          Prisestimat
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2">
-                          {Object.entries(getItemSummary()).map(([name, data]) => (
-                            <div key={name} className="flex justify-between text-sm">
-                              <span>{name} ({data.count} stk)</span>
-                              <span>{formatNumberWithSpaces(data.total)} NOK</span>
-                            </div>
-                          ))}
-                          <div className="border-t pt-2 mt-2">
-                            <div className="flex justify-between font-bold">
-                              <span>Total estimat</span>
-                              <span>{formatNumberWithSpaces(calculateTotalCost())} NOK</span>
-                            </div>
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between font-bold">
+                            <span>Total estimat</span>
+                            <span>{formatNumberWithSpaces(calculateTotalCost())} NOK</span>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
