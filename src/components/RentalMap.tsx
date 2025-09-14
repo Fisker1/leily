@@ -56,11 +56,11 @@ const RentalMap = () => {
         hasCoordinates: !!p.coordinates
       })));
       
-      const rentalProperties = properties.filter(p => p.show_in_rental && p.monthly_rent);
-      const myProperties = properties.filter(p => !p.show_in_rental || !p.monthly_rent);
+      const rentalProperties = properties.filter(p => p.show_in_rental === true);
+      const myProperties = properties.filter(p => p.show_in_rental !== true);
       
-      console.log('🟢 Rental properties:', rentalProperties.length, rentalProperties.map(p => p.address));
-      console.log('🔵 My properties:', myProperties.length, myProperties.map(p => p.address));
+      console.log('🟢 Rental properties (show_in_rental=true):', rentalProperties.length, rentalProperties.map(p => p.address));
+      console.log('🔵 My properties (show_in_rental≠true):', myProperties.length, myProperties.map(p => p.address));
     }
   }, [properties]);
 
@@ -239,7 +239,7 @@ const RentalMap = () => {
 
     // Add user's properties that are NOT for rent (blue pins)
     if (showMyProperties && properties.length > 0) {
-      const myProps = properties.filter(p => p.show_in_rental !== true || !p.monthly_rent || p.monthly_rent <= 0);
+      const myProps = properties.filter(p => p.show_in_rental !== true);
       console.log('🔵 Adding my property markers for:', myProps.length, 'properties');
       
       myProps.forEach((property) => {
@@ -287,7 +287,7 @@ const RentalMap = () => {
 
     // Add rental properties that are marked for rent (green pins) 
     if (showRentalProperties && properties.length > 0) {
-      const rentalProps = properties.filter(p => p.show_in_rental === true && p.monthly_rent && p.monthly_rent > 0);
+      const rentalProps = properties.filter(p => p.show_in_rental === true);
       console.log('🟢 Adding rental markers for:', rentalProps.length, 'properties');
       
       rentalProps.forEach((property) => {
@@ -309,8 +309,8 @@ const RentalMap = () => {
             <p class="font-semibold">${property.address}</p>
             ${property.city ? `<p class="text-gray-600">${property.city}</p>` : ''}
             <div class="mt-2 space-y-1">
-              <p><strong>Status:</strong> Leies ut</p>
-              <p><strong>Månedlig leie:</strong> ${formatNumberWithSpaces(property.monthly_rent || 0)} kr</p>
+              <p><strong>Status:</strong> På utleie</p>
+              ${property.monthly_rent ? `<p><strong>Månedlig leie:</strong> ${formatNumberWithSpaces(property.monthly_rent)} kr</p>` : '<p><strong>Status:</strong> Tilgjengelig for utleie</p>'}
               ${yield_ > 0 ? `<p><strong>Avkastning:</strong> <span class="font-semibold text-green-600">${yield_.toFixed(1)}%</span></p>` : ''}
             </div>
           </div>
@@ -708,7 +708,7 @@ const RentalMap = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-blue-600">
-              {properties.filter(p => p.show_in_rental !== true || !p.monthly_rent || p.monthly_rent <= 0).length}
+              {properties.filter(p => p.show_in_rental !== true).length}
             </CardTitle>
             <p className="text-xs text-muted-foreground">Mine eiendommer</p>
           </CardHeader>
@@ -717,7 +717,7 @@ const RentalMap = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-green-600">
-              {properties.filter(p => p.show_in_rental === true && p.monthly_rent && p.monthly_rent > 0).length}
+              {properties.filter(p => p.show_in_rental === true).length}
             </CardTitle>
             <p className="text-xs text-muted-foreground">Utleie-enheter</p>
           </CardHeader>
