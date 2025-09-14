@@ -372,99 +372,110 @@ const RentalMap = () => {
 
   // Initialize map - only run once when requirements are met
   useEffect(() => {
-    console.log('🗺️ Map initialization check:', {
-      hasToken: !!mapboxToken,
-      hasMapboxgl: !!mapboxgl,
-      hasContainer: !!mapContainer.current,
-      hasExistingMap: !!map.current
-    });
-
-    // Only initialize if we have requirements and no existing map
-    if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
-      console.log('❌ Map initialization requirements not met');
-      return;
-    }
-
-    try {
-      console.log('🚀 Initializing map...');
-      mapboxgl.accessToken = mapboxToken;
-
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [10.7522, 59.9139], // Oslo
-        zoom: 6,
-        attributionControl: false,
+    // Add a small delay to ensure DOM is ready
+    const initMap = () => {
+      console.log('🗺️ Map initialization check:', {
+        hasToken: !!mapboxToken,
+        hasMapboxgl: !!mapboxgl,
+        hasContainer: !!mapContainer.current,
+        hasExistingMap: !!map.current,
+        loading,
+        dataLoading,
+        user: !!user,
+        error
       });
 
-      console.log('✅ Map instance created');
+      // Only initialize if we have all requirements and no existing map
+      if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current || loading || dataLoading || !user || error) {
+        console.log('❌ Map initialization requirements not met');
+        return;
+      }
 
-      map.current.addControl(
-        new mapboxgl.NavigationControl(),
-        'top-right'
-      );
+      try {
+        console.log('🚀 Initializing map...');
+        mapboxgl.accessToken = mapboxToken;
 
-      map.current.on('load', () => {
-        console.log('✅ Map loaded successfully');
-        // Wait longer for map to be fully ready
-        setTimeout(() => {
-          if (map.current && map.current.isStyleLoaded()) {
-            console.log('✅ Map style loaded, adding markers');
-            addMarkersToMap();
-          }
-        }, 500);
-      });
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v11',
+          center: [10.7522, 59.9139], // Oslo
+          zoom: 6,
+          attributionControl: false,
+        });
 
-      map.current.on('error', (e) => {
-        const errorMessage = e.error?.message || e.message || 'Ukjent feil';
-        console.error('❌ Map error:', errorMessage);
-        
-        const isRecoverableError = errorMessage.includes('NetworkError') || 
-                                 errorMessage.includes('timeout') ||
-                                 errorMessage.includes('Failed to fetch') ||
-                                 errorMessage.includes('StyleError') ||
-                                 errorMessage.includes('RequestManager') ||
-                                 errorMessage.includes('TileLoadError') ||
-                                 errorMessage.includes('401') ||
-                                 errorMessage.includes('Unauthorized');
-        
-        if (isRecoverableError && retryCount < 3) {
-          console.log('🔄 Attempting to recover from map error...');
-          setRetryCount(prev => prev + 1);
-          
-          // Try to refresh token and reinitialize
-          setTimeout(async () => {
-            try {
-              await fetchMapboxToken(true);
-              if (map.current) {
-                map.current.remove();
-                map.current = null;
-              }
-              // The map will reinitialize automatically due to useEffect dependencies
-            } catch (error) {
-              console.error('Failed to recover:', error);
+        console.log('✅ Map instance created');
+
+        map.current.addControl(
+          new mapboxgl.NavigationControl(),
+          'top-right'
+        );
+
+        map.current.on('load', () => {
+          console.log('✅ Map loaded successfully');
+          // Wait longer for map to be fully ready
+          setTimeout(() => {
+            if (map.current && map.current.isStyleLoaded()) {
+              console.log('✅ Map style loaded, adding markers');
+              addMarkersToMap();
             }
-          }, 2000);
-        } else if (!isRecoverableError) {
-          setError(`Mapbox error: ${errorMessage}`);
-          toast({
-            title: "Kartfeil",
-            description: `Mapbox feil: ${errorMessage}`,
-            variant: "destructive",
-          });
-        }
-      });
+          }, 500);
+        });
 
-    } catch (error) {
-      console.error('❌ Map initialization failed:', error);
-      setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast({
-        title: "Kartfeil",
-        description: `Kunne ikke initialisere kartet: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
-        variant: "destructive",
-      });
-    }
-  }, [mapboxToken, mapboxgl, toast]);
+        map.current.on('error', (e) => {
+          const errorMessage = e.error?.message || e.message || 'Ukjent feil';
+          console.error('❌ Map error:', errorMessage);
+          
+          const isRecoverableError = errorMessage.includes('NetworkError') || 
+                                   errorMessage.includes('timeout') ||
+                                   errorMessage.includes('Failed to fetch') ||
+                                   errorMessage.includes('StyleError') ||
+                                   errorMessage.includes('RequestManager') ||
+                                   errorMessage.includes('TileLoadError') ||
+                                   errorMessage.includes('401') ||
+                                   errorMessage.includes('Unauthorized');
+          
+          if (isRecoverableError && retryCount < 3) {
+            console.log('🔄 Attempting to recover from map error...');
+            setRetryCount(prev => prev + 1);
+            
+            // Try to refresh token and reinitialize
+            setTimeout(async () => {
+              try {
+                await fetchMapboxToken(true);
+                if (map.current) {
+                  map.current.remove();
+                  map.current = null;
+                }
+                // The map will reinitialize automatically due to useEffect dependencies
+              } catch (error) {
+                console.error('Failed to recover:', error);
+              }
+            }, 2000);
+          } else if (!isRecoverableError) {
+            setError(`Mapbox error: ${errorMessage}`);
+            toast({
+              title: "Kartfeil",
+              description: `Mapbox feil: ${errorMessage}`,
+              variant: "destructive",
+            });
+          }
+        });
+
+      } catch (error) {
+        console.error('❌ Map initialization failed:', error);
+        setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast({
+          title: "Kartfeil",
+          description: `Kunne ikke initialisere kartet: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
+          variant: "destructive",
+        });
+      }
+    };
+
+    // Use a small timeout to ensure DOM is ready
+    const timeoutId = setTimeout(initMap, 100);
+    return () => clearTimeout(timeoutId);
+  }, [mapboxToken, mapboxgl, loading, dataLoading, user, error, toast]);
 
   // Cleanup map only when component unmounts
   useEffect(() => {
