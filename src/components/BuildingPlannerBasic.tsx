@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Rect, Line, FabricImage } from 'fabric';
+import { Canvas, Rect, Line, FabricImage } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,7 +79,7 @@ const PROFESSIONS: ProfessionData[] = [
 
 export default function BuildingPlannerBasic() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<Canvas | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { projects, loading, saveProject, updateProject, deleteProject } = useBuildingProjects();
   const { toast } = useToast();
@@ -95,7 +95,7 @@ export default function BuildingPlannerBasic() {
 
   useEffect(() => {
     if (canvasRef.current && !fabricCanvasRef.current) {
-      const canvas = new FabricCanvas(canvasRef.current, {
+      const canvas = new Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#f8f9fa'
@@ -162,7 +162,7 @@ export default function BuildingPlannerBasic() {
     };
   }, [selectedTool, floorPlanImage]);
 
-  const addGrid = (canvas: FabricCanvas) => {
+  const addGrid = (canvas: Canvas) => {
     const gridSize = 20;
     for (let i = 0; i <= canvas.width! / gridSize; i++) {
       const line = new Line([i * gridSize, 0, i * gridSize, canvas.height!], {
