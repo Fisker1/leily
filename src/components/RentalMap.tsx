@@ -176,7 +176,7 @@ const RentalMap = () => {
     clearMarkers();
 
     // Add user's properties (blue pins)
-    if (showMyProperties) {
+    if (showMyProperties && properties.length > 0) {
       properties.forEach((property) => {
         if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
           return;
@@ -216,7 +216,7 @@ const RentalMap = () => {
     }
 
     // Add rental properties (green pins) 
-    if (showRentalProperties) {
+    if (showRentalProperties && properties.length > 0) {
       properties.filter(p => p.show_in_rental && p.monthly_rent).forEach((property) => {
         if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
           return;
@@ -250,7 +250,7 @@ const RentalMap = () => {
     }
 
     // Add calculation properties (white pins)
-    if (showCalculationProperties) {
+    if (showCalculationProperties && calculationProperties.length > 0) {
       calculationProperties.forEach((calc) => {
         if (!calc.coordinates || !Array.isArray(calc.coordinates) || calc.coordinates.length !== 2) {
           return;
@@ -338,9 +338,12 @@ const RentalMap = () => {
       );
 
       map.current.on('load', () => {
+        // Wait longer for map to be fully ready
         setTimeout(() => {
-          addMarkersToMap();
-        }, 100);
+          if (map.current && map.current.isStyleLoaded()) {
+            addMarkersToMap();
+          }
+        }, 500);
       });
 
       map.current.on('error', (e) => {
@@ -370,10 +373,6 @@ const RentalMap = () => {
         variant: "destructive",
       });
     }
-
-    return () => {
-      // Cleanup handled in separate effect
-    };
   }, [mapboxToken, mapboxgl, toast]);
 
   // Cleanup map only when component unmounts
@@ -389,37 +388,22 @@ const RentalMap = () => {
 
   // Update markers when data or layer settings change
   useEffect(() => {
-    // Only update markers if map is fully initialized and ready
     if (!map.current || !mapboxgl || !mapboxToken || loading || dataLoading) {
-      console.log('Skipping marker update - map not ready', {
-        hasMap: !!map.current,
-        hasMapboxgl: !!mapboxgl,
-        hasToken: !!mapboxToken,
-        loading,
-        dataLoading
-      });
       return;
     }
 
-    // Check if map is actually loaded
-    if (!map.current.isStyleLoaded()) {
-      console.log('Map style not loaded yet, waiting...');
-      const checkLoaded = () => {
-        if (map.current && map.current.isStyleLoaded()) {
-          console.log('Map style loaded, adding markers');
-          addMarkersToMap();
-        } else {
-          setTimeout(checkLoaded, 100);
-        }
-      };
-      checkLoaded();
-      return;
-    }
+    // Ensure map is fully loaded before adding markers
+    const updateMarkers = () => {
+      if (map.current && map.current.isStyleLoaded() && mapboxgl) {
+        addMarkersToMap();
+      } else {
+        // Retry after a short delay
+        setTimeout(updateMarkers, 200);
+      }
+    };
 
-    const timeoutId = setTimeout(() => {
-      console.log('Triggering marker update - properties:', properties.length, 'calculations:', calculationProperties.length);
-      addMarkersToMap();
-    }, 100);
+    // Small delay to ensure all data is ready
+    const timeoutId = setTimeout(updateMarkers, 150);
     
     return () => clearTimeout(timeoutId);
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxToken, loading, dataLoading]);
