@@ -202,33 +202,42 @@ const SimpleAuth = () => {
               variant="outline"
               className="w-full"
               onClick={async () => {
+                console.log('🥷 STAGER BUTTON CLICKED! Function is working!');
+                console.log('🥷 Stager button clicked - start');
+                
                 const password = prompt('Skriv inn passordet for Stager:');
+                console.log('🥷 Password prompt completed', password ? 'Password entered' : 'No password');
+                
                 if (password !== 'blåmeis') {
+                  console.log('🥷 Wrong password');
                   alert('Feil passord!');
                   return;
                 }
                 
-                console.log('Stager button clicked');
+                console.log('🥷 Correct password, starting login...');
                 setLoading(true);
                 try {
-                  console.log('Trying to sign in with Stager credentials...');
+                  console.log('🥷 Trying to sign in with Stager credentials...');
                   const { data, error } = await supabase.auth.signInWithPassword({
                     email: 'anderslundoy@protonmail.com',
                     password: 'blåmeis'
                   });
                   
+                  console.log('🥷 Login result:', { data: !!data, error: error?.message });
+                  
                   if (error) {
-                    console.error('Stager login error:', error);
+                    console.error('🥷 Stager login error:', error);
                     alert('Innlogging feilet: ' + error.message);
                   } else {
-                    console.log('Stager login success:', data);
+                    console.log('🥷 Stager login success:', data);
                     // Let AuthContext handle the redirect automatically
                     // Don't navigate manually to avoid race conditions
                   }
                 } catch (err) {
-                  console.error('Unexpected error:', err);
+                  console.error('🥷 Unexpected error:', err);
                   alert('Uventet feil: ' + (err as Error).message);
                 } finally {
+                  console.log('🥷 Login attempt finished');
                   setLoading(false);
                 }
               }}
