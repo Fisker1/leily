@@ -205,7 +205,7 @@ const RentalMap = () => {
       case 'rental':
         el.style.backgroundColor = '#22c55e'; // Green
         el.style.border = '3px solid white';
-        el.innerHTML = '<div style="color: white; font-size: 10px; text-align: center; line-height: 14px;">💰</div>';
+        el.innerHTML = '<div style="color: white; font-size: 10px; text-align: center; line-height: 14px;">🏠</div>';
         break;
       case 'calculation':
         el.style.backgroundColor = '#ffffff'; // White
@@ -692,7 +692,7 @@ const RentalMap = () => {
                       <span>Blå = Dine eiendommer</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-3 w-3 text-green-500" />
+                      <Home className="h-3 w-3 text-green-500" />
                       <span>Grønn = Utleie-enheter</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -721,7 +721,7 @@ const RentalMap = () => {
             <CardTitle className="text-lg text-blue-600">
               {properties.filter(p => p.show_in_rental !== true).length}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Mine eiendommer</p>
+            <p className="text-xs text-muted-foreground">Mine eiendommer (ikke utleid)</p>
           </CardHeader>
         </Card>
         
