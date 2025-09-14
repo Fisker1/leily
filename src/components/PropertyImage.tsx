@@ -36,20 +36,44 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
   useEffect(() => {
     if (shouldShowSatellite) {
-      const fetchMapboxToken = async () => {
+      const fetchMapboxToken = async (retryCount = 0) => {
         try {
+          console.log(`🔑 Fetching Mapbox token for satellite image... (attempt ${retryCount + 1})`);
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
-            console.error('Error fetching Mapbox token:', error);
+            console.error('❌ Token fetch error:', error);
+            
+            // Retry up to 3 times with exponential backoff for cold start
+            if (retryCount < 3) {
+              const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+              console.log(`⏳ Retrying in ${delay}ms... (cold start recovery)`);
+              setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
+              return;
+            }
             return;
           }
 
           if (data?.token) {
+            console.log('✅ Mapbox token received for satellite image');
             setMapboxToken(data.token);
+          } else {
+            console.error('❌ No token received from server');
+            // Retry for no token response too
+            if (retryCount < 3) {
+              const delay = Math.pow(2, retryCount) * 1000;
+              setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
+            }
           }
         } catch (error) {
-          console.error('Error fetching Mapbox token:', error);
+          console.error('❌ Error fetching Mapbox token:', error);
+          
+          // Retry on network/other errors
+          if (retryCount < 3) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
+            setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
+          }
         }
       };
 
