@@ -596,16 +596,6 @@ const RentalMap = () => {
             <div className="relative">
               <div ref={mapContainer} className="h-96 w-full rounded-lg border" />
               
-              {/* Debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="absolute bottom-4 left-4 bg-black/75 text-white p-2 rounded text-xs">
-                  <div>Token: {mapboxToken ? 'Yes' : 'No'}</div>
-                  <div>MapboxGL: {mapboxgl ? 'Yes' : 'No'}</div>
-                  <div>Properties: {properties.length}</div>
-                  <div>Map: {map.current ? 'Yes' : 'No'}</div>
-                </div>
-              )}
-              
               {/* Legend - Hidden on mobile */}
               <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
                 <CardHeader className="pb-2">
