@@ -1,5 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas, Rect, Line, FabricImage } from 'fabric';
+// Import Fabric.js components individually for better debugging
+import { Canvas } from 'fabric';
+import { Rect } from 'fabric';  
+import { Line } from 'fabric';
+import { FabricImage } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -223,47 +227,60 @@ export default function BuildingPlannerBasic() {
       const imageUrl = e.target?.result as string;
       setFloorPlanImage(imageUrl);
       
-      // Add image to canvas
+      // Add image to canvas using the correct v6 approach
       if (fabricCanvasRef.current) {
-        FabricImage.fromURL(imageUrl).then((img) => {
-          if (fabricCanvasRef.current) {
-            const canvas = fabricCanvasRef.current;
-            
-            // Clear canvas first
-            canvas.clear();
-            
-            // Calculate proper scaling to fit within canvas bounds
-            const canvasWidth = canvas.width || 800;
-            const canvasHeight = canvas.height || 600;
-            const imgWidth = img.width || 1;
-            const imgHeight = img.height || 1;
-            
-            const scaleX = canvasWidth / imgWidth;
-            const scaleY = canvasHeight / imgHeight;
-            const scale = Math.min(scaleX, scaleY, 1);
-            
-            // Scale the image
-            img.scale(scale);
-            
-            // Center the image properly
-            const scaledWidth = imgWidth * scale;
-            const scaledHeight = imgHeight * scale;
-            
-            img.set({
-              left: (canvasWidth - scaledWidth) / 2,
-              top: (canvasHeight - scaledHeight) / 2,
-              selectable: false,
-              evented: false,
-              name: 'floorPlan'
-            });
-            
-            canvas.add(img);
-            canvas.renderAll();
-            
-            // Add touch controls for mobile
-            addTouchControls(canvas);
-          }
-        });
+        const canvas = fabricCanvasRef.current;
+        
+        // Create HTML image element
+        const imageElement = document.createElement('img');
+        imageElement.src = imageUrl;
+        imageElement.crossOrigin = 'anonymous';
+        
+        imageElement.onload = () => {
+          // Clear canvas first
+          canvas.clear();
+          
+          // Calculate proper scaling to fit within canvas bounds
+          const canvasWidth = canvas.width || 800;
+          const canvasHeight = canvas.height || 600;
+          const imgWidth = imageElement.naturalWidth;
+          const imgHeight = imageElement.naturalHeight;
+          
+          const scaleX = canvasWidth / imgWidth;
+          const scaleY = canvasHeight / imgHeight;
+          const scale = Math.min(scaleX, scaleY, 1);
+          
+          // Calculate centered position
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+          
+          // Create FabricImage with the loaded image element
+          const fabricImg = new FabricImage(imageElement, {
+            left: (canvasWidth - scaledWidth) / 2,
+            top: (canvasHeight - scaledHeight) / 2,
+            scaleX: scale,
+            scaleY: scale,
+            selectable: false,
+            evented: false,
+            hasControls: false,
+            hoverCursor: 'default',
+            name: 'floorPlan'
+          });
+          
+          canvas.add(fabricImg);
+          canvas.renderAll();
+          
+          // Add touch controls for mobile
+          addTouchControls(canvas);
+        };
+        
+        imageElement.onerror = () => {
+          toast({
+            title: "Feil ved lasting",
+            description: "Kunne ikke laste bildet",
+            variant: "destructive"
+          });
+        };
       }
       
       toast({
@@ -432,26 +449,40 @@ export default function BuildingPlannerBasic() {
       if (!floorPlanImage) {
         addGrid(fabricCanvasRef.current);
       } else if (floorPlanImage) {
-        // Re-add floor plan image
-        FabricImage.fromURL(floorPlanImage).then((img) => {
-          if (fabricCanvasRef.current) {
-            const canvas = fabricCanvasRef.current;
-            const scaleX = canvas.width! / img.width!;
-            const scaleY = canvas.height! / img.height!;
-            const scale = Math.min(scaleX, scaleY, 1);
-            
-            img.scale(scale);
-            img.set({
-              left: (canvas.width! - img.width! * scale) / 2,
-              top: (canvas.height! - img.height! * scale) / 2,
-              selectable: false,
-              evented: false
-            });
-            
-            canvas.add(img);
-            canvas.renderAll();
-          }
-        });
+        // Re-add floor plan image using v6 approach
+        const canvas = fabricCanvasRef.current;
+        const imageElement = document.createElement('img');
+        imageElement.src = floorPlanImage;
+        imageElement.crossOrigin = 'anonymous';
+        
+        imageElement.onload = () => {
+          const canvasWidth = canvas.width || 800;
+          const canvasHeight = canvas.height || 600;
+          const imgWidth = imageElement.naturalWidth;
+          const imgHeight = imageElement.naturalHeight;
+          
+          const scaleX = canvasWidth / imgWidth;
+          const scaleY = canvasHeight / imgHeight;
+          const scale = Math.min(scaleX, scaleY, 1);
+          
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+          
+          const fabricImg = new FabricImage(imageElement, {
+            left: (canvasWidth - scaledWidth) / 2,
+            top: (canvasHeight - scaledHeight) / 2,
+            scaleX: scale,
+            scaleY: scale,
+            selectable: false,
+            evented: false,
+            hasControls: false,
+            hoverCursor: 'default',
+            name: 'floorPlan'
+          });
+          
+          canvas.add(fabricImg);
+          canvas.renderAll();
+        };
       }
     }
     setPlacedItems([]);
@@ -590,11 +621,11 @@ export default function BuildingPlannerBasic() {
                 {PROFESSIONS.map((profession) => (
                   <Button
                     key={profession.id}
-                    variant={selectedProfessions.includes(profession.id) ? "default" : "secondary"}
+                    variant={selectedProfessions.includes(profession.id) ? "default" : "outline"}
                     className={`h-20 flex flex-col items-center justify-center space-y-2 ${
-                      selectedProfessions.includes(profession.id) 
-                        ? '' 
-                        : 'bg-white text-white border-white hover:bg-white/90'
+                      !selectedProfessions.includes(profession.id) 
+                        ? 'bg-white border-white hover:bg-white/90' 
+                        : ''
                     }`}
                     onClick={() => {
                       setSelectedProfessions(prev => 
@@ -604,11 +635,13 @@ export default function BuildingPlannerBasic() {
                       );
                     }}
                   >
-                    <div className="text-white">
+                    <div className={selectedProfessions.includes(profession.id) ? 'text-white' : 'text-gray-600'}>
                       {profession.icon}
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold text-xs text-white">{profession.name}</div>
+                      <div className={`font-semibold text-xs ${selectedProfessions.includes(profession.id) ? 'text-white' : 'text-gray-600'}`}>
+                        {profession.name}
+                      </div>
                     </div>
                   </Button>
                 ))}
