@@ -215,10 +215,10 @@ export default function BuildingPlannerBasic() {
     floorPlans.forEach(fp => {
       if (fp.canvas && fp.canvas.freeDrawingBrush) {
         try {
-          if (selectedTool === 'carpenter') {
+          if (selectedTool === 'carpenter' && carpenterTool === 'wall') {
             fp.canvas.isDrawingMode = true;
-            fp.canvas.freeDrawingBrush.color = '#333333';
-            fp.canvas.freeDrawingBrush.width = 3;
+            fp.canvas.freeDrawingBrush.color = '#8B4513';
+            fp.canvas.freeDrawingBrush.width = 8;
           } else {
             fp.canvas.isDrawingMode = false;
           }
@@ -228,7 +228,7 @@ export default function BuildingPlannerBasic() {
         }
       }
     });
-  }, [selectedTool, floorPlans]);
+  }, [selectedTool, carpenterTool, floorPlans]);
 
   const handleCarpenterTool = (canvas: FabricCanvas, pointer: any, tool: string, floorPlanId: string) => {
     let shape;
@@ -283,12 +283,13 @@ export default function BuildingPlannerBasic() {
         itemData = itemPrices.door;
         break;
       case 'wall':
-        // Enable drawing mode for walls
+        // Enable drawing mode for walls - don't place objects
         if (canvas.freeDrawingBrush) {
           canvas.isDrawingMode = true;
           canvas.freeDrawingBrush.color = '#8B4513';
           canvas.freeDrawingBrush.width = 8;
-          toast("Tegningsmodus aktivert - tegn vegger!");
+          canvas.renderAll();
+          toast("Tegningsmodus aktivert - tegn vegger direkte på lerretet!");
         } else {
           toast("Lerret ikke klart for tegning. Prøv på nytt.");
         }
@@ -595,6 +596,9 @@ export default function BuildingPlannerBasic() {
     e.preventDefault();
     e.stopPropagation();
     
+    // Prevent multiple rapid clicks
+    if (overlayFlashing) return;
+    
     let clientX, clientY;
     
     if ('touches' in e.nativeEvent && e.nativeEvent.changedTouches.length > 0) {
@@ -605,7 +609,7 @@ export default function BuildingPlannerBasic() {
       clientX = e.nativeEvent.clientX;
       clientY = e.nativeEvent.clientY;
     } else {
-      return; // Invalid event
+      return;
     }
     
     const canvas = getCurrentFloorPlan()?.canvas;
@@ -622,14 +626,24 @@ export default function BuildingPlannerBasic() {
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
     
-    // Flash green briefly to show click registered
+    // Flash briefly to show click registered
     setOverlayFlashing(true);
-    setTimeout(() => setOverlayFlashing(false), 150);
+    setTimeout(() => setOverlayFlashing(false), 200);
     
     // Handle tool placement
     try {
       if (selectedTool === 'carpenter' && carpenterTool) {
-        handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
+        if (carpenterTool === 'wall') {
+          // Don't place items for wall drawing - just enable drawing mode
+          if (canvas.freeDrawingBrush) {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush.color = '#8B4513';
+            canvas.freeDrawingBrush.width = 8;
+            canvas.renderAll();
+          }
+        } else {
+          handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
+        }
       } else if (selectedTool === 'electrician' && electricianTool) {
         handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
       } else if (selectedTool === 'plumber' && plumberTool) {
@@ -729,7 +743,7 @@ export default function BuildingPlannerBasic() {
 
     const currentFloor = getCurrentFloorPlan();
     if (!currentFloor?.canvas) {
-      toast("Lerret ikke initialisert. Prøv igjen.");
+      toast("Lerret ikke initialisert. Prøv igjen om et øyeblikk.");
       return;
     }
 
@@ -739,22 +753,27 @@ export default function BuildingPlannerBasic() {
       
       // Create a new HTML image element to ensure proper loading
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         try {
+          const canvas = currentFloor.canvas!;
+          
+          // Clear any existing background first
+          canvas.backgroundImage = undefined;
+          canvas.renderAll();
+          
           // Create Fabric image from loaded HTML image
           FabricImage.fromElement(img).then((fabricImg) => {
-            const canvas = currentFloor.canvas!;
-            
             // Scale image to fit canvas while maintaining aspect ratio
             const canvasAspect = canvas.width / canvas.height;
             const imageAspect = fabricImg.width / fabricImg.height;
             
             if (imageAspect > canvasAspect) {
               // Image is wider - fit to canvas width
-              fabricImg.scaleToWidth(canvas.width);
+              fabricImg.scaleToWidth(canvas.width * 0.9); // Slight padding
             } else {
               // Image is taller - fit to canvas height  
-              fabricImg.scaleToHeight(canvas.height);
+              fabricImg.scaleToHeight(canvas.height * 0.9); // Slight padding
             }
             
             // Center the image
@@ -763,12 +782,12 @@ export default function BuildingPlannerBasic() {
               top: canvas.height / 2,
               originX: 'center',
               originY: 'center',
-              opacity: 0.7,
+              opacity: 0.6,
               selectable: false,
               evented: false
             });
             
-            // Clear any existing background and set new one
+            // Set as background image
             canvas.backgroundImage = fabricImg;
             canvas.renderAll();
             
@@ -777,6 +796,7 @@ export default function BuildingPlannerBasic() {
               backgroundImage: imageUrl 
             });
             
+            console.log('Background image set successfully');
             toast("Bakgrunnsbilde lastet opp!");
           }).catch((error) => {
             console.error('Error creating Fabric image:', error);
@@ -1127,20 +1147,22 @@ export default function BuildingPlannerBasic() {
                         height: 'auto'
                       }}
                     />
-                    {/* Touch overlay for mobile placement */}
-                    {((selectedTool === 'carpenter' && carpenterTool) || (selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
-                       <div className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
-                         style={{ 
-                           backgroundColor: overlayFlashing ? 'rgba(0, 255, 0, 0.4)' : 'rgba(0, 255, 0, 0.1)',
-                           touchAction: 'none'
-                         }}
-                         onClick={(e) => handleOverlayClick(e, plan.id)}
-                         onTouchEnd={(e) => {
-                           e.preventDefault();
-                           handleOverlayClick(e, plan.id);
-                         }}
-                       />
-                    )}
+                     {/* Touch overlay for mobile placement */}
+                     {((selectedTool === 'carpenter' && carpenterTool && carpenterTool !== 'wall') || 
+                       (selectedTool === 'electrician' && electricianTool) || 
+                       (selectedTool === 'plumber' && plumberTool)) && (
+                        <div className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
+                          style={{ 
+                            backgroundColor: overlayFlashing ? 'rgba(59, 130, 246, 0.3)' : 'rgba(0, 0, 0, 0)',
+                            touchAction: 'none'
+                          }}
+                          onClick={(e) => handleOverlayClick(e, plan.id)}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            handleOverlayClick(e, plan.id);
+                          }}
+                        />
+                     )}
                   </div>
 
                   {placedItems.filter(item => item.floorPlanId === plan.id).length > 0 && (
