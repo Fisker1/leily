@@ -556,47 +556,53 @@ export default function BuildingPlannerBasic() {
   };
 
   const handleOverlayClick = (e: React.MouseEvent | React.TouchEvent, floorPlanId: string) => {
-    console.log('handleOverlayClick called', { selectedTool, carpenterTool, electricianTool, plumberTool });
+    e.preventDefault();
+    e.stopPropagation();
     
     let clientX, clientY;
     
-    if ('touches' in e.nativeEvent) {
+    if ('touches' in e.nativeEvent && e.nativeEvent.changedTouches.length > 0) {
       const touch = e.nativeEvent.changedTouches[0];
       clientX = touch.clientX;
       clientY = touch.clientY;
-    } else {
+    } else if ('clientX' in e.nativeEvent) {
       clientX = e.nativeEvent.clientX;
       clientY = e.nativeEvent.clientY;
+    } else {
+      return; // Invalid event
     }
     
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
     const canvas = getCurrentFloorPlan()?.canvas;
+    if (!canvas) {
+      toast("Lerret ikke klart. Prøv å velg verktøy på nytt.");
+      return;
+    }
     
-    console.log('Canvas found:', !!canvas);
+    // Get canvas element to calculate coordinates
+    const canvasElement = canvasRefs.current[floorPlanId];
+    if (!canvasElement) return;
     
-    if (!canvas) return;
-    
+    const rect = canvasElement.getBoundingClientRect();
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
     
-    console.log('Click coordinates:', { x, y });
-    
-    // Flash red
+    // Flash green briefly to show click registered
     setOverlayFlashing(true);
     setTimeout(() => setOverlayFlashing(false), 150);
     
-          if (selectedTool === 'carpenter' && carpenterTool) {
-            console.log('Calling handleCarpenterTool with', carpenterTool);
-            handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
-          } else if (selectedTool === 'electrician' && electricianTool) {
-            console.log('Calling handleElectricianTool with', electricianTool);
-            handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
-          } else if (selectedTool === 'plumber' && plumberTool) {
-            console.log('Calling handlePlumberTool with', plumberTool);
-            handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
-          } else {
-            console.log('No tool handler called - conditions not met');
-          }
+    // Handle tool placement
+    try {
+      if (selectedTool === 'carpenter' && carpenterTool) {
+        handleCarpenterTool(canvas, {x, y}, carpenterTool, floorPlanId);
+      } else if (selectedTool === 'electrician' && electricianTool) {
+        handleElectricianTool(canvas, {x, y}, electricianTool, floorPlanId);
+      } else if (selectedTool === 'plumber' && plumberTool) {
+        handlePlumberTool(canvas, {x, y}, plumberTool, floorPlanId);
+      }
+    } catch (error) {
+      console.error('Error placing item:', error);
+      toast("Feil ved plassering av objekt");
+    }
   };
 
   const addNewFloorPlan = () => {
@@ -685,55 +691,82 @@ export default function BuildingPlannerBasic() {
       return;
     }
 
+    const currentFloor = getCurrentFloorPlan();
+    if (!currentFloor?.canvas) {
+      toast("Lerret ikke initialisert. Prøv igjen.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string;
-      const currentFloor = getCurrentFloorPlan();
       
-      if (!currentFloor?.canvas) return;
-
-      // Create Fabric image from uploaded file
-      FabricImage.fromURL(imageUrl).then((img) => {
-        const canvas = currentFloor.canvas!;
-        
-        // Scale image to fit canvas while maintaining aspect ratio
-        const canvasAspect = canvas.width / canvas.height;
-        const imageAspect = img.width / img.height;
-        
-        if (imageAspect > canvasAspect) {
-          // Image is wider - fit to canvas width
-          img.scaleToWidth(canvas.width);
-        } else {
-          // Image is taller - fit to canvas height  
-          img.scaleToHeight(canvas.height);
+      // Create a new HTML image element to ensure proper loading
+      const img = new Image();
+      img.onload = () => {
+        try {
+          // Create Fabric image from loaded HTML image
+          FabricImage.fromElement(img).then((fabricImg) => {
+            const canvas = currentFloor.canvas!;
+            
+            // Scale image to fit canvas while maintaining aspect ratio
+            const canvasAspect = canvas.width / canvas.height;
+            const imageAspect = fabricImg.width / fabricImg.height;
+            
+            if (imageAspect > canvasAspect) {
+              // Image is wider - fit to canvas width
+              fabricImg.scaleToWidth(canvas.width);
+            } else {
+              // Image is taller - fit to canvas height  
+              fabricImg.scaleToHeight(canvas.height);
+            }
+            
+            // Center the image
+            fabricImg.set({
+              left: canvas.width / 2,
+              top: canvas.height / 2,
+              originX: 'center',
+              originY: 'center',
+              opacity: 0.7,
+              selectable: false,
+              evented: false
+            });
+            
+            // Clear any existing background and set new one
+            canvas.backgroundImage = fabricImg;
+            canvas.renderAll();
+            
+            // Update floor plan with background image URL
+            updateFloorPlan(currentFloor.id, { 
+              backgroundImage: imageUrl 
+            });
+            
+            toast("Bakgrunnsbilde lastet opp!");
+          }).catch((error) => {
+            console.error('Error creating Fabric image:', error);
+            toast("Feil ved behandling av bilde");
+          });
+        } catch (error) {
+          console.error('Error processing image:', error);
+          toast("Feil ved behandling av bilde");
         }
-        
-        // Center the image
-        img.set({
-          left: canvas.width / 2,
-          top: canvas.height / 2,
-          originX: 'center',
-          originY: 'center',
-          opacity: 0.7
-        });
-        
-        // Set as background image directly
-        canvas.backgroundImage = img;
-        canvas.renderAll();
-        
-        // Update floor plan with background image URL
-        updateFloorPlan(currentFloor.id, { 
-          backgroundImage: imageUrl 
-        });
-        
-        toast("Bakgrunnsbilde lastet opp!");
-      }).catch((error) => {
-        console.error('Error loading image:', error);
-        toast("Feil ved opplasting av bilde");
-      });
+      };
+      
+      img.onerror = () => {
+        toast("Kunne ikke laste bildet. Prøv et annet format.");
+      };
+      
+      img.src = imageUrl;
+    };
+    
+    reader.onerror = () => {
+      toast("Feil ved lesing av fil");
     };
     
     reader.readAsDataURL(file);
+    
+    // Clear the input so the same file can be uploaded again
+    event.target.value = '';
   };
 
   const triggerImageUpload = () => {
@@ -1013,56 +1046,6 @@ export default function BuildingPlannerBasic() {
                      </div>
                    )}
 
-                  {/* Visual feedback for selected tools */}
-                  {selectedTool === 'carpenter' && carpenterTool && (
-                    <div className="p-3 bg-orange-100 border border-orange-300 rounded-lg">
-                      <p className="text-sm text-orange-800 font-medium">
-                        ✅ {carpenterTool === 'window' ? 'Vindu' : 'Tegn vegg'} klar
-                      </p>
-                      <p className="text-xs text-orange-600">
-                        {carpenterTool === 'window' ? 'Trykk på det grønne området på lerretet' : 'Tegningsmodus - tegn direkte på lerretet'}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {selectedTool === 'electrician' && electricianTool && (
-                    <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg">
-                      <p className="text-sm text-blue-800 font-medium">
-                         ✅ {electricianTool === 'outlet' ? 'Stikkontakt' : 
-                             electricianTool === 'lightSwitch' ? 'Lysbryter' : 
-                             electricianTool === 'light' ? 'Lysarmatur' : 'Sikringsskap'} klar
-                      </p>
-                      <p className="text-xs text-blue-600">Trykk på det grønne området på lerretet</p>
-                    </div>
-                  )}
-                  
-                  {selectedTool === 'plumber' && plumberTool && (
-                    <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
-                        ✅ {plumberTool === 'sink' ? 'Vask' : 
-                            plumberTool === 'shower' ? 'Dusj' : 
-                            plumberTool === 'toilet' ? 'Toalett' :
-                            plumberTool === 'dishwasher' ? 'Oppvaskmaskin' : 'Vaskemaskin'} klar
-                      </p>
-                      <p className="text-xs text-green-600">Trykk på det grønne området på lerretet</p>
-                    </div>
-                  )}
-
-                  {selectedTool === 'carpenter' && carpenterTool === 'wall' && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        Vegg-tegningsmodus aktiv - tegn direkte på lerretet med finger eller mus
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedTool === 'carpenter' && carpenterTool !== 'wall' && carpenterTool && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        Vindu-plassering aktiv - trykk på lerretet for å plassere vindu
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -1107,38 +1090,17 @@ export default function BuildingPlannerBasic() {
                     />
                     {/* Touch overlay for mobile placement */}
                     {((selectedTool === 'carpenter' && carpenterTool) || (selectedTool === 'electrician' && electricianTool) || (selectedTool === 'plumber' && plumberTool)) && (
-                      <div
-                        className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
-                        style={{ 
-                          backgroundColor: overlayFlashing ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 255, 0, 0.1)',
-                          touchAction: 'none'
-                        }}
-                        onClick={(e) => handleOverlayClick(e, plan.id)}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
-                          handleOverlayClick(e, plan.id);
-                        }}
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-center">
-                             <div className="text-sm font-medium">
-                                Trykk her for å plassere {
-                                  selectedTool === 'carpenter' ? 
-                                    (carpenterTool === 'window' ? 'vindu' : 
-                                     carpenterTool === 'door' ? 'dør' : 'vegg') :
-                                  selectedTool === 'electrician' ? 
-                                    (electricianTool === 'outlet' ? 'stikkontakt' : 
-                                     electricianTool === 'lightSwitch' ? 'lysbryter' : 
-                                     electricianTool === 'light' ? 'lysarmatur' : 'sikringsskap') :
-                                    (plumberTool === 'sink' ? 'vask' : 
-                                     plumberTool === 'shower' ? 'dusj' : 
-                                     plumberTool === 'toilet' ? 'toalett' :
-                                     plumberTool === 'dishwasher' ? 'oppvaskmaskin' : 'vaskemaskin')
-                                }
-                             </div>
-                          </div>
-                        </div>
-                      </div>
+                       <div className="absolute inset-0 z-10 cursor-crosshair transition-all duration-150"
+                         style={{ 
+                           backgroundColor: overlayFlashing ? 'rgba(0, 255, 0, 0.4)' : 'rgba(0, 255, 0, 0.1)',
+                           touchAction: 'none'
+                         }}
+                         onClick={(e) => handleOverlayClick(e, plan.id)}
+                         onTouchEnd={(e) => {
+                           e.preventDefault();
+                           handleOverlayClick(e, plan.id);
+                         }}
+                       />
                     )}
                   </div>
 
