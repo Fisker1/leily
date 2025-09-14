@@ -165,6 +165,39 @@ export default function BuildingPlannerBasic() {
           
           console.log('Canvas initialized successfully for', floorPlanId);
           
+          // Restore background image if it exists
+          const existingBackground = existingFloorPlan?.backgroundImage;
+          if (existingBackground) {
+            console.log('Restoring background image for', floorPlanId);
+            FabricImage.fromURL(existingBackground).then((fabricImg) => {
+              // Scale and center the image
+              const canvasAspect = canvas.width / canvas.height;
+              const imageAspect = fabricImg.width / fabricImg.height;
+              
+              if (imageAspect > canvasAspect) {
+                fabricImg.scaleToWidth(canvas.width * 0.95);
+              } else {
+                fabricImg.scaleToHeight(canvas.height * 0.95);
+              }
+              
+              fabricImg.set({
+                left: canvas.width / 2,
+                top: canvas.height / 2,
+                originX: 'center',
+                originY: 'center',
+                opacity: 0.7,
+                selectable: false,
+                evented: false
+              });
+              
+              canvas.backgroundImage = fabricImg;
+              canvas.renderAll();
+              console.log('Background image restored for', floorPlanId);
+            }).catch((error) => {
+              console.error('Failed to restore background image:', error);
+            });
+          }
+          
           const initialState = JSON.stringify(canvas.toJSON());
           
           updateFloorPlan(floorPlanId, {
@@ -622,12 +655,14 @@ export default function BuildingPlannerBasic() {
 
     currentFloor.canvas.clear();
     currentFloor.canvas.backgroundColor = "#ffffff";
+    currentFloor.canvas.backgroundImage = undefined; // Clear background image
     currentFloor.canvas.renderAll();
     
     const newState = JSON.stringify(currentFloor.canvas.toJSON());
     updateFloorPlan(currentFloor.id, {
       history: [newState],
       historyIndex: 0,
+      backgroundImage: undefined, // Clear from floor plan data too
     });
     
     setPlacedItems(prev => prev.filter(item => item.floorPlanId !== currentFloor.id));
@@ -662,10 +697,6 @@ export default function BuildingPlannerBasic() {
         try {
           const canvas = currentFloor.canvas!;
           
-          // Clear any existing background first
-          canvas.backgroundImage = undefined;
-          canvas.renderAll();
-          
           // Create Fabric image from loaded HTML image
           FabricImage.fromElement(img).then((fabricImg) => {
             // Scale image to fit canvas while maintaining aspect ratio
@@ -674,10 +705,10 @@ export default function BuildingPlannerBasic() {
             
             if (imageAspect > canvasAspect) {
               // Image is wider - fit to canvas width
-              fabricImg.scaleToWidth(canvas.width * 0.9); // Slight padding
+              fabricImg.scaleToWidth(canvas.width * 0.95);
             } else {
               // Image is taller - fit to canvas height  
-              fabricImg.scaleToHeight(canvas.height * 0.9); // Slight padding
+              fabricImg.scaleToHeight(canvas.height * 0.95);
             }
             
             // Center the image
@@ -686,25 +717,115 @@ export default function BuildingPlannerBasic() {
               top: canvas.height / 2,
               originX: 'center',
               originY: 'center',
-              opacity: 0.6,
+              opacity: 0.7,
               selectable: false,
               evented: false
             });
             
-            // Set as background image
+            // Clear canvas and set background image properly
             canvas.backgroundImage = fabricImg;
             canvas.renderAll();
+            
+            // Force a canvas refresh
+            setTimeout(() => {
+              canvas.renderAll();
+            }, 100);
             
             // Update floor plan with background image URL
             updateFloorPlan(currentFloor.id, { 
               backgroundImage: imageUrl 
             });
             
-            console.log('Background image set successfully');
-            toast("Bakgrunnsbilde lastet opp!");
+            console.log('Background image set successfully', {
+              imageSize: { width: fabricImg.width, height: fabricImg.height },
+              canvasSize: { width: canvas.width, height: canvas.height },
+              scaledSize: { width: fabricImg.getScaledWidth(), height: fabricImg.getScaledHeight() }
+            });
+            toast("Bakgrunnsbilde lastet opp og synlig på lerrettet!");
           }).catch((error) => {
             console.error('Error creating Fabric image:', error);
-            toast("Feil ved behandling av bilde");
+            
+            // Fallback method - try adding as regular object first, then set as background
+            try {
+              FabricImage.fromURL(imageUrl).then((fabricImg2) => {
+                const canvas = currentFloor.canvas!;
+                
+                // Scale image
+                const canvasAspect = canvas.width / canvas.height;
+                const imageAspect = fabricImg2.width / fabricImg2.height;
+                
+                if (imageAspect > canvasAspect) {
+                  fabricImg2.scaleToWidth(canvas.width * 0.95);
+                } else {
+                  fabricImg2.scaleToHeight(canvas.height * 0.95);
+                }
+                
+                fabricImg2.set({
+                  left: canvas.width / 2,
+                  top: canvas.height / 2,
+                  originX: 'center',
+                  originY: 'center',
+                  opacity: 0.7,
+                  selectable: false,
+                  evented: false
+                });
+                
+                // Add as background using correct Fabric.js method
+                canvas.backgroundImage = fabricImg2;
+                canvas.renderAll();
+                
+                updateFloorPlan(currentFloor.id, { 
+                  backgroundImage: imageUrl 
+                });
+                
+                console.log('Background image set using fallback method');
+                toast("Bakgrunnsbilde lastet opp!");
+              });
+            } catch (fallbackError) {
+              console.error('Fallback method also failed:', fallbackError);
+              
+              // Last resort - add as a regular object at the back
+              try {
+                FabricImage.fromURL(imageUrl).then((fabricImg3) => {
+                  const canvas = currentFloor.canvas!;
+                  
+                  // Scale image
+                  const canvasAspect = canvas.width / canvas.height;
+                  const imageAspect = fabricImg3.width / fabricImg3.height;
+                  
+                  if (imageAspect > canvasAspect) {
+                    fabricImg3.scaleToWidth(canvas.width * 0.95);
+                  } else {
+                    fabricImg3.scaleToHeight(canvas.height * 0.95);
+                  }
+                  
+                  fabricImg3.set({
+                    left: canvas.width / 2,
+                    top: canvas.height / 2,
+                    originX: 'center',
+                    originY: 'center',
+                    opacity: 0.7,
+                    selectable: false,
+                    evented: false
+                  });
+                  
+                  // Add as bottom object
+                  canvas.add(fabricImg3);
+                  canvas.sendObjectToBack(fabricImg3);
+                  canvas.renderAll();
+                  
+                  updateFloorPlan(currentFloor.id, { 
+                    backgroundImage: imageUrl 
+                  });
+                  
+                  console.log('Background image added as bottom object');
+                  toast("Bakgrunnsbilde lastet opp!");
+                });
+              } catch (finalError) {
+                console.error('All methods failed:', finalError);
+                toast("Feil ved opplasting av bakgrunnsbilde");
+              }
+            }
           });
         } catch (error) {
           console.error('Error processing image:', error);
@@ -713,6 +834,7 @@ export default function BuildingPlannerBasic() {
       };
       
       img.onerror = () => {
+        console.error('Image failed to load');
         toast("Kunne ikke laste bildet. Prøv et annet format.");
       };
       
