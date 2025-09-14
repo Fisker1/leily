@@ -1022,137 +1022,137 @@ export default function BuildingPlannerBasic() {
                      </div>
                   </div>
 
-                   {selectedTool === 'carpenter' && (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">Velg snekkerarbeid:</div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant={carpenterTool === 'window' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCarpenterTool('window')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-3 border border-current mb-1" />
-                            <span className="text-xs">Vindu</span>
-                          </Button>
-                          <Button
-                            variant={carpenterTool === 'door' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCarpenterTool('door')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-3 h-4 border border-current rounded-r mb-1" />
-                            <span className="text-xs">Dør</span>
-                          </Button>
-                          <Button
-                            variant={carpenterTool === 'wall' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCarpenterTool('wall')}
-                            className="flex flex-col items-center justify-center h-16 p-2 col-span-2"
-                          >
-                            <div className="w-6 h-1 bg-current mb-1" />
-                            <span className="text-xs">Tegn vegg</span>
-                          </Button>
-                        </div>
-                      </div>
-                   )}
+                    {selectedTool === 'carpenter' && (
+                       <div className="space-y-3">
+                         <div className="text-sm font-medium">Velg snekkerarbeid:</div>
+                         <div className="grid grid-cols-2 gap-3">
+                           <Button
+                             variant={carpenterTool === 'window' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setCarpenterTool('window')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-3 border border-current mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Vindu</span>
+                           </Button>
+                           <Button
+                             variant={carpenterTool === 'door' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setCarpenterTool('door')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-3 h-4 border border-current rounded-r mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Dør</span>
+                           </Button>
+                           <Button
+                             variant={carpenterTool === 'wall' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setCarpenterTool('wall')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 col-span-2 text-center"
+                           >
+                             <div className="w-6 h-1 bg-current mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Tegn vegg</span>
+                           </Button>
+                         </div>
+                       </div>
+                    )}
 
-                   {selectedTool === 'electrician' && (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant={electricianTool === 'outlet' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setElectricianTool('outlet')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <Zap className="h-4 w-4 mb-1" />
-                            <span className="text-xs">Stikkontakt</span>
-                          </Button>
-                          <Button
-                            variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setElectricianTool('lightSwitch')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-4 border border-current rounded-sm mb-1" />
-                            <span className="text-xs">Lysbryter</span>
-                          </Button>
-                          <Button
-                            variant={electricianTool === 'light' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setElectricianTool('light')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-4 border border-current rounded-full mb-1" />
-                            <span className="text-xs">Lysarmatur</span>
-                          </Button>
-                          <Button
-                            variant={electricianTool === 'electricalPanel' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setElectricianTool('electricalPanel')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-5 border-2 border-current rounded-sm mb-1" />
-                            <span className="text-xs">Sikringsskap</span>
-                          </Button>
-                        </div>
-                      </div>
-                   )}
+                    {selectedTool === 'electrician' && (
+                       <div className="space-y-3">
+                         <div className="text-sm font-medium">Velg elektrisk utstyr:</div>
+                         <div className="grid grid-cols-2 gap-3">
+                           <Button
+                             variant={electricianTool === 'outlet' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setElectricianTool('outlet')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <Zap className="h-4 w-4 mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Stikkontakt</span>
+                           </Button>
+                           <Button
+                             variant={electricianTool === 'lightSwitch' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setElectricianTool('lightSwitch')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-4 border border-current rounded-sm mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Lysbryter</span>
+                           </Button>
+                           <Button
+                             variant={electricianTool === 'light' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setElectricianTool('light')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-4 border border-current rounded-full mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Lysarmatur</span>
+                           </Button>
+                           <Button
+                             variant={electricianTool === 'electricalPanel' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setElectricianTool('electricalPanel')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-5 border-2 border-current rounded-sm mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Sikringsskap</span>
+                           </Button>
+                         </div>
+                       </div>
+                    )}
 
-                   {selectedTool === 'plumber' && (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Button
-                            variant={plumberTool === 'sink' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setPlumberTool('sink')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-3 border border-current rounded-t mb-1" />
-                            <span className="text-xs">Vask</span>
-                          </Button>
-                          <Button
-                            variant={plumberTool === 'shower' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setPlumberTool('shower')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-4 border border-current rounded mb-1" />
-                            <span className="text-xs">Dusj</span>
-                          </Button>
-                          <Button
-                            variant={plumberTool === 'toilet' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setPlumberTool('toilet')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-3 h-4 border border-current rounded-full mb-1" />
-                            <span className="text-xs">Toalett</span>
-                          </Button>
-                          <Button
-                            variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setPlumberTool('dishwasher')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-4 border border-current rounded mb-1" />
-                            <span className="text-xs">Oppvask</span>
-                          </Button>
-                          <Button
-                            variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setPlumberTool('washingMachine')}
-                            className="flex flex-col items-center justify-center w-16 h-16 p-2"
-                          >
-                            <div className="w-4 h-4 border border-current rounded-full mb-1" />
-                            <span className="text-xs">Vask.maskin</span>
-                          </Button>
-                        </div>
-                      </div>
-                   )}
+                    {selectedTool === 'plumber' && (
+                       <div className="space-y-3">
+                         <div className="text-sm font-medium">Velg rørleggerutstyr:</div>
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <Button
+                             variant={plumberTool === 'sink' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setPlumberTool('sink')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-3 border border-current rounded-t mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Vask</span>
+                           </Button>
+                           <Button
+                             variant={plumberTool === 'shower' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setPlumberTool('shower')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-4 border border-current rounded mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Dusj</span>
+                           </Button>
+                           <Button
+                             variant={plumberTool === 'toilet' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setPlumberTool('toilet')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-3 h-4 border border-current rounded-full mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Toalett</span>
+                           </Button>
+                           <Button
+                             variant={plumberTool === 'dishwasher' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setPlumberTool('dishwasher')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center"
+                           >
+                             <div className="w-4 h-4 border border-current rounded mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Oppvask</span>
+                           </Button>
+                           <Button
+                             variant={plumberTool === 'washingMachine' ? 'default' : 'outline'}
+                             size="sm"
+                             onClick={() => setPlumberTool('washingMachine')}
+                             className="flex flex-col items-center justify-center min-h-[4rem] p-2 text-center col-span-2 sm:col-span-1"
+                           >
+                             <div className="w-4 h-4 border border-current rounded-full mb-1 flex-shrink-0" />
+                             <span className="text-xs leading-tight">Vaskemaskin</span>
+                           </Button>
+                         </div>
+                       </div>
+                    )}
 
                 </div>
 
