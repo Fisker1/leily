@@ -122,8 +122,13 @@ const RentalMap = () => {
       }
     };
 
-    fetchToken();
-  }, [toast, user]);
+    // Only fetch token once
+    if (!mapboxToken) {
+      fetchToken();
+    } else {
+      setLoading(false);
+    }
+  }, [toast, user, mapboxToken]);
 
   // Clear all markers
   const clearMarkers = () => {
@@ -173,14 +178,24 @@ const RentalMap = () => {
 
   // Add markers to map
   const addMarkersToMap = () => {
-    if (!map.current || !mapboxgl) return;
+    if (!map.current || !mapboxgl) {
+      console.log('Map or mapboxgl not ready');
+      return;
+    }
+    
+    console.log('Adding markers to map. Properties:', properties.length, 'Calculations:', calculationProperties.length);
     
     clearMarkers();
 
     // Add user's properties (blue pins)
     if (showMyProperties) {
       properties.forEach((property) => {
-        if (!property.coordinates) return;
+        if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
+          console.log('Property missing coordinates:', property.address);
+          return;
+        }
+        
+        console.log('Adding property marker:', property.address, property.coordinates);
         
         const el = createMarkerElement('my-property');
         
@@ -198,18 +213,29 @@ const RentalMap = () => {
         `);
 
         const marker = new mapboxgl.Marker(el)
-          .setLngLat(property.coordinates)
+          .setLngLat([property.coordinates[0], property.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
           
         markers.current.push(marker);
+        
+        // Center map on first property
+        if (markers.current.length === 1) {
+          map.current!.flyTo({
+            center: [property.coordinates[0], property.coordinates[1]],
+            zoom: 12,
+            duration: 2000
+          });
+        }
       });
     }
 
     // Add rental properties (green pins) 
     if (showRentalProperties) {
       properties.filter(p => p.show_in_rental && p.monthly_rent).forEach((property) => {
-        if (!property.coordinates) return;
+        if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
+          return;
+        }
         
         const el = createMarkerElement('rental');
         
@@ -230,7 +256,7 @@ const RentalMap = () => {
         `);
 
         const marker = new mapboxgl.Marker(el)
-          .setLngLat(property.coordinates)
+          .setLngLat([property.coordinates[0], property.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
           
@@ -241,7 +267,9 @@ const RentalMap = () => {
     // Add calculation properties (white pins)
     if (showCalculationProperties) {
       calculationProperties.forEach((calc) => {
-        if (!calc.coordinates) return;
+        if (!calc.coordinates || !Array.isArray(calc.coordinates) || calc.coordinates.length !== 2) {
+          return;
+        }
         
         const el = createMarkerElement('calculation');
         
@@ -262,7 +290,7 @@ const RentalMap = () => {
         `);
 
         const marker = new mapboxgl.Marker(el)
-          .setLngLat(calc.coordinates)
+          .setLngLat([calc.coordinates[0], calc.coordinates[1]])
           .setPopup(popup)
           .addTo(map.current!);
           
@@ -299,11 +327,13 @@ const RentalMap = () => {
         markers.current.push(marker);
       });
     }
+    
+    console.log('Added', markers.current.length, 'markers to map');
   };
 
   // Initialize map
   useEffect(() => {
-    if (!mapboxToken || !mapboxgl || !mapContainer.current) {
+    if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
       return;
     }
 
@@ -327,7 +357,10 @@ const RentalMap = () => {
 
       map.current.on('load', () => {
         console.log('Map loaded successfully!');
-        addMarkersToMap();
+        // Small delay to ensure map is fully ready
+        setTimeout(() => {
+          addMarkersToMap();
+        }, 500);
       });
 
       map.current.on('error', (e) => {
@@ -339,7 +372,8 @@ const RentalMap = () => {
                                  errorMessage.includes('timeout') ||
                                  errorMessage.includes('Failed to fetch') ||
                                  errorMessage.includes('StyleError') ||
-                                 errorMessage.includes('RequestManager');
+                                 errorMessage.includes('RequestManager') ||
+                                 errorMessage.includes('TileLoadError');
         
         if (!isRecoverableError) {
           toast({
@@ -373,35 +407,22 @@ const RentalMap = () => {
       clearMarkers();
       if (map.current) {
         map.current.remove();
+        map.current = null;
       }
     };
   }, [mapboxToken, mapboxgl, toast]);
 
   // Update markers when data or layer settings change
   useEffect(() => {
-    if (map.current && mapboxgl && mapboxToken) {
+    if (map.current && mapboxgl && mapboxToken && !loading && !dataLoading) {
       const timeoutId = setTimeout(() => {
+        console.log('Triggering marker update');
         addMarkersToMap();
-      }, 100); // Debounce marker updates
+      }, 200); // Slightly longer debounce
       
       return () => clearTimeout(timeoutId);
     }
-  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData]);
-
-  // Force refresh property data when component mounts to ensure fresh data after breaks
-  useEffect(() => {
-    if (user && !loading && !dataLoading) {
-      // Refresh data if it's been more than 30 minutes since last update
-      const lastRefresh = localStorage.getItem('rentalMap_lastRefresh');
-      const now = Date.now();
-      const shouldRefresh = !lastRefresh || (now - parseInt(lastRefresh)) > 30 * 60 * 1000; // 30 minutes
-      
-      if (shouldRefresh) {
-        localStorage.setItem('rentalMap_lastRefresh', now.toString());
-        // The useOptimizedPropertyData hook will handle the refresh automatically
-      }
-    }
-  }, [user, loading, dataLoading]);
+  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxToken, loading, dataLoading]);
 
   // Map is now available to all logged-in users
   

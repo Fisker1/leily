@@ -122,21 +122,26 @@ export const useOptimizedPropertyData = () => {
       // Only geocode properties that don't have coordinates yet
       const propertiesWithCoordinates = await Promise.all(
         (data || []).map(async (property: any) => {
-          // Use existing coordinates from database if available
+          // Use existing coordinates from database if available and valid
           if (property.coordinates && Array.isArray(property.coordinates) && property.coordinates.length === 2) {
-            return { ...property, coordinates: property.coordinates as [number, number] };
+            const [lng, lat] = property.coordinates;
+            if (typeof lng === 'number' && typeof lat === 'number' && !isNaN(lng) && !isNaN(lat)) {
+              return { ...property, coordinates: property.coordinates as [number, number] };
+            }
           }
           
           // Otherwise geocode the address
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
           
-          // Update the database with the geocoded coordinates
-          if (coords) {
+          // Update the database with the geocoded coordinates only if we got valid coordinates
+          if (coords && coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
             try {
               await supabase
                 .from('properties')
                 .update({ coordinates: coords })
                 .eq('id', property.id);
+              
+              return { ...property, coordinates: coords };
             } catch (updateError) {
               console.error('Error updating property coordinates:', updateError);
             }
