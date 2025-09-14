@@ -669,109 +669,118 @@ const Rental = () => {
                           </PropertyAddDialog>
                         </div>
                       ) : (
-                         <TooltipProvider>
-                           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 w-full max-w-[300px] mx-auto lg:w-36 lg:gap-2">
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => {
-                                     setSelectedProperty(property);
-                                     setDocumentsDialogOpen(true);
-                                   }}
-                                 >
-                                   <FileText className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Dokumenter</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Dokumenter</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => {
-                                     setSelectedProperty(property);
-                                     setDetailsDialogOpen(true);
-                                   }}
-                                 >
-                                   <Eye className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Detaljer</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Detaljer</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => {
-                                     setSelectedProperty(property);
-                                     setEditDialogOpen(true);
-                                   }}
-                                 >
-                                   <Edit className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Rediger</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Rediger</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant={property.show_in_rental !== false ? "outline" : "default"} 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0 col-span-2 sm:col-span-1"
-                                   onClick={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
-                                 >
-                                   {property.show_in_rental !== false ? (
-                                     <EyeOff className="h-4 w-4" />
-                                   ) : (
-                                     <Eye className="h-4 w-4" />
-                                   )}
-                                   <span className="ml-1 lg:hidden">
-                                     {property.show_in_rental !== false ? "Skjul" : "Vis"}
-                                   </span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>{property.show_in_rental !== false ? "Skjul fra utleie" : "Vis på utleie"}</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="destructive" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0 hover:bg-red-600 dark:hover:bg-red-500 col-span-2 sm:col-span-1"
-                                   onClick={() => handleDeleteProperty(property.id)}
-                                 >
-                                   <Trash className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Slett</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Slett</p>
-                               </TooltipContent>
-                             </Tooltip>
-                           </div>
-                         </TooltipProvider>
+                          <TooltipProvider>
+                            <div className="space-y-2">
+                              {/* First row: Dokumenter */}
+                              <div className="grid grid-cols-1 gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-full h-10 px-2 text-xs"
+                                      onClick={() => {
+                                        setSelectedProperty(property);
+                                        setDocumentsDialogOpen(true);
+                                      }}
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                      <span className="ml-1">Dokumenter</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Dokumenter</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              
+                              {/* Second row: Detaljer and Rediger */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-full h-10 px-2 text-xs"
+                                      onClick={() => {
+                                        setSelectedProperty(property);
+                                        setDetailsDialogOpen(true);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      <span className="ml-1">Detaljer</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Detaljer</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-full h-10 px-2 text-xs"
+                                      onClick={() => {
+                                        setSelectedProperty(property);
+                                        setEditDialogOpen(true);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      <span className="ml-1">Rediger</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Rediger</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              
+                              {/* Third row: Skjul (half width) and Slett */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant={property.show_in_rental !== false ? "outline" : "default"} 
+                                      size="sm" 
+                                      className="w-full h-10 px-2 text-xs"
+                                      onClick={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
+                                    >
+                                      {property.show_in_rental !== false ? (
+                                        <EyeOff className="h-4 w-4" />
+                                      ) : (
+                                        <Eye className="h-4 w-4" />
+                                      )}
+                                      <span className="ml-1">
+                                        {property.show_in_rental !== false ? "Skjul" : "Vis"}
+                                      </span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{property.show_in_rental !== false ? "Skjul fra utleie" : "Vis på utleie"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm" 
+                                      className="w-full h-10 px-2 text-xs hover:bg-red-600 dark:hover:bg-red-500"
+                                      onClick={() => handleDeleteProperty(property.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                      <span className="ml-1">Slett</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Slett</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          </TooltipProvider>
                       )}
                     </div>
                   </div>
