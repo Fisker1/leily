@@ -41,6 +41,50 @@ export type Database = {
         }
         Relationships: []
       }
+      building_projects: {
+        Row: {
+          calculation_id: string | null
+          created_at: string
+          floor_plans: Json
+          id: string
+          placed_items: Json
+          project_name: string
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name?: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_projects_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calculation_history: {
         Row: {
           calculation_data: Json
