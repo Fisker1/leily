@@ -23,6 +23,8 @@ const RentalMap = () => {
   const [mapboxgl, setMapboxgl] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastTokenFetch, setLastTokenFetch] = useState<number>(0);
 
   // Layer toggles with localStorage persistence
   const [showMyProperties, setShowMyProperties] = useState(() => {
@@ -83,34 +85,66 @@ const RentalMap = () => {
     loadMapbox();
   }, [toast]);
 
-  // Fetch Mapbox token
+  // Fetch Mapbox token with retry logic and caching
+  const fetchMapboxToken = async (forceRefresh = false) => {
+    const now = Date.now();
+    const tokenAge = now - lastTokenFetch;
+    const TOKEN_CACHE_DURATION = 90 * 60 * 1000; // 90 minutes
+    
+    // Use cached token if it's fresh and not forcing refresh
+    if (mapboxToken && tokenAge < TOKEN_CACHE_DURATION && !forceRefresh) {
+      return mapboxToken;
+    }
+
+    try {
+      console.log('🔑 Fetching Mapbox token...');
+      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      
+      if (error) {
+        console.error('❌ Token fetch error:', error);
+        throw error;
+      }
+
+      if (data?.token) {
+        console.log('✅ Mapbox token received');
+        setMapboxToken(data.token);
+        setLastTokenFetch(now);
+        setRetryCount(0);
+        return data.token;
+      } else {
+        console.error('❌ No token received from server');
+        throw new Error('Ingen token mottatt');
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to fetch token:', error);
+      throw error;
+    }
+  };
+
+  // Auto-refresh token before expiration
+  useEffect(() => {
+    if (!user || !mapboxToken) return;
+    
+    const TOKEN_REFRESH_INTERVAL = 80 * 60 * 1000; // 80 minutes
+    const refreshTimer = setTimeout(() => {
+      console.log('🔄 Auto-refreshing Mapbox token...');
+      fetchMapboxToken(true).catch(console.error);
+    }, TOKEN_REFRESH_INTERVAL);
+
+    return () => clearTimeout(refreshTimer);
+  }, [mapboxToken, user]);
+
+  // Initial token fetch
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
     
-    const fetchToken = async () => {
+    const initializeToken = async () => {
       try {
-        console.log('🔑 Fetching Mapbox token...');
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        
-        if (error) {
-          console.error('❌ Token fetch error:', error);
-          setError(`Token fetch error: ${error.message}`);
-          throw error;
-        }
-
-        if (data?.token) {
-          console.log('✅ Mapbox token received');
-          setMapboxToken(data.token);
-        } else {
-          console.error('❌ No token received from server');
-          setError('Ingen token mottatt fra server');
-          throw new Error('Ingen token mottatt');
-        }
+        await fetchMapboxToken();
       } catch (error: any) {
-        console.error('❌ Failed to fetch token:', error);
         setError(`Kunne ikke hente Mapbox token: ${error.message}`);
         toast({
           title: "Kartfeil", 
@@ -123,11 +157,11 @@ const RentalMap = () => {
     };
 
     if (!mapboxToken) {
-      fetchToken();
+      initializeToken();
     } else {
       setLoading(false);
     }
-  }, [toast, user, mapboxToken]);
+  }, [user]);
 
   // Clear all markers
   const clearMarkers = () => {
@@ -390,9 +424,28 @@ const RentalMap = () => {
                                  errorMessage.includes('Failed to fetch') ||
                                  errorMessage.includes('StyleError') ||
                                  errorMessage.includes('RequestManager') ||
-                                 errorMessage.includes('TileLoadError');
+                                 errorMessage.includes('TileLoadError') ||
+                                 errorMessage.includes('401') ||
+                                 errorMessage.includes('Unauthorized');
         
-        if (!isRecoverableError) {
+        if (isRecoverableError && retryCount < 3) {
+          console.log('🔄 Attempting to recover from map error...');
+          setRetryCount(prev => prev + 1);
+          
+          // Try to refresh token and reinitialize
+          setTimeout(async () => {
+            try {
+              await fetchMapboxToken(true);
+              if (map.current) {
+                map.current.remove();
+                map.current = null;
+              }
+              // The map will reinitialize automatically due to useEffect dependencies
+            } catch (error) {
+              console.error('Failed to recover:', error);
+            }
+          }, 2000);
+        } else if (!isRecoverableError) {
           setError(`Mapbox error: ${errorMessage}`);
           toast({
             title: "Kartfeil",
@@ -553,10 +606,15 @@ const RentalMap = () => {
                   variant="outline" 
                   size="sm" 
                   className="mt-4"
-                  onClick={() => {
+                  onClick={async () => {
                     setError(null);
                     setLoading(true);
-                    window.location.reload();
+                    setRetryCount(0);
+                    try {
+                      await fetchMapboxToken(true);
+                    } catch (error) {
+                      console.error('Manual retry failed:', error);
+                    }
                   }}
                 >
                   Prøv igjen
