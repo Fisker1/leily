@@ -219,9 +219,9 @@ const RentalMap = () => {
     
     clearMarkers();
 
-    // Add user's properties (blue pins)
+    // Add user's properties that are NOT for rent (blue pins)
     if (showMyProperties && properties.length > 0) {
-      properties.forEach((property) => {
+      properties.filter(p => !p.show_in_rental || !p.monthly_rent).forEach((property) => {
         if (!property.coordinates || !Array.isArray(property.coordinates) || property.coordinates.length !== 2) {
           return;
         }
@@ -679,7 +679,7 @@ const RentalMap = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-blue-600">
-              {properties.length}
+              {properties.filter(p => !p.show_in_rental || !p.monthly_rent).length}
             </CardTitle>
             <p className="text-xs text-muted-foreground">Mine eiendommer</p>
           </CardHeader>
