@@ -48,43 +48,43 @@ const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange={false}
-      storageKey="leily-theme"
-    >
-      <ForceDefaultTheme>
-        <TooltipProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<SimpleAuth />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/utleie" element={<Rental />} />
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/calculator" element={<Calculator />} />
-                  <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
-                  <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
-                  <Route path="/bank-report" element={<BankReport />} />
-                  <Route path="/min-side" element={<MyProfile />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </AuthProvider>
-        </LanguageProvider>
-      </TooltipProvider>
-      </ForceDefaultTheme>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem={false}
+        disableTransitionOnChange={false}
+        storageKey="leily-theme"
+      >
+        <ForceDefaultTheme>
+          <TooltipProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<SimpleAuth />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/utleie" element={<Rental />} />
+                    <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/calculator" element={<Calculator />} />
+                    <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
+                    <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
+                    <Route path="/bank-report" element={<BankReport />} />
+                    <Route path="/min-side" element={<MyProfile />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </AuthProvider>
+          </LanguageProvider>
+        </TooltipProvider>
+        </ForceDefaultTheme>
     </ThemeProvider>
   </QueryClientProvider>
 );

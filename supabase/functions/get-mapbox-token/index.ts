@@ -20,8 +20,18 @@ serve(async (req) => {
 
     // Validate token format (should start with pk. for public tokens)
     if (!MAPBOX_PUBLIC_TOKEN.startsWith('pk.')) {
-      console.error('Invalid Mapbox token format. Public tokens should start with pk.')
-      throw new Error('Invalid Mapbox token format. Use a public token starting with pk.')
+      console.error('Invalid Mapbox token format. Public tokens should start with pk. Token starts with:', MAPBOX_PUBLIC_TOKEN.substring(0, 10))
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid Mapbox token format. Use a public token starting with pk.',
+          received_prefix: MAPBOX_PUBLIC_TOKEN.substring(0, 10),
+          timestamp: new Date().toISOString()
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
     }
 
     console.log('Successfully returning Mapbox token')
