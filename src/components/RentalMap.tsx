@@ -341,7 +341,7 @@ const RentalMap = () => {
     console.log('Added', markers.current.length, 'markers to map');
   };
 
-  // Initialize map
+  // Initialize map - only run once when requirements are met
   useEffect(() => {
     console.log('Map initialization effect triggered', {
       mapboxToken: !!mapboxToken,
@@ -350,8 +350,15 @@ const RentalMap = () => {
       mapExists: !!map.current
     });
 
-    if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
+    // Only initialize if we have requirements and no existing map
+    if (!mapboxToken || !mapboxgl || !mapContainer.current) {
       console.log('Map initialization skipped - missing requirements');
+      return;
+    }
+
+    // Don't reinitialize if map already exists
+    if (map.current) {
+      console.log('Map already exists, skipping initialization');
       return;
     }
 
@@ -379,9 +386,9 @@ const RentalMap = () => {
         console.log('Map loaded successfully!');
         // Small delay to ensure map is fully ready
         setTimeout(() => {
-          console.log('Calling addMarkersToMap after delay');
+          console.log('Calling addMarkersToMap after map load');
           addMarkersToMap();
-        }, 500);
+        }, 100);
       });
 
       map.current.on('error', (e) => {
@@ -410,12 +417,6 @@ const RentalMap = () => {
         console.log('Map style loaded');
       });
 
-      map.current.on('sourcedata', (e) => {
-        if (e.isSourceLoaded) {
-          console.log('Map source loaded');
-        }
-      });
-
     } catch (error) {
       console.error('Map initialization error:', error);
       setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -426,26 +427,60 @@ const RentalMap = () => {
       });
     }
 
+    // Cleanup function - only run when component unmounts
     return () => {
-      console.log('Cleaning up map...');
+      console.log('Map effect cleanup triggered');
+      // Don't clean up the map here, only when component unmounts
+    };
+  }, [mapboxToken, mapboxgl, toast]);
+
+  // Cleanup map only when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log('Component unmounting, cleaning up map...');
       clearMarkers();
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [mapboxToken, mapboxgl, toast]);
+  }, []);
 
   // Update markers when data or layer settings change
   useEffect(() => {
-    if (map.current && mapboxgl && mapboxToken && !loading && !dataLoading) {
-      const timeoutId = setTimeout(() => {
-        console.log('Triggering marker update');
-        addMarkersToMap();
-      }, 200); // Slightly longer debounce
-      
-      return () => clearTimeout(timeoutId);
+    // Only update markers if map is fully initialized and ready
+    if (!map.current || !mapboxgl || !mapboxToken || loading || dataLoading) {
+      console.log('Skipping marker update - map not ready', {
+        hasMap: !!map.current,
+        hasMapboxgl: !!mapboxgl,
+        hasToken: !!mapboxToken,
+        loading,
+        dataLoading
+      });
+      return;
     }
+
+    // Check if map is actually loaded
+    if (!map.current.isStyleLoaded()) {
+      console.log('Map style not loaded yet, waiting...');
+      const checkLoaded = () => {
+        if (map.current && map.current.isStyleLoaded()) {
+          console.log('Map style loaded, adding markers');
+          addMarkersToMap();
+        } else {
+          setTimeout(checkLoaded, 100);
+        }
+      };
+      checkLoaded();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      console.log('Triggering marker update - properties:', properties.length, 'calculations:', calculationProperties.length);
+      addMarkersToMap();
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxToken, loading, dataLoading]);
 
   // Map is now available to all logged-in users
