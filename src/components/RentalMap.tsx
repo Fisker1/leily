@@ -22,6 +22,7 @@ const RentalMap = () => {
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [mapboxgl, setMapboxgl] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Layer toggles with localStorage persistence
   const [showMyProperties, setShowMyProperties] = useState(() => {
@@ -62,13 +63,18 @@ const RentalMap = () => {
 
   // Load Mapbox GL
   useEffect(() => {
+    console.log('Loading Mapbox GL...');
     const loadMapbox = async () => {
       try {
+        console.log('Importing mapbox-gl...');
         const mapboxModule = await import('mapbox-gl');
+        console.log('Importing mapbox-gl CSS...');
         await import('mapbox-gl/dist/mapbox-gl.css');
+        console.log('Mapbox GL loaded successfully');
         setMapboxgl(mapboxModule.default);
       } catch (error) {
         console.error('Failed to load Mapbox GL:', error);
+        setError('Kunne ikke laste Mapbox GL biblioteket');
         toast({
           title: "Kartfeil",
           description: "Kunne ikke laste Mapbox GL biblioteket",
@@ -83,6 +89,7 @@ const RentalMap = () => {
   useEffect(() => {
     // Only fetch token if user is authenticated
     if (!user) {
+      console.log('No user, skipping token fetch');
       setLoading(false);
       return;
     }
@@ -99,6 +106,7 @@ const RentalMap = () => {
         
         if (error) {
           console.error('Supabase function error:', error);
+          setError(`Token fetch error: ${error.message}`);
           throw error;
         }
 
@@ -107,10 +115,12 @@ const RentalMap = () => {
           setMapboxToken(data.token);
         } else {
           console.error('No token in response:', data);
+          setError('Ingen token mottatt');
           throw new Error('Ingen token mottatt');
         }
       } catch (error) {
         console.error('Token fetch error:', error);
+        setError(`Token fetch failed: ${error.message}`);
         toast({
           title: "Kartfeil",
           description: `Kunne ikke hente Mapbox token: ${error.message}`,
@@ -333,22 +343,32 @@ const RentalMap = () => {
 
   // Initialize map
   useEffect(() => {
+    console.log('Map initialization effect triggered', {
+      mapboxToken: !!mapboxToken,
+      mapboxgl: !!mapboxgl,
+      mapContainer: !!mapContainer.current,
+      mapExists: !!map.current
+    });
+
     if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current) {
+      console.log('Map initialization skipped - missing requirements');
       return;
     }
 
     console.log('Initializing map with token:', mapboxToken.substring(0, 10) + '...');
 
-    mapboxgl.accessToken = mapboxToken;
-
     try {
+      mapboxgl.accessToken = mapboxToken;
+
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v11', // Use v11 which is more stable
+        style: 'mapbox://styles/mapbox/streets-v11',
         center: [10.7522, 59.9139], // Oslo
         zoom: 6,
-        attributionControl: false, // Disable attribution to prevent issues
+        attributionControl: false,
       });
+
+      console.log('Map created, adding controls...');
 
       map.current.addControl(
         new mapboxgl.NavigationControl(),
@@ -359,6 +379,7 @@ const RentalMap = () => {
         console.log('Map loaded successfully!');
         // Small delay to ensure map is fully ready
         setTimeout(() => {
+          console.log('Calling addMarkersToMap after delay');
           addMarkersToMap();
         }, 500);
       });
@@ -376,6 +397,7 @@ const RentalMap = () => {
                                  errorMessage.includes('TileLoadError');
         
         if (!isRecoverableError) {
+          setError(`Mapbox error: ${errorMessage}`);
           toast({
             title: "Kartfeil",
             description: `Mapbox feil: ${errorMessage}`,
@@ -396,6 +418,7 @@ const RentalMap = () => {
 
     } catch (error) {
       console.error('Map initialization error:', error);
+      setError(`Map initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
         title: "Kartfeil",
         description: `Kunne ikke initialisere kartet: ${error instanceof Error ? error.message : 'Ukjent feil'}`,
@@ -404,6 +427,7 @@ const RentalMap = () => {
     }
 
     return () => {
+      console.log('Cleaning up map...');
       clearMarkers();
       if (map.current) {
         map.current.remove();
@@ -513,9 +537,39 @@ const RentalMap = () => {
                 </p>
               </div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <MapPin className="h-8 w-8 mx-auto mb-2 text-red-500" />
+                <p className="text-red-500 font-medium mb-2">Kartfeil</p>
+                <p className="text-muted-foreground text-sm">{error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    window.location.reload();
+                  }}
+                >
+                  Prøv igjen
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="relative">
               <div ref={mapContainer} className="h-96 w-full rounded-lg border" />
+              
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="absolute bottom-4 left-4 bg-black/75 text-white p-2 rounded text-xs">
+                  <div>Token: {mapboxToken ? 'Yes' : 'No'}</div>
+                  <div>MapboxGL: {mapboxgl ? 'Yes' : 'No'}</div>
+                  <div>Properties: {properties.length}</div>
+                  <div>Map: {map.current ? 'Yes' : 'No'}</div>
+                </div>
+              )}
               
               {/* Legend - Hidden on mobile */}
               <Card className="absolute top-4 right-4 w-64 bg-background/95 backdrop-blur hidden sm:block">
