@@ -196,25 +196,14 @@ export default function BuildingPlannerBasic() {
     }
   };
 
-  const handleFloorPlanUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFloorPlanUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Ugyldig filtype",
         description: "Velg en bildefil (JPG, PNG, etc.).",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "Fil for stor",
-        description: "Velg et bilde som er mindre enn 10MB.",
         variant: "destructive",
       });
       return;
@@ -229,66 +218,36 @@ export default function BuildingPlannerBasic() {
         const canvas = fabricCanvasRef.current;
         
         try {
-          console.log('Loading image with v6 method...');
-          
-          // Clear canvas first but don't change background yet
+          // Clear canvas
           canvas.clear();
+          canvas.backgroundColor = '#ffffff';
           
-          // Use the correct v6 FabricImage.fromURL method
-          const fabricImg = await FabricImage.fromURL(imageUrl);
+          // Load image using Fabric v6
+          const img = await FabricImage.fromURL(imageUrl);
           
-          console.log('Image loaded, dimensions:', fabricImg.width, 'x', fabricImg.height);
-          
-          // Calculate proper scaling to fit within canvas bounds
+          // Scale to fit canvas
           const canvasWidth = canvas.width || 800;
           const canvasHeight = canvas.height || 600;
+          const scale = Math.min(canvasWidth / img.width!, canvasHeight / img.height!, 1);
           
-          console.log('Canvas dimensions:', canvasWidth, 'x', canvasHeight);
-          
-          const scaleX = canvasWidth / fabricImg.width!;
-          const scaleY = canvasHeight / fabricImg.height!;
-          const scale = Math.min(scaleX, scaleY, 0.9); // Use 0.9 to ensure it fits with margin
-          
-          console.log('Calculated scale:', scale);
-          
-          // Calculate final dimensions and position
-          const finalWidth = fabricImg.width! * scale;
-          const finalHeight = fabricImg.height! * scale;
-          const left = (canvasWidth - finalWidth) / 2;
-          const top = (canvasHeight - finalHeight) / 2;
-          
-          console.log('Final position and size:', { left, top, width: finalWidth, height: finalHeight });
-          
-          // Configure the image
-          fabricImg.set({
-            left: left,
-            top: top,
-            scaleX: scale,
-            scaleY: scale,
-            selectable: true, // Make it selectable temporarily for debugging
-            evented: true,
-            hasControls: true,
-            name: 'floorPlan'
+          img.scaleToWidth(canvasWidth * scale * 0.9);
+          img.set({
+            left: canvasWidth / 2,
+            top: canvasHeight / 2,
+            originX: 'center',
+            originY: 'center'
           });
           
-          console.log('Adding image to canvas...');
-          canvas.add(fabricImg);
-          
-          // Set white background after adding image
-          canvas.backgroundColor = '#ffffff';
-          canvas.renderAll();
-          
-          console.log('Image added successfully, canvas objects count:', canvas.size());
+          canvas.add(img);
           canvas.renderAll();
           
           toast({
-            title: "Plantegning lastet opp",
-            description: `Bilde vist på lerretet (${Math.round(finalWidth)}x${Math.round(finalHeight)})`,
+            title: "Plantegning lastet opp", 
+            description: "Bildet er nå synlig på lerretet"
           });
         } catch (error) {
-          console.error('Error loading image:', error);
           toast({
-            title: "Feil ved lasting av bilde",
+            title: "Feil",
             description: "Kunne ikke laste bildet",
             variant: "destructive"
           });
