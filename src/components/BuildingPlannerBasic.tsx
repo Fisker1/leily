@@ -118,11 +118,22 @@ export default function BuildingPlannerBasic() {
   // Initialize canvas for a floor plan
   const initializeCanvas = (floorPlanId: string) => {
     const canvasElement = canvasRefs.current[floorPlanId];
-    if (!canvasElement) return;
+    if (!canvasElement) {
+      console.log('Canvas element not found for', floorPlanId);
+      return;
+    }
 
-    // Check if canvas is already initialized
+    // Check if canvas is already initialized and dispose if needed
     const existingFloorPlan = floorPlans.find(fp => fp.id === floorPlanId);
-    if (existingFloorPlan?.canvas) return;
+    if (existingFloorPlan?.canvas) {
+      console.log('Disposing existing canvas for', floorPlanId);
+      try {
+        existingFloorPlan.canvas.dispose();
+      } catch (error) {
+        console.log('Error disposing canvas:', error);
+      }
+      updateFloorPlan(floorPlanId, { canvas: null });
+    }
 
     // Calculate responsive canvas dimensions
     const isMobile = window.innerWidth < 768;
@@ -136,64 +147,85 @@ export default function BuildingPlannerBasic() {
       canvasHeight = 600;
     }
 
-    const canvas = new FabricCanvas(canvasElement, {
-      width: canvasWidth,
-      height: canvasHeight,
-      backgroundColor: "#ffffff",
-    });
-
-    // Configure drawing settings
-    canvas.freeDrawingBrush.color = '#333333';
-    canvas.freeDrawingBrush.width = 3;
-
-    const initialState = JSON.stringify(canvas.toJSON());
-    
-    updateFloorPlan(floorPlanId, {
-      canvas,
-      history: [initialState],
-      historyIndex: 0,
-    });
-
-    // Handle canvas changes for history
-    const handleCanvasChange = () => {
-      const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
-      if (!currentFloor || currentFloor.isUndoing) return;
-
-      const currentState = JSON.stringify(canvas.toJSON());
-      const newHistory = currentFloor.history.slice(0, currentFloor.historyIndex + 1);
-      newHistory.push(currentState);
-      
-      if (newHistory.length > 20) {
-        newHistory.shift();
-      }
-      
-      updateFloorPlan(floorPlanId, {
-        history: newHistory,
-        historyIndex: Math.min(currentFloor.historyIndex + 1, 19),
+    try {
+      console.log('Creating new canvas for', floorPlanId);
+      const canvas = new FabricCanvas(canvasElement, {
+        width: canvasWidth,
+        height: canvasHeight,
+        backgroundColor: "#ffffff",
       });
-    };
 
-    canvas.on('object:added', handleCanvasChange);
-    canvas.on('object:removed', handleCanvasChange);
-    canvas.on('object:modified', handleCanvasChange);
-    canvas.on('path:created', handleCanvasChange);
+      // Wait for canvas to be fully initialized before setting properties
+      setTimeout(() => {
+        try {
+          if (canvas.freeDrawingBrush) {
+            canvas.freeDrawingBrush.color = '#333333';
+            canvas.freeDrawingBrush.width = 3;
+          }
+          
+          console.log('Canvas initialized successfully for', floorPlanId);
+          
+          const initialState = JSON.stringify(canvas.toJSON());
+          
+          updateFloorPlan(floorPlanId, {
+            canvas,
+            history: [initialState],
+            historyIndex: 0,
+          });
 
-    // Enable touch support for mobile
-    canvas.enableRetinaScaling = true;
+          // Handle canvas changes for history
+          const handleCanvasChange = () => {
+            const currentFloor = floorPlans.find(fp => fp.id === floorPlanId);
+            if (!currentFloor || currentFloor.isUndoing) return;
+
+            const currentState = JSON.stringify(canvas.toJSON());
+            const newHistory = currentFloor.history.slice(0, currentFloor.historyIndex + 1);
+            newHistory.push(currentState);
+            
+            if (newHistory.length > 20) {
+              newHistory.shift();
+            }
+            
+            updateFloorPlan(floorPlanId, {
+              history: newHistory,
+              historyIndex: Math.min(currentFloor.historyIndex + 1, 19),
+            });
+          };
+
+          canvas.on('object:added', handleCanvasChange);
+          canvas.on('object:removed', handleCanvasChange);
+          canvas.on('object:modified', handleCanvasChange);
+          canvas.on('path:created', handleCanvasChange);
+
+          // Enable touch support for mobile
+          canvas.enableRetinaScaling = true;
+        } catch (error) {
+          console.error('Error setting canvas properties:', error);
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('Error creating canvas:', error);
+      toast("Feil ved initialisering av lerret. Prøv å laste siden på nytt.");
+    }
   };
 
   // Update canvas drawing mode when tool changes
   useEffect(() => {
     floorPlans.forEach(fp => {
-      if (fp.canvas) {
-        if (selectedTool === 'carpenter') {
-          fp.canvas.isDrawingMode = true;
-          fp.canvas.freeDrawingBrush.color = '#333333';
-          fp.canvas.freeDrawingBrush.width = 3;
-        } else {
-          fp.canvas.isDrawingMode = false;
+      if (fp.canvas && fp.canvas.freeDrawingBrush) {
+        try {
+          if (selectedTool === 'carpenter') {
+            fp.canvas.isDrawingMode = true;
+            fp.canvas.freeDrawingBrush.color = '#333333';
+            fp.canvas.freeDrawingBrush.width = 3;
+          } else {
+            fp.canvas.isDrawingMode = false;
+          }
+          fp.canvas.renderAll();
+        } catch (error) {
+          console.error('Error updating canvas drawing mode:', error);
         }
-        fp.canvas.renderAll();
       }
     });
   }, [selectedTool, floorPlans]);
@@ -252,10 +284,14 @@ export default function BuildingPlannerBasic() {
         break;
       case 'wall':
         // Enable drawing mode for walls
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.color = '#8B4513';
-        canvas.freeDrawingBrush.width = 8;
-        toast("Tegningsmodus aktivert - tegn vegger!");
+        if (canvas.freeDrawingBrush) {
+          canvas.isDrawingMode = true;
+          canvas.freeDrawingBrush.color = '#8B4513';
+          canvas.freeDrawingBrush.width = 8;
+          toast("Tegningsmodus aktivert - tegn vegger!");
+        } else {
+          toast("Lerret ikke klart for tegning. Prøv på nytt.");
+        }
         return;
     }
 
@@ -793,40 +829,42 @@ export default function BuildingPlannerBasic() {
             <div className="flex items-center justify-between mb-4">
               <TabsList>
                 {floorPlans.map((plan) => (
-                  <TabsTrigger key={plan.id} value={plan.id} className="relative group">
-                    {plan.isEditingName ? (
-                      <Input
-                        defaultValue={plan.name}
-                        className="w-20 h-6 text-xs"
-                        autoFocus
-                        onBlur={(e) => {
-                          updateFloorPlan(plan.id, { 
-                            name: e.target.value || plan.name,
-                            isEditingName: false 
-                          });
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                  <div key={plan.id} className="relative group">
+                    <TabsTrigger value={plan.id} className="relative">
+                      {plan.isEditingName ? (
+                        <Input
+                          defaultValue={plan.name}
+                          className="w-20 h-6 text-xs"
+                          autoFocus
+                          onBlur={(e) => {
                             updateFloorPlan(plan.id, { 
-                              name: (e.target as HTMLInputElement).value || plan.name,
+                              name: e.target.value || plan.name,
                               isEditingName: false 
                             });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <span 
-                        onDoubleClick={() => updateFloorPlan(plan.id, { isEditingName: true })}
-                        className="cursor-pointer"
-                      >
-                        {plan.name}
-                      </span>
-                    )}
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              updateFloorPlan(plan.id, { 
+                                name: (e.target as HTMLInputElement).value || plan.name,
+                                isEditingName: false 
+                              });
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span 
+                          onDoubleClick={() => updateFloorPlan(plan.id, { isEditingName: true })}
+                          className="cursor-pointer"
+                        >
+                          {plan.name}
+                        </span>
+                      )}
+                    </TabsTrigger>
                     {floorPlans.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute -top-2 -right-2 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 bg-destructive text-destructive-foreground hover:bg-destructive/80 z-10"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFloorPlan(plan.id);
@@ -835,7 +873,7 @@ export default function BuildingPlannerBasic() {
                         <X className="h-3 w-3" />
                       </Button>
                     )}
-                  </TabsTrigger>
+                  </div>
                 ))}
               </TabsList>
               <Button onClick={addNewFloorPlan} size="sm" variant="outline">
@@ -1074,13 +1112,14 @@ export default function BuildingPlannerBasic() {
 
                   {/* Canvas with touch overlay */}
                   <div className="border border-gray-200 rounded-lg shadow-lg overflow-hidden bg-white relative">
-                    <canvas
-                      ref={(el) => {
-                        canvasRefs.current[plan.id] = el;
-                        if (el && !plan.canvas) {
-                          setTimeout(() => initializeCanvas(plan.id), 100);
-                        }
-                      }}
+                     <canvas
+                       ref={(el) => {
+                         canvasRefs.current[plan.id] = el;
+                         if (el && !plan.canvas) {
+                           // Use a longer delay to ensure element is fully rendered
+                           setTimeout(() => initializeCanvas(plan.id), 300);
+                         }
+                       }}
                       className="max-w-full block"
                       style={{ 
                         display: 'block',
