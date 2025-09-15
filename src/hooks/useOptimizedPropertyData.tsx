@@ -36,18 +36,6 @@ const processGeocodingQueue = async () => {
   
   isProcessingQueue = true;
   
-  // Try to get Mapbox token first for better geocoding accuracy
-  let mapboxToken = null;
-  try {
-    const { data } = await supabase.functions.invoke('get-mapbox-token');
-    if (data?.token) {
-      mapboxToken = data.token;
-      console.log('🔑 Using Mapbox for geocoding');
-    }
-  } catch (error) {
-    console.log('⚠️ Falling back to Nominatim for geocoding');
-  }
-  
   while (geocodingQueue.length > 0) {
     const { resolve, address } = geocodingQueue.shift()!;
     
@@ -59,55 +47,66 @@ const processGeocodingQueue = async () => {
     try {
       let coords = null;
       
-      // Try Mapbox first if token is available
-      if (mapboxToken) {
+      // Use backend geocoding function first (most reliable)
+      try {
+        console.log(`🌍 Backend geocoding for: ${address}`);
+        
+        // Extract address parts for better geocoding
+        const parts = address.split(',').map(p => p.trim());
+        const streetAddress = parts[0] || address;
+        const city = parts[1] || '';
+        
+        const { data, error } = await supabase.functions.invoke('geocode-address', {
+          body: {
+            address: streetAddress,
+            city: city,
+            country: 'NO'
+          }
+        });
+
+        if (!error && data?.coordinates && data.success) {
+          coords = data.coordinates as [number, number];
+          console.log(`✅ Backend geocoded "${address}":`, coords);
+        } else {
+          console.warn('Backend geocoding failed, trying fallback:', error);
+        }
+      } catch (backendError) {
+        console.warn('Backend geocoding error, trying fallback:', backendError);
+      }
+      
+      // Fallback to Nominatim if backend failed
+      if (!coords) {
         try {
+          console.log(`🌍 Fallback geocoding for: ${address}`);
           const encodedAddress = encodeURIComponent(address);
           const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&country=NO&limit=1`
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`,
+            {
+              headers: {
+                'User-Agent': 'Leily Property App'
+              }
+            }
           );
           
           if (response.ok) {
             const data = await response.json();
-            if (data.features && data.features.length > 0) {
-              const [lng, lat] = data.features[0].center;
-              coords = [lng, lat] as [number, number];
-              console.log(`✅ Mapbox geocoded "${address}":`, coords);
+            if (data && data.length > 0) {
+              coords = [parseFloat(data[0].lon), parseFloat(data[0].lat)] as [number, number];
+              console.log(`✅ Nominatim geocoded "${address}":`, coords);
+            } else {
+              console.warn(`❌ No results found for "${address}"`);
             }
           }
-        } catch (mapboxError) {
-          console.warn('Mapbox geocoding failed, trying Nominatim:', mapboxError);
-        }
-      }
-      
-      // Fallback to Nominatim if Mapbox failed or unavailable
-      if (!coords) {
-        const encodedAddress = encodeURIComponent(address);
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=no`,
-          {
-            headers: {
-              'User-Agent': 'Leily Property App'
-            }
-          }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            coords = [parseFloat(data[0].lon), parseFloat(data[0].lat)] as [number, number];
-            console.log(`✅ Nominatim geocoded "${address}":`, coords);
-          } else {
-            console.warn(`❌ No results found for "${address}"`);
-          }
+        } catch (nominatimError) {
+          console.error('Nominatim geocoding error:', nominatimError);
         }
       }
       
       geocodeCache.set(address, coords);
       resolve(coords);
       
-      // Rate limiting - wait 300ms between requests
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Rate limiting - wait 500ms between requests to be gentle on APIs
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Geocoding error for', address, ':', error);
       geocodeCache.set(address, null);
