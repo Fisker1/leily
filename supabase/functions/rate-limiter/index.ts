@@ -19,6 +19,7 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'payment/create': { maxRequests: 3, windowMinutes: 15 },
   'admin/promote': { maxRequests: 2, windowMinutes: 60 },
   'admin/tenant-access': { maxRequests: 5, windowMinutes: 10 },
+  'get-mapbox-token': { maxRequests: 500, windowMinutes: 5 }, // Very generous for token fetching
   'default': { maxRequests: 20, windowMinutes: 5 }
 }
 
