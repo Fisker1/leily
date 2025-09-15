@@ -87,77 +87,145 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
     mapboxgl.accessToken = mapboxToken;
     
-    // Use our backend geocoding function instead of direct API calls
-    const geocodeAddress = async () => {
+    // Use coordinates from database if available, otherwise geocode
+    const initializeMap = async () => {
+      let lng: number, lat: number;
+      
       try {
-        console.log(`🌍 Geocoding address via backend: ${address}, ${city || ''}`);
+        // First try to get coordinates from properties table if this address exists there
+        console.log(`🔍 Looking for cached coordinates for ${address}, ${city || ''}`);
         
-        const { data, error } = await supabase.functions.invoke('geocode-address', {
-          body: {
-            address: address,
-            city: city,
-            country: 'NO'
+        const { data: properties } = await supabase
+          .from('properties')
+          .select('coordinates')
+          .ilike('address', `%${address}%`)
+          .eq('city', city || '')
+          .not('coordinates', 'is', null)
+          .limit(1);
+        
+        if (properties && properties[0]?.coordinates && Array.isArray(properties[0].coordinates) && properties[0].coordinates.length === 2) {
+          [lng, lat] = properties[0].coordinates;
+          console.log(`✅ Using cached coordinates [${lng}, ${lat}] for ${address}`);
+        } else {
+          // Fallback to geocoding
+          console.log(`🌍 No cached coordinates, geocoding: ${address}, ${city || ''}`);
+          
+          const { data, error } = await supabase.functions.invoke('geocode-address', {
+            body: {
+              address: address,
+              city: city,
+              country: 'NO'
+            }
+          });
+
+          if (error || !data?.coordinates || !data.success) {
+            console.error('❌ Geocoding failed:', error);
+            // Show informative fallback
+            if (mapContainer.current) {
+              mapContainer.current.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
+                  <div class="text-center p-4">
+                    <p>📍 Satellittbilde ikke tilgjengelig</p>
+                    <p class="text-xs mt-1 opacity-75">${address}</p>
+                  </div>
+                </div>
+              `;
+            }
+            return;
           }
-        });
 
-        if (error) {
-          console.error('❌ Geocoding error:', error);
-          return;
+          [lng, lat] = data.coordinates;
+          console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+          
+          // Cache the coordinates for future use by updating any matching property
+          try {
+            await supabase
+              .from('properties')
+              .update({ coordinates: [lng, lat] })
+              .ilike('address', `%${address}%`)
+              .eq('city', city || '')
+              .is('coordinates', null);
+            console.log(`💾 Cached coordinates for ${address}`);
+          } catch (cacheError) {
+            console.warn('⚠️ Could not cache coordinates:', cacheError);
+          }
         }
-
-        if (!data?.coordinates) {
-          console.error('❌ No coordinates returned from geocoding');
-          return;
-        }
-
-        const [lng, lat] = data.coordinates;
-        console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+        
+        // Create the map with coordinates
+        if (!mapContainer.current) return;
         
         try {
           map.current = new mapboxgl.Map({
-            container: mapContainer.current!,
+            container: mapContainer.current,
             style: 'mapbox://styles/mapbox/satellite-v9',
             center: [lng, lat],
             zoom: 17,
             bearing: 0,
             pitch: 0,
             attributionControl: false,
-            logoPosition: 'bottom-right'
+            logoPosition: 'bottom-right',
+            interactive: false // Disable all interactions from the start
           });
 
-          // Wait for map to load before disabling interactions
+          // Add marker and disable interactions when map loads
           map.current.on('load', () => {
             if (map.current) {
               // Add a red marker at the property location
-              new mapboxgl.Marker({ color: '#ff0000' })
+              new mapboxgl.Marker({ 
+                color: '#ef4444',
+                scale: 0.8
+              })
                 .setLngLat([lng, lat])
                 .addTo(map.current);
               
-              // Disable all interactions for a static look
-              map.current.dragPan.disable();
-              map.current.scrollZoom.disable();
-              map.current.boxZoom.disable();
-              map.current.dragRotate.disable();
-              map.current.keyboard.disable();
-              map.current.doubleClickZoom.disable();
-              map.current.touchZoomRotate.disable();
+              console.log(`✅ Satellite map loaded for ${address}`);
             }
           });
 
           map.current.on('error', (e) => {
-            console.error('Mapbox GL error:', e);
-            // If map fails to load, we'll just show an empty container
+            console.error('❌ Mapbox GL error:', e);
+            // Show error message if map fails to load
+            if (mapContainer.current) {
+              mapContainer.current.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
+                  <div class="text-center p-4">
+                    <p>🗺️ Kart kunne ikke lastes</p>
+                    <p class="text-xs mt-1 opacity-75">${address}</p>
+                  </div>
+                </div>
+              `;
+            }
           });
 
-        } catch (error) {
-          console.error('Error creating Mapbox GL map:', error);
+        } catch (mapError) {
+          console.error('❌ Error creating Mapbox GL map:', mapError);
+          if (mapContainer.current) {
+            mapContainer.current.innerHTML = `
+              <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
+                <div class="text-center p-4">
+                  <p>⚠️ Kunne ikke initialisere kart</p>
+                  <p class="text-xs mt-1 opacity-75">${address}</p>
+                </div>
+              </div>
+            `;
+          }
         }
-      } catch (error) {
-        console.error('Error in geocoding process:', error);
+      } catch (generalError) {
+        console.error('❌ General error in map initialization:', generalError);
+        if (mapContainer.current) {
+          mapContainer.current.innerHTML = `
+            <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
+              <div class="text-center p-4">
+                <p>🔄 Laster kart...</p>
+                <p class="text-xs mt-1 opacity-75">${address}</p>
+              </div>
+            </div>
+          `;
+        }
       }
     };
 
-    geocodeAddress();
+    initializeMap();
 
     return () => {
       if (map.current) {

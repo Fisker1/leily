@@ -14,6 +14,7 @@ serve(async (req) => {
     const { address, city, country = 'NO' } = await req.json()
     
     if (!address) {
+      console.error('Address is required')
       return new Response(
         JSON.stringify({ error: 'Address is required' }),
         {
@@ -38,27 +39,62 @@ serve(async (req) => {
 
     // Build the full address string
     const fullAddress = city ? `${address}, ${city}` : address
-    console.log(`Geocoding address: ${fullAddress}`)
+    console.log(`🌍 Geocoding address: ${fullAddress}`)
     
-    // Make geocoding request to Mapbox
+    // Make geocoding request to Mapbox with retries
     const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${MAPBOX_PUBLIC_TOKEN}&country=${country}&limit=1`
     
-    const response = await fetch(geocodeUrl)
+    let response: Response;
+    let attempt = 0;
+    const maxAttempts = 3;
     
-    if (!response.ok) {
-      console.error(`Geocoding failed with status ${response.status}`)
-      const errorText = await response.text()
-      console.error('Geocoding error response:', errorText)
+    while (attempt < maxAttempts) {
+      try {
+        console.log(`🔄 Geocoding attempt ${attempt + 1}/${maxAttempts}`)
+        response = await fetch(geocodeUrl, {
+          headers: {
+            'User-Agent': 'Leily-PropertyApp/1.0'
+          }
+        })
+        
+        if (response.ok) {
+          break;
+        }
+        
+        if (response.status === 403) {
+          console.error(`❌ Forbidden error (403) on attempt ${attempt + 1}`)
+        } else {
+          console.error(`❌ HTTP ${response.status} on attempt ${attempt + 1}`)
+        }
+        
+        attempt++;
+        if (attempt < maxAttempts) {
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      } catch (fetchError) {
+        console.error(`❌ Network error on attempt ${attempt + 1}:`, fetchError)
+        attempt++;
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+    
+    if (!response! || !response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error')
+      console.error(`❌ All geocoding attempts failed. Status: ${response?.status}, Error: ${errorText}`)
       
       return new Response(
         JSON.stringify({ 
-          error: 'Geocoding failed',
-          status: response.status,
-          details: errorText
+          error: 'Geocoding failed after retries',
+          status: response?.status || 0,
+          details: errorText,
+          address: fullAddress
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: response.status,
+          status: response?.status || 500,
         }
       )
     }
@@ -66,7 +102,7 @@ serve(async (req) => {
     const data = await response.json()
     
     if (!data.features || data.features.length === 0) {
-      console.log(`No geocoding results found for: ${fullAddress}`)
+      console.log(`❌ No geocoding results found for: ${fullAddress}`)
       return new Response(
         JSON.stringify({ 
           error: 'No geocoding results found',
@@ -82,13 +118,14 @@ serve(async (req) => {
     const feature = data.features[0]
     const [lng, lat] = feature.center
     
-    console.log(`Successfully geocoded ${fullAddress} to [${lng}, ${lat}]`)
+    console.log(`✅ Successfully geocoded ${fullAddress} to [${lng}, ${lat}]`)
     
     return new Response(
       JSON.stringify({ 
         coordinates: [lng, lat],
         place_name: feature.place_name,
-        address: fullAddress
+        address: fullAddress,
+        success: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -96,12 +133,13 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Geocoding error:', error.message)
+    console.error('❌ Geocoding function error:', error.message)
     
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        success: false
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
