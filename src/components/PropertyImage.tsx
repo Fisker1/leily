@@ -87,62 +87,77 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
     mapboxgl.accessToken = mapboxToken;
     
-    // Geocode the address to get coordinates
-    const fullAddress = `${address}, ${city || ''}`;
-    
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}&country=NO&limit=1`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Geocoding failed with status ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.features && data.features.length > 0) {
-          const [lng, lat] = data.features[0].center;
-          
-          try {
-            map.current = new mapboxgl.Map({
-              container: mapContainer.current!,
-              style: 'mapbox://styles/mapbox/satellite-v9',
-              center: [lng, lat],
-              zoom: 17, // Increased zoom for better detail
-              bearing: 0,
-              pitch: 0,
-              attributionControl: false,
-              logoPosition: 'bottom-right'
-            });
-
-            // Wait for map to load before disabling interactions
-            map.current.on('load', () => {
-              if (map.current) {
-                // Add a red marker at the property location
-                new mapboxgl.Marker({ color: '#ff0000' })
-                  .setLngLat([lng, lat])
-                  .addTo(map.current);
-                
-                // Disable all interactions for a static look
-                map.current.dragPan.disable();
-                map.current.scrollZoom.disable();
-                map.current.boxZoom.disable();
-                map.current.dragRotate.disable();
-                map.current.keyboard.disable();
-                map.current.doubleClickZoom.disable();
-                map.current.touchZoomRotate.disable();
-              }
-            });
-
-            map.current.on('error', (e) => {
-              console.error('Mapbox GL error:', e);
-            });
-          } catch (error) {
-            console.error('Error creating Mapbox GL map:', error);
+    // Use our backend geocoding function instead of direct API calls
+    const geocodeAddress = async () => {
+      try {
+        console.log(`🌍 Geocoding address via backend: ${address}, ${city || ''}`);
+        
+        const { data, error } = await supabase.functions.invoke('geocode-address', {
+          body: {
+            address: address,
+            city: city,
+            country: 'NO'
           }
+        });
+
+        if (error) {
+          console.error('❌ Geocoding error:', error);
+          return;
         }
-      })
-      .catch(error => {
-        console.error('Error geocoding address:', error);
-      });
+
+        if (!data?.coordinates) {
+          console.error('❌ No coordinates returned from geocoding');
+          return;
+        }
+
+        const [lng, lat] = data.coordinates;
+        console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+        
+        try {
+          map.current = new mapboxgl.Map({
+            container: mapContainer.current!,
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            center: [lng, lat],
+            zoom: 17,
+            bearing: 0,
+            pitch: 0,
+            attributionControl: false,
+            logoPosition: 'bottom-right'
+          });
+
+          // Wait for map to load before disabling interactions
+          map.current.on('load', () => {
+            if (map.current) {
+              // Add a red marker at the property location
+              new mapboxgl.Marker({ color: '#ff0000' })
+                .setLngLat([lng, lat])
+                .addTo(map.current);
+              
+              // Disable all interactions for a static look
+              map.current.dragPan.disable();
+              map.current.scrollZoom.disable();
+              map.current.boxZoom.disable();
+              map.current.dragRotate.disable();
+              map.current.keyboard.disable();
+              map.current.doubleClickZoom.disable();
+              map.current.touchZoomRotate.disable();
+            }
+          });
+
+          map.current.on('error', (e) => {
+            console.error('Mapbox GL error:', e);
+            // If map fails to load, we'll just show an empty container
+          });
+
+        } catch (error) {
+          console.error('Error creating Mapbox GL map:', error);
+        }
+      } catch (error) {
+        console.error('Error in geocoding process:', error);
+      }
+    };
+
+    geocodeAddress();
 
     return () => {
       if (map.current) {

@@ -20,6 +20,7 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'admin/promote': { maxRequests: 2, windowMinutes: 60 },
   'admin/tenant-access': { maxRequests: 5, windowMinutes: 10 },
   'get-mapbox-token': { maxRequests: 500, windowMinutes: 5 }, // Very generous for token fetching
+  'geocode-address': { maxRequests: 100, windowMinutes: 5 }, // Generous for geocoding
   'default': { maxRequests: 20, windowMinutes: 5 }
 }
 
