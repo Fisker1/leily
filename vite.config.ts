@@ -11,6 +11,14 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: ['es2020', 'edge88', 'firefox78', 'chrome78', 'safari14'],
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
   },
   optimizeDeps: {
     force: true,
