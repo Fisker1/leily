@@ -1,12 +1,12 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Rect, Line, FabricImage } from 'fabric';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Canvas as FabricCanvas, Rect, Line, FabricImage, FabricObject } from 'fabric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Hammer, Zap, Wrench, Save, FolderOpen, Trash2, Plus, Upload, Calculator } from 'lucide-react';
+import { Hammer, Zap, Wrench, Save, FolderOpen, Trash2, Plus, Upload, Calculator, Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Move, MousePointer2 } from 'lucide-react';
 import { useBuildingProjects } from '@/hooks/useBuildingProjects';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
@@ -92,6 +92,14 @@ export default function BuildingPlannerBasic() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
   const [floorPlanImage, setFloorPlanImage] = useState<string>('');
+  
+  // History management for undo/redo
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  // Tool modes
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
 
   useEffect(() => {
     if (canvasRef.current && !fabricCanvasRef.current) {
@@ -111,10 +119,27 @@ export default function BuildingPlannerBasic() {
 
       // Add touch controls once during canvas initialization
       addTouchControls(canvas);
+      
+      // Enable object selection
+      canvas.selection = true;
+      
+      // Handle canvas events
+      canvas.on('object:added', saveCanvasState);
+      canvas.on('object:removed', saveCanvasState);
+      canvas.on('object:modified', saveCanvasState);
+      
+      // Handle object selection
+      canvas.on('selection:created', () => {
+        // Object(s) selected
+      });
+      
+      canvas.on('selection:cleared', () => {
+        // Selection cleared
+      });
 
       // Handle object placement
       canvas.on('mouse:down', (options) => {
-        if (!options.e.target || !selectedTool) return;
+        if (!options.e.target || !selectedTool || isSelectMode) return;
         
         const pointer = canvas.getPointer(options.e);
         let tool: BuildingTool | undefined;
@@ -131,6 +156,7 @@ export default function BuildingPlannerBasic() {
         }
         
         if (tool && profession) {
+          const itemId = Date.now().toString();
           const shape = new Rect({
             left: pointer.x,
             top: pointer.y,
@@ -141,12 +167,20 @@ export default function BuildingPlannerBasic() {
             strokeWidth: 2
           });
           
+          // Add custom properties
+          (shape as any).itemId = itemId;
+          (shape as any).toolId = tool.id;
+          (shape as any).profession = profession;
+          (shape as any).cost = tool.cost;
+          (shape as any).name = tool.name;
+          (shape as any).description = tool.description;
+          
           canvas.add(shape);
           canvas.renderAll();
           
           // Add to placed items
           const newItem: PlacedItem = {
-            id: Date.now().toString(),
+            id: itemId,
             type: tool.id,
             name: tool.name,
             cost: tool.cost,
@@ -168,7 +202,130 @@ export default function BuildingPlannerBasic() {
         fabricCanvasRef.current = null;
       }
     };
-  }, [selectedTool, floorPlanImage]);
+  }, [selectedTool, floorPlanImage, isSelectMode]);
+  
+  // Save canvas state for undo/redo
+  const saveCanvasState = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvasState = JSON.stringify(fabricCanvasRef.current.toJSON());
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(canvasState);
+      return newHistory.slice(-20); // Keep only last 20 states
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, 19));
+  }, [historyIndex]);
+  
+  // Undo function
+  const undo = useCallback(() => {
+    if (historyIndex <= 0 || !fabricCanvasRef.current) return;
+    
+    const newIndex = historyIndex - 1;
+    const canvasState = history[newIndex];
+    
+    fabricCanvasRef.current.loadFromJSON(canvasState).then(() => {
+      fabricCanvasRef.current?.renderAll();
+      setHistoryIndex(newIndex);
+      // Update placed items based on canvas objects
+      updatePlacedItemsFromCanvas();
+    });
+  }, [history, historyIndex]);
+  
+  // Redo function
+  const redo = useCallback(() => {
+    if (historyIndex >= history.length - 1 || !fabricCanvasRef.current) return;
+    
+    const newIndex = historyIndex + 1;
+    const canvasState = history[newIndex];
+    
+    fabricCanvasRef.current.loadFromJSON(canvasState).then(() => {
+      fabricCanvasRef.current?.renderAll();
+      setHistoryIndex(newIndex);
+      // Update placed items based on canvas objects
+      updatePlacedItemsFromCanvas();
+    });
+  }, [history, historyIndex]);
+  
+  // Update placed items from canvas objects
+  const updatePlacedItemsFromCanvas = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const objects = fabricCanvasRef.current.getObjects();
+    const items: PlacedItem[] = [];
+    
+    objects.forEach(obj => {
+      if ((obj as any).itemId) {
+        items.push({
+          id: (obj as any).itemId,
+          type: (obj as any).toolId,
+          name: (obj as any).name,
+          cost: (obj as any).cost,
+          description: (obj as any).description,
+          profession: (obj as any).profession
+        });
+      }
+    });
+    
+    setPlacedItems(items);
+  }, []);
+  
+  // Delete selected objects
+  const deleteSelected = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const activeObjects = fabricCanvasRef.current.getActiveObjects();
+    if (activeObjects.length === 0) return;
+    
+    activeObjects.forEach(obj => {
+      fabricCanvasRef.current?.remove(obj);
+    });
+    
+    fabricCanvasRef.current.discardActiveObject();
+    fabricCanvasRef.current.renderAll();
+    
+    // Update placed items
+    updatePlacedItemsFromCanvas();
+    
+    toast({
+      title: "Elementer slettet",
+      description: `${activeObjects.length} element(er) ble slettet`
+    });
+  }, [updatePlacedItemsFromCanvas, toast]);
+  
+  // Zoom controls
+  const zoomIn = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const zoom = fabricCanvasRef.current.getZoom();
+    const newZoom = Math.min(zoom * 1.2, 3);
+    fabricCanvasRef.current.setZoom(newZoom);
+    setCurrentZoom(newZoom);
+  }, []);
+  
+  const zoomOut = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const zoom = fabricCanvasRef.current.getZoom();
+    const newZoom = Math.max(zoom / 1.2, 0.5);
+    fabricCanvasRef.current.setZoom(newZoom);
+    setCurrentZoom(newZoom);
+  }, []);
+  
+  const resetZoom = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    fabricCanvasRef.current.setZoom(1);
+    fabricCanvasRef.current.viewportTransform = [1, 0, 0, 1, 0, 0];
+    fabricCanvasRef.current.renderAll();
+    setCurrentZoom(1);
+  }, []);
+  
+  // Toggle select mode
+  const toggleSelectMode = useCallback(() => {
+    setIsSelectMode(prev => !prev);
+    setSelectedTool('');
+  }, []);
 
   const addGrid = (canvas: FabricCanvas) => {
     const gridSize = 20;
@@ -661,10 +818,16 @@ export default function BuildingPlannerBasic() {
                     );
                   })}
                 </div>
-                {selectedTool && (
+                {selectedTool && !isSelectMode && (
                   <p className="text-sm text-muted-foreground">
                     Klikk på {floorPlanImage ? 'plantegningen' : 'lerretet'} for å plassere{' '}
                     {PROFESSIONS.flatMap(p => p.tools).find(t => t.id === selectedTool)?.name.toLowerCase()}
+                  </p>
+                )}
+                
+                {isSelectMode && (
+                  <p className="text-sm text-muted-foreground">
+                    Velg elementer på {floorPlanImage ? 'plantegningen' : 'lerretet'} for å flytte, rotere eller slette dem
                   </p>
                 )}
               </div>
@@ -699,21 +862,89 @@ export default function BuildingPlannerBasic() {
             </div>
 
             {/* Canvas Controls */}
-            <div className="flex justify-end gap-2 mb-4">
-              <Button variant="outline" size="sm" onClick={clearCanvas}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Tøm
-              </Button>
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+              {/* Tool Controls */}
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant={isSelectMode ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={toggleSelectMode}
+                >
+                  <MousePointer2 className="h-4 w-4 mr-2" />
+                  Velg
+                </Button>
+                
+                {isSelectMode && (
+                  <Button variant="outline" size="sm" onClick={deleteSelected}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Slett valgte
+                  </Button>
+                )}
+              </div>
+              
+              {/* History Controls */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={undo}
+                  disabled={historyIndex <= 0}
+                >
+                  <Undo2 className="h-4 w-4 mr-2" />
+                  Angre
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={redo}
+                  disabled={historyIndex >= history.length - 1}
+                >
+                  <Redo2 className="h-4 w-4 mr-2" />
+                  Gjenta
+                </Button>
+              </div>
+              
+              {/* Zoom Controls */}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={zoomOut}>
+                  <ZoomOut className="h-4 w-4 mr-1" />
+                  Zoom ut
+                </Button>
+                
+                <Button variant="outline" size="sm" onClick={resetZoom}>
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Tilbakestill
+                </Button>
+                
+                <Button variant="outline" size="sm" onClick={zoomIn}>
+                  <ZoomIn className="h-4 w-4 mr-1" />
+                  Zoom inn
+                </Button>
+              </div>
+              
+              {/* Canvas Controls */}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={clearCanvas}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Tøm
+                </Button>
 
-              <Button variant="outline" size="sm" onClick={resetAll}>
-                <Plus className="h-4 w-4 mr-2" />
-                Start på nytt
-              </Button>
+                <Button variant="outline" size="sm" onClick={resetAll}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Start på nytt
+                </Button>
+              </div>
             </div>
 
             {/* Canvas */}
             <div className="border rounded-lg overflow-hidden w-full">
               <canvas ref={canvasRef} className="block w-full h-auto touch-none" style={{ maxWidth: '100%' }} />
+              {currentZoom !== 1 && (
+                <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs">
+                  Zoom: {Math.round(currentZoom * 100)}%
+                </div>
+              )}
             </div>
 
             {/* Placed Items and Cost Estimate */}
