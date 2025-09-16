@@ -365,48 +365,97 @@ export default function BuildingPlannerBasic() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const imageUrl = e.target?.result as string;
-      setFloorPlanImage(imageUrl);
       
       if (fabricCanvasRef.current) {
         const canvas = fabricCanvasRef.current;
         
         try {
-          // Clear canvas
+          // Clear existing objects but keep the canvas
           canvas.clear();
           canvas.backgroundColor = '#ffffff';
           
-          // Load image using Fabric v6
-          const img = await FabricImage.fromURL(imageUrl);
+          // Create image element first to ensure proper loading
+          const imgElement = new Image();
+          imgElement.crossOrigin = 'anonymous';
           
-          // Scale to fit canvas
-          const canvasWidth = canvas.width || 800;
-          const canvasHeight = canvas.height || 600;
-          const scale = Math.min(canvasWidth / img.width!, canvasHeight / img.height!, 1);
+          imgElement.onload = async () => {
+            try {
+              // Load image using Fabric v6
+              const fabricImg = await FabricImage.fromURL(imageUrl);
+              
+              // Scale to fit canvas while maintaining aspect ratio
+              const canvasWidth = canvas.width || 800;
+              const canvasHeight = canvas.height || 600;
+              
+              const imgWidth = fabricImg.width || 1;
+              const imgHeight = fabricImg.height || 1;
+              
+              const scaleX = (canvasWidth * 0.9) / imgWidth;
+              const scaleY = (canvasHeight * 0.9) / imgHeight;
+              const scale = Math.min(scaleX, scaleY);
+              
+              fabricImg.set({
+                left: canvasWidth / 2,
+                top: canvasHeight / 2,
+                originX: 'center',
+                originY: 'center',
+                scaleX: scale,
+                scaleY: scale,
+                selectable: false,
+                evented: false,
+                name: 'backgroundImage'
+              });
+              
+              canvas.add(fabricImg);
+              canvas.sendObjectToBack(fabricImg);
+              canvas.renderAll();
+              
+              setFloorPlanImage(imageUrl);
+              
+              toast({
+                title: "Plantegning lastet opp", 
+                description: "Bildet er nå synlig på lerretet"
+              });
+            } catch (fabricError) {
+              console.error('Fabric image error:', fabricError);
+              toast({
+                title: "Feil",
+                description: "Kunne ikke laste bildet på lerretet",
+                variant: "destructive"
+              });
+            }
+          };
           
-          img.scaleToWidth(canvasWidth * scale * 0.9);
-          img.set({
-            left: canvasWidth / 2,
-            top: canvasHeight / 2,
-            originX: 'center',
-            originY: 'center'
-          });
+          imgElement.onerror = () => {
+            toast({
+              title: "Feil",
+              description: "Kunne ikke laste bildet",
+              variant: "destructive"
+            });
+          };
           
-          canvas.add(img);
-          canvas.renderAll();
+          // Start loading the image
+          imgElement.src = imageUrl;
           
-          toast({
-            title: "Plantegning lastet opp", 
-            description: "Bildet er nå synlig på lerretet"
-          });
         } catch (error) {
+          console.error('Upload error:', error);
           toast({
             title: "Feil",
-            description: "Kunne ikke laste bildet",
+            description: "Kunne ikke behandle bildet",
             variant: "destructive"
           });
         }
       }
     };
+    
+    reader.onerror = () => {
+      toast({
+        title: "Feil",
+        description: "Kunne ikke lese bildefilen",
+        variant: "destructive"
+      });
+    };
+    
     reader.readAsDataURL(file);
   };
 
@@ -861,37 +910,39 @@ export default function BuildingPlannerBasic() {
               </p>
             </div>
 
-            {/* Canvas Controls */}
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-              {/* Tool Controls */}
-              <div className="flex flex-wrap gap-2">
+            {/* Canvas Controls - Mobile Optimized */}
+            <div className="space-y-3 mb-4">
+              {/* First Row - Tool and Selection Controls */}
+              <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                 <Button 
                   variant={isSelectMode ? "default" : "outline"} 
                   size="sm" 
                   onClick={toggleSelectMode}
+                  className="flex-shrink-0"
                 >
-                  <MousePointer2 className="h-4 w-4 mr-2" />
-                  Velg
+                  <MousePointer2 className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Velg</span>
                 </Button>
                 
                 {isSelectMode && (
-                  <Button variant="outline" size="sm" onClick={deleteSelected}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Slett valgte
+                  <Button variant="outline" size="sm" onClick={deleteSelected} className="flex-shrink-0">
+                    <Trash2 className="h-4 w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Slett valgte</span>
                   </Button>
                 )}
               </div>
               
-              {/* History Controls */}
-              <div className="flex gap-2">
+              {/* Second Row - History Controls */}
+              <div className="flex gap-2 justify-center">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={undo}
                   disabled={historyIndex <= 0}
+                  className="flex-shrink-0"
                 >
-                  <Undo2 className="h-4 w-4 mr-2" />
-                  Angre
+                  <Undo2 className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Angre</span>
                 </Button>
                 
                 <Button 
@@ -899,40 +950,41 @@ export default function BuildingPlannerBasic() {
                   size="sm" 
                   onClick={redo}
                   disabled={historyIndex >= history.length - 1}
+                  className="flex-shrink-0"
                 >
-                  <Redo2 className="h-4 w-4 mr-2" />
-                  Gjenta
+                  <Redo2 className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Gjenta</span>
                 </Button>
               </div>
               
-              {/* Zoom Controls */}
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={zoomOut}>
+              {/* Third Row - Zoom Controls */}
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={zoomOut} className="flex-shrink-0">
                   <ZoomOut className="h-4 w-4 mr-1" />
-                  Zoom ut
+                  <span className="hidden sm:inline">Zoom ut</span>
                 </Button>
                 
-                <Button variant="outline" size="sm" onClick={resetZoom}>
+                <Button variant="outline" size="sm" onClick={resetZoom} className="flex-shrink-0">
                   <RotateCcw className="h-4 w-4 mr-1" />
-                  Tilbakestill
+                  <span className="hidden sm:inline">Tilbakestill</span>
                 </Button>
                 
-                <Button variant="outline" size="sm" onClick={zoomIn}>
+                <Button variant="outline" size="sm" onClick={zoomIn} className="flex-shrink-0">
                   <ZoomIn className="h-4 w-4 mr-1" />
-                  Zoom inn
+                  <span className="hidden sm:inline">Zoom inn</span>
                 </Button>
               </div>
               
-              {/* Canvas Controls */}
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={clearCanvas}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Tøm
+              {/* Fourth Row - Canvas Controls */}
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={clearCanvas} className="flex-shrink-0">
+                  <Trash2 className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Tøm</span>
                 </Button>
 
-                <Button variant="outline" size="sm" onClick={resetAll}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start på nytt
+                <Button variant="outline" size="sm" onClick={resetAll} className="flex-shrink-0">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Start på nytt</span>
                 </Button>
               </div>
             </div>
