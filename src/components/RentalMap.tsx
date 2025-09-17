@@ -111,7 +111,7 @@ const RentalMap = () => {
   const fetchMapboxToken = async (forceRefresh = false) => {
     const now = Date.now();
     const tokenAge = now - lastTokenFetch;
-    const TOKEN_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes (reduced from 90)
+    const TOKEN_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
     
     // Use cached token if it's fresh and not forcing refresh
     if (mapboxToken && tokenAge < TOKEN_CACHE_DURATION && !forceRefresh) {
@@ -128,33 +128,11 @@ const RentalMap = () => {
         throw new Error(`Edge function failed: ${error.message || 'Unknown error'}`);
       }
 
-      if (data?.success && data?.token) {
+      if (data?.success && data?.token && data.token.startsWith('pk.')) {
         console.log('✅ Valid Mapbox token received');
-        console.log('Token validation:', data.validation);
         console.log('Token prefix:', data.tokenPrefix);
         
-        // Test the token immediately by making a simple Mapbox API call
-        try {
-          const testResponse = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${data.token}&limit=1`
-          );
-          
-          if (!testResponse.ok) {
-            if (testResponse.status === 401) {
-              throw new Error('Mapbox token is invalid or has expired (401 Unauthorized)');
-            } else if (testResponse.status === 403) {
-              throw new Error('Mapbox token does not have required permissions (403 Forbidden)');
-            } else {
-              throw new Error(`Mapbox API test failed with status ${testResponse.status}`);
-            }
-          }
-          
-          console.log('✅ Mapbox token validated successfully');
-        } catch (testError) {
-          console.error('❌ Mapbox token validation failed:', testError);
-          throw new Error(`Invalid Mapbox token: ${testError.message}`);
-        }
-        
+        // Skip validation - just use the token directly
         setMapboxToken(data.token);
         setLastTokenFetch(now);
         setRetryCount(0);
@@ -164,7 +142,7 @@ const RentalMap = () => {
         throw new Error('Invalid response format from token service');
       }
     } catch (error: any) {
-      console.error('❌ Failed to fetch/validate token:', error);
+      console.error('❌ Failed to fetch token:', error);
       throw error;
     }
   };

@@ -55,29 +55,11 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             return;
           }
 
-          if (data?.success && data?.token) {
+          if (data?.success && data?.token && data.token.startsWith('pk.')) {
             console.log('✅ Valid Mapbox token received for property image');
             
-            // Test token before using it
-            try {
-              const testResponse = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${data.token}&limit=1`
-              );
-              
-              if (!testResponse.ok) {
-                throw new Error(`Token validation failed: ${testResponse.status}`);
-              }
-              
-              console.log('✅ Token validated successfully for property image');
-              setMapboxToken(data.token);
-            } catch (tokenError) {
-              console.error('❌ Token validation failed:', tokenError);
-              if (retryCount < 2) {
-                const delay = Math.pow(2, retryCount) * 2000; // 2s, 4s  
-                setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
-              }
-              return;
-            }
+            // Skip validation - just use the token directly
+            setMapboxToken(data.token);
           } else {
             console.error('❌ Invalid response from token service:', data);
             if (retryCount < 2) {
@@ -203,14 +185,25 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           });
 
           map.current.on('error', (e) => {
-            console.error('❌ Mapbox GL error:', e);
-            // Show error message if map fails to load
+            console.error('❌ Mapbox GL error:', e.error?.message || e);
+            // Show helpful error message based on error type
             if (mapContainer.current) {
+              let errorMessage = '🗺️ Kart kunne ikke lastes';
+              let errorDetails = address;
+              
+              if (e.error?.message?.includes('401')) {
+                errorMessage = '🔑 Mapbox token ugyldig';
+                errorDetails = 'Token har utløpt eller er ikke gyldig';
+              } else if (e.error?.message?.includes('403') || e.error?.message?.includes('Forbidden')) {
+                errorMessage = '🚫 Mapbox tillatelser mangler';
+                errorDetails = 'Token har ikke nødvendige rettigheter';
+              }
+              
               mapContainer.current.innerHTML = `
                 <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
                   <div class="text-center p-4">
-                    <p>🗺️ Kart kunne ikke lastes</p>
-                    <p class="text-xs mt-1 opacity-75">${address}</p>
+                    <p>${errorMessage}</p>
+                    <p class="text-xs mt-1 opacity-75">${errorDetails}</p>
                   </div>
                 </div>
               `;
