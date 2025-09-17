@@ -38,29 +38,49 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     if (shouldShowSatellite) {
       const fetchMapboxToken = async (retryCount = 0) => {
         try {
-          console.log(`🔑 Fetching Mapbox token for satellite image... (attempt ${retryCount + 1})`);
+          console.log(`🔑 Fetching Mapbox token for property image... (attempt ${retryCount + 1})`);
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
             console.error('❌ Token fetch error:', error);
             
-            // Retry up to 3 times with exponential backoff for cold start
-            if (retryCount < 3) {
-              const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-              console.log(`⏳ Retrying in ${delay}ms... (cold start recovery)`);
+            // Retry up to 2 times with exponential backoff
+            if (retryCount < 2) {
+              const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
+              console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
               setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
               return;
             }
+            console.error('❌ All retry attempts failed for property image');
             return;
           }
 
-          if (data?.token) {
-            console.log('✅ Mapbox token received for satellite image');
-            setMapboxToken(data.token);
+          if (data?.success && data?.token) {
+            console.log('✅ Valid Mapbox token received for property image');
+            
+            // Test token before using it
+            try {
+              const testResponse = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${data.token}&limit=1`
+              );
+              
+              if (!testResponse.ok) {
+                throw new Error(`Token validation failed: ${testResponse.status}`);
+              }
+              
+              console.log('✅ Token validated successfully for property image');
+              setMapboxToken(data.token);
+            } catch (tokenError) {
+              console.error('❌ Token validation failed:', tokenError);
+              if (retryCount < 2) {
+                const delay = Math.pow(2, retryCount) * 2000; // 2s, 4s  
+                setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
+              }
+              return;
+            }
           } else {
-            console.error('❌ No token received from server');
-            // Retry for no token response too
-            if (retryCount < 3) {
+            console.error('❌ Invalid response from token service:', data);
+            if (retryCount < 2) {
               const delay = Math.pow(2, retryCount) * 1000;
               setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
             }
@@ -69,9 +89,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           console.error('❌ Error fetching Mapbox token:', error);
           
           // Retry on network/other errors
-          if (retryCount < 3) {
+          if (retryCount < 2) {
             const delay = Math.pow(2, retryCount) * 1000;
-            console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
+            console.log(`⏳ Retrying in ${delay}ms... (network error recovery)`);
             setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
           }
         }

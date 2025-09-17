@@ -107,38 +107,64 @@ const RentalMap = () => {
     loadMapbox();
   }, [toast]);
 
-  // Fetch Mapbox token with retry logic and caching
+  // Fetch Mapbox token with enhanced error handling
   const fetchMapboxToken = async (forceRefresh = false) => {
     const now = Date.now();
     const tokenAge = now - lastTokenFetch;
-    const TOKEN_CACHE_DURATION = 90 * 60 * 1000; // 90 minutes
+    const TOKEN_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes (reduced from 90)
     
     // Use cached token if it's fresh and not forcing refresh
     if (mapboxToken && tokenAge < TOKEN_CACHE_DURATION && !forceRefresh) {
+      console.log('🔄 Using cached Mapbox token (age:', Math.round(tokenAge / 60000), 'minutes)');
       return mapboxToken;
     }
 
     try {
-      console.log('🔑 Fetching Mapbox token...');
+      console.log('🔑 Fetching fresh Mapbox token from edge function...');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error) {
-        console.error('❌ Token fetch error:', error);
-        throw error;
+        console.error('❌ Edge function error:', error);
+        throw new Error(`Edge function failed: ${error.message || 'Unknown error'}`);
       }
 
-      if (data?.token) {
-        console.log('✅ Mapbox token received');
+      if (data?.success && data?.token) {
+        console.log('✅ Valid Mapbox token received');
+        console.log('Token validation:', data.validation);
+        console.log('Token prefix:', data.tokenPrefix);
+        
+        // Test the token immediately by making a simple Mapbox API call
+        try {
+          const testResponse = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${data.token}&limit=1`
+          );
+          
+          if (!testResponse.ok) {
+            if (testResponse.status === 401) {
+              throw new Error('Mapbox token is invalid or has expired (401 Unauthorized)');
+            } else if (testResponse.status === 403) {
+              throw new Error('Mapbox token does not have required permissions (403 Forbidden)');
+            } else {
+              throw new Error(`Mapbox API test failed with status ${testResponse.status}`);
+            }
+          }
+          
+          console.log('✅ Mapbox token validated successfully');
+        } catch (testError) {
+          console.error('❌ Mapbox token validation failed:', testError);
+          throw new Error(`Invalid Mapbox token: ${testError.message}`);
+        }
+        
         setMapboxToken(data.token);
         setLastTokenFetch(now);
         setRetryCount(0);
         return data.token;
       } else {
-        console.error('❌ No token received from server');
-        throw new Error('Ingen token mottatt');
+        console.error('❌ Invalid response from edge function:', data);
+        throw new Error('Invalid response format from token service');
       }
     } catch (error: any) {
-      console.error('❌ Failed to fetch token:', error);
+      console.error('❌ Failed to fetch/validate token:', error);
       throw error;
     }
   };
