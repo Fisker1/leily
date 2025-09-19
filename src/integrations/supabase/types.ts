@@ -770,6 +770,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_property_financial_summary: {
+        Args: { property_owner_id: string }
+        Returns: {
+          address: string
+          estimated_equity_range: string
+          id: string
+          monthly_rent: number
+          property_type: string
+          purchase_date: string
+          purchase_price_range: string
+        }[]
+      }
       get_secure_tenant_data: {
         Args: { tenant_property_owner_id: string }
         Returns: {
@@ -817,6 +829,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      monitor_property_security: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       monitor_subscription_violations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -836,6 +852,10 @@ export type Database = {
       }
       promote_user_to_ambassador: {
         Args: { target_user_id: string }
+        Returns: boolean
+      }
+      validate_property_ownership: {
+        Args: { property_id: string }
         Returns: boolean
       }
       validate_tenant_ownership: {
