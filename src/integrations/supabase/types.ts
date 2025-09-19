@@ -688,6 +688,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_access_payment_records: {
+        Args: { admin_justification: string; target_user_id?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          payment_method_masked: string
+          payment_status: string
+          payment_type: string
+          user_id: string
+        }[]
+      }
       admin_access_tenant_data: {
         Args: { admin_justification: string; tenant_property_owner_id: string }
         Returns: {
@@ -797,6 +810,10 @@ export type Database = {
         Returns: boolean
       }
       monitor_admin_tenant_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      monitor_payment_security: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
