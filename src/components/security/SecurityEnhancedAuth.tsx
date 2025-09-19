@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,11 +31,35 @@ const SecurityEnhancedAuth: React.FC<SecurityEnhancedAuthProps> = ({ mode, onTog
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const validatePassword = (password: string): string[] => {
+  const validatePassword = async (password: string): Promise<string[]> => {
+    try {
+      // Use the enhanced server-side password validation
+      const { data, error } = await supabase.rpc('validate_password_strength', {
+        password_text: password
+      });
+
+      if (error) {
+        console.error('Password validation error:', error);
+        // Fallback to client-side validation
+        return clientSidePasswordValidation(password);
+      }
+
+      return (data as any)?.issues || [];
+    } catch (error) {
+      console.error('Password validation error:', error);
+      return clientSidePasswordValidation(password);
+    }
+  };
+
+  const clientSidePasswordValidation = (password: string): string[] => {
     const errors: string[] = [];
+    const commonPasswords = [
+      'password', '123456', '123456789', 'qwerty', 'abc123', 
+      'password123', 'admin', 'letmein', 'welcome', 'monkey'
+    ];
     
-    if (password.length < 8) {
-      errors.push('Passordet må være minst 8 tegn langt');
+    if (password.length < 12) {
+      errors.push('Passordet må være minst 12 tegn langt for høy sikkerhet');
     }
     if (!/[A-Z]/.test(password)) {
       errors.push('Passordet må inneholde minst én stor bokstav');
@@ -46,33 +71,52 @@ const SecurityEnhancedAuth: React.FC<SecurityEnhancedAuthProps> = ({ mode, onTog
       errors.push('Passordet må inneholde minst ett tall');
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push('Passordet må inneholde minst ett spesialtegn');
+      errors.push('Passordet må inneholde minst ett spesialtegn (!@#$%^&* etc.)');
+    }
+    if (commonPasswords.includes(password.toLowerCase())) {
+      errors.push('Dette passordet er for vanlig og lett å gjette');
     }
 
     return errors;
   };
 
-  const calculatePasswordStrength = (password: string): number => {
+  const calculatePasswordStrength = async (password: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase.rpc('validate_password_strength', {
+        password_text: password
+      });
+
+      if (error) {
+        return clientSidePasswordStrength(password);
+      }
+
+      return (data as any)?.score || 0;
+    } catch (error) {
+      return clientSidePasswordStrength(password);
+    }
+  };
+
+  const clientSidePasswordStrength = (password: string): number => {
     let strength = 0;
     
-    if (password.length >= 8) strength += 20;
-    if (password.length >= 12) strength += 10;
+    if (password.length >= 12) strength += 25;
+    if (password.length >= 16) strength += 10;
     if (/[A-Z]/.test(password)) strength += 20;
     if (/[a-z]/.test(password)) strength += 20;
     if (/[0-9]/.test(password)) strength += 15;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 15;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 20;
 
     return Math.min(strength, 100);
   };
 
-  const handlePasswordChange = (password: string) => {
+  const handlePasswordChange = async (password: string) => {
     setFormData(prev => ({ ...prev, password }));
     
     if (mode === 'signup') {
-      const strength = calculatePasswordStrength(password);
+      const strength = await calculatePasswordStrength(password);
       setPasswordStrength(strength);
       
-      const validationErrors = validatePassword(password);
+      const validationErrors = await validatePassword(password);
       setErrors(validationErrors);
     }
   };
@@ -97,11 +141,11 @@ const SecurityEnhancedAuth: React.FC<SecurityEnhancedAuthProps> = ({ mode, onTog
 
     try {
       if (mode === 'signup') {
-        // Validate password strength for signup
-        if (passwordStrength < 60) {
+        // Validate password strength for signup - require minimum 70 for high security
+        if (passwordStrength < 70) {
           toast({
-            title: 'Svakt passord',
-            description: 'Vennligst velg et sterkere passord for sikkerhet',
+            title: 'Passord ikke sterkt nok',
+            description: 'For høy sikkerhet kreves et passord med minst 70% styrke',
             variant: 'destructive',
           });
           return;

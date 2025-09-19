@@ -12,6 +12,7 @@ import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft } fr
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import SecurityDashboard from '@/components/security/SecurityDashboard';
+import { SecurityMaintenanceStatus } from '@/components/security/SecurityMaintenanceStatus';
 
 interface Report {
   id: string;
@@ -421,7 +422,10 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="security">
-            <SecurityDashboard />
+            <div className="space-y-6">
+              <SecurityDashboard />
+              <SecurityMaintenanceStatus />
+            </div>
           </TabsContent>
 
           <TabsContent value="staging">

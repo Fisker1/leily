@@ -770,6 +770,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      enhanced_rate_limit_check: {
+        Args: {
+          endpoint_name: string
+          identifier_key: string
+          max_requests?: number
+          penalty_multiplier?: number
+          window_minutes?: number
+        }
+        Returns: Json
+      }
+      enhanced_security_cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_property_financial_summary: {
         Args: { property_owner_id: string }
         Returns: {
@@ -853,6 +867,14 @@ export type Database = {
       promote_user_to_ambassador: {
         Args: { target_user_id: string }
         Returns: boolean
+      }
+      track_failed_auth_attempts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      validate_password_strength: {
+        Args: { password_text: string }
+        Returns: Json
       }
       validate_property_ownership: {
         Args: { property_id: string }

@@ -99,10 +99,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Check rate limit before attempting sign in
-      const canProceed = await checkRateLimit('auth/login', email);
-      if (!canProceed) {
-        return { error: { message: 'Rate limit exceeded. Please try again later.' } };
+      // Enhanced rate limiting with progressive penalties
+      const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('enhanced_rate_limit_check', {
+        endpoint_name: 'auth/login',
+        identifier_key: email,
+        max_requests: 5, // Stricter limit for login attempts
+        window_minutes: 15
+      });
+
+      if (rateLimitError || !(rateLimitResult as any)?.allowed) {
+        const violationLevel = (rateLimitResult as any)?.violation_level || 0;
+        return { 
+          error: { 
+            message: violationLevel > 1 
+              ? 'Multiple failed attempts detected. Extended cooldown applied.' 
+              : 'Rate limit exceeded. Please try again later.' 
+          } 
+        };
       }
 
       const { error } = await supabase.auth.signInWithPassword({
@@ -111,11 +124,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Log failed authentication attempt
+        // Log failed authentication attempt with enhanced context
         await logSecurityEvent('auth_failure', 'auth_attempts', {
           email,
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          security_level: 'HIGH',
+          attempt_context: 'enhanced_monitoring'
+        });
+        
+        // Trigger brute force monitoring
+        await supabase.rpc('track_failed_auth_attempts');
+      } else {
+        // Log successful authentication
+        await logSecurityEvent('auth_success', 'auth_attempts', {
+          email,
+          timestamp: new Date().toISOString(),
+          security_level: 'INFO'
         });
       }
 
@@ -124,7 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await logSecurityEvent('auth_error', 'auth_attempts', {
         email,
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        security_level: 'CRITICAL'
       });
       return { error };
     }
@@ -132,10 +158,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      // Check rate limit before attempting sign up
-      const canProceed = await checkRateLimit('auth/register', email);
-      if (!canProceed) {
-        return { error: { message: 'Rate limit exceeded. Please try again later.' } };
+      // Enhanced rate limiting for registration
+      const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('enhanced_rate_limit_check', {
+        endpoint_name: 'auth/register',
+        identifier_key: email,
+        max_requests: 3, // Stricter limit for registration
+        window_minutes: 60
+      });
+
+      if (rateLimitError || !(rateLimitResult as any)?.allowed) {
+        return { 
+          error: { 
+            message: 'Too many registration attempts. Please try again later.' 
+          } 
+        };
+      }
+
+      // Validate password strength before attempting registration
+      const { data: passwordValidation } = await supabase.rpc('validate_password_strength', {
+        password_text: password
+      });
+
+      if (!(passwordValidation as any)?.is_strong) {
+        return {
+          error: {
+            message: 'Password does not meet security requirements. Please choose a stronger password.'
+          }
+        };
       }
 
       // Environment-aware redirect URL
@@ -155,17 +204,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Log failed registration attempt
+        // Log failed registration attempt with enhanced context
         await logSecurityEvent('signup_failure', 'auth_attempts', {
           email,
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          security_level: 'HIGH',
+          password_strength_check: 'performed'
         });
       } else {
         // Log successful registration
         await logSecurityEvent('signup_success', 'auth_attempts', {
           email,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          security_level: 'INFO',
+          password_strength_check: 'passed'
         });
       }
 
@@ -174,7 +227,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await logSecurityEvent('signup_error', 'auth_attempts', {
         email,
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        security_level: 'CRITICAL'
       });
       return { error };
     }
