@@ -157,6 +157,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         if (!mapContainer.current) return;
         
         try {
+          // Check if we're in an iframe for WebGL compatibility
+          const isInIframe = window.self !== window.top;
+          
           map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/satellite-v9',
@@ -166,7 +169,11 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             pitch: 0,
             attributionControl: false,
             logoPosition: 'bottom-right',
-            interactive: false // Disable all interactions from the start
+            interactive: false, // Disable all interactions from the start
+            preserveDrawingBuffer: isInIframe, // Help with iframe rendering
+            antialias: !isInIframe, // Disable antialiasing in iframe for performance
+            failIfMajorPerformanceCaveat: false, // Don't fail on performance issues
+            maxTileCacheSize: isInIframe ? 20 : 50, // Smaller cache in iframe
           });
 
           // Add marker and disable interactions when map loads

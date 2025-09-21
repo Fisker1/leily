@@ -476,12 +476,45 @@ const RentalMap = () => {
         console.log('🚀 Initializing map...');
         mapboxgl.accessToken = mapboxToken;
 
+        // Check if we're in an iframe
+        const isInIframe = window.self !== window.top;
+        console.log('🖼️ Running in iframe:', isInIframe);
+        
+        // Check for WebGL support with iframe compatibility
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl', { 
+          preserveDrawingBuffer: isInIframe,
+          antialias: !isInIframe,
+          powerPreference: 'default'
+        }) || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+          console.error('❌ WebGL not supported');
+          setError('WebGL støttes ikke av din nettleser eller er deaktivert');
+          toast({
+            title: "Kartfeil",
+            description: "WebGL støttes ikke av din nettleser eller er deaktivert",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('✅ WebGL support detected');
+        canvas.remove();
+
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/streets-v11',
           center: [10.7522, 59.9139], // Oslo
           zoom: 6,
           attributionControl: false,
+          projection: 'mercator', // More stable projection for iframe
+          preserveDrawingBuffer: isInIframe, // Help with iframe rendering
+          antialias: !isInIframe, // Disable antialiasing in iframe for performance
+          failIfMajorPerformanceCaveat: false, // Don't fail on performance issues
+          trackResize: true,
+          maxTileCacheSize: isInIframe ? 50 : 100, // Smaller cache in iframe
+          refreshExpiredTiles: !isInIframe, // Reduce activity in iframe
         });
 
         console.log('✅ Map instance created');
