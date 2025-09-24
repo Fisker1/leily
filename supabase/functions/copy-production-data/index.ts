@@ -12,15 +12,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('FINAL deployment to leily-staging: wdwjmapvuibsqiifslno...');
+    console.log('Copying production data to current environment...');
     
-    // Production database client (rkhzyzuttsvsjcgzrokt)
     const prodClient = createClient(
-      'https://rkhzyzuttsvsjcgzrokt.supabase.co',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+      Deno.env.get('PROD_SUPABASE_URL') || '',
+      Deno.env.get('PROD_SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
-    // Staging database client (current environment - wdwjmapvuibsqiifslno)  
+    // Target database client (current environment)
     const stagingClient = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
