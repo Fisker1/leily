@@ -131,7 +131,7 @@ export const SecurityImplementationStatus = () => {
                   className="mt-2"
                 >
                   <a 
-                    href="https://supabase.com/dashboard/project/rkhzyzuttsvsjcgzrokt/auth/providers?provider=Email" 
+                    href="https://supabase.com/dashboard" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
