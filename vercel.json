@@ -3,9 +3,6 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/" }
   ]
 }
 
