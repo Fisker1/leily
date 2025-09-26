@@ -256,7 +256,7 @@ async function calculateMarketData(request: AnalysisRequest): Promise<MarketData
   // Fall back to formula-based calculations
   console.log('📊 Using formula-based market estimates');
   
-  let baseRent = 8000; // Realistic base rent for Norwegian market
+  const baseRent = 8000; // Realistic base rent for Norwegian market
   
   // Location multipliers (adjusted for realistic Norwegian market)
   const locationMultipliers: { [key: string]: number } = {
