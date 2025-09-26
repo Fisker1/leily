@@ -8,6 +8,7 @@ export default function EnvDebug() {
     <div style={{ padding: 16 }}>
       <pre>{JSON.stringify({
         environment: env.VITE_ENVIRONMENT || 'unknown',
+        coming_soon: (import.meta as any).env?.VITE_COMING_SOON ?? 'undefined',
         supabase_host: host
       }, null, 2)}</pre>
     </div>
