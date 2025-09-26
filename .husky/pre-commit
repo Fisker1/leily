@@ -1,0 +1,19 @@
+# Run lint-staged for code quality and security checks
+npx lint-staged
+
+# Additional security checks
+echo "🔍 Running security checks..."
+
+# Check for common secrets patterns
+if git diff --cached --name-only | xargs grep -l "sk_\|pk\.ey\|AKIA\|secret_key\|private_key" 2>/dev/null; then
+    echo "❌ Potential secrets detected! Please remove them before committing."
+    exit 1
+fi
+
+# Check for TODO/FIXME in security-critical files
+if git diff --cached --name-only | grep -E "(auth|security|password|token)" | xargs grep -l "TODO\|FIXME" 2>/dev/null; then
+    echo "⚠️  TODO/FIXME found in security-critical files. Please resolve before committing."
+    exit 1
+fi
+
+echo "✅ Security checks passed"
