@@ -22,6 +22,9 @@ const RiskAnalysis = lazy(() => import("./pages/calculator/RiskAnalysis"));
 const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPropertyDetails"));
 const BankReport = lazy(() => import("./pages/BankReport"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const EnvDebug = lazy(() => import("./pages/__env"));
+const Health = lazy(() => import("./pages/__health"));
+const SupabaseInfo = lazy(() => import("./pages/__supabase"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -76,6 +79,9 @@ const App = () => (
                     <Route path="/bank-report" element={<BankReport />} />
                     <Route path="/min-side" element={<MyProfile />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/__env" element={<EnvDebug />} />
+                    <Route path="/__health" element={<Health />} />
+                    <Route path="/__supabase" element={<SupabaseInfo />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
