@@ -37,7 +37,7 @@ export const useInputValidation = () => {
       case 'text':
       default:
         // Remove potentially dangerous characters but keep Norwegian characters
-        sanitized = sanitized.replace(/[<>'\"&]/g, '');
+        sanitized = sanitized.replace(/[<>'"&]/g, '');
         break;
     }
 

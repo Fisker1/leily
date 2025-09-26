@@ -3,13 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+import type { Json } from '@/integrations/supabase/types';
+
 export interface CalculationHistoryItem {
   id: string;
   calculation_name: string | null;
   finn_code: string | null;
   property_address: string | null;
-  calculation_data: any;
-  results_data: any;
+  calculation_data: Json;
+  results_data: Json;
   created_at: string;
   updated_at: string;
 }
@@ -49,8 +51,8 @@ export const useCalculationHistory = () => {
     calculationName: string,
     finnCode: string | null,
     propertyAddress: string | null,
-    calculationData: any,
-    resultsData: any
+    calculationData: Json,
+    resultsData: Json
   ) => {
     if (!user) {
       toast({

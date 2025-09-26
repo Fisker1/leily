@@ -12,13 +12,13 @@ const EnvSchema = z.object({
   VITE_LOG_LEVEL: z.string().optional(),
 })
 
-export const env = EnvSchema.parse((import.meta as any).env)
+export const env = EnvSchema.parse(import.meta.env)
 
 type DeploymentEnv = 'development' | 'staging' | 'production'
 
 const currentEnv: DeploymentEnv = env.VITE_ENVIRONMENT
   ? env.VITE_ENVIRONMENT
-  : ((import.meta as any).env?.DEV ? 'development' : 'production')
+  : (import.meta.env?.DEV ? 'development' : 'production')
 
 export const ENV_CONFIG = {
   isDevelopment: currentEnv === 'development',
@@ -35,8 +35,8 @@ export const ENV_CONFIG = {
   },
   settings: {
     enableAnalytics: env.VITE_ENABLE_ANALYTICS === 'true',
-    debugMode: env.VITE_DEBUG === 'true' || (import.meta as any).env?.MODE === 'development',
-    logLevel: env.VITE_LOG_LEVEL || ((import.meta as any).env?.MODE === 'development' ? 'debug' : 'error')
+    debugMode: env.VITE_DEBUG === 'true' || import.meta.env?.MODE === 'development',
+    logLevel: env.VITE_LOG_LEVEL || (import.meta.env?.MODE === 'development' ? 'debug' : 'error')
   }
 }
 

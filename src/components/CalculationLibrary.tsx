@@ -37,10 +37,12 @@ import { useCalculationHistory, CalculationHistoryItem } from "@/hooks/useCalcul
 import { useAuth } from "@/contexts/AuthContext";
 import { formatNumberWithSpaces } from "@/lib/utils";
 
+import type { Json } from '@/integrations/supabase/types';
+
 interface CalculationLibraryProps {
   onLoadCalculation?: (calculation: CalculationHistoryItem) => void;
   onSaveCurrentCalculation?: () => void;
-  currentCalculationData?: any;
+  currentCalculationData?: Json;
 }
 
 const CalculationLibrary = ({ 
@@ -86,17 +88,19 @@ const CalculationLibrary = ({
     });
   };
 
-  const getCalculationSummary = (data: any) => {
-    const totalPrice = parseFloat(data.totalPrice) || 0;
-    const monthlyRent = data.isRental ? parseFloat(data.expectedAnnualRent) / 12 || 0 : 0;
-    const yield_ = data.isRental && totalPrice > 0 ? (parseFloat(data.expectedAnnualRent) / totalPrice * 100) : 0;
+  const getCalculationSummary = (data: Json) => {
+    const dataObj = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
+    
+    const totalPrice = parseFloat(String(dataObj.totalPrice || '0')) || 0;
+    const monthlyRent = dataObj.isRental ? parseFloat(String(dataObj.expectedAnnualRent || '0')) / 12 || 0 : 0;
+    const yield_ = dataObj.isRental && totalPrice > 0 ? (parseFloat(String(dataObj.expectedAnnualRent || '0')) / totalPrice * 100) : 0;
 
     return {
       totalPrice,
       monthlyRent,
       yield: yield_,
-      isRental: data.isRental,
-      propertyType: data.propertyType
+      isRental: dataObj.isRental,
+      propertyType: dataObj.propertyType
     };
   };
 
@@ -190,7 +194,7 @@ const CalculationLibrary = ({
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-muted-foreground">Type</p>
-                              <p className="font-medium capitalize">{summary.propertyType || 'Ikke oppgitt'}</p>
+                              <p className="font-medium capitalize">{String(summary.propertyType) || 'Ikke oppgitt'}</p>
                             </div>
                             <div>
                               <p className="text-muted-foreground">Pris</p>
@@ -277,7 +281,7 @@ const CalculationLibrary = ({
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium">Eiendomstype</p>
                   <p className="text-lg capitalize">
-                    {selectedCalculation.calculation_data.propertyType || 'Ikke oppgitt'}
+                    {String((selectedCalculation.calculation_data as Record<string, unknown>)?.propertyType) || 'Ikke oppgitt'}
                   </p>
                 </div>
               </div>
@@ -292,19 +296,19 @@ const CalculationLibrary = ({
                         <DollarSign className="h-5 w-5 mx-auto mb-1 text-primary" />
                         <p className="text-sm text-muted-foreground">Totalpris</p>
                         <p className="font-semibold">
-                          {formatNumberWithSpaces(selectedCalculation.results_data.totalPrice || 0)} kr
+                          {formatNumberWithSpaces(Number((selectedCalculation.results_data as Record<string, unknown>)?.totalPrice) || 0)} kr
                         </p>
                       </CardContent>
                     </Card>
 
-                    {selectedCalculation.calculation_data.isRental && (
+                    {(selectedCalculation.calculation_data as Record<string, unknown>)?.isRental && (
                       <>
                         <Card>
                           <CardContent className="p-3 text-center">
                             <TrendingUp className="h-5 w-5 mx-auto mb-1 text-green-600" />
                             <p className="text-sm text-muted-foreground">Månedlig leie</p>
                             <p className="font-semibold">
-                              {formatNumberWithSpaces(selectedCalculation.results_data.monthlyRent || 0)} kr
+                              {formatNumberWithSpaces(Number((selectedCalculation.results_data as Record<string, unknown>)?.monthlyRent) || 0)} kr
                             </p>
                           </CardContent>
                         </Card>
@@ -314,7 +318,7 @@ const CalculationLibrary = ({
                             <TrendingUp className="h-5 w-5 mx-auto mb-1 text-accent" />
                             <p className="text-sm text-muted-foreground">Avkastning</p>
                             <p className="font-semibold">
-                              {(selectedCalculation.results_data.yield || 0).toFixed(1)}%
+                              {(Number((selectedCalculation.results_data as Record<string, unknown>)?.yield) || 0).toFixed(1)}%
                             </p>
                           </CardContent>
                         </Card>
@@ -324,12 +328,12 @@ const CalculationLibrary = ({
                             <DollarSign className="h-5 w-5 mx-auto mb-1 text-blue-600" />
                             <p className="text-sm text-muted-foreground">Pengestrøm</p>
                             <p className={`font-semibold ${
-                              (selectedCalculation.results_data.monthlyCashFlow || 0) >= 0 
+                              (Number((selectedCalculation.results_data as Record<string, unknown>)?.monthlyCashFlow) || 0) >= 0 
                                 ? 'text-green-600' 
                                 : 'text-red-600'
                             }`}>
-                              {(selectedCalculation.results_data.monthlyCashFlow || 0) >= 0 ? '+' : ''}
-                              {formatNumberWithSpaces(selectedCalculation.results_data.monthlyCashFlow || 0)} kr
+                              {(Number((selectedCalculation.results_data as Record<string, unknown>)?.monthlyCashFlow) || 0) >= 0 ? '+' : ''}
+                              {formatNumberWithSpaces(Number((selectedCalculation.results_data as Record<string, unknown>)?.monthlyCashFlow) || 0)} kr
                             </p>
                           </CardContent>
                         </Card>

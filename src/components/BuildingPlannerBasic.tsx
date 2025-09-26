@@ -38,6 +38,29 @@ interface PlacedItem {
   profession: Profession;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  placedItems: PlacedItem[];
+  canvasState?: string;
+  floorPlanImage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ExtendedFabricObject extends FabricObject {
+  itemId?: string;
+  toolId?: string;
+  profession?: Profession;
+  cost?: number;
+  name?: string;
+  description?: string;
+}
+
+interface ExtendedCanvas extends FabricCanvas {
+  touchCleanup?: () => void;
+}
+
 const PROFESSIONS: ProfessionData[] = [
   {
     id: 'carpenter',
@@ -87,7 +110,7 @@ export default function BuildingPlannerBasic() {
   const [selectedProfessions, setSelectedProfessions] = useState<Profession[]>([]);
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [projectName, setProjectName] = useState('');
-  const [currentProject, setCurrentProject] = useState<any>(null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
@@ -168,12 +191,13 @@ export default function BuildingPlannerBasic() {
           });
           
           // Add custom properties
-          (shape as any).itemId = itemId;
-          (shape as any).toolId = tool.id;
-          (shape as any).profession = profession;
-          (shape as any).cost = tool.cost;
-          (shape as any).name = tool.name;
-          (shape as any).description = tool.description;
+          const extendedShape = shape as ExtendedFabricObject;
+          extendedShape.itemId = itemId;
+          extendedShape.toolId = tool.id;
+          extendedShape.profession = profession;
+          extendedShape.cost = tool.cost;
+          extendedShape.name = tool.name;
+          extendedShape.description = tool.description;
           
           canvas.add(shape);
           canvas.renderAll();
@@ -195,8 +219,9 @@ export default function BuildingPlannerBasic() {
     return () => {
       if (fabricCanvasRef.current) {
         // Cleanup touch events if they exist
-        if ((fabricCanvasRef.current as any).touchCleanup) {
-          (fabricCanvasRef.current as any).touchCleanup();
+        const extendedCanvas = fabricCanvasRef.current as ExtendedCanvas;
+        if (extendedCanvas.touchCleanup) {
+          extendedCanvas.touchCleanup();
         }
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
@@ -255,14 +280,15 @@ export default function BuildingPlannerBasic() {
     const items: PlacedItem[] = [];
     
     objects.forEach(obj => {
-      if ((obj as any).itemId) {
+      const extendedObj = obj as ExtendedFabricObject;
+      if (extendedObj.itemId) {
         items.push({
-          id: (obj as any).itemId,
-          type: (obj as any).toolId,
-          name: (obj as any).name,
-          cost: (obj as any).cost,
-          description: (obj as any).description,
-          profession: (obj as any).profession
+          id: extendedObj.itemId,
+          type: extendedObj.toolId || '',
+          name: extendedObj.name || '',
+          cost: extendedObj.cost || 0,
+          description: extendedObj.description || '',
+          profession: extendedObj.profession || 'carpenter'
         });
       }
     });
@@ -557,7 +583,8 @@ export default function BuildingPlannerBasic() {
     canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });
     
     // Store cleanup function
-    (canvas as any).touchCleanup = () => {
+    const extendedCanvas = canvas as ExtendedCanvas;
+    extendedCanvas.touchCleanup = () => {
       canvasElement.removeEventListener('touchstart', handleTouchStart);
       canvasElement.removeEventListener('touchmove', handleTouchMove);
       canvasElement.removeEventListener('touchend', handleTouchEnd);

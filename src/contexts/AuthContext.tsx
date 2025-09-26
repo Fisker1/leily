@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRateLimit } from '@/hooks/useRateLimit';
+import type { Json } from '@/integrations/supabase/types';
 
 interface Profile {
   id: string;
@@ -18,11 +19,11 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  signInWithProvider: (provider: 'google' | 'facebook') => Promise<{ error: any }>;
-  updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+  signInWithProvider: (provider: 'google' | 'facebook') => Promise<{ error: Error | null }>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -183,14 +184,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       return { error };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       await logSecurityEvent('auth_error', 'auth_attempts', {
         email,
-        error: error.message,
+        error: errorMessage,
         timestamp: new Date().toISOString(),
         security_level: 'CRITICAL'
       });
-      return { error };
+      return { error: error instanceof Error ? error : new Error(errorMessage) };
     }
   };
 
@@ -261,19 +263,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       return { error };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       await logSecurityEvent('signup_error', 'auth_attempts', {
         email,
-        error: error.message,
+        error: errorMessage,
         timestamp: new Date().toISOString(),
         security_level: 'CRITICAL'
       });
-      return { error };
+      return { error: error instanceof Error ? error : new Error(errorMessage) };
     }
   };
 
   // Helper function to log security events
-  const logSecurityEvent = async (action: string, table_name: string, details: any) => {
+  const logSecurityEvent = async (action: string, table_name: string, details: Record<string, unknown>) => {
     try {
       await supabase
         .from('audit_log')
@@ -281,7 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           table_name,
           action,
           user_id: user?.id || null,
-          details
+          details: details as unknown as Json
         });
     } catch (error) {
       console.error('Failed to log security event:', error);

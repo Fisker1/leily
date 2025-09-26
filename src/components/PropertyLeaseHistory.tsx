@@ -12,6 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import TransferProtocolDialog from './TransferProtocolDialog';
 
+interface Room {
+  roomName: string;
+  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  notes?: string;
+  damages?: string[];
+  photoUrls?: string[];
+}
+
 interface PropertyLeaseHistoryProps {
   propertyId: string;
   propertyAddress: string;
@@ -316,7 +324,7 @@ const PropertyLeaseHistory = ({ propertyId, propertyAddress }: PropertyLeaseHist
                                                           <div>
                                                             <strong>Rom for rom:</strong>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                                                              {parsed.rooms.map((room: any, index: number) => (
+                                                              {parsed.rooms.map((room: Room, index: number) => (
                                                                 <div key={index} className="bg-white p-3 rounded border">
                                                                   <div className="flex items-center justify-between mb-2">
                                                                     <h5 className="font-medium">{room.roomName}</h5>

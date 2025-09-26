@@ -33,6 +33,8 @@ interface Property {
   updated_at?: string;
 }
 
+type PropertyUpdate = Partial<Omit<Property, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>;
+
 interface PropertyEditDialogProps {
   property: Property;
   open: boolean;
@@ -120,7 +122,7 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
           primary_residence: formData.primary_residence,
           show_in_rental: formData.show_in_rental,
           image_url: imageUrl,
-        } as any)
+        } as PropertyUpdate)
         .eq('id', property.id);
 
       if (error) throw error;

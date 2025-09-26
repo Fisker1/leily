@@ -1,7 +1,7 @@
 import React from 'react'
 
 export default function EnvDebug() {
-  const viteEnv = (import.meta as any).env || {}
+  const viteEnv = import.meta.env || {}
   const entries = Object.entries(viteEnv)
     .filter(([key]) => typeof key === 'string' && key.startsWith('VITE_'))
     .sort(([a], [b]) => a.localeCompare(b))
