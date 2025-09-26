@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs:open": "xdg-open docs/index.md || open docs/index.md || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
