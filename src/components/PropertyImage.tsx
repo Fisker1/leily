@@ -38,7 +38,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
     if (shouldShowSatellite) {
       const fetchMapboxToken = async (retryCount = 0) => {
         try {
-          console.log(`🔑 Fetching Mapbox token for property image... (attempt ${retryCount + 1})`);
+          if (import.meta.env.DEV) {
+            console.log(`🔑 Fetching Mapbox token for property image... (attempt ${retryCount + 1})`);
+          }
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
           if (error) {
@@ -47,7 +49,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             // Retry up to 2 times with exponential backoff
             if (retryCount < 2) {
               const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
-              console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
+              if (import.meta.env.DEV) {
+                console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
+              }
               setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
               return;
             }
@@ -56,7 +60,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           if (data?.success && data?.token && data.token.startsWith('pk.')) {
-            console.log('✅ Valid Mapbox token received for property image');
+            if (import.meta.env.DEV) {
+              console.log('✅ Valid Mapbox token received for property image');
+            }
             
             // Skip validation - just use the token directly
             setMapboxToken(data.token);
@@ -73,7 +79,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           // Retry on network/other errors
           if (retryCount < 2) {
             const delay = Math.pow(2, retryCount) * 1000;
-            console.log(`⏳ Retrying in ${delay}ms... (network error recovery)`);
+            if (import.meta.env.DEV) {
+              console.log(`⏳ Retrying in ${delay}ms... (network error recovery)`);
+            }
             setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
           }
         }
@@ -95,7 +103,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
       
       try {
         // First try to get coordinates from properties table if this address exists there
-        console.log(`🔍 Looking for cached coordinates for ${address}, ${city || ''}`);
+        if (import.meta.env.DEV) {
+          console.log(`🔍 Looking for cached coordinates for ${address}, ${city || ''}`);
+        }
         
         const { data: properties } = await supabase
           .from('properties')
@@ -107,10 +117,14 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         
         if (properties && properties[0]?.coordinates && Array.isArray(properties[0].coordinates) && properties[0].coordinates.length === 2) {
           [lng, lat] = properties[0].coordinates;
-          console.log(`✅ Using cached coordinates [${lng}, ${lat}] for ${address}`);
+          if (import.meta.env.DEV) {
+            console.log(`✅ Using cached coordinates [${lng}, ${lat}] for ${address}`);
+          }
         } else {
           // Fallback to geocoding
-          console.log(`🌍 No cached coordinates, geocoding: ${address}, ${city || ''}`);
+          if (import.meta.env.DEV) {
+            console.log(`🌍 No cached coordinates, geocoding: ${address}, ${city || ''}`);
+          }
           
           const { data, error } = await supabase.functions.invoke('geocode-address', {
             body: {
@@ -137,7 +151,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           }
 
           [lng, lat] = data.coordinates;
-          console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+          if (import.meta.env.DEV) {
+            console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+          }
           
           // Cache the coordinates for future use by updating any matching property
           try {
@@ -147,9 +163,13 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
               .ilike('address', `%${address}%`)
               .eq('city', city || '')
               .is('coordinates', null);
-            console.log(`💾 Cached coordinates for ${address}`);
+            if (import.meta.env.DEV) {
+              console.log(`💾 Cached coordinates for ${address}`);
+            }
           } catch (cacheError) {
-            console.warn('⚠️ Could not cache coordinates:', cacheError);
+            if (import.meta.env.DEV) {
+              console.warn('⚠️ Could not cache coordinates:', cacheError);
+            }
           }
         }
         
@@ -187,7 +207,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
                 .setLngLat([lng, lat])
                 .addTo(map.current);
               
-              console.log(`✅ Satellite map loaded for ${address}`);
+              if (import.meta.env.DEV) {
+                console.log(`✅ Satellite map loaded for ${address}`);
+              }
             }
           });
 

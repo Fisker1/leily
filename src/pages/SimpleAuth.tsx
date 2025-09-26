@@ -20,29 +20,26 @@ const SimpleAuth = () => {
   // Automatic redirect when user is authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      console.log('User authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [user, authLoading, navigate]);
 
   const handleStagerLogin = async () => {
-    console.log('🥷 Stager login attempt with password:', stagerPassword);
+    if (import.meta.env.DEV) {
+      console.log('🥷 Stager login attempt');
+    }
     
     if (stagerPassword !== 'blåmeis') {
       alert('Feil passord!');
       return;
     }
     
-    console.log('🥷 Correct password, starting login...');
     setLoading(true);
     try {
-      console.log('🥷 Trying to sign in with Stager credentials...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: 'anderslundoy@protonmail.com',
         password: 'blåmeis'
       });
-      
-      console.log('🥷 Login result:', { data: !!data, error: error?.message });
       
       if (error) {
         console.error('🥷 Stager login error:', error);

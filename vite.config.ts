@@ -16,10 +16,18 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: ['es2020', 'edge88', 'firefox78', 'chrome78', 'safari14'],
     cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-select', '@radix-ui/react-accordion'],
+          supabase: ['@supabase/supabase-js'],
+          charts: ['recharts'],
+          pdf: ['jspdf', 'html2canvas'],
+          fabric: ['fabric'],
+          mapbox: ['mapbox-gl'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
         },
       },
     },

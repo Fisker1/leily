@@ -34,9 +34,11 @@ const BankReport = () => {
   const reportData = location.state || {};
   const { user } = useAuth();
   
-  // Debug logging to see what data we received
-  console.log('Report Data Received:', reportData);
-  console.log('Basic Data:', reportData.basicData);
+  // Debug logging to see what data we received (development only)
+  if (import.meta.env.DEV) {
+    console.log('Report Data Received:', reportData);
+    console.log('Basic Data:', reportData.basicData);
+  }
   
   const {
     basicData = {},
