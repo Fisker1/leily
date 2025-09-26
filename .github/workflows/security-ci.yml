@@ -1,0 +1,163 @@
+name: Security CI
+
+on:
+  push:
+    branches: [main, master, security/*]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-audit:
+    name: Security Audit & Testing
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run dependency audit
+        run: |
+          # Create security reports directory
+          mkdir -p security/reports
+          
+          # Run npm audit and save results
+          npm audit --json > security/reports/npm-audit.json || true
+          npm audit > security/reports/npm-audit.txt || true
+          
+          # Check for high/critical vulnerabilities
+          HIGH_VULNS=$(npm audit --json | jq '.metadata.vulnerabilities.high // 0')
+          CRITICAL_VULNS=$(npm audit --json | jq '.metadata.vulnerabilities.critical // 0')
+          
+          echo "High vulnerabilities: $HIGH_VULNS"
+          echo "Critical vulnerabilities: $CRITICAL_VULNS"
+          
+          # Fail if high or critical vulnerabilities found
+          if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+            echo "❌ High or critical vulnerabilities found!"
+            exit 1
+          fi
+
+      - name: Run retire.js scan
+        run: |
+          npx retire --outputformat json > security/reports/retire.json || true
+          npx retire --outputpath security/reports/retire.txt || true
+
+      - name: Run ESLint security scan
+        run: |
+          npx eslint --ext .js,.ts,.tsx src > security/reports/eslint.txt || true
+          
+          # Install and run eslint-plugin-security if not already installed
+          npm install --no-save eslint-plugin-security
+          npx eslint --ext .js,.ts,.tsx src --rule 'security/detect-eval-with-expression: error' --rule 'security/detect-non-literal-fs-filename: error' --rule 'security/detect-unsafe-regex: error' > security/reports/eslint-security.txt || true
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Run TypeScript type checking
+        run: npx tsc --noEmit
+
+      - name: Build application
+        run: npm run build
+        env:
+          # Use dummy values for build
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy-key-for-build-testing-only
+          VITE_SUPABASE_PROJECT_ID: dummy-project-id
+
+      - name: Run security smoke tests
+        run: |
+          # Check for common security issues in build output
+          echo "🔍 Checking build output for security issues..."
+          
+          # Check for exposed secrets in build
+          if grep -r "sk\." dist/ 2>/dev/null; then
+            echo "❌ Secret key found in build output!"
+            exit 1
+          fi
+          
+          # Check for eval() usage in build
+          if grep -r "eval(" dist/ 2>/dev/null; then
+            echo "❌ eval() usage found in build output!"
+            exit 1
+          fi
+          
+          echo "✅ Build security checks passed"
+
+      - name: Upload security artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: security/reports/
+          retention-days: 30
+
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const auditData = JSON.parse(fs.readFileSync('security/reports/npm-audit.json', 'utf8'));
+              const vulnerabilities = auditData.metadata.vulnerabilities;
+              
+              const comment = `## 🔒 Security Audit Results
+              
+              | Severity | Count |
+              |----------|-------|
+              | Critical | ${vulnerabilities.critical || 0} |
+              | High     | ${vulnerabilities.high || 0} |
+              | Moderate | ${vulnerabilities.moderate || 0} |
+              | Low      | ${vulnerabilities.low || 0} |
+              
+              ${vulnerabilities.critical + vulnerabilities.high > 0 ? '❌ **Action required:** High or critical vulnerabilities found!' : '✅ **All clear:** No high or critical vulnerabilities detected.'}
+              
+              View detailed reports in the [security-reports artifact](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } catch (error) {
+              console.log('Could not create security summary comment:', error.message);
+            }
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
