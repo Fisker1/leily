@@ -227,37 +227,42 @@ const Auth = () => {
                   </Button>
                 </form>
                 
-                {/* Quick test login section */}
-                <div className="mt-6 pt-4 border-t border-border">
-                  <div className="text-center mb-3">
-                    <span className="text-xs text-muted-foreground bg-background px-2">
-                      Stage Test Login
-                    </span>
-                  </div>
-                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-center text-muted-foreground">
-                      🥷 Test bruker for staging
+                {/* Quick test login section - only show in staging */}
+                {(window.location.host.includes('stage') || window.location.host.includes('localhost') || window.location.host.includes('vercel.app')) && (
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <div className="text-center mb-3">
+                      <span className="text-xs text-muted-foreground bg-background px-2">
+                        🥷 Staging Test Login
+                      </span>
                     </div>
-                    <div className="text-xs text-center font-mono">
-                      <div>Email: anderslundoy@protonmail.com</div>
-                      <div>Passord: blåmeis</div>
+                    <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                      <div className="text-xs text-center text-muted-foreground">
+                        Test bruker for staging miljø
+                      </div>
+                      <div className="text-xs text-center font-mono">
+                        <div>Email: anderslundoy@protonmail.com</div>
+                        <div>Passord: blåmeis</div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            email: 'anderslundoy@protonmail.com',
+                            password: 'blåmeis'
+                          });
+                        }}
+                      >
+                        Fyll inn test-bruker
+                      </Button>
+                      <div className="text-xs text-center text-muted-foreground">
+                        Hvis innlogging feiler, vil testbruker opprettes automatisk
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs"
-                      onClick={() => {
-                        setFormData({
-                          ...formData,
-                          email: 'anderslundoy@protonmail.com',
-                          password: 'blåmeis'
-                        });
-                      }}
-                    >
-                      Fyll inn test-bruker
-                    </Button>
                   </div>
-                </div>
+                )}
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4 mt-4">

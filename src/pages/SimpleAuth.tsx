@@ -46,7 +46,42 @@ const SimpleAuth = () => {
       
       if (error) {
         console.error('🥷 Stager login error:', error);
-        alert('Innlogging feilet: ' + error.message);
+        
+        // If user doesn't exist, try to create them automatically in staging
+        if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
+          console.log('🥷 User might not exist, attempting to create staging user...');
+          try {
+            const createResponse = await supabase.functions.invoke('create-staging-user', {
+              method: 'POST'
+            });
+            
+            console.log('🥷 User creation result:', createResponse);
+            
+            if (!createResponse.error) {
+              alert('Testbruker opprettet! Prøv å logge inn igjen.');
+              // Try login again after user creation
+              const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+                email: 'anderslundoy@protonmail.com',
+                password: 'blåmeis'
+              });
+              
+              if (retryError) {
+                alert('Innlogging feilet selv etter brukeroppretting: ' + retryError.message);
+              } else {
+                console.log('🥷 Retry login success:', retryData);
+                setStagerPassword('');
+                setShowStagerPassword(false);
+              }
+            } else {
+              alert('Kunne ikke opprette testbruker: ' + createResponse.error + '\n\nKontakt administrator for å sette opp testbrukeren manuelt.');
+            }
+          } catch (createErr) {
+            console.error('🥷 Error creating user:', createErr);
+            alert('Testbruker eksisterer ikke og kunne ikke opprettes automatisk.\n\nFor å løse dette:\n1. Gå til Supabase Dashboard\n2. Authentication → Users\n3. Opprett bruker: anderslundoy@protonmail.com\n4. Sett passord: blåmeis\n5. Bekreft epost');
+          }
+        } else {
+          alert('Innlogging feilet: ' + error.message);
+        }
       } else {
         console.log('🥷 Stager login success:', data);
         // Reset password input
