@@ -102,7 +102,7 @@ export const useCalculatorData = () => {
           score: 75 // This would be calculated based on various factors
         };
         
-      case 'Avanserte beregninger':
+      case 'Avanserte beregninger': {
         const totalExpenses = parseFloat(data.municipalFees) + parseFloat(data.electricityMonthly) + 
                              parseFloat(data.insurance) + parseFloat(data.sharedExpenses);
         return {
@@ -111,6 +111,7 @@ export const useCalculatorData = () => {
           netOperatingIncome: (parseFloat(data.expectedAnnualRent) / 12 - totalExpenses) * 12,
           totalReturnPercentage: 12.5 // Would be calculated
         };
+      }
         
       case 'Markedsanalyse':
         return {
@@ -124,7 +125,7 @@ export const useCalculatorData = () => {
           marketRentYield: ((20000 * 12) / 2800000) * 100
         };
         
-      case 'Risikoevaluering':
+      case 'Risikoevaluering': {
         const loanToValue = (parseFloat(data.loanAmount) / parseFloat(data.totalPrice)) * 100;
         return {
           loanToValue,
@@ -135,6 +136,7 @@ export const useCalculatorData = () => {
             { title: '3 måneder leieledie', impact: -54000, severity: 'Høy' }
           ]
         };
+      }
         
       case 'Avkastningsanalyse':
         return {

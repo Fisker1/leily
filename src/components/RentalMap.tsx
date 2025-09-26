@@ -216,11 +216,12 @@ const RentalMap = () => {
         el.style.border = '3px solid #6b7280';
         el.innerHTML = '<div style="color: #6b7280; font-size: 10px; text-align: center; line-height: 14px;">📊</div>';
         break;
-      case 'market':
+      case 'market': {
         const yield_ = data?.yield || 0;
         el.style.backgroundColor = yield_ > 5.0 ? '#22c55e' : yield_ > 4.5 ? '#f59e0b' : '#ef4444';
         el.style.border = '2px solid white';
         break;
+      }
     }
     
     el.style.width = '24px';

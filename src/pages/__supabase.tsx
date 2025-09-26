@@ -3,7 +3,9 @@ import { env } from '@/lib/env'
 
 export default function SupabaseInfo() {
   let host = 'invalid'
-  try { host = new URL(env.VITE_SUPABASE_URL).host } catch {}
+  try { host = new URL(env.VITE_SUPABASE_URL).host } catch (error) { 
+    console.warn('Invalid Supabase URL:', error);
+  }
   const info = {
     environment: env.VITE_ENVIRONMENT || 'unknown',
     supabase: {
