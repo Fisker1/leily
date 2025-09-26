@@ -1,0 +1,38 @@
+name: Vercel Deploy (staging/prod)
+
+on:
+  push:
+    branches: [ main, staging ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          VITE_ENVIRONMENT: ${{ github.ref_name == 'staging' && 'staging' || 'production' }}
+          VITE_SUPABASE_URL: ${{ github.ref_name == 'staging' && secrets.VITE_SUPABASE_URL_STAGING || secrets.VITE_SUPABASE_URL_PROD }}
+          VITE_SUPABASE_ANON_KEY: ${{ github.ref_name == 'staging' && secrets.VITE_SUPABASE_ANON_KEY_STAGING || secrets.VITE_SUPABASE_ANON_KEY_PROD }}
+          VITE_SUPABASE_PROJECT_ID: ${{ github.ref_name == 'staging' && secrets.VITE_SUPABASE_PROJECT_ID_STAGING || secrets.VITE_SUPABASE_PROJECT_ID_PROD }}
+          VITE_APP_URL: ${{ github.ref_name == 'staging' && secrets.VITE_APP_URL_STAGING || secrets.VITE_APP_URL_PROD }}
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ github.ref_name == 'staging' && secrets.VERCEL_PROJECT_ID_STAGING || secrets.VERCEL_PROJECT_ID_PROD }}
+          working-directory: .
+          vercel-args: "--prod"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+

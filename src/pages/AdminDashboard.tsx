@@ -453,8 +453,8 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  <p><strong>Fra:</strong> rkhzyzuttsvsjcgzrokt.supabase.co (Produksjon)</p>
-                  <p><strong>Til:</strong> wdwjmapvuibsqiifslno.supabase.co (Staging)</p>
+                  <p><strong>Fra:</strong> Produksjon → Supabase (se Vercel env)</p>
+                  <p><strong>Til:</strong> Staging → Supabase (se Vercel env)</p>
                 </div>
               </CardContent>
             </Card>

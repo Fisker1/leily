@@ -1,68 +1,51 @@
-// Environment configuration for staging/production deployment
-console.log('🔧 Environment Debug Info:');
-console.log('VITE_ENVIRONMENT:', import.meta.env.VITE_ENVIRONMENT);
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('VITE_SUPABASE_PROJECT_ID:', import.meta.env.VITE_SUPABASE_PROJECT_ID);
+import { z } from 'zod'
+
+// Strongly-typed, validated environment config for client-only usage
+const EnvSchema = z.object({
+  VITE_ENVIRONMENT: z.enum(['development', 'staging', 'production']).optional(),
+  VITE_SUPABASE_URL: z.string().url(),
+  VITE_SUPABASE_ANON_KEY: z.string().min(10),
+  VITE_SUPABASE_PROJECT_ID: z.string().min(5),
+  VITE_APP_URL: z.string().url().optional(),
+  VITE_ENABLE_ANALYTICS: z.string().optional(),
+  VITE_DEBUG: z.string().optional(),
+  VITE_LOG_LEVEL: z.string().optional(),
+})
+
+export const env = EnvSchema.parse((import.meta as any).env)
+
+type DeploymentEnv = 'development' | 'staging' | 'production'
+
+const currentEnv: DeploymentEnv = env.VITE_ENVIRONMENT
+  ? env.VITE_ENVIRONMENT
+  : ((import.meta as any).env?.DEV ? 'development' : 'production')
 
 export const ENV_CONFIG = {
-  // Current environment detection
-  isDevelopment: import.meta.env.MODE === 'development',
-  isStaging: import.meta.env.VITE_ENVIRONMENT === 'staging',
-  isProduction: import.meta.env.VITE_ENVIRONMENT === 'production',
-  
-  // Supabase configuration (environment-aware)
+  isDevelopment: currentEnv === 'development',
+  isStaging: currentEnv === 'staging',
+  isProduction: currentEnv === 'production',
   supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL || (
-      import.meta.env.VITE_ENVIRONMENT === 'staging' 
-        ? "https://wdwjmapvuibsqiifslno.supabase.co"
-        : import.meta.env.VITE_ENVIRONMENT === 'production'
-        ? "https://rkhzyzuttsvsjcgzrokt.supabase.co"
-        : "http://localhost:54321" // Local development
-    ),
-    anonKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (
-      import.meta.env.VITE_ENVIRONMENT === 'staging'
-        ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkd2ptYXB2dWlic3FpaWZzbG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODU3ODksImV4cCI6MjA3MzI2MTc4OX0.WbEjzF_D8D1g3-i8NA5UIPl-D1ny2W8ZjD2sEp260Cs"
-        : import.meta.env.VITE_ENVIRONMENT === 'production'
-        ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJraHp5enV0dHN2c2pjZ3pyb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjM5NDMsImV4cCI6MjA3MTE5OTk0M30.CU5UT8k9b8AIW_WF2a5dHc3X8sV5ugXF5QmAhVMGwoc"
-        : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJraHp5enV0dHN2c2pjZ3pyb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjM5NDMsImV4cCI6MjA3MTE5OTk0M30.CU5UT8k9b8AIW_WF2a5dHc3X8sV5ugXF5QmAhVMGwoc" // Fallback to prod for development
-    ),
-    projectId: import.meta.env.VITE_SUPABASE_PROJECT_ID || (
-      import.meta.env.VITE_ENVIRONMENT === 'staging' 
-        ? "wdwjmapvuibsqiifslno"
-        : import.meta.env.VITE_ENVIRONMENT === 'production'
-        ? "rkhzyzuttsvsjcgzrokt"
-        : "rkhzyzuttsvsjcgzrokt" // Fallback to prod for development
-    )
+    url: env.VITE_SUPABASE_URL,
+    anonKey: env.VITE_SUPABASE_ANON_KEY,
+    projectId: env.VITE_SUPABASE_PROJECT_ID
   },
-  
-  // App URLs (environment-aware)
   app: {
-    baseUrl: import.meta.env.VITE_APP_URL || (
-      import.meta.env.VITE_ENVIRONMENT === 'staging' 
-        ? "https://staging.leily.no"
-        : import.meta.env.VITE_ENVIRONMENT === 'production'
-        ? "https://www.leily.no"
-        : window.location.origin
-    ),
-    redirectUrl: `${import.meta.env.VITE_APP_URL || window.location.origin}/`,
+    baseUrl: env.VITE_APP_URL || window.location.origin,
+    redirectUrl: `${env.VITE_APP_URL || window.location.origin}/`,
   },
-  
-  // Environment-specific settings
   settings: {
-    enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-    debugMode: import.meta.env.VITE_DEBUG === 'true' || import.meta.env.MODE === 'development',
-    logLevel: import.meta.env.VITE_LOG_LEVEL || (import.meta.env.MODE === 'development' ? 'debug' : 'error')
+    enableAnalytics: env.VITE_ENABLE_ANALYTICS === 'true',
+    debugMode: env.VITE_DEBUG === 'true' || (import.meta as any).env?.MODE === 'development',
+    logLevel: env.VITE_LOG_LEVEL || ((import.meta as any).env?.MODE === 'development' ? 'debug' : 'error')
   }
-};
+}
 
-// Helper functions for environment checks
-export const isStaging = () => ENV_CONFIG.isStaging;
-export const isProduction = () => ENV_CONFIG.isProduction;
-export const isDevelopment = () => ENV_CONFIG.isDevelopment;
+export const isStaging = () => ENV_CONFIG.isStaging
+export const isProduction = () => ENV_CONFIG.isProduction
+export const isDevelopment = () => ENV_CONFIG.isDevelopment
 
-// Get current environment name
-export const getCurrentEnvironment = (): 'development' | 'staging' | 'production' => {
-  if (ENV_CONFIG.isProduction) return 'production';
-  if (ENV_CONFIG.isStaging) return 'staging';
-  return 'development';
-};
+export const getCurrentEnvironment = (): DeploymentEnv => {
+  if (ENV_CONFIG.isProduction) return 'production'
+  if (ENV_CONFIG.isStaging) return 'staging'
+  return 'development'
+}

@@ -7,6 +7,22 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy, useEffect } from "react";
+import ComingSoon from "./pages/ComingSoon";
+const COMING_SOON = import.meta.env.VITE_COMING_SOON === "true";
+const ALLOWLIST_PATH_PREFIXES: string[] = [];
+function isAllowedPath(pathname: string) {
+  return ALLOWLIST_PATH_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
+// Safe staging logs
+if (typeof window !== 'undefined') {
+  const host = window.location.host
+  if (host.includes('stage.leily.no') || host.includes('vercel.app')) {
+    // Log only flags, never secrets
+    // eslint-disable-next-line no-console
+    console.info('env flags', { COMING_SOON: (import.meta as any).env?.VITE_COMING_SOON })
+  }
+}
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -22,6 +38,9 @@ const RiskAnalysis = lazy(() => import("./pages/calculator/RiskAnalysis"));
 const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPropertyDetails"));
 const BankReport = lazy(() => import("./pages/BankReport"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const EnvDebug = lazy(() => import("./pages/__env"));
+const Health = lazy(() => import("./pages/__health"));
+const SupabaseInfo = lazy(() => import("./pages/__supabase"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -46,7 +65,11 @@ const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
+const App = () => {
+  if (COMING_SOON && !isAllowedPath(window.location.pathname)) {
+    return <ComingSoon />;
+  }
+  return (
   <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
@@ -76,6 +99,9 @@ const App = () => (
                     <Route path="/bank-report" element={<BankReport />} />
                     <Route path="/min-side" element={<MyProfile />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/__env" element={<EnvDebug />} />
+                    <Route path="/__health" element={<Health />} />
+                    <Route path="/__supabase" element={<SupabaseInfo />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
@@ -87,6 +113,7 @@ const App = () => (
         </ForceDefaultTheme>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
