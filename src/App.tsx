@@ -7,6 +7,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy, useEffect } from "react";
+import ComingSoon from "./pages/ComingSoon";
+const COMING_SOON = import.meta.env.VITE_COMING_SOON === "true";
+const ALLOWLIST_PATH_PREFIXES: string[] = [];
+function isAllowedPath(pathname: string) {
+  return ALLOWLIST_PATH_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -49,7 +55,11 @@ const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
+const App = () => {
+  if (COMING_SOON && !isAllowedPath(window.location.pathname)) {
+    return <ComingSoon />;
+  }
+  return (
   <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
@@ -93,6 +103,7 @@ const App = () => (
         </ForceDefaultTheme>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
