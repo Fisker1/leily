@@ -9,8 +9,8 @@ export default function ComingSoon() {
     return () => { document.head.removeChild(m); };
   }, []);
 
-  const imgSrcPrimary = "/coming-soon.png";
-  const imgSrcFallback = "/coming-soon.jpg";
+  const imgSrcPrimary = "/coming-soon.jpg";
+  const imgSrcFallback = "/coming-soon.png";
   const [src, setSrc] = React.useState(imgSrcPrimary);
 
   return (

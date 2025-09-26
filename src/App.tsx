@@ -14,6 +14,16 @@ function isAllowedPath(pathname: string) {
   return ALLOWLIST_PATH_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
+// Safe staging logs
+if (typeof window !== 'undefined') {
+  const host = window.location.host
+  if (host.includes('stage.leily.no') || host.includes('vercel.app')) {
+    // Log only flags, never secrets
+    // eslint-disable-next-line no-console
+    console.info('env flags', { COMING_SOON: (import.meta as any).env?.VITE_COMING_SOON })
+  }
+}
+
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const SimpleAuth = lazy(() => import("./pages/SimpleAuth"));
