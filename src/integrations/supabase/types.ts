@@ -124,6 +124,33 @@ export type Database = {
         }
         Relationships: []
       }
+      finn_property_cache: {
+        Row: {
+          created_at: string
+          finn_code: string
+          id: string
+          property_data: Json
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          finn_code: string
+          id?: string
+          property_data: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          finn_code?: string
+          id?: string
+          property_data?: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       deposit_accounts: {
         Row: {
           account_number: string | null

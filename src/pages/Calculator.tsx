@@ -16,6 +16,7 @@ import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalcul
 import CalculatorModules from '@/components/calculator/CalculatorModules';
 import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
 import CalculationLibrary from '@/components/CalculationLibrary';
+import FinnPropertyFetcher from '@/components/calculator/FinnPropertyFetcher';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useCalculationHistory } from '@/hooks/useCalculationHistory';
 import { ExtendedDetailsDialog } from '@/components/ExtendedDetailsDialog';
@@ -26,6 +27,7 @@ import { Slider } from '@/components/ui/slider';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
+import { FinnPropertyData } from '@/types/finn';
 
 const Calculator = () => {
   const {
@@ -48,6 +50,8 @@ const Calculator = () => {
   const [calculationName, setCalculationName] = useState('');
   const [finnCode, setFinnCode] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
+  const [autoFetchedData, setAutoFetchedData] = useState<FinnPropertyData | null>(null);
+  const [manualOverride, setManualOverride] = useState<{[key: string]: boolean}>({});
 
   // Access control
   const canAccessBuildingPlanner = isPro;
@@ -69,6 +73,31 @@ const Calculator = () => {
       return;
     }
     setActiveTab(value);
+  };
+
+  const handleFinnPropertyDataReceived = (data: FinnPropertyData) => {
+    setAutoFetchedData(data);
+    setFinnCode(data.finnCode);
+    setPropertyAddress(data.address);
+    
+    // Auto-fill calculator fields if not manually overridden
+    if (!manualOverride.totalPrice) {
+      handleInputChange('totalPrice', data.price.toString());
+    }
+    if (!manualOverride.propertyType) {
+      handleInputChange('propertyType', data.propertyType);
+    }
+    if (!manualOverride.municipalFees && data.municipalFees) {
+      handleInputChange('municipalFees', data.municipalFees.toString());
+    }
+    if (!manualOverride.sharedExpenses && data.sharedCosts) {
+      handleInputChange('sharedExpenses', data.sharedCosts.toString());
+    }
+
+    toast({
+      title: "Eiendomsdata importert",
+      description: "Data fra Finn.no er fylt inn i kalkulatoren. Du kan fortsatt redigere verdiene.",
+    });
   };
 
   const handleSaveCalculation = async () => {
@@ -180,6 +209,14 @@ const Calculator = () => {
       ...prev,
       [field]: value
     }));
+    
+    // Track manual overrides for auto-fetched data
+    if (autoFetchedData) {
+      setManualOverride(prev => ({
+        ...prev,
+        [field]: true
+      }));
+    }
     
     // Track if loan amount is manually edited
     if (field === 'loanAmount') {
@@ -308,13 +345,25 @@ const Calculator = () => {
           </TabsList>
           
           <TabsContent value="calculator" className="space-y-8">
+            {/* Finn Property Fetcher - Pro users only */}
+            <div className="max-w-2xl mx-auto">
+              <FinnPropertyFetcher
+                onPropertyDataReceived={handleFinnPropertyDataReceived}
+                initialFinnCode={finnCode}
+                className="mb-6"
+              />
+            </div>
+
             {/* Centered Property Details */}
             <div className="max-w-2xl mx-auto">
               <Card className="shadow-medium">
                 <CardHeader>
                   <CardTitle className="text-primary">Eiendomsdetaljer</CardTitle>
                   <CardDescription>
-                    Fyll inn informasjon om eiendommen du vurderer
+                    {isPro 
+                      ? "Fyll inn informasjon manuelt eller bruk automatisk henting ovenfor" 
+                      : "Fyll inn informasjon om eiendommen du vurderer"
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -345,7 +394,14 @@ const Calculator = () => {
 
                   {/* Property Type */}
                   <div className="space-y-2">
-                    <Label htmlFor="propertyType">Type bolig</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="propertyType">Type bolig</Label>
+                      {autoFetchedData && !manualOverride.propertyType && (
+                        <Badge variant="outline" className="text-xs">
+                          Auto-hentet
+                        </Badge>
+                      )}
+                    </div>
                     <Select value={calculatorData.propertyType} onValueChange={value => handleInputChange('propertyType', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Velg boligtype" />
@@ -385,7 +441,14 @@ const Calculator = () => {
 
                    {/* Total Price */}
                    <div className="space-y-2">
-                     <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
+                     <div className="flex items-center gap-2">
+                       <Label htmlFor="totalPrice">Totalpris på eiendommen (NOK)</Label>
+                       {autoFetchedData && !manualOverride.totalPrice && (
+                         <Badge variant="outline" className="text-xs">
+                           Auto-hentet
+                         </Badge>
+                       )}
+                     </div>
                      <CurrencyInput id="totalPrice" value={calculatorData.totalPrice} onChange={value => handleInputChange('totalPrice', value)} placeholder="5 000 000" />
                    </div>
 
@@ -471,7 +534,14 @@ const Calculator = () => {
                     <div className="grid grid-cols-1 gap-4">
                        {/* Municipal Fees */}
                        <div className="space-y-2">
-                         <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
+                         <div className="flex items-center gap-2">
+                           <Label htmlFor="municipalFees">Kommunale avgifter (pr. mnd)</Label>
+                           {autoFetchedData && !manualOverride.municipalFees && (
+                             <Badge variant="outline" className="text-xs">
+                               Auto-hentet
+                             </Badge>
+                           )}
+                         </div>
                          <CurrencyInput id="municipalFees" value={calculatorData.municipalFees} onChange={value => handleInputChange('municipalFees', value)} placeholder="1 500" />
                        </div>
 
@@ -489,7 +559,14 @@ const Calculator = () => {
 
                        {/* Shared Expenses */}
                        <div className="space-y-2">
-                         <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
+                         <div className="flex items-center gap-2">
+                           <Label htmlFor="sharedExpenses">Fellesutgifter (internett/tv/annet) (pr. mnd)</Label>
+                           {autoFetchedData && !manualOverride.sharedExpenses && (
+                             <Badge variant="outline" className="text-xs">
+                               Auto-hentet
+                             </Badge>
+                           )}
+                         </div>
                          <CurrencyInput id="sharedExpenses" value={calculatorData.sharedExpenses} onChange={value => handleInputChange('sharedExpenses', value)} placeholder="600" />
                        </div>
                     </div>
