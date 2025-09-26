@@ -61,35 +61,19 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Plausible Analytics -->
+    <!-- Plausible Analytics - Static script for detection -->
+    <script defer data-domain="stage.leily.no" src="https://plausible.io/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js"></script>
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+    
+    <!-- Domain adjustment script -->
     <script>
-      // Dynamic Plausible analytics loading based on domain
-      (function() {
-        const hostname = window.location.hostname;
-        let domain = '';
-        
-        // Map hostnames to Plausible domains
-        if (hostname === 'stage.leily.no' || hostname.includes('staging')) {
-          domain = 'stage.leily.no';
-        } else if (hostname === 'www.leily.no' || hostname === 'leily.no') {
-          domain = 'leily.no';
+      // Adjust domain for production
+      if (window.location.hostname === 'www.leily.no' || window.location.hostname === 'leily.no') {
+        const plausibleScript = document.querySelector('script[data-domain]');
+        if (plausibleScript) {
+          plausibleScript.setAttribute('data-domain', 'leily.no');
         }
-        
-        // Only load Plausible if we have a valid domain and analytics is enabled
-        if (domain) {
-          // Load the Plausible script
-          const script = document.createElement('script');
-          script.defer = true;
-          script.setAttribute('data-domain', domain);
-          script.src = 'https://plausible.io/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js';
-          document.head.appendChild(script);
-          
-          // Initialize Plausible function
-          window.plausible = window.plausible || function() { 
-            (window.plausible.q = window.plausible.q || []).push(arguments) 
-          };
-        }
-      })();
+      }
     </script>
     
     <!-- Critical CSS for above-the-fold content -->
