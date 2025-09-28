@@ -11,7 +11,10 @@ interface FinnPropertyData {
   finnCode: string;
   title: string;
   address: string;
-  price: number;
+  price: number; // Prisantydning
+  totalPrice?: number; // Totalpris
+  additionalCosts?: number; // Omkostninger
+  propertyValue?: number; // Formuesverdi
   propertyType: string;
   livingArea: number;
   totalArea?: number;
@@ -20,30 +23,82 @@ interface FinnPropertyData {
   energyRating?: string;
   description: string;
   images: string[];
-  municipalFees?: number;
+  municipalFees?: number; // Monthly amount
   sharedCosts?: number;
   monthlyRent?: number;
+  loanCostsFrom?: number; // Pris på lån fra X kr/mnd
+  
+  // Ownership and legal
+  ownershipType?: string; // Eier, Selveier, Andel, etc.
+  
+  // Property features and facilities
   parkingSpaces?: number;
   balcony?: boolean;
   elevator?: boolean;
   garage?: boolean;
-  garden?: boolean;
+  garden?: boolean; // Hage
+  terrace?: boolean; // Balkong/Terrasse
+  fireplace?: boolean; // Peis/Ildsted
+  basement?: boolean; // Kjeller
+  attic?: boolean; // Loft
   viewType?: string;
   condition?: string;
   heatingType?: string;
   internetIncluded?: boolean;
-  petsAllowed?: boolean;
+  petsAllowed?: boolean; // Kjæledyr tillatt
   smokingAllowed?: boolean;
   furnished?: boolean;
+  childFriendly?: boolean; // Barnevennlig
+  quietArea?: boolean; // Rolig
+  centralLocation?: boolean; // Sentralt
+  publicWaterSewer?: boolean; // Offentlig vann/kloakk
+  hiking?: boolean; // Turterreng
+  
+  // Location and coordinates
   coordinates?: {
     lat: number;
     lng: number;
   };
   neighborhood?: string;
   pricePerSqm?: number;
+  
+  // Rental specific
   availableFrom?: string;
   depositAmount?: number;
   minRentalPeriod?: number;
+  
+  // Agent and viewing information
+  agentName?: string;
+  agentPhone?: string;
+  agentEmail?: string;
+  agencyName?: string;
+  
+  // Viewing information
+  viewingDates?: Array<{
+    date: string;
+    timeFrom: string;
+    timeTo: string;
+    description?: string;
+  }>;
+  
+  // Administrative
+  referenceNumber?: string;
+  datePublished?: string;
+  dateModified?: string;
+  
+  // Additional building details
+  floors?: number; // Antall etasjer
+  roomDescription?: string; // Detailed room breakdown
+  buildingDescription?: string;
+  locationDescription?: string;
+  
+  // Energy and technical
+  energyCertificate?: string;
+  waterHeating?: string;
+  sewageSystem?: string;
+  
+  // Calculated fields
+  totalMonthlyCosts?: number; // Sum of all monthly costs
 }
 
 // Use OpenAI to extract structured data from Finn.no HTML
@@ -88,23 +143,55 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
       console.log(`Structured data preview: ${structuredData.substring(0, 200)}...`);
     }
 
-    const prompt = `Du er en EKSPERT på å ekstrahere eiendomsinformasjon fra Finn.no HTML. 
+    const prompt = `Du er en EKSPERT på å ekstrahere KOMPLETT eiendomsinformasjon fra Finn.no HTML. 
 
-VIKTIG: Finn.no har ofte denne informasjonen:
-- Prisantydning (hovedpris)
-- Totalpris (inkl omkostninger) 
-- Omkostninger (separate avgifter)
-- Kommunale avgifter (månedlig eller årlig)
-- Fellesutgifter/felleskostnader
-- Formuesverdi
-- Lånekostnader per måned
-- Boligareal (både primær og total)
+EKSTREMT VIKTIG - SØKER ETTER ALLE DISSE FELTENE:
+
+PRIS-INFORMASJON:
+- "Prisantydning" (hovedpris)
+- "Totalpris" (inkl alle kostnader)  
+- "Omkostninger" (tilleggskostnader)
+- "Formuesverdi" 
+- "Kommunale avgifter" (per år eller måned)
+- "Fellesutgifter" / "Felleskostnader"
+- "Pris på lån" / "Lånekostnader" (fra X kr/mnd)
+
+EIENDOMSDETALJER:
+- Boligtype: "Tomannsbolig", "Enebolig", "Leilighet", "Rekkehus"
+- "Eieform": "Eier", "Selveier", "Andel", etc.
+- "Soverom" / "Rom" (antall)
+- "Primærareal" / "Boligareal" (m²)
+- "Bruttoareal" / "Totalareal" (m²)
 - Byggeår
-- Antall soverom
-- Energimerking (A-G)
-- Adresse og postnummer
+- "Energimerking" (A-G)
 
-${structuredData ? `STRUKTURERT DATA (JSON-LD):
+FASILITETER (søk etter disse ordene):
+- "Balkong", "Terrasse"  
+- "Hage", "Have"
+- "Peis", "Ildsted", "Peisovn"
+- "Garasje", "P-plass", "Parkering"
+- "Kjeller", "Loft" 
+- "Barnevennlig"
+- "Kjæledyr tillatt", "Pets allowed"
+- "Rolig", "Quiet"
+- "Sentralt", "Central"
+- "Offentlig vann", "Offentlig kloakk"
+- "Turterreng", "Hiking"
+
+MEGLER/VISNING:
+- Meglers navn (ofte under DNB Eiendom, Privatmegleren, etc.)
+- Telefonnummer (format: XX XX XX XX)
+- Eiendomsmeglerfirma navn
+- Visningsdato og tidspunkt
+- "Neste visning", "Visning"
+
+ADMINISTRATIVT:
+- "FINN-kode" / "Finn-kode" (8-9 siffer)
+- "Referanse" nummer
+- "Sist endret" / "Publisert" dato
+- Adresse (gate + postnummer + by)
+
+${structuredData ? `STRUKTURERT DATA (JSON-LD) - BRUK DETTE FØRST:
 ${structuredData}
 
 ` : ''}HTML INNHOLD:
@@ -114,9 +201,13 @@ Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende
 {
   "finnCode": "${finnCode}",
   "title": "eiendomstittel fra HTML",
-  "address": "full adresse fra HTML", 
+  "address": "gate, postnummer by", 
   "price": 0,
-  "propertyType": "leilighet",
+  "totalPrice": 0,
+  "additionalCosts": 0,
+  "propertyValue": 0,
+  "propertyType": "tomannsbolig",
+  "ownershipType": "selveier",
   "livingArea": 0,
   "totalArea": 0,
   "bedrooms": 0,
@@ -126,39 +217,46 @@ Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende
   "municipalFees": 0,
   "sharedCosts": 0,
   "monthlyRent": 0,
+  "loanCostsFrom": 0,
   "parkingSpaces": 0,
   "balcony": false,
   "elevator": false,
   "garage": false,
   "garden": false,
-  "viewType": "gate/hav/skog",
-  "condition": "god/dårlig/utmerket",
-  "heatingType": "fjernvarme/elektrisk/ved",
-  "internetIncluded": false,
+  "terrace": false,
+  "fireplace": false,
+  "basement": false,
+  "attic": false,
   "petsAllowed": false,
-  "smokingAllowed": false,
-  "furnished": false,
+  "childFriendly": false,
+  "quietArea": false,
+  "centralLocation": false,
+  "publicWaterSewer": false,
+  "hiking": false,
+  "agentName": "Geir Audun Vikse",
+  "agentPhone": "46 85 03 90",
+  "agencyName": "DNB Eiendom AS",
+  "viewingDates": [{"date": "2025-10-02", "timeFrom": "15:30", "timeTo": "16:15"}],
+  "referenceNumber": "704250214",
+  "datePublished": "2025-09-26",
   "images": ["url1", "url2"],
   "coordinates": {"lat": 0, "lng": 0},
-  "neighborhood": "Grünerløkka/Majorstuen/etc",
+  "neighborhood": "Haugesund",
   "pricePerSqm": 0,
-  "availableFrom": "2025-01-15",
-  "depositAmount": 0,
-  "minRentalPeriod": 12
+  "floors": 2,
+  "roomDescription": "detaljert rombeskrivelse"
 }
 
 KRITISKE INSTRUKSJONER:
-- SØK GRUNDIG etter alle tall og priser i HTML-en
-- "Totalpris" eller "Total" er viktigst - dette er hovedprisen
-- "Prisantydning" er også en pris hvis totalpris ikke finnes
-- "Kommunale avgifter" kan være per år (del på 12) eller per måned
-- "Fellesutgifter", "Felleskost", "Shared costs" er månedlige fellesutgifter
-- Hvis du finner "kr per år" - del på 12 for månedlig beløp
-- Hvis du finner "kr/mnd" eller "kr per måned" - bruk direkte
-- I tomatsboli/enebolig i HTML blir ofte til "tomannsbolig"/"enebolig" 
-- SØK etter "m²", "kvm", "kvadratmeter" for areal
-- SØK etter "soverom", "rom", "bedrooms" for antall soverom
-- Bruk kun faktiske verdier - IKKE gjett
+- SØK GRUNDIG etter ALLE tall, priser og detaljer i HTML-en
+- "Totalpris" er hovedprisen hvis tilgjengelig, ellers "Prisantydning"
+- Hvis "Kommunale avgifter" sier "per år" - del på 12 for månedlig
+- Meglerinfo står ofte i høyre sidebar eller under eiendomsselskap
+- Visningsdato er ofte i format "Torsdag, 02. oktober" + klokkeslett
+- FINN-kode er 8-9 siffer, referanse er kortere
+- Fasiliteter kan stå som punktliste eller i tekst
+- For boolean verdier: true hvis nevnt/funnet, false hvis ikke nevnt
+- Bruk kun faktiske verdier - IKKE gjett eller oppfinn data
 - Returner KUN valid JSON, ingen annen tekst eller forklaring`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

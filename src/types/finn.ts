@@ -2,7 +2,10 @@ export interface FinnPropertyData {
   finnCode: string;
   title: string;
   address: string;
-  price: number;
+  price: number; // Prisantydning
+  totalPrice?: number; // Totalpris
+  additionalCosts?: number; // Omkostninger
+  propertyValue?: number; // Formuesverdi
   propertyType: 'leilighet' | 'enebolig' | 'rekkehus' | 'tomannsbolig';
   livingArea: number;
   totalArea?: number;
@@ -11,30 +14,82 @@ export interface FinnPropertyData {
   energyRating?: string;
   description: string;
   images: string[];
-  municipalFees?: number;
+  municipalFees?: number; // Monthly amount
   sharedCosts?: number;
   monthlyRent?: number;
+  loanCostsFrom?: number; // Pris på lån fra X kr/mnd
+  
+  // Ownership and legal
+  ownershipType?: string; // Eier, Selveier, Andel, etc.
+  
+  // Property features and facilities
   parkingSpaces?: number;
   balcony?: boolean;
   elevator?: boolean;
   garage?: boolean;
-  garden?: boolean;
+  garden?: boolean; // Hage
+  terrace?: boolean; // Balkong/Terrasse
+  fireplace?: boolean; // Peis/Ildsted
+  basement?: boolean; // Kjeller
+  attic?: boolean; // Loft
   viewType?: string;
   condition?: string;
   heatingType?: string;
   internetIncluded?: boolean;
-  petsAllowed?: boolean;
+  petsAllowed?: boolean; // Kjæledyr tillatt
   smokingAllowed?: boolean;
   furnished?: boolean;
+  childFriendly?: boolean; // Barnevennlig
+  quietArea?: boolean; // Rolig
+  centralLocation?: boolean; // Sentralt
+  publicWaterSewer?: boolean; // Offentlig vann/kloakk
+  hiking?: boolean; // Turterreng
+  
+  // Location and coordinates
   coordinates?: {
     lat: number;
     lng: number;
   };
   neighborhood?: string;
   pricePerSqm?: number;
+  
+  // Rental specific
   availableFrom?: string;
   depositAmount?: number;
   minRentalPeriod?: number;
+  
+  // Agent and viewing information
+  agentName?: string;
+  agentPhone?: string;
+  agentEmail?: string;
+  agencyName?: string;
+  
+  // Viewing information
+  viewingDates?: Array<{
+    date: string;
+    timeFrom: string;
+    timeTo: string;
+    description?: string;
+  }>;
+  
+  // Administrative
+  referenceNumber?: string;
+  datePublished?: string;
+  dateModified?: string;
+  
+  // Additional building details
+  floors?: number; // Antall etasjer
+  roomDescription?: string; // Detailed room breakdown
+  buildingDescription?: string;
+  locationDescription?: string;
+  
+  // Energy and technical
+  energyCertificate?: string;
+  waterHeating?: string;
+  sewageSystem?: string;
+  
+  // Calculated fields
+  totalMonthlyCosts?: number; // Sum of all monthly costs
 }
 
 export interface FinnPropertyResponse {
