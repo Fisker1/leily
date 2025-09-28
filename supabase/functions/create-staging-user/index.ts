@@ -117,14 +117,15 @@ serve(async (req) => {
       console.log(`🔧 Updating profile for ${testUser.email} with tier: ${testUser.subscription_tier}`)
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: newUser.user.id,
+          email: testUser.email,
           full_name: testUser.full_name,
           subscription_tier: testUser.subscription_tier,
           subscription_end: testUser.subscription_tier === 'premium' 
             ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() 
             : null
-        })
-        .eq('id', newUser.user.id)
+        }, { onConflict: 'id' })
 
       if (profileError) {
         console.error('❌ Error updating profile for:', testUser.email, profileError)
