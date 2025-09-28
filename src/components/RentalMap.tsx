@@ -536,8 +536,22 @@ const RentalMap = () => {
           }, 500);
         });
 
+        // Add error throttling to prevent error loops
+        let errorThrottleTimer: NodeJS.Timeout | null = null;
+        let lastErrorTime = 0;
+        const ERROR_THROTTLE_MS = 5000; // Only show errors every 5 seconds max
+
         map.current.on('error', (e) => {
+          const now = Date.now();
           const errorMessage = e.error?.message || e.message || 'Ukjent feil';
+          
+          // Throttle error reporting to prevent spam
+          if (now - lastErrorTime < ERROR_THROTTLE_MS) {
+            console.log('⚠️ Map error throttled:', errorMessage);
+            return;
+          }
+          
+          lastErrorTime = now;
           console.error('❌ Map error:', errorMessage);
           
           const isRecoverableError = errorMessage.includes('NetworkError') || 
@@ -549,30 +563,57 @@ const RentalMap = () => {
                                    errorMessage.includes('401') ||
                                    errorMessage.includes('Unauthorized');
           
-          if (isRecoverableError && retryCount < 3) {
-            console.log('🔄 Attempting to recover from map error...');
+          const isCriticalError = errorMessage.includes('WebGL') ||
+                                errorMessage.includes('Invalid token') ||
+                                errorMessage.includes('Forbidden');
+          
+          if (isCriticalError) {
+            console.error('💥 Critical map error, stopping retries');
+            setError(`Kritisk kartfeil: ${errorMessage}`);
+            return;
+          }
+          
+          if (isRecoverableError && retryCount < 2) { // Reduced max retries
+            console.log(`🔄 Attempting recovery ${retryCount + 1}/2...`);
             setRetryCount(prev => prev + 1);
             
-            // Try to refresh token and reinitialize
-            setTimeout(async () => {
+            // Clear any existing error throttle timer
+            if (errorThrottleTimer) {
+              clearTimeout(errorThrottleTimer);
+            }
+            
+            // Throttled recovery attempt
+            errorThrottleTimer = setTimeout(async () => {
               try {
                 await fetchMapboxToken(true);
                 if (map.current) {
                   map.current.remove();
                   map.current = null;
                 }
-                // The map will reinitialize automatically due to useEffect dependencies
               } catch (error) {
-                console.error('Failed to recover:', error);
+                console.error('Recovery failed:', error);
+                setError('Kunne ikke gjenopprette kartet');
               }
-            }, 2000);
-          } else if (!isRecoverableError) {
-            setError(`Mapbox error: ${errorMessage}`);
-            toast({
-              title: "Kartfeil",
-              description: `Mapbox feil: ${errorMessage}`,
-              variant: "destructive",
-            });
+            }, 3000); // Longer delay between attempts
+          } else {
+            // Only show toast for non-recoverable errors or after max retries
+            if (!isRecoverableError || retryCount >= 2) {
+              setError(`Mapbox error: ${errorMessage}`);
+              
+              // Clear any existing throttle timer before showing toast
+              if (errorThrottleTimer) {
+                clearTimeout(errorThrottleTimer);
+              }
+              
+              // Throttled toast to prevent spam
+              errorThrottleTimer = setTimeout(() => {
+                toast({
+                  title: "Kartfeil",
+                  description: `Kartet kunne ikke lastes: ${errorMessage}`,
+                  variant: "destructive",
+                });
+              }, 1000);
+            }
           }
         });
 
@@ -597,7 +638,11 @@ const RentalMap = () => {
     return () => {
       clearMarkers();
       if (map.current) {
-        map.current.remove();
+        try {
+          map.current.remove();
+        } catch (error) {
+          console.log('Map cleanup error (safe to ignore):', error);
+        }
         map.current = null;
       }
     };
