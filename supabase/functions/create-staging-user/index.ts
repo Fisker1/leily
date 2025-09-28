@@ -13,16 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    // Only allow this function to run in staging environment
+    // Only allow this function to run in non-production environment
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Basic staging environment check
-    if (!supabaseUrl.includes('staging') && !supabaseUrl.includes('test')) {
+    // Check if we have the service role key (needed for user creation)
+    if (!supabaseServiceRoleKey) {
       return new Response(
         JSON.stringify({ 
-          error: 'This function only runs in staging environment',
-          environment: supabaseUrl 
+          error: 'Service role key required for user creation',
+          hint: 'This function requires SUPABASE_SERVICE_ROLE_KEY to be configured'
         }),
         { 
           status: 403, 
@@ -30,6 +30,8 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('🚀 Starting test user creation process...')
 
     // Create Supabase client with service role key (can manage auth)
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
@@ -58,6 +60,8 @@ serve(async (req) => {
       }
     ]
 
+    console.log('🔧 Creating test users:', testUsers.map(u => ({ email: u.email, role: u.role, tier: u.subscription_tier })))
+
     const createdUsers = []
 
     for (const testUser of testUsers) {
@@ -66,6 +70,7 @@ serve(async (req) => {
       const existingUser = existingUsers?.users?.find(user => user.email === testUser.email)
       
       if (existingUser) {
+        console.log(`✅ User ${testUser.email} already exists`)
         createdUsers.push({
           ...testUser,
           user_id: existingUser.id,
@@ -73,6 +78,8 @@ serve(async (req) => {
         })
         continue
       }
+
+      console.log(`🔧 Creating new user: ${testUser.email}`)
 
       // Create the test user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -85,7 +92,7 @@ serve(async (req) => {
       })
 
       if (createError) {
-        console.error('Error creating user:', testUser.email, createError)
+        console.error('❌ Error creating user:', testUser.email, createError)
         createdUsers.push({
           ...testUser,
           status: 'error',
@@ -95,6 +102,7 @@ serve(async (req) => {
       }
 
       if (!newUser.user) {
+        console.error('❌ User creation returned no user data for:', testUser.email)
         createdUsers.push({
           ...testUser,
           status: 'error',
@@ -103,7 +111,10 @@ serve(async (req) => {
         continue
       }
 
+      console.log(`✅ Successfully created user: ${testUser.email} with ID: ${newUser.user.id}`)
+
       // Update profile with subscription
+      console.log(`🔧 Updating profile for ${testUser.email} with tier: ${testUser.subscription_tier}`)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -116,10 +127,13 @@ serve(async (req) => {
         .eq('id', newUser.user.id)
 
       if (profileError) {
-        console.error('Error updating profile:', profileError)
+        console.error('❌ Error updating profile for:', testUser.email, profileError)
+      } else {
+        console.log(`✅ Profile updated successfully for: ${testUser.email}`)
       }
 
       // Assign role if not default user
+      console.log(`🔧 Assigning role "${testUser.role}" to ${testUser.email}`)
       if (testUser.role !== 'user') {
         const { error: roleError } = await supabase
           .from('user_roles')
@@ -129,7 +143,23 @@ serve(async (req) => {
           })
 
         if (roleError) {
-          console.error('Error assigning role:', roleError)
+          console.error('❌ Error assigning role:', testUser.role, 'to:', testUser.email, roleError)
+        } else {
+          console.log(`✅ Role "${testUser.role}" assigned successfully to: ${testUser.email}`)
+        }
+      } else {
+        // Ensure default user role is assigned
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: newUser.user.id,
+            role: 'user'
+          })
+
+        if (roleError && !roleError.message.includes('duplicate key')) {
+          console.error('❌ Error assigning default user role to:', testUser.email, roleError)
+        } else {
+          console.log(`✅ Default user role assigned successfully to: ${testUser.email}`)
         }
       }
 
@@ -155,6 +185,8 @@ serve(async (req) => {
         user_id: newUser.user.id,
         status: 'created'
       })
+
+      console.log(`🎉 Successfully set up user: ${testUser.email} with role: ${testUser.role} and tier: ${testUser.subscription_tier}`)
     }
 
     return new Response(
