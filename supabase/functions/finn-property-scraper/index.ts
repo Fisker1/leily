@@ -157,102 +157,103 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
 
 KRITISK: Finn FAKTISKE tall fra HTML-en - ALDRI oppfinn data!
 
-SØK ETTER DISSE EKSAKTE SEKSJONENE OG TEKSTENE:
+SØK ETTER DISSE EKSAKTE SEKSJONENE OG TEKSTENE I HTML:
 
-1. PRISANTYDNING (hovedpris): 
-   - Søk etter "Prisantydning" etterfulgt av tall + "kr"
-   - Format: "3 990 000 kr", "4.500.000 kr" 
+1. PRISANTYDNING (hovedpris - VIKTIGST): 
+   - Søk etter "===PRICE_SECTION=== prisantydning:" eller "===CURRENCY_VALUE===" 
+   - Format: "3 990 000 kr", "4.500.000 kr", "3,5 mill kr"
+   - Konverter mill til millioner: "3,5 mill" = 3500000
    - Dette er HOVEDPRISEN som skal brukes som "price"
 
-2. TOTALPRIS:
-   - Søk etter "Totalpris" etterfulgt av tall + "kr" 
-   - Dette inkluderer omkostninger
+2. ANDRE PRISER:
+   - "===PRICE_SECTION=== totalpris:" → totalPrice
+   - "===PRICE_SECTION=== omkostninger:" → additionalCosts
+   - "===PRICE_SECTION=== formuesverdi:" → propertyValue
+   - "===PRICE_SECTION=== felleskost:" → sharedCosts (månedlig)
+   - "===PRICE_SECTION=== kommunale avg:" → municipalFees (del på 12 hvis årlig)
 
-3. OMKOSTNINGER:
-   - Søk etter "Omkostninger" etterfulgt av tall + "kr"
+3. AREALER:
+   - "===SPECIFIC_AREA=== intern bruksareal:" eller "===AREA_MEASUREMENT===" → livingArea
+   - "===SPECIFIC_AREA=== bruksareal:" → totalArea
+   - "===SPECIFIC_AREA=== ekstern bruksareal:" → balconyArea
 
-4. FELLESKOST/MND:
-   - Søk etter "Felleskost/mnd" eller "Felleskost" etterfulgt av tall + "kr"
-   - Dette er månedlige fellesutgifter
+4. ROM OG DETALJER:
+   - "===ROOM_INFO=== soverom:" → bedrooms
+   - "===YEAR_INFO=== byggeår:" → yearBuilt (4 siffer)
+   - "===PROPERTY_TYPE=== boligtype:" → propertyType (leilighet/enebolig/etc)
+   - "===PROPERTY_TYPE=== eieform:" → ownershipType (selveier/andel/etc)
 
-5. KOMMUNALE AVG:
-   - Søk etter "Kommunale avg" etterfulgt av tall + "kr per år"
-   - Hvis "per år" - del på 12 for å få månedlig beløp
+5. SØK I TABELLER OG LISTER:
+   - "===TABLE_ROW_START===" til "===TABLE_ROW_END===" inneholder ofte strukturert data
+   - "===DEFINITION_LIST_START===" til "===DEFINITION_LIST_END===" kan ha nøkkelinfo
+   - "===KEY_INFO_SECTION_START===" inneholder ofte de viktigste dataene
 
-6. FORMUESVERDI:
-   - Søk etter "Formuesverdi" etterfulgt av tall + "kr"
-
-7. AREALER I NØKKELINFO-SEKSJONEN:
-   - "Intern bruksareal" eller "Boligareal": XX m² (BRA-i) → livingArea
-   - "Bruksareal": XX m² → totalArea
-   - "Ekstern bruksareal": XX m² (BRA-e) → balconyArea
-
-8. ANDRE NØKKELINFO-VERDIER:
-   - "Boligtype": Leilighet/Enebolig/Rekkehus/Tomannsbolig
-   - "Eieform": Eier (Selveier)/Andel/Aksje
-   - "Soverom": tall
-   - "Byggeår": årstall (4 siffer)
-   - "Energimerking": bokstav A-G, kan stå som "G - Rød"
-
-9. VISNING:
-   - Søk etter "Torsdag, 02. oktober" + tid "17:45 - 18:30"
+6. BILDER:
+   - Søk etter <img> tags eller "images" i JSON-LD data
 
 HTML INNHOLD MED FORSTERKEDE MARKØRER:
 ${truncatedHtml}
 
-${structuredData ? `STRUKTURERT JSON-LD DATA (PRIORITER DETTE):
+${structuredData ? `STRUKTURERT JSON-LD DATA (PRIORITER DETTE HØYEST):
 ${structuredData}` : ''}
 
-RETURNER EKSAKT DETTE JSON-FORMATET MED FAKTISKE VERDIER:
+KRITISKE INSTRUKSJONER:
+- Les ALLE "===PRICE_SECTION===" og "===CURRENCY_VALUE===" markører nøye
+- Konverter "3 990 000" til 3990000 (fjern mellomrom)
+- Konverter "mill" til 000000: "3,5 mill" = 3500000
+- Hvis du ikke finner eksakte tall, bruk null - IKKE gå glipp av tall som er der!
+- Søk spesielt etter prisantydning som er hovedprisen
+
+RETURNER EKSAKT DETTE JSON-FORMATET:
 {
   "finnCode": "${finnCode}",
   "title": "EKSAKT_TITTEL_FRA_HTML",
   "address": "EKSAKT_ADRESSE", 
-  "price": PRISANTYDNING_TALL,
+  "price": PRISANTYDNING_TALL_ELLER_NULL,
   "totalPrice": TOTALPRIS_TALL_ELLER_NULL,
   "additionalCosts": OMKOSTNINGER_TALL_ELLER_NULL,
   "propertyValue": FORMUESVERDI_TALL_ELLER_NULL,
   "propertyType": "leilighet/enebolig/rekkehus/tomannsbolig",
-  "ownershipType": "selveier/eier/andel",
-  "livingArea": INTERN_BRUKSAREAL_TALL,
-  "totalArea": BRUKSAREAL_TALL_ELLER_NULL,
-  "balconyArea": EKSTERN_BRUKSAREAL_TALL_ELLER_NULL,
+  "ownershipType": "selveier/eier/andel/aksje",
+  "livingArea": INTERN_BRUKSAREAL_TALL_ELLER_NULL,
+  "totalArea": BRUKSAREAL_TOTALT_ELLER_NULL,
+  "balconyArea": EKSTERN_BRUKSAREAL_ELLER_NULL,
   "bedrooms": SOVEROM_TALL_ELLER_NULL,
-  "totalRooms": TOTAL_ROM_TALL_ELLER_NULL,
+  "totalRooms": TOTAL_ROM_ELLER_NULL,
   "floor": "ETASJE_TEKST_ELLER_NULL",
   "yearBuilt": BYGGEÅR_4_SIFFER_ELLER_NULL,
   "energyRating": "A/B/C/D/E/F/G_ELLER_NULL",
-  "description": "FULL_BESKRIVELSE",
+  "description": "FULL_BESKRIVELSE_TEKST",
   "municipalFees": KOMMUNALE_MÅNEDLIG_ELLER_NULL,
   "sharedCosts": FELLESKOST_MÅNEDLIG_ELLER_NULL,
   "sharedEquity": FELLESFORMUE_ELLER_NULL,
   "monthlyRent": NULL,
   "loanCostsFrom": LÅN_FRA_ELLER_NULL,
   "parkingSpaces": PARKERING_ANTALL_ELLER_NULL,
-  "balcony": true/false,
-  "elevator": true/false,
-  "garage": true/false,
-  "garden": true/false,
-  "terrace": true/false,
-  "fireplace": true/false,
-  "basement": true/false,
-  "attic": true/false,
-  "petsAllowed": true/false,
-  "childFriendly": true/false,
-  "quietArea": true/false,
-  "centralLocation": true/false,
-  "publicWaterSewer": true/false,
-  "hiking": true/false,
-  "chargingStation": true/false,
-  "internet": true/false,
-  "agentName": "NAVN_ELLER_NULL",
+  "balcony": true/false_BASERT_PÅ_TEKST,
+  "elevator": true/false_BASERT_PÅ_TEKST,
+  "garage": true/false_BASERT_PÅ_TEKST,
+  "garden": true/false_BASERT_PÅ_TEKST,
+  "terrace": true/false_BASERT_PÅ_TEKST,
+  "fireplace": true/false_BASERT_PÅ_TEKST,
+  "basement": true/false_BASERT_PÅ_TEKST,
+  "attic": true/false_BASERT_PÅ_TEKST,
+  "petsAllowed": true/false_BASERT_PÅ_TEKST,
+  "childFriendly": true/false_BASERT_PÅ_TEKST,
+  "quietArea": true/false_BASERT_PÅ_TEKST,
+  "centralLocation": true/false_BASERT_PÅ_TEKST,
+  "publicWaterSewer": true/false_BASERT_PÅ_TEKST,
+  "hiking": true/false_BASERT_PÅ_TEKST,
+  "chargingStation": true/false_BASERT_PÅ_TEKST,
+  "internet": true/false_BASERT_PÅ_TEKST,
+  "agentName": "MEGLER_NAVN_ELLER_NULL",
   "agentPhone": "TELEFON_ELLER_NULL",
   "agentTitle": "TITTEL_ELLER_NULL",
-  "agencyName": "FIRMA_ELLER_NULL",
+  "agencyName": "FIRMA_NAVN_ELLER_NULL",
   "viewingDates": [{"date": "YYYY-MM-DD", "timeFrom": "HH:MM", "timeTo": "HH:MM"}],
-  "referenceNumber": "REF_ELLER_NULL",
-  "datePublished": "YYYY-MM-DD_ELLER_NULL",
-  "images": ["URL1", "URL2"],
+  "referenceNumber": "REF_NUMMER_ELLER_NULL",
+  "datePublished": "PUBLISERT_DATO_ELLER_NULL",
+  "images": ["FAKTISKE_BILDE_URLS"],
   "coordinates": {"lat": null, "lng": null},
   "neighborhood": "OMRÅDE_ELLER_NULL",
   "pricePerSqm": BEREGNET_PRIS_PER_M2_ELLER_NULL,
@@ -262,12 +263,7 @@ RETURNER EKSAKT DETTE JSON-FORMATET MED FAKTISKE VERDIER:
   "locationDescription": "LOKASJON_BESKRIVELSE_ELLER_NULL"
 }
 
-KRITISKE REGLER:
-- Les HTML nøye - ikke gå glipp av tall i "Nøkkelinfo" seksjonen  
-- Konverter "mill" til 000000 (3,5 mill = 3500000)
-- Fjern mellomrom fra tall: "3 990 000" → 3990000
-- Hvis energimerking er "G - Rød" → bruk bare "G"
-- Returner KUN valid JSON, ingen forklaring!`;
+RETURNER KUN VALID JSON - INGEN FORKLARING!`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -389,37 +385,73 @@ KRITISKE REGLER:
   }
 }
 
-// Preprocess HTML to highlight price and area information
+// Enhanced HTML preprocessing to highlight key data sections with better pattern matching
 function preprocessHtmlForPricing(html: string): string {
-  // Enhanced preprocessing to better isolate key sections
-  let enhanced = html;
+  console.log('Preprocessing HTML for better AI extraction...');
   
-  // Add strong markers around key price and data sections
-  const keyPatterns = [
-    // Price patterns - more specific
-    /(Prisantydning|Totalpris|Omkostninger|Formuesverdi)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
-    /(Felleskost\/mnd\.|Felleskost)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
-    /(Kommunale\s+avg\.)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
-    
-    // Area patterns - more specific
-    /(Intern\s+bruksareal|Bruksareal|Boligareal)[\s\S]*?(\d+\s*m²)/gi,
-    /(Ekstern\s+bruksareal|Tomteareal)[\s\S]*?(\d+\s*m²)/gi,
-    
-    // Property details
-    /(Boligtype|Eieform|Soverom|Byggeår|Energimerking)[\s\S]*?([A-Za-z0-9\-\s]+)/gi,
-    
-    // Viewing dates
-    /(Visning|visning)[\s\S]*?(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2})/gi
-  ];
+  let processedHtml = html;
   
-  keyPatterns.forEach((pattern, index) => {
-    enhanced = enhanced.replace(pattern, `\n***KEY_DATA_${index}_START***\n$&\n***KEY_DATA_${index}_END***\n`);
-  });
+  // 1. Mark ALL numeric values followed by "kr" with special markers
+  processedHtml = processedHtml.replace(
+    /(\d{1,3}(?:\s\d{3})*)\s*kr(?!\w)/gi, 
+    '\n===CURRENCY_VALUE=== $1 kr ===CURRENCY_VALUE===\n'
+  );
   
-  // Also highlight nøkkelinfo sections which usually contain structured data
-  enhanced = enhanced.replace(/(Nøkkelinfo|nøkkelinfo)[\s\S]*?(?=<\/div>|<div|$)/gi, '\n***NØKKELINFO_START***\n$&\n***NØKKELINFO_END***\n');
+  // 2. Mark specific price-related terms with their contexts
+  processedHtml = processedHtml.replace(
+    /(prisantydning|totalpris|omkostninger|formuesverdi|felleskost|kommunale\s+avg)[^<>]*?(\d[\d\s]*)\s*kr/gi,
+    '\n===PRICE_SECTION=== $1: $2 kr ===PRICE_SECTION===\n'
+  );
   
-  return enhanced;
+  // 3. Mark area measurements with enhanced detection
+  processedHtml = processedHtml.replace(
+    /(\d+)\s*m²(?:\s*\([^)]*\))?/gi,
+    '\n===AREA_MEASUREMENT=== $1 m² ===AREA_MEASUREMENT===\n'
+  );
+  
+  // 4. Mark specific area types from Nøkkelinfo section
+  processedHtml = processedHtml.replace(
+    /(intern\s+bruksareal|bruksareal|boligareal|ekstern\s+bruksareal|tomteareal)[^<>]*?(\d+)\s*m²/gi,
+    '\n===SPECIFIC_AREA=== $1: $2 m² ===SPECIFIC_AREA===\n'
+  );
+  
+  // 5. Mark room count information
+  processedHtml = processedHtml.replace(
+    /(soverom|antall\s+rom)[^<>]*?(\d+)/gi,
+    '\n===ROOM_INFO=== $1: $2 ===ROOM_INFO===\n'
+  );
+  
+  // 6. Mark building year information
+  processedHtml = processedHtml.replace(
+    /(byggeår|bygget)[^<>]*?(19\d{2}|20\d{2})/gi,
+    '\n===YEAR_INFO=== $1: $2 ===YEAR_INFO===\n'
+  );
+  
+  // 7. Mark property type information
+  processedHtml = processedHtml.replace(
+    /(boligtype|eieform)[^<>]*?(leilighet|enebolig|rekkehus|tomannsbolig|eier|selveier|andel|aksje)/gi,
+    '\n===PROPERTY_TYPE=== $1: $2 ===PROPERTY_TYPE===\n'
+  );
+  
+  // 8. Highlight table rows and data structures that might contain key info
+  processedHtml = processedHtml.replace(
+    /<tr[^>]*>[\s\S]*?<\/tr>/gi,
+    '\n===TABLE_ROW_START===\n$&\n===TABLE_ROW_END===\n'
+  );
+  
+  // 9. Highlight definition lists which are common in property descriptions
+  processedHtml = processedHtml.replace(
+    /<dl[^>]*>[\s\S]*?<\/dl>/gi,
+    '\n===DEFINITION_LIST_START===\n$&\n===DEFINITION_LIST_END===\n'
+  );
+  
+  // 10. Mark structured sections that might contain nøkkelinfo
+  processedHtml = processedHtml.replace(
+    /(nøkkelinfo|key\s*info|property\s*details)[\s\S]{0,100}?/gi,
+    '\n===KEY_INFO_SECTION_START===\n$&\n===KEY_INFO_SECTION_END===\n'
+  );
+  
+  return processedHtml;
 }
 
 // Improved scraping with better headers and error handling
