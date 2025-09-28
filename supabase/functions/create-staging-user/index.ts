@@ -53,7 +53,7 @@ serve(async (req) => {
       },
       {
         email: 'ambassadør@leily.no',
-        password: 'clinton', 
+        password: 'hærverk', 
         full_name: 'Ambassadør Bruker',
         subscription_tier: 'premium',
         role: 'ambassador'
@@ -132,9 +132,23 @@ serve(async (req) => {
         console.log(`✅ Profile updated successfully for: ${testUser.email}`)
       }
 
-      // Assign role if not default user
       console.log(`🔧 Assigning role "${testUser.role}" to ${testUser.email}`)
-      if (testUser.role !== 'user') {
+      if (testUser.role === 'ambassador') {
+        console.log('🎯 Assigning ambassador role specifically')
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: newUser.user.id,
+            role: 'ambassador'
+          })
+
+        if (roleError) {
+          console.error('❌ Error assigning ambassador role to:', testUser.email, roleError)
+          console.error('❌ Full error details:', JSON.stringify(roleError, null, 2))
+        } else {
+          console.log(`✅ Ambassador role assigned successfully to: ${testUser.email}`)
+        }
+      } else if (testUser.role !== 'user') {
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({

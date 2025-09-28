@@ -29,7 +29,7 @@ const SimpleAuth = () => {
   const testUsers = [
     { email: 'gjest@leily.no', password: 'blåmeis', name: 'Gjest', icon: '👤' },
     { email: 'pro@leily.no', password: 'rødspette', name: 'Pro', icon: '⭐' },
-    { email: 'ambassadør@leily.no', password: 'clinton', name: 'Ambassadør', icon: '🏅' }
+    { email: 'ambassadør@leily.no', password: 'hærverk', name: 'Ambassadør', icon: '🏅' }
   ];
 
   const handleTestLogin = async () => {
