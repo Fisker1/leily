@@ -139,148 +139,116 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
       structuredData = jsonLdMatches.join('\n');
     }
     
-    // Get first 15000 chars to capture more content but stay within limits
-    const truncatedHtml = htmlContent.length > 15000 ? htmlContent.substring(0, 15000) + "..." : htmlContent;
+    // Preprocess HTML to highlight price and area information
+    const preprocessedHtml = preprocessHtmlForPricing(htmlContent);
+    
+    // Get first 20000 chars to capture more content but stay within limits
+    const truncatedHtml = preprocessedHtml.length > 20000 ? preprocessedHtml.substring(0, 20000) + "..." : preprocessedHtml;
 
     console.log(`Using OpenAI GPT-4o to extract comprehensive data for Finn code: ${finnCode}`);
-    console.log(`HTML length: ${htmlContent.length}, Truncated: ${truncatedHtml.length}`);
+    console.log(`HTML length: ${htmlContent.length}, Preprocessed: ${preprocessedHtml.length}, Truncated: ${truncatedHtml.length}`);
     console.log(`Structured data found: ${structuredData.length > 0 ? 'Yes' : 'No'}`);
     
     if (structuredData) {
       console.log(`Structured data preview: ${structuredData.substring(0, 200)}...`);
     }
 
-    const prompt = `Du er en EKSPERT på å ekstrahere KOMPLETT eiendomsinformasjon fra Finn.no HTML. 
+    const prompt = `Du er en EKSPERT på å ekstrahere EIENDOMSDATA fra Finn.no HTML. FOKUSER SPESIELT PÅ PRISER!
 
-KRITISK: SØK GRUNDIG etter ALL INFORMASJON i HTML-en - ikke bare overfladisk!
+KRITISK INSTRUKS: SØK ETTER FAKTISKE TALL - IKKE BRUK 0 SOM PLACEHOLDER!
 
-PRIS-INFORMASJON (SØK ETTER DISSE EKSAKTE ORDENE):
-- "Prisantydning" (hovedpris - ofte stor tekst øverst)
-- "Totalpris" (total sum inkl omkostninger)
-- "Omkostninger" (tilleggskostnader)
-- "Formuesverdi" (ofte mindre tekst)
-- "Felleskost" / "Fellesutgifter" (månedlig)
-- "Fellesformue" (andel av felleseie)
-- "Kommunale" (avgifter per år eller måned)
-- "Pris på lån" / "Lånekostnader" (fra X kr/mnd)
-- "kr/mnd" (månedlige kostnader)
+FINN DISSE PRISENE (SØK I HTML ETTER EKSAKTE TALL):
+1. HOVEDPRIS - søk etter: "Prisantydning", "Totalpris", "Pris", "kr" 
+   - Ofte format: "4 500 000 kr", "4.500.000 kr", "4,5 mill kr"
+   - Konverter "mill" til 000000 (4,5 mill = 4500000)
+2. OMKOSTNINGER - søk etter: "Omkostninger", "Tilleggskostnader"
+3. FELLESK - søk etter: "Felleskost", "Fellesutgifter", "kr/mnd"
+4. KOMMUNALE - søk etter: "Kommunale avgifter", "kr/år" (del på 12 hvis per år)
 
-NØKKELINFO SEKSJON (SØK SYSTEMATISK):
-- "Boligtype": Leilighet, Enebolig, Rekkehus, Tomannsbolig
-- "Eieform": Eier, Selveier, Andel, Aksje
-- "Soverom" eller "Rom" (totalt antall rom)
-- "Intern bruksareal", "Primærareal", "BRA-i" (m²)
-- "Bruksareal", "Totalareal", "BRA-e" (m²)
-- "Balkong", "Terrasse", "TBA" (m²)
-- "Etasje" (hvilken etasje)
-- "Byggeår" (årstall)
-- "Energimerking" (bokstav A-G, ofte fargekodet)
+FINN DISSE AREALENE (SØK ETTER m² TALL):
+1. BOLIGAREAL - "Boligareal", "Primærareal", "BRA-i", "m²"
+2. TOTALAREAL - "Totalareal", "Bruksareal", "BRA"  
+3. TERRASSE/BALKONG - "Balkong", "Terrasse", "TBA"
 
-DETALJERT FASILITETER (SØK I HTML ETTER DISSE):
-- "Balkong/Terrasse", "Balkong", "Terrasse"
-- "Heis", "Elevator" 
-- "Garasje", "Garasje/P-plass", "Parkering"
-- "Hage", "Have", "Uteområde"
-- "Peis", "Ildsted", "Peisovn", "Vedovn"
-- "Kjeller", "Basement"
-- "Loft", "Attic"
-- "Barnevennlig", "Barnehage", "Skole"
-- "Kjæledyr tillatt", "Pets"
-- "Rolig", "Stille"
-- "Sentralt", "Sentrum"
-- "Ladestasjon", "El-bil"
-- "Turterreng", "Hiking", "Natur"
-- "Offentlig vann/kloakk"
-- "Bademulighet", "Badeland"
-- "Internett", "Fiber"
+EIENDOMSTYPE: leilighet, enebolig, rekkehus, tomannsbolig
+SOVEROM: "soverom", "Soverommer" (tall)
+BYGGEÅR: "Byggeår", "bygget" (årstall)
 
-MEGLER OG VISNING (SØK GRUNDIG):
-- Meglers fulle navn (f.eks "Lillian Tunge")
-- Telefonnummer (format: XX XX XX XX eller +47 XX XX XX XX)
-- Eiendomsmeglerfirma (DNB Eiendom, Privatmegleren, MNEF, etc.)
-- "Partner", "Eiendomsmegler", tittel
-- Visningsdato (dag, dato, måned)
-- Visningstidspunkt (klokkeslett format XX:XX - XX:XX)
-- "Neste visning", "Visning", "Åpen visning"
+MEGLER INFO (søk grundig):
+- Navn: Finn fullt navn på megler
+- Telefon: Format XX XX XX XX eller +47 XX XX XX XX  
+- Firma: DNB, Privatmegleren, MNEF, etc.
 
-BESKRIVELSE OG BILDER:
-- Finn den KOMPLETTE beskrivelsen av eiendommen (lang tekst)
-- Alle bildeURLer (https://images.finncdn.no/...)
-- Spesiell informasjon om lokasjon og omgivelser
+VISNINGSDATOER:
+- "Visning", "Åpen visning" + dato og tid
+- Format: "Torsdag 3. oktober 15:30-16:15"
 
-ADMINISTRATIVT:
-- "FINN-kode" (8-9 siffer)
-- "Referanse" nummer (ofte kortere)
-- "Sist endret", "Publisert", datoer
-- Komplett adresse med gate, nummer, postnummer og by
-
-${structuredData ? `STRUKTURERT DATA (JSON-LD) - BRUK DETTE FØRST:
-${structuredData}
-
-` : ''}HTML INNHOLD:
+HTML INNHOLD MED PRISMARKØRER:
 ${truncatedHtml}
 
-Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende verdier):
+${structuredData ? `JSON-LD DATA (BRUK DETTE FØRST):
+${structuredData}` : ''}
+
+Returner JSON med FAKTISKE tall (bruk null hvis ikke funnet):
 {
   "finnCode": "${finnCode}",
-  "title": "eiendomstittel fra HTML",
-  "address": "gate, postnummer by", 
-  "price": 0,
-  "totalPrice": 0,
-  "additionalCosts": 0,
-  "propertyValue": 0,
-  "propertyType": "tomannsbolig",
-  "ownershipType": "selveier",
-  "livingArea": 0,
-  "totalArea": 0,
-  "bedrooms": 0,
-  "yearBuilt": 0,
-  "energyRating": "A",
-  "description": "beskrivelse av eiendommen",
-  "municipalFees": 0,
-  "sharedCosts": 0,
-  "monthlyRent": 0,
-  "loanCostsFrom": 0,
-  "parkingSpaces": 0,
-  "balcony": false,
-  "elevator": false,
-  "garage": false,
-  "garden": false,
-  "terrace": false,
-  "fireplace": false,
-  "basement": false,
-  "attic": false,
-  "petsAllowed": false,
-  "childFriendly": false,
-  "quietArea": false,
-  "centralLocation": false,
-  "publicWaterSewer": false,
-  "hiking": false,
-  "agentName": "Geir Audun Vikse",
-  "agentPhone": "46 85 03 90",
-  "agencyName": "DNB Eiendom AS",
-  "viewingDates": [{"date": "2025-10-02", "timeFrom": "15:30", "timeTo": "16:15"}],
-  "referenceNumber": "704250214",
-  "datePublished": "2025-09-26",
+  "title": "faktisk tittel fra HTML",
+  "address": "faktisk adresse", 
+  "price": FAKTISK_TALL_ELLER_NULL,
+  "totalPrice": FAKTISK_TALL_ELLER_NULL,
+  "additionalCosts": FAKTISK_TALL_ELLER_NULL,
+  "propertyValue": FAKTISK_TALL_ELLER_NULL,
+  "propertyType": "enebolig/leilighet/rekkehus/tomannsbolig",
+  "ownershipType": "selveier/eier/andel",
+  "livingArea": FAKTISK_TALL_ELLER_NULL,
+  "totalArea": FAKTISK_TALL_ELLER_NULL,
+  "balconyArea": FAKTISK_TALL_ELLER_NULL,
+  "bedrooms": FAKTISK_TALL_ELLER_NULL,
+  "totalRooms": FAKTISK_TALL_ELLER_NULL,
+  "floor": "etasje som tekst",
+  "yearBuilt": FAKTISK_ÅRSTALL_ELLER_NULL,
+  "energyRating": "A/B/C/D/E/F/G",
+  "description": "komplett beskrivelse",
+  "municipalFees": FAKTISK_MÅNEDLIG_TALL_ELLER_NULL,
+  "sharedCosts": FAKTISK_MÅNEDLIG_TALL_ELLER_NULL,
+  "sharedEquity": FAKTISK_TALL_ELLER_NULL,
+  "monthlyRent": FAKTISK_TALL_ELLER_NULL,
+  "loanCostsFrom": FAKTISK_TALL_ELLER_NULL,
+  "parkingSpaces": FAKTISK_TALL_ELLER_NULL,
+  "balcony": true/false,
+  "elevator": true/false,
+  "garage": true/false,
+  "garden": true/false,
+  "terrace": true/false,
+  "fireplace": true/false,
+  "basement": true/false,
+  "attic": true/false,
+  "petsAllowed": true/false,
+  "childFriendly": true/false,
+  "quietArea": true/false,
+  "centralLocation": true/false,
+  "publicWaterSewer": true/false,
+  "hiking": true/false,
+  "chargingStation": true/false,
+  "internet": true/false,
+  "agentName": "faktisk navn",
+  "agentPhone": "faktisk telefon",
+  "agentTitle": "eiendomsmegler/partner",
+  "agencyName": "faktisk firmanavn",
+  "viewingDates": [{"date": "YYYY-MM-DD", "timeFrom": "HH:MM", "timeTo": "HH:MM"}],
+  "referenceNumber": "faktisk referanse",
+  "datePublished": "YYYY-MM-DD",
   "images": ["url1", "url2"],
-  "coordinates": {"lat": 0, "lng": 0},
-  "neighborhood": "Haugesund",
-  "pricePerSqm": 0,
-  "floors": 2,
-  "roomDescription": "detaljert rombeskrivelse"
+  "coordinates": {"lat": null, "lng": null},
+  "neighborhood": "faktisk område",
+  "pricePerSqm": BEREGNET_ELLER_NULL,
+  "floors": FAKTISK_TALL_ELLER_NULL,
+  "roomDescription": "detaljert beskrivelse",
+  "buildingDescription": "bygningsbeskrivelse",
+  "locationDescription": "områdebeskrivelse"
 }
 
-KRITISKE INSTRUKSJONER:
-- SØK GRUNDIG etter ALLE tall, priser og detaljer i HTML-en
-- "Totalpris" er hovedprisen hvis tilgjengelig, ellers "Prisantydning"
-- Hvis "Kommunale avgifter" sier "per år" - del på 12 for månedlig
-- Meglerinfo står ofte i høyre sidebar eller under eiendomsselskap
-- Visningsdato er ofte i format "Torsdag, 02. oktober" + klokkeslett
-- FINN-kode er 8-9 siffer, referanse er kortere
-- Fasiliteter kan stå som punktliste eller i tekst
-- For boolean verdier: true hvis nevnt/funnet, false hvis ikke nevnt
-- Bruk kun faktiske verdier - IKKE gjett eller oppfinn data
-- Returner KUN valid JSON, ingen annen tekst eller forklaring`;
+KRITISK: Returner KUN gyldig JSON, ingen annen tekst!`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -289,19 +257,19 @@ KRITISKE INSTRUKSJONER:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // Use more powerful model for better extraction
+        model: 'gpt-4o-mini', // Use mini model for faster, more consistent extraction
         messages: [
           {
             role: 'system',
-            content: 'Du er en AI som er ekspert på å ekstrahere strukturert eiendomsdata fra Finn.no HTML. Du returnerer alltid valid JSON.'
+            content: 'Du er en AI som er ekspert på å ekstrahere strukturert eiendomsdata fra Finn.no HTML. Du returnerer alltid valid JSON med faktiske tall - ALDRI 0 som placeholder.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.05, // Very low for consistent extraction
-        max_tokens: 4000 // Much more tokens for comprehensive data extraction
+        temperature: 0.1, // Very low for consistent extraction
+        max_tokens: 3000 // Enough tokens for comprehensive data extraction
       }),
     });
 
@@ -438,6 +406,27 @@ async function scrapeFinnPropertyHTML(finnCode: string): Promise<string | null> 
     console.error('Error scraping Finn property HTML:', error);
     return null;
   }
+}
+
+// Preprocess HTML to highlight price and area information
+function preprocessHtmlForPricing(html: string): string {
+  // Enhance price-related sections by adding markers
+  let enhanced = html;
+  
+  // Add markers around price-related content
+  const pricePatterns = [
+    /(\d[\d\s]*\s*kr(?:\s*\/m²)?)/gi,
+    /(prisantydning|totalpris|omkostninger|formuesverdi|felleskost|kommunale)/gi,
+    /(boligareal|primærareal|bruksareal|totalareal)/gi,
+    /(\d+\s*m²)/gi,
+    /(soverom|rom\s*totalt|byggeår)/gi
+  ];
+  
+  pricePatterns.forEach((pattern, index) => {
+    enhanced = enhanced.replace(pattern, `***PRICE_INFO_${index}*** $1 ***END_PRICE_INFO_${index}***`);
+  });
+  
+  return enhanced;
 }
 
 serve(async (req) => {
