@@ -55,14 +55,59 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log(`Using OpenAI to extract data for Finn code: ${finnCode}`);
+    // Extract and focus on key sections of HTML that contain property data
+    const keySelectors = [
+      'script[type="application/ld+json"]', // Structured data
+      '[data-testid*="price"]', '[class*="price"]', '[class*="Price"]',
+      '[data-testid*="cost"]', '[class*="cost"]', '[class*="Cost"]', 
+      '[data-testid*="municipal"]', '[class*="municipal"]',
+      '[data-testid*="shared"]', '[class*="shared"]', '[class*="felles"]',
+      '[data-testid*="area"]', '[class*="area"]', '[class*="Area"]',
+      '[data-testid*="room"]', '[class*="room"]', '[class*="Room"]',
+      '[data-testid*="year"]', '[class*="year"]', '[class*="bygge"]',
+      'h1', 'h2', 'h3', // Titles and headers
+      '[class*="address"]', '[class*="location"]', // Address info
+      '[class*="description"]', '[class*="Description"]' // Description
+    ];
+    
+    // Try to extract structured JSON-LD data first
+    const jsonLdMatches = htmlContent.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
+    let structuredData = '';
+    if (jsonLdMatches) {
+      structuredData = jsonLdMatches.join('\n');
+    }
+    
+    // Get first 15000 chars to capture more content but stay within limits
+    const truncatedHtml = htmlContent.length > 15000 ? htmlContent.substring(0, 15000) + "..." : htmlContent;
 
-    // Truncate HTML to avoid token limits (keep first 8000 chars which should contain main property info)
-    const truncatedHtml = htmlContent.length > 8000 ? htmlContent.substring(0, 8000) + "..." : htmlContent;
+    console.log(`Using OpenAI GPT-4o to extract comprehensive data for Finn code: ${finnCode}`);
+    console.log(`HTML length: ${htmlContent.length}, Truncated: ${truncatedHtml.length}`);
+    console.log(`Structured data found: ${structuredData.length > 0 ? 'Yes' : 'No'}`);
+    
+    if (structuredData) {
+      console.log(`Structured data preview: ${structuredData.substring(0, 200)}...`);
+    }
 
-    const prompt = `Du er en ekspert på å ekstrahere eiendomsinformasjon fra Finn.no HTML. Analyser denne HTML-koden og trekk ut ALL TILGJENGELIG eiendomsinformasjon for å kunne fylle ut en eiendomskalkulator automatisk.
+    const prompt = `Du er en EKSPERT på å ekstrahere eiendomsinformasjon fra Finn.no HTML. 
 
-HTML innhold:
+VIKTIG: Finn.no har ofte denne informasjonen:
+- Prisantydning (hovedpris)
+- Totalpris (inkl omkostninger) 
+- Omkostninger (separate avgifter)
+- Kommunale avgifter (månedlig eller årlig)
+- Fellesutgifter/felleskostnader
+- Formuesverdi
+- Lånekostnader per måned
+- Boligareal (både primær og total)
+- Byggeår
+- Antall soverom
+- Energimerking (A-G)
+- Adresse og postnummer
+
+${structuredData ? `STRUKTURERT DATA (JSON-LD):
+${structuredData}
+
+` : ''}HTML INNHOLD:
 ${truncatedHtml}
 
 Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende verdier):
@@ -102,16 +147,19 @@ Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende
   "minRentalPeriod": 12
 }
 
-Viktige instruksjoner:
-- Bruk kun faktiske verdier fra HTML-en - ikke gjett eller finn på verdier
-- Pris skal være totalpris i NOK som et tall (ikke string)
-- propertyType skal være: "leilighet", "enebolig", "rekkehus", eller "tomannsbolig" 
-- livingArea og totalArea skal være tall i m²
-- municipalFees og sharedCosts skal være månedlige beløp i NOK
-- monthlyRent skal være månedlig leiepris hvis det er en utleiebolig
-- balcony, elevator, garage, garden skal være true/false basert på om det nevnes
-- Hvis en verdi ikke finnes, bruk null for tall og strings, false for booleans
-- Returner KUN JSON, ingen annen tekst`;
+KRITISKE INSTRUKSJONER:
+- SØK GRUNDIG etter alle tall og priser i HTML-en
+- "Totalpris" eller "Total" er viktigst - dette er hovedprisen
+- "Prisantydning" er også en pris hvis totalpris ikke finnes
+- "Kommunale avgifter" kan være per år (del på 12) eller per måned
+- "Fellesutgifter", "Felleskost", "Shared costs" er månedlige fellesutgifter
+- Hvis du finner "kr per år" - del på 12 for månedlig beløp
+- Hvis du finner "kr/mnd" eller "kr per måned" - bruk direkte
+- I tomatsboli/enebolig i HTML blir ofte til "tomannsbolig"/"enebolig" 
+- SØK etter "m²", "kvm", "kvadratmeter" for areal
+- SØK etter "soverom", "rom", "bedrooms" for antall soverom
+- Bruk kun faktiske verdier - IKKE gjett
+- Returner KUN valid JSON, ingen annen tekst eller forklaring`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -120,7 +168,7 @@ Viktige instruksjoner:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o', // Use more powerful model for better extraction
         messages: [
           {
             role: 'system',
@@ -131,8 +179,8 @@ Viktige instruksjoner:
             content: prompt
           }
         ],
-        temperature: 0.1,
-        max_tokens: 1000
+        temperature: 0.05, // Very low for consistent extraction
+        max_tokens: 2000 // More tokens for complete data
       }),
     });
 
@@ -149,7 +197,8 @@ Viktige instruksjoner:
       throw new Error('No content returned from OpenAI');
     }
 
-    console.log('OpenAI extracted text:', extractedText);
+    console.log('OpenAI extracted text preview:', extractedText.substring(0, 500));
+    console.log('Full OpenAI response length:', extractedText.length);
 
     // Parse JSON from the response
     try {
