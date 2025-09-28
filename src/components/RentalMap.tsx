@@ -245,19 +245,47 @@ const RentalMap = () => {
           
           // Try different map styles to find one that works
           const styles = [
+            // Basic styles that should work with any token
+            {
+              name: 'Basic',
+              style: {
+                "version": 8,
+                "name": "Basic",
+                "sources": {
+                  "osm": {
+                    "type": "raster",
+                    "tiles": [
+                      "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    ],
+                    "tileSize": 256,
+                    "attribution": "© OpenStreetMap contributors"
+                  }
+                },
+                "layers": [
+                  {
+                    "id": "osm",
+                    "type": "raster",
+                    "source": "osm"
+                  }
+                ]
+              }
+            },
+            // Mapbox fallbacks 
             'mapbox://styles/mapbox/streets-v11',
             'mapbox://styles/mapbox/light-v10', 
-            'mapbox://styles/mapbox/outdoors-v11',
-            'mapbox://styles/mapbox/satellite-streets-v11'
+            'mapbox://styles/mapbox/outdoors-v11'
           ];
 
-          for (const style of styles) {
+          for (let i = 0; i < styles.length; i++) {
             try {
-              addDebug(`Prøver kartsstil: ${style}`);
+              const currentStyle = styles[i];
+              addDebug(`Prøver kartsstil ${i + 1}/${styles.length}: ${typeof currentStyle === 'string' ? currentStyle : currentStyle.name}`);
               
               mapInstance = new mapboxgl.Map({
                 container: mapContainer.current,
-                style: style,
+                style: typeof currentStyle === 'string' ? currentStyle : currentStyle.style,
                 center: [10.7522, 59.9139], // Oslo
                 zoom: 6,
                 attributionControl: false,
@@ -265,9 +293,16 @@ const RentalMap = () => {
               });
 
               map.current = mapInstance;
+              addDebug(`✅ Kartsstil ${i + 1} opprettet`);
               break;
             } catch (styleError) {
-              addDebug(`Kartsstil ${style} feilet: ${styleError}`);
+              addDebug(`❌ Kartsstil ${i + 1} feilet: ${styleError}`);
+              if (mapInstance) {
+                try {
+                  mapInstance.remove();
+                } catch (e) {}
+                mapInstance = null;
+              }
               continue;
             }
           }
@@ -314,13 +349,16 @@ const RentalMap = () => {
             
             addDebug(`❌ Kartfeil: ${JSON.stringify(errorDetails)}`);
             
+            // For 403 errors, ignore them as they are tile loading issues
+            if (e.error && e.error.status === 403) {
+              addDebug('🔧 403-feil ignorert (vanlig kartlastingsfeil)');
+              return;
+            }
+            
             // Only set error for critical issues
             if (e.error && e.error.status === 401) {
               setError('Kartfeil: Ugyldig Mapbox token');
               setLoading(false);
-            } else if (e.error && e.error.status === 403) {
-              setError('Kartfeil: Ikke tilgang til kartsstil - prøver alternative stiler...');
-              // Try next style automatically
             } else if (e.error && e.error.message && e.error.message.includes('network')) {
               setError('Kartfeil: Nettverksfeil - sjekk internettforbindelsen');
               setLoading(false);
