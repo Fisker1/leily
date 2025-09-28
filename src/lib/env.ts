@@ -12,7 +12,28 @@ const EnvSchema = z.object({
   VITE_LOG_LEVEL: z.string().optional(),
 })
 
-export const env = EnvSchema.parse(import.meta.env as Record<string, string>)
+// Safe parsing with error handling
+const parseResult = EnvSchema.safeParse(import.meta.env as Record<string, string>)
+
+let envData: any
+if (!parseResult.success) {
+  console.error('Environment validation failed:', parseResult.error.format())
+  // Create a fallback env object with defaults
+  envData = {
+    VITE_ENVIRONMENT: import.meta.env?.VITE_ENVIRONMENT as 'development' | 'staging' | 'production' | undefined,
+    VITE_SUPABASE_URL: import.meta.env?.VITE_SUPABASE_URL as string | undefined,
+    VITE_SUPABASE_ANON_KEY: import.meta.env?.VITE_SUPABASE_ANON_KEY as string | undefined,
+    VITE_SUPABASE_PROJECT_ID: import.meta.env?.VITE_SUPABASE_PROJECT_ID as string | undefined,
+    VITE_APP_URL: import.meta.env?.VITE_APP_URL as string | undefined,
+    VITE_ENABLE_ANALYTICS: import.meta.env?.VITE_ENABLE_ANALYTICS as string | undefined,
+    VITE_DEBUG: import.meta.env?.VITE_DEBUG as string | undefined,
+    VITE_LOG_LEVEL: import.meta.env?.VITE_LOG_LEVEL as string | undefined,
+  }
+} else {
+  envData = parseResult.data
+}
+
+export const env = envData
 
 type DeploymentEnv = 'development' | 'staging' | 'production'
 
