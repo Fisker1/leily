@@ -24,6 +24,16 @@ const RentalMap = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  // Add a single error state to prevent multiple error messages
+  const [hasShownCriticalError, setHasShownCriticalError] = useState(false);
+
+  // Clear error state when map loads successfully
+  useEffect(() => {
+    if (map.current && !error && !loading) {
+      setHasShownCriticalError(false);
+      setRetryCount(0);
+    }
+  }, [map.current, error, loading]);
   const [lastTokenFetch, setLastTokenFetch] = useState<number>(0);
 
   // Layer toggles with localStorage persistence - RESET TO ENSURE THEY'RE ON
@@ -160,7 +170,7 @@ const RentalMap = () => {
     return () => clearTimeout(refreshTimer);
   }, [mapboxToken, user]);
 
-  // Initial token fetch
+  // Initial token fetch with better error handling
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -171,12 +181,9 @@ const RentalMap = () => {
       try {
         await fetchMapboxToken();
       } catch (error: any) {
+        console.error('Token fetch failed:', error);
         setError(`Kunne ikke hente Mapbox token: ${error.message}`);
-        toast({
-          title: "Kartfeil", 
-          description: `Kunne ikke laste kartet. Kontroller Mapbox token konfigurasjonen.`,
-          variant: "destructive",
-        });
+        // Remove toast from here to prevent duplicate error messages
       } finally {
         setLoading(false);
       }
@@ -567,9 +574,20 @@ const RentalMap = () => {
                                 errorMessage.includes('Invalid token') ||
                                 errorMessage.includes('Forbidden');
           
-          if (isCriticalError) {
+          if (isCriticalError && !hasShownCriticalError) {
             console.error('💥 Critical map error, stopping retries');
             setError(`Kritisk kartfeil: ${errorMessage}`);
+            setHasShownCriticalError(true);
+            
+            // Show toast only once for critical errors
+            toast({
+              title: "Kartfeil",
+              description: `Kartet kan ikke lastes: ${errorMessage}`,
+              variant: "destructive",
+            });
+            return;
+          } else if (isCriticalError) {
+            // Critical error already shown, just log
             return;
           }
           
@@ -596,16 +614,17 @@ const RentalMap = () => {
               }
             }, 3000); // Longer delay between attempts
           } else {
-            // Only show toast for non-recoverable errors or after max retries
-            if (!isRecoverableError || retryCount >= 2) {
+            // Only show toast for final failure after all retries, and only if not already shown
+            if ((!isRecoverableError || retryCount >= 2) && !hasShownCriticalError) {
               setError(`Mapbox error: ${errorMessage}`);
+              setHasShownCriticalError(true);
               
               // Clear any existing throttle timer before showing toast
               if (errorThrottleTimer) {
                 clearTimeout(errorThrottleTimer);
               }
               
-              // Throttled toast to prevent spam
+              // Show final error toast
               errorThrottleTimer = setTimeout(() => {
                 toast({
                   title: "Kartfeil",
@@ -836,14 +855,15 @@ const RentalMap = () => {
                   size="sm" 
                   className="mt-4"
                   onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    setRetryCount(0);
-                    try {
-                      await fetchMapboxToken(true);
-                    } catch (error) {
-                      console.error('Manual retry failed:', error);
-                    }
+                     setError(null);
+                     setLoading(true);
+                     setRetryCount(0);
+                     setHasShownCriticalError(false);
+                     try {
+                       await fetchMapboxToken(true);
+                     } catch (error) {
+                       console.error('Manual retry failed:', error);
+                     }
                   }}
                 >
                   Prøv igjen
