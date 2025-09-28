@@ -24,7 +24,9 @@ const RentalMap = () => {
 
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
+  const [showRentalProperties, setShowRentalProperties] = useState(true);
   const [showCalculationProperties, setShowCalculationProperties] = useState(true);
+  const [showMarketData, setShowMarketData] = useState(true);
 
   // Get data
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
@@ -153,115 +155,112 @@ const RentalMap = () => {
       const mapboxModule = await import('mapbox-gl');
       const mapboxgl = mapboxModule.default;
       bounds = new mapboxgl.LngLatBounds();
-    } catch (error) {
-      console.error('Failed to import mapbox for bounds:', error);
-      return;
-    }
 
-    // Add property markers
-    if (showMyProperties && properties && properties.length > 0) {
-      console.log(`📍 Adding ${properties.length} property markers`);
-      
-      properties.forEach((property) => {
-        if (property.coordinates && property.coordinates.length === 2) {
-          const el = document.createElement('div');
-          el.style.cssText = `
-            width: 14px;
-            height: 14px;
-            background: #3b82f6;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          `;
+      // Add property markers
+      if (showMyProperties && properties && properties.length > 0) {
+        console.log(`📍 Adding ${properties.length} property markers`);
+        
+        properties.forEach((property) => {
+          if (property.coordinates && property.coordinates.length === 2) {
+            const el = document.createElement('div');
+            el.style.cssText = `
+              width: 14px;
+              height: 14px;
+              background: #3b82f6;
+              border: 2px solid white;
+              border-radius: 50%;
+              cursor: pointer;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            `;
 
-          const mapboxModule = require('mapbox-gl');
-          const popup = new mapboxModule.Popup({ offset: 25 }).setHTML(`
-            <div style="padding: 8px; font-family: system-ui;">
-              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${property.address}</h3>
-              <p style="margin: 4px 0; font-size: 12px; color: #666;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
-              ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
-              ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
-              ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
-            </div>
-          `);
+            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+              <div style="padding: 8px; font-family: system-ui;">
+                <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${property.address}</h3>
+                <p style="margin: 4px 0; font-size: 12px; color: #666;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
+                ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
+                ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
+                ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
+              </div>
+            `);
 
-          const marker = new mapboxModule.Marker(el)
-            .setLngLat([property.coordinates[0], property.coordinates[1]])
-            .setPopup(popup)
-            .addTo(map.current);
+            const marker = new mapboxgl.Marker(el)
+              .setLngLat([property.coordinates[0], property.coordinates[1]])
+              .setPopup(popup)
+              .addTo(map.current);
 
-          allMarkers.push(marker);
-          bounds.extend([property.coordinates[0], property.coordinates[1]]);
-        }
-      });
-    }
-
-    // Add calculation markers
-    if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
-      console.log(`🧮 Adding ${calculationProperties.length} calculation markers`);
-      
-      calculationProperties.forEach((calc) => {
-        if (calc.coordinates && calc.coordinates.length === 2) {
-          const el = document.createElement('div');
-          el.style.cssText = `
-            width: 14px;
-            height: 14px;
-            background: #f59e0b;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          `;
-
-          const mapboxModule = require('mapbox-gl');
-          const popup = new mapboxModule.Popup({ offset: 25 }).setHTML(`
-            <div style="padding: 8px; font-family: system-ui;">
-              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${calc.property_address}</h3>
-              <p style="margin: 4px 0; font-size: 12px; color: #666;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
-              <p style="margin: 4px 0; font-size: 12px; color: #666;">Finn-kode: ${calc.finn_code}</p>
-              ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
-            </div>
-          `);
-
-          const marker = new mapboxModule.Marker(el)
-            .setLngLat([calc.coordinates[0], calc.coordinates[1]])
-            .setPopup(popup)
-            .addTo(map.current);
-
-          allMarkers.push(marker);
-          bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
-        }
-      });
-    }
-
-    // Update markers ref
-    markers.current = allMarkers;
-
-    // Center map on markers
-    if (allMarkers.length > 0) {
-      console.log(`🎯 Centering map on ${allMarkers.length} markers`);
-      
-      if (allMarkers.length === 1) {
-        // Single marker: center on it
-        const lngLat = allMarkers[0].getLngLat();
-        map.current.setCenter([lngLat.lng, lngLat.lat]);
-        map.current.setZoom(12);
-      } else {
-        // Multiple markers: fit bounds
-        map.current.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 14
+            allMarkers.push(marker);
+            bounds.extend([property.coordinates[0], property.coordinates[1]]);
+          }
         });
       }
-    } else {
-      // No markers: center on Norway
-      console.log('📍 No markers found, centering on Norway');
-      map.current.setCenter([10.7522, 59.9139]);
-      map.current.setZoom(6);
-    }
 
-    console.log(`✅ Added ${allMarkers.length} markers total`);
+      // Add calculation markers
+      if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
+        console.log(`🧮 Adding ${calculationProperties.length} calculation markers`);
+        
+        calculationProperties.forEach((calc) => {
+          if (calc.coordinates && calc.coordinates.length === 2) {
+            const el = document.createElement('div');
+            el.style.cssText = `
+              width: 14px;
+              height: 14px;
+              background: #f59e0b;
+              border: 2px solid white;
+              border-radius: 50%;
+              cursor: pointer;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            `;
+
+            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+              <div style="padding: 8px; font-family: system-ui;">
+                <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${calc.property_address}</h3>
+                <p style="margin: 4px 0; font-size: 12px; color: #666;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
+                <p style="margin: 4px 0; font-size: 12px; color: #666;">Finn-kode: ${calc.finn_code}</p>
+                ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
+              </div>
+            `);
+
+            const marker = new mapboxgl.Marker(el)
+              .setLngLat([calc.coordinates[0], calc.coordinates[1]])
+              .setPopup(popup)
+              .addTo(map.current);
+
+            allMarkers.push(marker);
+            bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
+          }
+        });
+      }
+
+      // Update markers ref
+      markers.current = allMarkers;
+
+      // Center map on markers
+      if (allMarkers.length > 0) {
+        console.log(`🎯 Centering map on ${allMarkers.length} markers`);
+        
+        if (allMarkers.length === 1) {
+          // Single marker: center on it
+          const lngLat = allMarkers[0].getLngLat();
+          map.current.setCenter([lngLat.lng, lngLat.lat]);
+          map.current.setZoom(12);
+        } else {
+          // Multiple markers: fit bounds
+          map.current.fitBounds(bounds, {
+            padding: 50,
+            maxZoom: 14
+          });
+        }
+      } else {
+        // No markers: center on Norway
+        console.log('📍 No markers found, centering on Norway');
+        map.current.setCenter([10.7522, 59.9139]);
+        map.current.setZoom(6);
+      }
+
+      console.log(`✅ Added ${allMarkers.length} markers total`);
+    } catch (error) {
+      console.error('❌ Failed to add markers:', error);
+    }
   };
 
   // Update markers when data or toggles change
@@ -269,7 +268,7 @@ const RentalMap = () => {
     if (!loading && !dataLoading) {
       addMarkers();
     }
-  }, [showMyProperties, showCalculationProperties, properties, calculationProperties, loading, dataLoading]);
+  }, [showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, properties, calculationProperties, loading, dataLoading]);
 
   if (!user) {
     return (
@@ -330,6 +329,18 @@ const RentalMap = () => {
               
               <div className="flex items-center space-x-2">
                 <Switch
+                  id="rental-properties"
+                  checked={showRentalProperties}
+                  onCheckedChange={setShowRentalProperties}
+                />
+                <Label htmlFor="rental-properties" className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                  Utleie-enheter
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
                   id="calculation-properties"
                   checked={showCalculationProperties}
                   onCheckedChange={setShowCalculationProperties}
@@ -337,6 +348,18 @@ const RentalMap = () => {
                 <Label htmlFor="calculation-properties" className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-amber-500 rounded-full border border-white"></div>
                   Kalkulasjoner
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="market-data"
+                  checked={showMarketData}
+                  onCheckedChange={setShowMarketData}
+                />
+                <Label htmlFor="market-data" className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+                  Markedsdata
                 </Label>
               </div>
             </div>
