@@ -285,7 +285,15 @@ KRITISKE INSTRUKSJONER:
     if (!response.ok) {
       const errorData = await response.text();
       console.error('OpenAI API error:', response.status, errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      
+      // Handle specific OpenAI errors
+      if (response.status === 429) {
+        throw new Error('OpenAI API quota exceeded. Please try again later or contact support.');
+      } else if (response.status === 401) {
+        throw new Error('OpenAI API authentication failed. Please check API key configuration.');
+      } else {
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+      }
     }
 
     const aiResult = await response.json();
@@ -564,13 +572,31 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Finn scraper error:', error);
+    
+    // Handle specific error types with user-friendly messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
+    let statusCode = 500;
+    let userMessage = 'An error occurred while fetching property data. Please try again.';
+    
+    if (errorMessage.includes('OpenAI API quota exceeded')) {
+      statusCode = 429;
+      userMessage = 'OpenAI API quota exceeded. Property extraction is temporarily unavailable. Please try again later.';
+    } else if (errorMessage.includes('Property not found') || errorMessage.includes('Failed to fetch property page')) {
+      statusCode = 404;
+      userMessage = 'Property not found. Please check the Finn code and try again.';
+    } else if (errorMessage.includes('OpenAI API authentication failed')) {
+      statusCode = 500;
+      userMessage = 'Service configuration error. Please contact support.';
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error',
-        message: 'An error occurred while fetching property data. Please try again.' 
+        error: errorMessage.includes('quota exceeded') ? 'quota_exceeded' : 'extraction_failed',
+        message: userMessage
       }),
       { 
-        status: 500, 
+        status: statusCode, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );

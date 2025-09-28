@@ -102,7 +102,22 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
 
     } catch (error: any) {
       console.error('Error fetching Finn property:', error);
-      const errorMessage = error.message || 'Kunne ikke hente eiendomsdata';
+      
+      // Handle different error types from the edge function
+      let errorMessage = 'Kunne ikke hente eiendomsdata';
+      
+      if (error.message) {
+        if (error.message.includes('OpenAI API quota exceeded') || error.message.includes('quota exceeded')) {
+          errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+        } else if (error.message.includes('Property not found')) {
+          errorMessage = 'Fant ikke eiendommen. Sjekk Finn-koden og prøv igjen.';
+        } else if (error.message.includes('Service configuration error')) {
+          errorMessage = 'Tjenestekonfigurasjonsfeil. Kontakt support.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setError(errorMessage);
       
       toast({
