@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ const RentalMap = () => {
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
@@ -29,23 +30,35 @@ const RentalMap = () => {
   // Get data
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
 
+  const addDebug = (message: string) => {
+    console.log(`🔧 [DEBUG] ${message}`);
+    setDebugInfo(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
+
   // Fetch Mapbox token
   const fetchMapboxToken = async () => {
     try {
+      addDebug('Initierer Mapbox token henting...');
+      
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error) {
-        throw new Error(`Edge function failed: ${error.message}`);
+        throw new Error(`Edge function feil: ${error.message}`);
       }
 
+      addDebug(`Token respons mottatt: ${JSON.stringify(data)}`);
+
       if (data?.success && data?.token && data.token.startsWith('pk.')) {
+        addDebug(`Gyldig token mottatt: ${data.token.substring(0, 20)}...`);
         setMapboxToken(data.token);
         return data.token;
       } else {
-        throw new Error('Invalid token response');
+        throw new Error(`Ugyldig token respons: ${JSON.stringify(data)}`);
       }
     } catch (error: any) {
-      setError(`Kunne ikke hente Mapbox token: ${error.message}`);
+      const errorMsg = `Token henting feilet: ${error.message}`;
+      addDebug(errorMsg);
+      setError(errorMsg);
       return null;
     }
   };
@@ -56,18 +69,21 @@ const RentalMap = () => {
       try {
         marker?.remove();
       } catch (e) {
-        // Ignore cleanup errors
+        addDebug(`Feil ved fjerning av markør: ${e}`);
       }
     });
     markers.current = [];
+    addDebug(`Fjernet ${markers.current.length} markører`);
   };
 
   // Add markers to map
   const addMarkers = async () => {
     if (!map.current || loading || dataLoading) {
+      addDebug(`Markører ikke klare: map=${!!map.current}, loading=${loading}, dataLoading=${dataLoading}`);
       return;
     }
 
+    addDebug('Starter markør tilføyelse...');
     clearMarkers();
 
     let allMarkers: any[] = [];
@@ -77,80 +93,94 @@ const RentalMap = () => {
       const mapboxModule = await import('mapbox-gl');
       const mapboxgl = mapboxModule.default;
       bounds = new mapboxgl.LngLatBounds();
+      addDebug('Mapbox GL importert OK');
 
       // Add property markers
       if (showMyProperties && properties && properties.length > 0) {
-        properties.forEach((property) => {
+        addDebug(`Legger til ${properties.length} eiendom markører`);
+        properties.forEach((property, index) => {
           if (property.coordinates && property.coordinates.length === 2) {
-            const el = document.createElement('div');
-            el.style.cssText = `
-              width: 14px;
-              height: 14px;
-              background: #3b82f6;
-              border: 2px solid white;
-              border-radius: 50%;
-              cursor: pointer;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            `;
+            try {
+              const el = document.createElement('div');
+              el.style.cssText = `
+                width: 14px;
+                height: 14px;
+                background: #3b82f6;
+                border: 2px solid white;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+              `;
 
-            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-              <div style="padding: 8px; font-family: system-ui;">
-                <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${property.address}</h3>
-                <p style="margin: 4px 0; font-size: 12px; color: #666;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
-                ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
-                ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
-                ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
-              </div>
-            `);
+              const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                <div style="padding: 8px; font-family: system-ui;">
+                  <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${property.address}</h3>
+                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
+                  ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
+                  ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
+                  ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
+                </div>
+              `);
 
-            const marker = new mapboxgl.Marker(el)
-              .setLngLat([property.coordinates[0], property.coordinates[1]])
-              .setPopup(popup)
-              .addTo(map.current);
+              const marker = new mapboxgl.Marker(el)
+                .setLngLat([property.coordinates[0], property.coordinates[1]])
+                .setPopup(popup)
+                .addTo(map.current);
 
-            allMarkers.push(marker);
-            bounds.extend([property.coordinates[0], property.coordinates[1]]);
+              allMarkers.push(marker);
+              bounds.extend([property.coordinates[0], property.coordinates[1]]);
+              addDebug(`Eiendom markør ${index + 1} lagt til på [${property.coordinates[0]}, ${property.coordinates[1]}]`);
+            } catch (markerError) {
+              addDebug(`Feil ved eiendom markør ${index + 1}: ${markerError}`);
+            }
           }
         });
       }
 
       // Add calculation markers
       if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
-        calculationProperties.forEach((calc) => {
+        addDebug(`Legger til ${calculationProperties.length} kalkyle markører`);
+        calculationProperties.forEach((calc, index) => {
           if (calc.coordinates && calc.coordinates.length === 2) {
-            const el = document.createElement('div');
-            el.style.cssText = `
-              width: 14px;
-              height: 14px;
-              background: #f59e0b;
-              border: 2px solid white;
-              border-radius: 50%;
-              cursor: pointer;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            `;
+            try {
+              const el = document.createElement('div');
+              el.style.cssText = `
+                width: 14px;
+                height: 14px;
+                background: #f59e0b;
+                border: 2px solid white;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+              `;
 
-            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-              <div style="padding: 8px; font-family: system-ui;">
-                <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${calc.property_address}</h3>
-                <p style="margin: 4px 0; font-size: 12px; color: #666;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
-                <p style="margin: 4px 0; font-size: 12px; color: #666;">Finn-kode: ${calc.finn_code}</p>
-                ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
-              </div>
-            `);
+              const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                <div style="padding: 8px; font-family: system-ui;">
+                  <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${calc.property_address}</h3>
+                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
+                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Finn-kode: ${calc.finn_code}</p>
+                  ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
+                </div>
+              `);
 
-            const marker = new mapboxgl.Marker(el)
-              .setLngLat([calc.coordinates[0], calc.coordinates[1]])
-              .setPopup(popup)
-              .addTo(map.current);
+              const marker = new mapboxgl.Marker(el)
+                .setLngLat([calc.coordinates[0], calc.coordinates[1]])
+                .setPopup(popup)
+                .addTo(map.current);
 
-            allMarkers.push(marker);
-            bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
+              allMarkers.push(marker);
+              bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
+              addDebug(`Kalkyle markør ${index + 1} lagt til på [${calc.coordinates[0]}, ${calc.coordinates[1]}]`);
+            } catch (markerError) {
+              addDebug(`Feil ved kalkyle markør ${index + 1}: ${markerError}`);
+            }
           }
         });
       }
 
       // Update markers ref
       markers.current = allMarkers;
+      addDebug(`Totalt ${allMarkers.length} markører lagt til`);
 
       // Center map on markers
       if (allMarkers.length > 0) {
@@ -158,25 +188,31 @@ const RentalMap = () => {
           const lngLat = allMarkers[0].getLngLat();
           map.current.setCenter([lngLat.lng, lngLat.lat]);
           map.current.setZoom(12);
+          addDebug(`Sentrert på enkelt markør: [${lngLat.lng}, ${lngLat.lat}]`);
         } else {
           map.current.fitBounds(bounds, {
             padding: 50,
             maxZoom: 14
           });
+          addDebug(`Tilpasset til bounds for ${allMarkers.length} markører`);
         }
       } else {
         map.current.setCenter([10.7522, 59.9139]);
         map.current.setZoom(6);
+        addDebug('Ingen markører - bruker standard Oslo senter');
       }
     } catch (error) {
-      console.error('Failed to add markers:', error);
+      const errorMsg = `Markør feil: ${error}`;
+      addDebug(errorMsg);
+      console.error(errorMsg, error);
     }
   };
 
-  // Initialize map once
+  // Initialize map
   useEffect(() => {
     if (!user) {
       setLoading(false);
+      addDebug('Ingen bruker - avslutter');
       return;
     }
 
@@ -185,70 +221,127 @@ const RentalMap = () => {
 
     const initializeMap = async () => {
       try {
+        addDebug('Starter kart initialisering...');
+        
         // Load Mapbox GL
         const mapboxModule = await import('mapbox-gl');
         mapboxgl = mapboxModule.default;
+        addDebug('Mapbox GL modul lastet');
 
         // Get token
         const token = mapboxToken || await fetchMapboxToken();
-        if (!token) return;
+        if (!token) {
+          addDebug('Ingen token mottatt - avbryter');
+          return;
+        }
 
         // Set access token
         mapboxgl.accessToken = token;
+        addDebug(`Mapbox token satt: ${token.substring(0, 20)}...`);
 
         // Create map
         if (mapContainer.current && !map.current) {
-          mapInstance = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/light-v11',
-            center: [10.7522, 59.9139], // Oslo
-            zoom: 6,
-            attributionControl: false,
-            preserveDrawingBuffer: true
-          });
+          addDebug('Oppretter kart instans...');
+          
+          // Try different map styles to find one that works
+          const styles = [
+            'mapbox://styles/mapbox/streets-v11',
+            'mapbox://styles/mapbox/light-v10', 
+            'mapbox://styles/mapbox/outdoors-v11',
+            'mapbox://styles/mapbox/satellite-streets-v11'
+          ];
 
-          map.current = mapInstance;
+          for (const style of styles) {
+            try {
+              addDebug(`Prøver kartsstil: ${style}`);
+              
+              mapInstance = new mapboxgl.Map({
+                container: mapContainer.current,
+                style: style,
+                center: [10.7522, 59.9139], // Oslo
+                zoom: 6,
+                attributionControl: false,
+                preserveDrawingBuffer: true
+              });
+
+              map.current = mapInstance;
+              break;
+            } catch (styleError) {
+              addDebug(`Kartsstil ${style} feilet: ${styleError}`);
+              continue;
+            }
+          }
+
+          if (!mapInstance) {
+            throw new Error('Kunne ikke opprette kart med noen stil');
+          }
 
           // Add navigation controls
           const navControl = new mapboxgl.NavigationControl();
           mapInstance.addControl(navControl, 'top-right');
+          addDebug('Navigasjonskontroller lagt til');
 
-          // Wait for map to load and handle style loading
+          // Wait for map to load
           mapInstance.on('load', () => {
-            console.log('✅ Map loaded successfully');
+            addDebug('✅ Kart lastet ferdig');
             setLoading(false);
             setError(null);
             addMarkers();
           });
 
           mapInstance.on('styledata', () => {
-            console.log('🎨 Map style loaded');
+            addDebug('🎨 Kartsstil lastet');
           });
 
-          // Handle map errors more specifically
+          mapInstance.on('sourcedataloading', (e: any) => {
+            addDebug(`📡 Laster kartdata: ${e.sourceId}`);
+          });
+
+          mapInstance.on('sourcedata', (e: any) => {
+            addDebug(`✅ Kartdata lastet: ${e.sourceId}`);
+          });
+
+          // Handle map errors
           mapInstance.on('error', (e: any) => {
-            console.log('❌ Map error:', e);
-            // Only set error for critical issues, not tile loading errors
+            const errorDetails = {
+              type: e.type,
+              error: e.error ? {
+                message: e.error.message,
+                status: e.error.status,
+                url: e.error.url
+              } : 'Ukjent feil'
+            };
+            
+            addDebug(`❌ Kartfeil: ${JSON.stringify(errorDetails)}`);
+            
+            // Only set error for critical issues
             if (e.error && e.error.status === 401) {
-              setError('Kartfeil: Autorisasjonsfeil med Mapbox token');
+              setError('Kartfeil: Ugyldig Mapbox token');
               setLoading(false);
+            } else if (e.error && e.error.status === 403) {
+              setError('Kartfeil: Ikke tilgang til kartsstil - prøver alternative stiler...');
+              // Try next style automatically
             } else if (e.error && e.error.message && e.error.message.includes('network')) {
               setError('Kartfeil: Nettverksfeil - sjekk internettforbindelsen');
               setLoading(false);
             }
-            // Ignore tile-specific errors as they're usually temporary
           });
 
-          // Force map to refresh after a short delay to help with tile loading
+          // Force map refresh
           setTimeout(() => {
-            if (mapInstance && mapInstance.isStyleLoaded()) {
+            if (mapInstance && mapInstance.isStyleLoaded && mapInstance.isStyleLoaded()) {
               mapInstance.resize();
-              mapInstance.redraw();
+              addDebug('Kart størrelse justert');
             }
           }, 1000);
+
+        } else {
+          addDebug('Kart container ikke tilgjengelig eller kart allerede opprettet');
         }
       } catch (error: any) {
-        setError(`Kunne ikke initialisere kartet: ${error.message}`);
+        const errorMsg = `Kart initialisering feilet: ${error.message}`;
+        addDebug(errorMsg);
+        setError(errorMsg);
         setLoading(false);
       }
     };
@@ -258,6 +351,7 @@ const RentalMap = () => {
     // Cleanup
     return () => {
       if (mapInstance) {
+        addDebug('Rydder opp kart instans');
         mapInstance.remove();
       }
       if (map.current) {
@@ -270,6 +364,7 @@ const RentalMap = () => {
   // Update markers when data or toggles change
   useEffect(() => {
     if (!loading && !dataLoading) {
+      addDebug('Data eller innstillinger endret - oppdaterer markører');
       addMarkers();
     }
   }, [
@@ -283,6 +378,18 @@ const RentalMap = () => {
     dataLoading
   ]);
 
+  const resetMap = () => {
+    addDebug('Tilbakestiller kart...');
+    setError(null);
+    setLoading(true);
+    setMapboxToken(null);
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
+    clearMarkers();
+  };
+
   if (!user) {
     return (
       <Card className="h-[600px] flex items-center justify-center">
@@ -295,16 +402,24 @@ const RentalMap = () => {
 
   if (error) {
     return (
-      <Card className="h-[600px] flex items-center justify-center">
-        <CardContent className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button 
-            onClick={() => {
-              setError(null);
-              setLoading(true);
-              fetchMapboxToken();
-            }}
-          >
+      <Card className="h-[600px]">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-2 text-red-500">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-semibold">Kartfeil</h3>
+          </div>
+          <p className="text-red-600">{error}</p>
+          
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            <h4 className="font-medium text-sm">Debug informasjon:</h4>
+            <div className="text-xs font-mono space-y-1 max-h-40 overflow-y-auto">
+              {debugInfo.map((info, i) => (
+                <div key={i} className="text-gray-600">{info}</div>
+              ))}
+            </div>
+          </div>
+          
+          <Button onClick={resetMap}>
             Prøv igjen
           </Button>
         </CardContent>
@@ -326,6 +441,18 @@ const RentalMap = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Debug Panel */}
+            {debugInfo.length > 0 && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">System status:</h4>
+                <div className="text-xs font-mono space-y-1 max-h-32 overflow-y-auto">
+                  {debugInfo.slice(-5).map((info, i) => (
+                    <div key={i} className="text-blue-700">{info}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Map Controls */}
             <div className="flex flex-wrap gap-6">
               <div className="flex items-center space-x-2">
