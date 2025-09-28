@@ -162,36 +162,48 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
         
         // Try to fetch the actual error response manually
         try {
-          const authToken = (supabase as any).auth.session?.access_token || 
-                          localStorage.getItem('sb-rkhzyzuttsvsjcgzrokt-auth-token');
+          // Get current session and token properly
+          const { data: { session } } = await supabase.auth.getSession();
+          const authToken = session?.access_token;
           
+          console.log('🔐 Auth session available:', !!session);
           console.log('🔐 Auth token available:', !!authToken);
+          console.log('🔐 User ID:', session?.user?.id);
           
-          const response = await fetch(`https://rkhzyzuttsvsjcgzrokt.supabase.co/functions/v1/finn-property-scraper`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJraHp5enV0dHN2c2pjZ3pyb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjM5NDMsImV4cCI6MjA3MTE5OTk0M30.CU5UT8k9b8AIW_WF2a5dHc3X8sV5ugXF5QmAhVMGwoc',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ finnCode: cleanCode })
-          });
-          
-          console.log('📡 Manual fetch response status:', response.status);
-          console.log('📡 Manual fetch response ok:', response.ok);
-          
-          const errorData = await response.json();
-          console.log('📄 Manual fetch response data:', errorData);
-          
-          if (errorData.message) {
-            console.log('✅ Found actual error message from edge function:', errorData.message);
-            errorMessage = errorData.message;
-          } else if (errorData.error === 'quota_exceeded') {
-            console.log('🚫 Quota exceeded detected from manual fetch');
-            errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
-          } else if (errorData.error === 'property_not_found') {
-            console.log('🏠 Property not found detected from manual fetch');  
-            errorMessage = 'Fant ikke eiendommen. Sjekk Finn-koden og prøv igjen.';
+          if (!authToken) {
+            console.log('❌ No auth token available, user might not be logged in');
+            errorMessage = 'Du må være innlogget for å bruke denne funksjonen.';
+          } else {
+            const response = await fetch(`https://rkhzyzuttsvsjcgzrokt.supabase.co/functions/v1/finn-property-scraper`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJraHp5enV0dHN2c2pjZ3pyb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjM5NDMsImV4cCI6MjA3MTE5OTk0M30.CU5UT8k9b8AIW_WF2a5dHc3X8sV5ugXF5QmAhVMGwoc',
+                'Content-Type': 'application/json',
+                'x-client-info': 'supabase-js-web/2.58.0'
+              },
+              body: JSON.stringify({ finnCode: cleanCode })
+            });
+            
+            console.log('📡 Manual fetch response status:', response.status);
+            console.log('📡 Manual fetch response ok:', response.ok);
+            
+            const errorData = await response.json();
+            console.log('📄 Manual fetch response data:', errorData);
+            
+            if (errorData.success === false && errorData.message) {
+              console.log('✅ Found actual error message from edge function:', errorData.message);
+              errorMessage = errorData.message;
+            } else if (errorData.error === 'quota_exceeded') {
+              console.log('🚫 Quota exceeded detected from manual fetch');
+              errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+            } else if (errorData.error === 'property_not_found') {
+              console.log('🏠 Property not found detected from manual fetch');  
+              errorMessage = 'Fant ikke eiendommen. Sjekk Finn-koden og prøv igjen.';
+            } else if (response.status === 403) {
+              console.log('🔐 Authentication failed - invalid JWT');
+              errorMessage = 'Sesjonen din har utløpt. Vennligst logg inn på nytt.';
+            }
           }
         } catch (fetchError) {
           console.error('❌ Manual fetch also failed:', fetchError);
