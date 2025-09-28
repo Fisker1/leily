@@ -359,7 +359,15 @@ KRITISKE INSTRUKSJONER:
 
   } catch (error) {
     console.error('Error extracting Finn property data with AI:', error);
-    return null;
+    // Re-throw specific errors instead of returning null so they can be handled properly
+    if (error instanceof Error && (
+      error.message.includes('OpenAI API quota exceeded') ||
+      error.message.includes('OpenAI API authentication failed') ||
+      error.message.includes('OpenAI API error')
+    )) {
+      throw error; // Let the main error handler deal with OpenAI-specific errors
+    }
+    return null; // Only return null for other extraction errors
   }
 }
 
