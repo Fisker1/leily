@@ -200,7 +200,7 @@ const RentalMap = () => {
         if (mapContainer.current && !map.current) {
           mapInstance = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v12',
+            style: 'mapbox://styles/mapbox/light-v11',
             center: [10.7522, 59.9139], // Oslo
             zoom: 6,
             attributionControl: false,
