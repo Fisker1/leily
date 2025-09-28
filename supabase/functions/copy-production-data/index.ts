@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       'audit_log'
     ];
 
-    let copiedTables = [];
+    const copiedTables = [];
     let totalRecords = 0;
 
     // Copy each table

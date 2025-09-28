@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
   if (host.includes('stage.leily.no') || host.includes('vercel.app')) {
     // Log only flags, never secrets
     // eslint-disable-next-line no-console
-    console.info('env flags', { COMING_SOON: (import.meta as any).env?.VITE_COMING_SOON })
+    console.info('env flags', { COMING_SOON: (import.meta.env as Record<string, unknown>)?.VITE_COMING_SOON })
   }
 }
 

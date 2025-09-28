@@ -124,6 +124,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        // Check if this is the staging test user and try to create it automatically
+        const isStaging = window.location.host.includes('stage') || window.location.host.includes('localhost') || window.location.host.includes('vercel.app');
+        const isTestUser = email === 'anderslundoy@protonmail.com' && password === 'blåmeis';
+        
+        if (isStaging && isTestUser && (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed'))) {
+          try {
+            console.log('🥷 Attempting to create staging test user automatically...');
+            const createResponse = await supabase.functions.invoke('create-staging-user', {
+              method: 'POST'
+            });
+            
+            if (!createResponse.error) {
+              console.log('🥷 Test user created, retrying login...');
+              // Retry the login after user creation
+              const { error: retryError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
+              
+              if (!retryError) {
+                // Success on retry, log it and return
+                await logSecurityEvent('auth_success', 'auth_attempts', {
+                  email,
+                  timestamp: new Date().toISOString(),
+                  security_level: 'INFO',
+                  note: 'staging_test_user_auto_created'
+                });
+                return { error: null };
+              } else {
+                // Still failed after creation
+                return { error: retryError };
+              }
+            }
+          } catch (createError) {
+            console.error('🥷 Failed to create staging user:', createError);
+          }
+        }
+        
         // Log failed authentication attempt with enhanced context
         await logSecurityEvent('auth_failure', 'auth_attempts', {
           email,

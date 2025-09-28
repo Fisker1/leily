@@ -66,6 +66,26 @@ Simply open [Lovable](https://lovable.dev/projects/d3e647d9-ae8f-489e-b9be-57562
 
 ## Can I connect a custom domain to my Lovable project?
 
+## Documentation
+
+Comprehensive API and component documentation is available in the `docs/` directory:
+
+- `docs/index.md` — Overview and navigation
+- `docs/apis/supabase-functions.md` — Supabase Edge Functions (HTTP APIs)
+- `docs/libraries/env.md` — Environment configuration helpers
+- `docs/libraries/utils.md` — Utility helpers
+- `docs/libraries/tenant-security.md` — Tenant security data helpers
+- `docs/contexts/auth.md` — Authentication context API
+- `docs/contexts/language.md` — Language context and translations
+- `docs/hooks/` — React hooks documentation
+  - `useRateLimit.md`
+  - `usePropertyData.md`
+  - `useOptimizedPropertyData.md`
+  - `useCalculatorData.md`
+  - `useInputValidation.md`
+
+Each page includes purpose, public API, parameters, return values, and examples.
+
 Yes, you can!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
