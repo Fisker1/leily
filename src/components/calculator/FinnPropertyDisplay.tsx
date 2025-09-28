@@ -19,327 +19,220 @@ export const FinnPropertyDisplay: React.FC<FinnPropertyDisplayProps> = ({
   onClearData,
   onViewOnFinn
 }) => {
-  // Group facilities into meaningful categories
-  const facilityCategories = {
-    // Indoor features
-    indoor: [
-      { key: 'fireplace', label: 'Peis', condition: propertyData.fireplace },
-      { key: 'elevator', label: 'Heis', condition: propertyData.elevator },
-      { key: 'basement', label: 'Kjeller', condition: propertyData.basement },
-      { key: 'attic', label: 'Loft', condition: propertyData.attic }
-    ],
-    // Outdoor features  
-    outdoor: [
-      { key: 'balcony', label: 'Balkong', condition: propertyData.balcony },
-      { key: 'terrace', label: 'Terrasse', condition: propertyData.terrace },
-      { key: 'garden', label: 'Hage', condition: propertyData.garden },
-      { key: 'garage', label: 'Garasje', condition: propertyData.garage }
-    ],
-    // Utilities & Services
-    utilities: [
-      { key: 'publicWaterSewer', label: 'Offentlig vann/kloakk', condition: propertyData.publicWaterSewer },
-      { key: 'internet', label: 'Bredbåndstilknytning', condition: propertyData.internet || propertyData.internetIncluded },
-      { key: 'chargingStation', label: 'Lademulighet', condition: propertyData.chargingStation }
-    ],
-    // Lifestyle & Location
-    lifestyle: [
-      { key: 'childFriendly', label: 'Barnevennlig', condition: propertyData.childFriendly },
-      { key: 'petsAllowed', label: 'Kjæledyr tillatt', condition: propertyData.petsAllowed },
-      { key: 'quietArea', label: 'Rolig', condition: propertyData.quietArea },
-      { key: 'centralLocation', label: 'Sentralt', condition: propertyData.centralLocation },
-      { key: 'hiking', label: 'Turterreng', condition: propertyData.hiking },
-      { key: 'viewType', label: propertyData.viewType, condition: !!propertyData.viewType }
-    ]
+  // Helper function to check if a value exists and is valid
+  const hasValue = (value: any): boolean => {
+    return value !== null && value !== undefined && value !== '' && value !== 0;
   };
 
-  // Get all active facilities
-  const allActiveFacilities = Object.values(facilityCategories)
-    .flat()
-    .filter(facility => facility.condition)
-    .map(facility => facility.label);
+  // Get valid price data
+  const priceData = [
+    { label: 'Prisantydning', value: propertyData.price, primary: true },
+    { label: 'Totalpris', value: propertyData.totalPrice },
+    { label: 'Omkostninger', value: propertyData.additionalCosts },
+    { label: 'Formuesverdi', value: propertyData.propertyValue },
+    { label: 'Pris per m²', value: propertyData.pricePerSqm, suffix: '/m²' }
+  ].filter(item => hasValue(item.value));
 
-  // Add raw facilities that aren't covered by our structured approach
-  if (propertyData.rawFacilities) {
+  // Get valid key information
+  const keyInfo = [
+    { label: 'Boligtype', value: propertyData.propertyType },
+    { label: 'Eieform', value: propertyData.ownershipType },
+    { label: 'Intern bruksareal', value: propertyData.livingArea, suffix: ' m²' },
+    { label: 'Tomteareal', value: propertyData.totalArea, suffix: ' m²' },
+    { label: 'Balkong/Terrasse', value: propertyData.balconyArea, suffix: ' m²' },
+    { label: 'Soverom', value: propertyData.bedrooms },
+    { label: 'Rom', value: propertyData.totalRooms },
+    { label: 'Byggeår', value: propertyData.yearBuilt },
+    { label: 'Energimerking', value: propertyData.energyRating },
+    { label: 'Etasje', value: propertyData.floor }
+  ].filter(item => hasValue(item.value));
+
+  // Get valid monthly costs
+  const monthlyCosts = [
+    { label: 'Kommunale avg.', value: propertyData.municipalFees, suffix: '/mnd' },
+    { label: 'Felleskost', value: propertyData.sharedCosts, suffix: '/mnd' },
+    { label: 'Fellesformue', value: propertyData.sharedEquity },
+    { label: 'Totalt per måned', value: propertyData.totalMonthlyCosts, suffix: '/mnd', primary: true }
+  ].filter(item => hasValue(item.value));
+
+  // Get facilities from both structured and raw data
+  const facilities: string[] = [];
+  
+  // Add structured facilities
+  const structuredFacilities = [
+    { condition: propertyData.fireplace, label: 'Peis/Ildsted' },
+    { condition: propertyData.balcony, label: 'Balkong' },
+    { condition: propertyData.terrace, label: 'Terrasse' },
+    { condition: propertyData.garden, label: 'Hage' },
+    { condition: propertyData.garage, label: 'Garasje' },
+    { condition: propertyData.publicWaterSewer, label: 'Offentlig vann/kloakk' },
+    { condition: propertyData.internet || propertyData.internetIncluded, label: 'Bredbåndstilknytning' },
+    { condition: propertyData.childFriendly, label: 'Barnevennlig' },
+    { condition: propertyData.petsAllowed, label: 'Kjæledyr tillatt' },
+    { condition: propertyData.quietArea, label: 'Rolig' },
+    { condition: propertyData.centralLocation, label: 'Sentralt' },
+    { condition: propertyData.hiking, label: 'Turterreng' },
+    { condition: propertyData.chargingStation, label: 'Lademulighet' },
+    { condition: propertyData.elevator, label: 'Heis' },
+    { condition: propertyData.basement, label: 'Kjeller' },
+    { condition: propertyData.attic, label: 'Loft' }
+  ];
+
+  structuredFacilities.forEach(facility => {
+    if (facility.condition) {
+      facilities.push(facility.label);
+    }
+  });
+
+  // Add raw facilities that aren't duplicated
+  if (propertyData.rawFacilities && Array.isArray(propertyData.rawFacilities)) {
     propertyData.rawFacilities.forEach(facility => {
-      if (!allActiveFacilities.some(af => af.toLowerCase().includes(facility.toLowerCase()))) {
-        allActiveFacilities.push(facility);
+      if (!facilities.some(f => f.toLowerCase().includes(facility.toLowerCase()))) {
+        facilities.push(facility);
       }
     });
   }
 
+  // Add view type if available
+  if (hasValue(propertyData.viewType)) {
+    facilities.push(`Utsikt: ${propertyData.viewType}`);
+  }
+
   return (
     <div className="space-y-4">
-      {/* Header with title and actions */}
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="font-semibold text-lg">{propertyData.title}</h3>
-          <p className="text-sm text-muted-foreground">{propertyData.address}</p>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base truncate">{propertyData.title || `Eiendom ${propertyData.finnCode}`}</h3>
+          <p className="text-sm text-muted-foreground truncate">{propertyData.address || 'Adresse ikke tilgjengelig'}</p>
           {cached && (
             <Badge variant="outline" className="mt-1 text-xs">
-              Data automatisk hentet fra Finn.no og lagret i 6 måneder
+              Data hentet fra Finn.no
             </Badge>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           {onViewOnFinn && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onViewOnFinn}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={onViewOnFinn}>
               <ExternalLink className="w-3 h-3 mr-1" />
               Vis på Finn.no
             </Button>
           )}
           {onClearData && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearData}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={onClearData}>
               Fjern data
             </Button>
           )}
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Main content grid */}
+      <div className="grid gap-4 md:grid-cols-3">
         {/* Price Section */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Pris</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground">Prisantydning</p>
-              <p className="text-xl font-bold text-primary">
-                {formatNumberWithSpaces(propertyData.price)} kr
-              </p>
-            </div>
-            
-            {propertyData.totalPrice && (
-              <div>
-                <p className="text-xs text-muted-foreground">Totalpris</p>
-                <p className="text-sm font-semibold">
-                  {formatNumberWithSpaces(propertyData.totalPrice)} kr
-                </p>
-              </div>
-            )}
-            
-            {propertyData.additionalCosts && (
-              <div>
-                <p className="text-xs text-muted-foreground">Omkostninger</p>
-                <p className="text-sm font-semibold">
-                  {formatNumberWithSpaces(propertyData.additionalCosts)} kr
-                </p>
-              </div>
-            )}
-            
-            {propertyData.propertyValue && (
-              <div>
-                <p className="text-xs text-muted-foreground">Formuesverdi</p>
-                <p className="text-sm font-semibold">
-                  {formatNumberWithSpaces(propertyData.propertyValue)} kr
-                </p>
-              </div>
-            )}
-
-            {propertyData.pricePerSqm && (
-              <div>
-                <p className="text-xs text-muted-foreground">Pris per m²</p>
-                <p className="text-sm font-semibold">
-                  {formatNumberWithSpaces(propertyData.pricePerSqm)} kr/m²
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {priceData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Pris</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {priceData.map((item, index) => (
+                <div key={index}>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className={`font-semibold ${item.primary ? 'text-lg text-primary' : 'text-sm'}`}>
+                    {typeof item.value === 'number' ? formatNumberWithSpaces(item.value) : item.value} kr{item.suffix || ''}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Key Information */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Nøkkelinfo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Boligtype</p>
-                <p className="font-medium capitalize">{propertyData.propertyType}</p>
+        {keyInfo.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Nøkkelinfo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {keyInfo.map((item, index) => (
+                  <div key={index}>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="font-medium">
+                      {typeof item.value === 'string' && item.value.toLowerCase() === item.value ? 
+                        item.value.charAt(0).toUpperCase() + item.value.slice(1) : 
+                        item.value}{item.suffix || ''}
+                    </p>
+                  </div>
+                ))}
               </div>
-              
-              {propertyData.ownershipType && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Eieform</p>
-                  <p className="font-medium">{propertyData.ownershipType}</p>
-                </div>
-              )}
-              
-              <div>
-                <p className="text-xs text-muted-foreground">Intern bruksareal</p>
-                <p className="font-medium">{propertyData.livingArea} m²</p>
-              </div>
-              
-              {propertyData.totalArea && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Tomteareal</p>
-                  <p className="font-medium">{propertyData.totalArea} m²</p>
-                </div>
-              )}
-              
-              {propertyData.balconyArea && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Balkong/Terrasse</p>
-                  <p className="font-medium">{propertyData.balconyArea} m²</p>
-                </div>
-              )}
-              
-              {propertyData.bedrooms && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Soverom</p>
-                  <p className="font-medium">{propertyData.bedrooms}</p>
-                </div>
-              )}
-              
-              {propertyData.totalRooms && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Totalt rom</p>
-                  <p className="font-medium">{propertyData.totalRooms}</p>
-                </div>
-              )}
-              
-              {propertyData.yearBuilt && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Byggeår</p>
-                  <p className="font-medium">{propertyData.yearBuilt}</p>
-                </div>
-              )}
-              
-              {propertyData.energyRating && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Energimerking</p>
-                  <p className="font-medium">{propertyData.energyRating}</p>
-                </div>
-              )}
-              
-              {propertyData.floor && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Etasje</p>
-                  <p className="font-medium">{propertyData.floor}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Facilities */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Fasiliteter</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {allActiveFacilities.map((facility, index) => (
-                <Badge
-                  key={`${facility}-${index}`}
-                  variant="secondary"
-                  className="text-xs"
-                >
-                  {facility}
-                </Badge>
-              ))}
-              {allActiveFacilities.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Ingen fasiliteter registrert
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {facilities.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Fasiliteter</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-1">
+                {facilities.map((facility, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5">
+                    {facility}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Monthly Costs Section - if available */}
-      {(propertyData.municipalFees || 
-        propertyData.sharedCosts || 
-        propertyData.sharedEquity || 
-        propertyData.totalMonthlyCosts) && (
+      {/* Monthly Costs - separate row if available */}
+      {monthlyCosts.length > 0 && (
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Månedlige kostnader</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              {propertyData.municipalFees && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Kommunale avg.</p>
-                  <p className="font-semibold">{formatNumberWithSpaces(propertyData.municipalFees)} kr/mnd</p>
+              {monthlyCosts.map((item, index) => (
+                <div key={index}>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className={`font-semibold ${item.primary ? 'text-primary' : ''}`}>
+                    {formatNumberWithSpaces(item.value)} kr{item.suffix || ''}
+                  </p>
                 </div>
-              )}
-              
-              {propertyData.sharedCosts && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Felleskost</p>
-                  <p className="font-semibold">{formatNumberWithSpaces(propertyData.sharedCosts)} kr/mnd</p>
-                </div>
-              )}
-              
-              {propertyData.sharedEquity && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Fellesformue</p>
-                  <p className="font-semibold">{formatNumberWithSpaces(propertyData.sharedEquity)} kr</p>
-                </div>
-              )}
-              
-              {propertyData.totalMonthlyCosts && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Totalt per måned</p>
-                  <p className="font-semibold text-primary">{formatNumberWithSpaces(propertyData.totalMonthlyCosts)} kr/mnd</p>
-                </div>
-              )}
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Agent Information - if available */}
-      {(propertyData.agentName || propertyData.agencyName) && (
+      {/* Agent Information - compact version */}
+      {(hasValue(propertyData.agentName) || hasValue(propertyData.agencyName)) && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Kontaktinformasjon</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Kontakt</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              {propertyData.agentName && (
+            <div className="text-sm space-y-1">
+              {hasValue(propertyData.agentName) && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Megler</p>
-                  <p className="font-medium">{propertyData.agentName}</p>
-                  {propertyData.agentTitle && (
-                    <p className="text-xs text-muted-foreground">{propertyData.agentTitle}</p>
+                  <span className="font-medium">{propertyData.agentName}</span>
+                  {hasValue(propertyData.agentTitle) && (
+                    <span className="text-muted-foreground ml-2">{propertyData.agentTitle}</span>
                   )}
                 </div>
               )}
-              
-              {propertyData.agencyName && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Meglerfirma</p>
-                  <p className="font-medium">{propertyData.agencyName}</p>
-                </div>
+              {hasValue(propertyData.agencyName) && (
+                <p className="text-muted-foreground">{propertyData.agencyName}</p>
               )}
-              
-              {propertyData.agentPhone && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Telefon</p>
-                  <p className="font-medium">{propertyData.agentPhone}</p>
-                </div>
-              )}
-              
-              {propertyData.agentEmail && (
-                <div>
-                  <p className="text-xs text-muted-foreground">E-post</p>
-                  <p className="font-medium">{propertyData.agentEmail}</p>
-                </div>
-              )}
+              <div className="flex gap-4 text-xs text-muted-foreground">
+                {hasValue(propertyData.agentPhone) && <span>{propertyData.agentPhone}</span>}
+                {hasValue(propertyData.agentEmail) && <span>{propertyData.agentEmail}</span>}
+              </div>
             </div>
           </CardContent>
         </Card>
