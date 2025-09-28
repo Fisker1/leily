@@ -28,7 +28,7 @@ console.log(getCurrentEnvironment());
 
 Required variables:
 - `VITE_SUPABASE_URL` (URL)
-- `VITE_SUPABASE_ANON_KEY` (string)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` (string)
 - `VITE_SUPABASE_PROJECT_ID` (string)
 
 Optional:

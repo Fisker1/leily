@@ -80,7 +80,7 @@ For staging må disse være satt:
 ```env
 VITE_ENVIRONMENT=staging
 VITE_SUPABASE_URL=https://your-staging-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-staging-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=your-staging-anon-key
 VITE_SUPABASE_PROJECT_ID=your-staging-project-id
 VITE_APP_URL=https://stage.leily.no
 ```

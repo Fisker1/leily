@@ -57,7 +57,7 @@ Koden er nå forberedt for å støtte staging og produksjonsmiljøer. Her er hva
 Bruk Vercel med to prosjekter: `leily-staging` og `leily-production`. Sett miljøvariabler i hvert prosjekt.
 
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_PROJECT_ID`
 - `VITE_ENVIRONMENT` (staging | production)
 - `VITE_APP_URL` (https://staging... / https://www...)
@@ -69,7 +69,7 @@ Bruk Vercel med to prosjekter: `leily-staging` og `leily-production`. Sett milj�
 ```
 VITE_ENVIRONMENT=staging
 VITE_SUPABASE_URL=https://din-staging-project.supabase.co
-VITE_SUPABASE_ANON_KEY=din-staging-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=din-staging-anon-key
 VITE_SUPABASE_PROJECT_ID=din-staging-project-id
 VITE_APP_URL=https://staging.leily.no
 VITE_ENABLE_ANALYTICS=false
@@ -80,7 +80,7 @@ VITE_DEBUG=true
 ```
 VITE_ENVIRONMENT=production
 VITE_SUPABASE_URL=https://din-prod-project.supabase.co
-VITE_SUPABASE_ANON_KEY=din-prod-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=din-prod-anon-key
 VITE_SUPABASE_PROJECT_ID=din-prod-project-id
 VITE_APP_URL=https://www.leily.no
 VITE_ENABLE_ANALYTICS=true
