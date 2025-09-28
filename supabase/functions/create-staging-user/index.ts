@@ -52,9 +52,9 @@ serve(async (req) => {
         role: 'user'
       },
       {
-        email: 'ambassadør@leily.no',
+        email: 'ambassador@leily.no',
         password: 'hærverk', 
-        full_name: 'Ambassadør Bruker',
+        full_name: 'Ambassador Bruker',
         subscription_tier: 'premium',
         role: 'ambassador'
       }
@@ -132,6 +132,7 @@ serve(async (req) => {
         console.log(`✅ Profile updated successfully for: ${testUser.email}`)
       }
 
+      // Assign role if not default user
       console.log(`🔧 Assigning role "${testUser.role}" to ${testUser.email}`)
       if (testUser.role === 'ambassador') {
         console.log('🎯 Assigning ambassador role specifically')
