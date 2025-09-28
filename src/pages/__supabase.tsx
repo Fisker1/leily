@@ -1,21 +1,21 @@
 import React from 'react'
-import { env } from '@/lib/env'
+import { CURRENT_ENV, SUPABASE_CONFIG } from '@/lib/env'
 
 export default function SupabaseInfo() {
   let host = 'invalid'
   try { 
-    const url = env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const url = SUPABASE_CONFIG.url || 'https://placeholder.supabase.co';
     host = new URL(url).host;
   } catch (error) { 
     console.warn('Invalid Supabase URL:', error);
   }
   const info = {
-    environment: env.VITE_ENVIRONMENT || 'unknown',
+    environment: CURRENT_ENV,
     supabase: {
-      url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-      anonKeyPresent: Boolean(env.VITE_SUPABASE_ANON_KEY && env.VITE_SUPABASE_ANON_KEY.length > 5),
+      url: SUPABASE_CONFIG.url || 'https://placeholder.supabase.co',
+      anonKeyPresent: Boolean(SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.anonKey.length > 5),
       host,
-      projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id',
+      projectId: SUPABASE_CONFIG.projectId || 'placeholder-id',
     },
   }
   return (
