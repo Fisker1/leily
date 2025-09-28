@@ -153,68 +153,82 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
       console.log(`Structured data preview: ${structuredData.substring(0, 200)}...`);
     }
 
-    const prompt = `Du er en EKSPERT på å ekstrahere EIENDOMSDATA fra Finn.no HTML. FOKUSER SPESIELT PÅ PRISER!
+    const prompt = `Du er en EKSPERT på å ekstrahere EKSAKTE TALL fra Finn.no eiendomsannonser. 
 
-KRITISK INSTRUKS: SØK ETTER FAKTISKE TALL - IKKE BRUK 0 SOM PLACEHOLDER!
+KRITISK: Finn FAKTISKE tall fra HTML-en - ALDRI oppfinn data!
 
-FINN DISSE PRISENE (SØK I HTML ETTER EKSAKTE TALL):
-1. HOVEDPRIS - søk etter: "Prisantydning", "Totalpris", "Pris", "kr" 
-   - Ofte format: "4 500 000 kr", "4.500.000 kr", "4,5 mill kr"
-   - Konverter "mill" til 000000 (4,5 mill = 4500000)
-2. OMKOSTNINGER - søk etter: "Omkostninger", "Tilleggskostnader"
-3. FELLESK - søk etter: "Felleskost", "Fellesutgifter", "kr/mnd"
-4. KOMMUNALE - søk etter: "Kommunale avgifter", "kr/år" (del på 12 hvis per år)
+SØK ETTER DISSE EKSAKTE SEKSJONENE OG TEKSTENE:
 
-FINN DISSE AREALENE (SØK ETTER m² TALL):
-1. BOLIGAREAL - "Boligareal", "Primærareal", "BRA-i", "m²"
-2. TOTALAREAL - "Totalareal", "Bruksareal", "BRA"  
-3. TERRASSE/BALKONG - "Balkong", "Terrasse", "TBA"
+1. PRISANTYDNING (hovedpris): 
+   - Søk etter "Prisantydning" etterfulgt av tall + "kr"
+   - Format: "3 990 000 kr", "4.500.000 kr" 
+   - Dette er HOVEDPRISEN som skal brukes som "price"
 
-EIENDOMSTYPE: leilighet, enebolig, rekkehus, tomannsbolig
-SOVEROM: "soverom", "Soverommer" (tall)
-BYGGEÅR: "Byggeår", "bygget" (årstall)
+2. TOTALPRIS:
+   - Søk etter "Totalpris" etterfulgt av tall + "kr" 
+   - Dette inkluderer omkostninger
 
-MEGLER INFO (søk grundig):
-- Navn: Finn fullt navn på megler
-- Telefon: Format XX XX XX XX eller +47 XX XX XX XX  
-- Firma: DNB, Privatmegleren, MNEF, etc.
+3. OMKOSTNINGER:
+   - Søk etter "Omkostninger" etterfulgt av tall + "kr"
 
-VISNINGSDATOER:
-- "Visning", "Åpen visning" + dato og tid
-- Format: "Torsdag 3. oktober 15:30-16:15"
+4. FELLESKOST/MND:
+   - Søk etter "Felleskost/mnd" eller "Felleskost" etterfulgt av tall + "kr"
+   - Dette er månedlige fellesutgifter
 
-HTML INNHOLD MED PRISMARKØRER:
+5. KOMMUNALE AVG:
+   - Søk etter "Kommunale avg" etterfulgt av tall + "kr per år"
+   - Hvis "per år" - del på 12 for å få månedlig beløp
+
+6. FORMUESVERDI:
+   - Søk etter "Formuesverdi" etterfulgt av tall + "kr"
+
+7. AREALER I NØKKELINFO-SEKSJONEN:
+   - "Intern bruksareal" eller "Boligareal": XX m² (BRA-i) → livingArea
+   - "Bruksareal": XX m² → totalArea
+   - "Ekstern bruksareal": XX m² (BRA-e) → balconyArea
+
+8. ANDRE NØKKELINFO-VERDIER:
+   - "Boligtype": Leilighet/Enebolig/Rekkehus/Tomannsbolig
+   - "Eieform": Eier (Selveier)/Andel/Aksje
+   - "Soverom": tall
+   - "Byggeår": årstall (4 siffer)
+   - "Energimerking": bokstav A-G, kan stå som "G - Rød"
+
+9. VISNING:
+   - Søk etter "Torsdag, 02. oktober" + tid "17:45 - 18:30"
+
+HTML INNHOLD MED FORSTERKEDE MARKØRER:
 ${truncatedHtml}
 
-${structuredData ? `JSON-LD DATA (BRUK DETTE FØRST):
+${structuredData ? `STRUKTURERT JSON-LD DATA (PRIORITER DETTE):
 ${structuredData}` : ''}
 
-Returner JSON med FAKTISKE tall (bruk null hvis ikke funnet):
+RETURNER EKSAKT DETTE JSON-FORMATET MED FAKTISKE VERDIER:
 {
   "finnCode": "${finnCode}",
-  "title": "faktisk tittel fra HTML",
-  "address": "faktisk adresse", 
-  "price": FAKTISK_TALL_ELLER_NULL,
-  "totalPrice": FAKTISK_TALL_ELLER_NULL,
-  "additionalCosts": FAKTISK_TALL_ELLER_NULL,
-  "propertyValue": FAKTISK_TALL_ELLER_NULL,
-  "propertyType": "enebolig/leilighet/rekkehus/tomannsbolig",
+  "title": "EKSAKT_TITTEL_FRA_HTML",
+  "address": "EKSAKT_ADRESSE", 
+  "price": PRISANTYDNING_TALL,
+  "totalPrice": TOTALPRIS_TALL_ELLER_NULL,
+  "additionalCosts": OMKOSTNINGER_TALL_ELLER_NULL,
+  "propertyValue": FORMUESVERDI_TALL_ELLER_NULL,
+  "propertyType": "leilighet/enebolig/rekkehus/tomannsbolig",
   "ownershipType": "selveier/eier/andel",
-  "livingArea": FAKTISK_TALL_ELLER_NULL,
-  "totalArea": FAKTISK_TALL_ELLER_NULL,
-  "balconyArea": FAKTISK_TALL_ELLER_NULL,
-  "bedrooms": FAKTISK_TALL_ELLER_NULL,
-  "totalRooms": FAKTISK_TALL_ELLER_NULL,
-  "floor": "etasje som tekst",
-  "yearBuilt": FAKTISK_ÅRSTALL_ELLER_NULL,
-  "energyRating": "A/B/C/D/E/F/G",
-  "description": "komplett beskrivelse",
-  "municipalFees": FAKTISK_MÅNEDLIG_TALL_ELLER_NULL,
-  "sharedCosts": FAKTISK_MÅNEDLIG_TALL_ELLER_NULL,
-  "sharedEquity": FAKTISK_TALL_ELLER_NULL,
-  "monthlyRent": FAKTISK_TALL_ELLER_NULL,
-  "loanCostsFrom": FAKTISK_TALL_ELLER_NULL,
-  "parkingSpaces": FAKTISK_TALL_ELLER_NULL,
+  "livingArea": INTERN_BRUKSAREAL_TALL,
+  "totalArea": BRUKSAREAL_TALL_ELLER_NULL,
+  "balconyArea": EKSTERN_BRUKSAREAL_TALL_ELLER_NULL,
+  "bedrooms": SOVEROM_TALL_ELLER_NULL,
+  "totalRooms": TOTAL_ROM_TALL_ELLER_NULL,
+  "floor": "ETASJE_TEKST_ELLER_NULL",
+  "yearBuilt": BYGGEÅR_4_SIFFER_ELLER_NULL,
+  "energyRating": "A/B/C/D/E/F/G_ELLER_NULL",
+  "description": "FULL_BESKRIVELSE",
+  "municipalFees": KOMMUNALE_MÅNEDLIG_ELLER_NULL,
+  "sharedCosts": FELLESKOST_MÅNEDLIG_ELLER_NULL,
+  "sharedEquity": FELLESFORMUE_ELLER_NULL,
+  "monthlyRent": NULL,
+  "loanCostsFrom": LÅN_FRA_ELLER_NULL,
+  "parkingSpaces": PARKERING_ANTALL_ELLER_NULL,
   "balcony": true/false,
   "elevator": true/false,
   "garage": true/false,
@@ -231,24 +245,29 @@ Returner JSON med FAKTISKE tall (bruk null hvis ikke funnet):
   "hiking": true/false,
   "chargingStation": true/false,
   "internet": true/false,
-  "agentName": "faktisk navn",
-  "agentPhone": "faktisk telefon",
-  "agentTitle": "eiendomsmegler/partner",
-  "agencyName": "faktisk firmanavn",
+  "agentName": "NAVN_ELLER_NULL",
+  "agentPhone": "TELEFON_ELLER_NULL",
+  "agentTitle": "TITTEL_ELLER_NULL",
+  "agencyName": "FIRMA_ELLER_NULL",
   "viewingDates": [{"date": "YYYY-MM-DD", "timeFrom": "HH:MM", "timeTo": "HH:MM"}],
-  "referenceNumber": "faktisk referanse",
-  "datePublished": "YYYY-MM-DD",
-  "images": ["url1", "url2"],
+  "referenceNumber": "REF_ELLER_NULL",
+  "datePublished": "YYYY-MM-DD_ELLER_NULL",
+  "images": ["URL1", "URL2"],
   "coordinates": {"lat": null, "lng": null},
-  "neighborhood": "faktisk område",
-  "pricePerSqm": BEREGNET_ELLER_NULL,
-  "floors": FAKTISK_TALL_ELLER_NULL,
-  "roomDescription": "detaljert beskrivelse",
-  "buildingDescription": "bygningsbeskrivelse",
-  "locationDescription": "områdebeskrivelse"
+  "neighborhood": "OMRÅDE_ELLER_NULL",
+  "pricePerSqm": BEREGNET_PRIS_PER_M2_ELLER_NULL,
+  "floors": ETASJER_ANTALL_ELLER_NULL,
+  "roomDescription": "ROM_BESKRIVELSE_ELLER_NULL",
+  "buildingDescription": "BYGNING_BESKRIVELSE_ELLER_NULL",
+  "locationDescription": "LOKASJON_BESKRIVELSE_ELLER_NULL"
 }
 
-KRITISK: Returner KUN gyldig JSON, ingen annen tekst!`;
+KRITISKE REGLER:
+- Les HTML nøye - ikke gå glipp av tall i "Nøkkelinfo" seksjonen  
+- Konverter "mill" til 000000 (3,5 mill = 3500000)
+- Fjern mellomrom fra tall: "3 990 000" → 3990000
+- Hvis energimerking er "G - Rød" → bruk bare "G"
+- Returner KUN valid JSON, ingen forklaring!`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -257,19 +276,19 @@ KRITISK: Returner KUN gyldig JSON, ingen annen tekst!`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Use mini model for faster, more consistent extraction
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'Du er en AI som er ekspert på å ekstrahere strukturert eiendomsdata fra Finn.no HTML. Du returnerer alltid valid JSON med faktiske tall - ALDRI 0 som placeholder.'
+            content: 'Du er en ekspert på å ekstrahere eksakte data fra Finn.no HTML. Du MÅ finne faktiske tall, ikke oppfinne data.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.1, // Very low for consistent extraction
-        max_tokens: 3000 // Enough tokens for comprehensive data extraction
+        temperature: 0.05,
+        max_tokens: 3000
       }),
     });
 
@@ -370,6 +389,39 @@ KRITISK: Returner KUN gyldig JSON, ingen annen tekst!`;
   }
 }
 
+// Preprocess HTML to highlight price and area information
+function preprocessHtmlForPricing(html: string): string {
+  // Enhanced preprocessing to better isolate key sections
+  let enhanced = html;
+  
+  // Add strong markers around key price and data sections
+  const keyPatterns = [
+    // Price patterns - more specific
+    /(Prisantydning|Totalpris|Omkostninger|Formuesverdi)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
+    /(Felleskost\/mnd\.|Felleskost)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
+    /(Kommunale\s+avg\.)[\s\S]*?(\d[\d\s]*\s*kr)/gi,
+    
+    // Area patterns - more specific
+    /(Intern\s+bruksareal|Bruksareal|Boligareal)[\s\S]*?(\d+\s*m²)/gi,
+    /(Ekstern\s+bruksareal|Tomteareal)[\s\S]*?(\d+\s*m²)/gi,
+    
+    // Property details
+    /(Boligtype|Eieform|Soverom|Byggeår|Energimerking)[\s\S]*?([A-Za-z0-9\-\s]+)/gi,
+    
+    // Viewing dates
+    /(Visning|visning)[\s\S]*?(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2})/gi
+  ];
+  
+  keyPatterns.forEach((pattern, index) => {
+    enhanced = enhanced.replace(pattern, `\n***KEY_DATA_${index}_START***\n$&\n***KEY_DATA_${index}_END***\n`);
+  });
+  
+  // Also highlight nøkkelinfo sections which usually contain structured data
+  enhanced = enhanced.replace(/(Nøkkelinfo|nøkkelinfo)[\s\S]*?(?=<\/div>|<div|$)/gi, '\n***NØKKELINFO_START***\n$&\n***NØKKELINFO_END***\n');
+  
+  return enhanced;
+}
+
 // Improved scraping with better headers and error handling
 async function scrapeFinnPropertyHTML(finnCode: string): Promise<string | null> {
   try {
@@ -408,27 +460,6 @@ async function scrapeFinnPropertyHTML(finnCode: string): Promise<string | null> 
   }
 }
 
-// Preprocess HTML to highlight price and area information
-function preprocessHtmlForPricing(html: string): string {
-  // Enhance price-related sections by adding markers
-  let enhanced = html;
-  
-  // Add markers around price-related content
-  const pricePatterns = [
-    /(\d[\d\s]*\s*kr(?:\s*\/m²)?)/gi,
-    /(prisantydning|totalpris|omkostninger|formuesverdi|felleskost|kommunale)/gi,
-    /(boligareal|primærareal|bruksareal|totalareal)/gi,
-    /(\d+\s*m²)/gi,
-    /(soverom|rom\s*totalt|byggeår)/gi
-  ];
-  
-  pricePatterns.forEach((pattern, index) => {
-    enhanced = enhanced.replace(pattern, `***PRICE_INFO_${index}*** $1 ***END_PRICE_INFO_${index}***`);
-  });
-  
-  return enhanced;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -461,21 +492,20 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    const { data: roles } = await supabase
+    const { data: userRoles } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .in('role', ['admin', 'ambassador']);
 
-    const isAdmin = roles?.some(r => r.role === 'admin');
-    const isAmbassador = roles?.some(r => r.role === 'ambassador');
-    const hasPro = profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'premium';
+    const isAdmin = userRoles && userRoles.length > 0;
+    const isPro = profile?.subscription_tier === 'pro';
 
-    if (!hasPro && !isAdmin && !isAmbassador) {
+    if (!isPro && !isAdmin) {
       return new Response(
         JSON.stringify({ 
-          error: 'Pro subscription required',
-          message: 'This feature requires a Pro subscription to access Finn.no data automatically.' 
+          success: false, 
+          error: 'Pro subscription or admin/ambassador role required for Finn.no data fetching' 
         }),
         { 
           status: 403, 
@@ -487,159 +517,127 @@ serve(async (req) => {
     const { finnCode } = await req.json();
 
     if (!finnCode) {
-      throw new Error('Finn code is required');
-    }
-
-    // Validate Finn code format (should be numeric)
-    if (!/^\d+$/.test(finnCode.toString())) {
-      throw new Error('Invalid Finn code format');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Finn code is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Processing request for Finn code: ${finnCode}`);
-
-    // Rate limiting - check if user has made too many requests recently
-    const { data: rateLimitResult } = await supabase.rpc('enhanced_rate_limit_check', {
-      endpoint_name: 'finn_scraper',
-      identifier_key: user.id,
-      max_requests: 10, // 10 requests per window
-      window_minutes: 60 // per hour
-    });
-
-    if (rateLimitResult && !(rateLimitResult as any).allowed) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Rate limit exceeded',
-          message: 'Too many requests. Please wait before trying again.' 
-        }),
-        { 
-          status: 429, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
 
     // Check cache first
     const { data: cachedData } = await supabase
       .from('finn_property_cache')
       .select('*')
       .eq('finn_code', finnCode)
-      .gte('created_at', new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()) // 6 months cache
+      .gte('updated_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()) // 6 hours cache
       .single();
 
-    let propertyData: FinnPropertyData | null = null;
-
     if (cachedData) {
-      console.log('Using cached data for Finn code:', finnCode);
-      propertyData = cachedData.property_data as FinnPropertyData;
-    } else {
-      console.log('Fetching fresh data for Finn code:', finnCode);
-      
-      // First, scrape the HTML content
-      const htmlContent = await scrapeFinnPropertyHTML(finnCode);
-      
-      if (!htmlContent) {
-        throw new Error('Failed to fetch property page');
-      }
-
-      // Then use OpenAI to extract structured data from the HTML
-      propertyData = await extractFinnDataWithAI(finnCode, htmlContent);
-      
-      if (propertyData) {
-        // Cache the result
-        console.log('Caching property data for Finn code:', finnCode);
-        await supabase
-          .from('finn_property_cache')
-          .upsert({
-            finn_code: finnCode,
-            property_data: propertyData,
-            extracted_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months (180 days)
-          });
-      }
-    }
-
-    if (!propertyData) {
+      console.log(`Using cached data for Finn code: ${finnCode}`);
       return new Response(
         JSON.stringify({ 
-          error: 'Property not found',
-          message: 'Could not extract property data. The property may not exist or be temporarily unavailable.' 
+          success: true, 
+          data: cachedData.property_data,
+          cached: true 
         }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Log successful fetch for analytics
-    await supabase
-      .from('audit_log')
-      .insert({
-        table_name: 'finn_property_fetch',
-        action: 'fetch_success',
+    console.log(`Fetching fresh data for Finn code: ${finnCode}`);
+
+    // Scrape the HTML from Finn.no
+    const html = await scrapeFinnPropertyHTML(finnCode);
+    if (!html) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to fetch property page from Finn.no' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract property data using AI
+    const propertyData = await extractFinnDataWithAI(finnCode, html);
+    if (!propertyData) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to extract property data from page' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Cache the data
+    console.log(`Caching property data for Finn code: ${finnCode}`);
+    const { error: cacheError } = await supabase
+      .from('finn_property_cache')
+      .upsert({
+        finn_code: finnCode,
+        property_data: propertyData,
         user_id: user.id,
-        details: {
-          finn_code: finnCode,
-          cached: !!cachedData,
-          method: 'openai_extraction',
-          timestamp: new Date().toISOString()
-        }
+        updated_at: new Date().toISOString()
       });
+
+    if (cacheError) {
+      console.error('Error caching property data:', cacheError);
+    }
 
     return new Response(
       JSON.stringify({ 
-        success: true,
+        success: true, 
         data: propertyData,
-        cached: !!cachedData 
+        cached: false 
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Finn scraper error:', error);
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error in finn-property-scraper:', error);
     
-    // Handle specific error types with user-friendly messages
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.log('🔍 Error message:', errorMessage);
-    
-    let statusCode = 500;
-    let userMessage = 'An error occurred while fetching property data. Please try again.';
-    let errorType = 'extraction_failed';
-    
-    if (errorMessage.includes('OpenAI API quota exceeded')) {
-      console.log('🚫 OpenAI quota exceeded detected');
-      statusCode = 429;
-      userMessage = 'OpenAI API quota exceeded. Property extraction is temporarily unavailable. Please try again later.';
-      errorType = 'quota_exceeded';
-    } else if (errorMessage.includes('Property not found') || errorMessage.includes('Failed to fetch property page')) {
-      console.log('🏠 Property not found detected');
-      statusCode = 404;
-      userMessage = 'Property not found. Please check the Finn code and try again.';
-      errorType = 'property_not_found';
-    } else if (errorMessage.includes('OpenAI API authentication failed')) {
-      console.log('🔐 OpenAI auth failed detected');
-      statusCode = 500;
-      userMessage = 'Service configuration error. Please contact support.';
-      errorType = 'auth_failed';
+    // Handle specific error types with appropriate messages
+    if (error instanceof Error) {
+      if (error.message.includes('OpenAI API quota exceeded')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'OpenAI API quota exceeded. Please try again later or contact support.' 
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else if (error.message.includes('OpenAI API authentication failed')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'OpenAI API authentication failed. Please contact support.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else if (error.message.includes('OpenAI API error')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'OpenAI API error. Please try again later.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else if (error.message.includes('Unauthorized')) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Unauthorized access' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
-    
-    console.log('📤 Returning error response:', { errorType, userMessage, statusCode });
     
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: errorType,
-        message: userMessage,
-        details: errorMessage  // Include technical details for debugging
+        success: false, 
+        error: 'Property not found or could not be processed' 
       }),
-      { 
-        status: statusCode, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
