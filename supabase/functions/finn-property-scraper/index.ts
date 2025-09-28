@@ -161,13 +161,15 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           return ownershipMap[type] || type.toLowerCase();
         };
         
-        // Parse facilities into boolean flags - WITH ENHANCED VALIDATION
+        // Parse facilities from structured data - ONLY from dedicated facilities section
         const facilities = getTargetValues('facilities');
         console.log('Raw facilities extracted from advertising config:', facilities);
         
-        // Validate that we actually got facilities data
+        // Extract facilities from HTML only from the specific "Fasiliteter" section
+        let htmlFacilities: string[] = [];
         if (!facilities || facilities.length === 0) {
-          console.warn('No facilities found in advertising config, will try HTML fallback');
+          console.log('No facilities in structured data, extracting from HTML Fasiliteter section');
+          htmlFacilities = extractFacilitiesFromFasilitetSection(htmlContent);
         }
         
         // Extract title and address properly - address should be from structured data or HTML fallback
@@ -247,8 +249,8 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           chargingStation: facilities.some((f: string) => f.includes('Ladestasjon') || f.includes('Lademulighet')),
           internet: facilities.some((f: string) => f.includes('Bredbånd') || f.includes('Fiber')),
           
-          // Store raw facilities array for future analysis
-          rawFacilities: facilities,
+          // Store raw facilities array for future analysis - use structured data or targeted HTML extraction
+          rawFacilities: facilities.length > 0 ? facilities : htmlFacilities,
           
           coordinates: undefined,
           neighborhood: getTargetValue('local_area_name'),
@@ -283,16 +285,16 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           propertyData.pricePerSqm = Math.round(propertyData.price / propertyData.livingArea);
         }
         
-        // DOUBLE-CHECK: If no facilities from structured data, try to extract from HTML
+        // DOUBLE-CHECK: If no facilities from structured data, use HTML extraction from Fasiliteter section only
         if (!propertyData.rawFacilities || propertyData.rawFacilities.length === 0) {
-          console.log('No facilities from structured data, attempting HTML extraction...');
-          const htmlFacilities = extractFacilitiesFromHTML(htmlContent);
-          if (htmlFacilities.length > 0) {
-            propertyData.rawFacilities = htmlFacilities;
-            // Update boolean flags based on HTML-extracted facilities
-            updateFacilityFlags(propertyData, htmlFacilities);
-            console.log('Successfully extracted facilities from HTML:', htmlFacilities);
-          }
+          console.log('No facilities from structured data, using targeted HTML extraction from Fasiliteter section...');
+          propertyData.rawFacilities = htmlFacilities;
+          // Update boolean flags based on specifically extracted facilities
+          updateFacilityFlags(propertyData, htmlFacilities);
+          console.log('Successfully extracted facilities from Fasiliteter section:', htmlFacilities);
+        } else {
+          // Use structured data and update flags
+          updateFacilityFlags(propertyData, facilities);
         }
         
         console.log('Successfully extracted property data from structured advertising config:', {
@@ -513,6 +515,52 @@ function extractAddressFromHTML(htmlContent: string): string | null {
   
   console.log('Could not extract address from HTML');
   return null;
+}
+
+// Extract facilities ONLY from the dedicated "Fasiliteter" section of the HTML
+function extractFacilitiesFromFasilitetSection(htmlContent: string): string[] {
+  const facilities: string[] = [];
+  
+  // Look specifically for the "Fasiliteter" section and extract items only from there
+  const fasilitetPatterns = [
+    // Match the "Fasiliteter" heading followed by the facility list
+    /<h[1-6][^>]*>Fasiliteter<\/h[1-6]>[\s\S]*?<ul[^>]*>([\s\S]*?)<\/ul>/gi,
+    /<h[1-6][^>]*>Facilities<\/h[1-6]>[\s\S]*?<ul[^>]*>([\s\S]*?)<\/ul>/gi,
+    
+    // Match divs or sections with "Fasiliteter" class or heading
+    /<div[^>]*class="[^"]*facilit[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+    /<section[^>]*>[\s\S]*?<h[1-6][^>]*>Fasiliteter<\/h[1-6]>[\s\S]*?<ul[^>]*>([\s\S]*?)<\/ul>[\s\S]*?<\/section>/gi
+  ];
+  
+  for (const pattern of fasilitetPatterns) {
+    const matches = htmlContent.match(pattern);
+    if (matches) {
+      for (const match of matches) {
+        // Extract list items from the matched section
+        const listItemPattern = /<li[^>]*>([^<]+)<\/li>/gi;
+        let listItemMatch;
+        
+        while ((listItemMatch = listItemPattern.exec(match)) !== null) {
+          const facilityText = listItemMatch[1].trim();
+          
+          // Only add if it looks like a real facility (not too long, not empty)
+          if (facilityText.length > 2 && facilityText.length < 50) {
+            // Clean up the text
+            const cleanedFacility = facilityText
+              .replace(/^\s*[•·\-\*]\s*/, '') // Remove bullet points
+              .trim();
+            
+            if (cleanedFacility && !facilities.includes(cleanedFacility)) {
+              facilities.push(cleanedFacility);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  console.log('Facilities extracted from Fasiliteter section:', facilities);
+  return facilities;
 }
 
 // Extract facilities from HTML content when structured data is not available
