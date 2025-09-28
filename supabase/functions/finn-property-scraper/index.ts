@@ -151,13 +151,36 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           return typeMap[type] || type.toLowerCase();
         };
         
-        // Map ownership type
+        // Map ownership type to Norwegian
         const mapOwnershipType = (type: string) => {
           const ownershipMap: Record<string, string> = {
             'FREEHOLD': 'selveier',
             'COOPERATIVE': 'andel',
-            'SHARE': 'aksje'
+            'SHARE': 'aksje',
+            'PART_OWNERSHIP': 'deleie',
+            'PARTIAL_OWNERSHIP': 'deleie',
+            'OWNERSHIP': 'eier',
+            'TENANT_OWNED': 'eierseksjon',
+            'CONDOMINIUM': 'eierseksjon',
+            'LEASEHOLD': 'festeeiendom',
+            'RENT': 'leie'
           };
+          
+          // Handle common English phrases that might appear
+          const lowerType = type.toLowerCase();
+          if (lowerType.includes('part') || lowerType.includes('partial')) {
+            return 'deleie';
+          }
+          if (lowerType.includes('cooperative') || lowerType.includes('andel')) {
+            return 'andel';
+          }
+          if (lowerType.includes('freehold') || lowerType.includes('selveier')) {
+            return 'selveier';
+          }
+          if (lowerType.includes('share') || lowerType.includes('aksje')) {
+            return 'aksje';
+          }
+          
           return ownershipMap[type] || type.toLowerCase();
         };
         
