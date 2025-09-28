@@ -70,7 +70,14 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
         body: { finnCode: cleanCode }
       });
 
-      if (functionError) throw functionError;
+      // Handle both function errors and error responses
+      if (functionError) {
+        // If there's function data with error info, use that
+        if (data && typeof data === 'object' && 'error' in data) {
+          throw new Error(data.message || 'Kunne ikke hente eiendomsdata');
+        }
+        throw functionError;
+      }
 
       const response = data as FinnPropertyResponse;
 
