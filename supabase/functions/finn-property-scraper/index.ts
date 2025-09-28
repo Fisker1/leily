@@ -161,8 +161,14 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           return ownershipMap[type] || type.toLowerCase();
         };
         
-        // Parse facilities into boolean flags
+        // Parse facilities into boolean flags - WITH ENHANCED VALIDATION
         const facilities = getTargetValues('facilities');
+        console.log('Raw facilities extracted from advertising config:', facilities);
+        
+        // Validate that we actually got facilities data
+        if (!facilities || facilities.length === 0) {
+          console.warn('No facilities found in advertising config, will try HTML fallback');
+        }
         
         // Extract comprehensive property data
         const propertyData: FinnPropertyData = {
@@ -263,6 +269,18 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
         // Calculate price per sqm if we have both values
         if (propertyData.price > 0 && propertyData.livingArea > 0) {
           propertyData.pricePerSqm = Math.round(propertyData.price / propertyData.livingArea);
+        }
+        
+        // DOUBLE-CHECK: If no facilities from structured data, try to extract from HTML
+        if (!propertyData.rawFacilities || propertyData.rawFacilities.length === 0) {
+          console.log('No facilities from structured data, attempting HTML extraction...');
+          const htmlFacilities = extractFacilitiesFromHTML(htmlContent);
+          if (htmlFacilities.length > 0) {
+            propertyData.rawFacilities = htmlFacilities;
+            // Update boolean flags based on HTML-extracted facilities
+            updateFacilityFlags(propertyData, htmlFacilities);
+            console.log('Successfully extracted facilities from HTML:', htmlFacilities);
+          }
         }
         
         console.log('Successfully extracted property data from structured advertising config:', {
@@ -445,6 +463,92 @@ function preprocessHtmlForPricing(html: string): string {
   );
   
   return processedHtml;
+}
+
+// Extract facilities from HTML content when structured data is not available
+function extractFacilitiesFromHTML(htmlContent: string): string[] {
+  const facilities: string[] = [];
+  
+  // Look for common facility patterns in HTML
+  const facilityPatterns = [
+    // Look for facilities in structured sections
+    /<div[^>]*class="[^"]*facilit[^"]*"[^>]*>(.*?)<\/div>/gis,
+    /<section[^>]*>(.*?fasiliteter.*?)<\/section>/gis,
+    /<ul[^>]*>(.*?fasiliteter.*?)<\/ul>/gis,
+    
+    // Look for badge-like elements that might contain facilities
+    /<span[^>]*class="[^"]*badge[^"]*"[^>]*>([^<]+)<\/span>/gi,
+    /<div[^>]*class="[^"]*tag[^"]*"[^>]*>([^<]+)<\/div>/gi,
+    
+    // Look for list items that might be facilities
+    /<li[^>]*>([^<]*(?:balkong|terrasse|peis|heis|garasje|hage|lademulighet|bredbånd|fiber|kjæledyr|barnevennlig|rolig|sentralt|turterreng|utsikt|moderne|parkett|offentlig vann|kloakk)[^<]*)<\/li>/gi
+  ];
+  
+  for (const pattern of facilityPatterns) {
+    const matches = htmlContent.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        // Clean up and extract facility names
+        const cleaned = match.replace(/<[^>]*>/g, ' ').trim();
+        const words = cleaned.split(/\s+/).filter(word => word.length > 2);
+        
+        // Look for known facility keywords
+        const facilityKeywords = [
+          'balkong', 'terrasse', 'peis', 'ildsted', 'heis', 'garasje', 'p-plass',
+          'hage', 'lademulighet', 'bredbånd', 'fiber', 'kjæledyr', 'barnevennlig',
+          'rolig', 'sentralt', 'turterreng', 'utsikt', 'moderne', 'parkett',
+          'offentlig vann', 'kloakk', 'kjeller', 'loft', 'utvidelsesmuligheter'
+        ];
+        
+        facilityKeywords.forEach(keyword => {
+          if (cleaned.toLowerCase().includes(keyword) && !facilities.some(f => f.toLowerCase().includes(keyword))) {
+            // Try to extract the full facility name around the keyword
+            const regex = new RegExp(`[^.,]*${keyword}[^.,]*`, 'i');
+            const facilityMatch = cleaned.match(regex);
+            if (facilityMatch) {
+              facilities.push(facilityMatch[0].trim());
+            }
+          }
+        });
+      });
+    }
+  }
+  
+  // Remove duplicates and clean up
+  return [...new Set(facilities)].filter(f => f.length > 2 && f.length < 100);
+}
+
+// Update facility boolean flags based on extracted facilities
+function updateFacilityFlags(propertyData: FinnPropertyData, facilities: string[]): void {
+  const facilitiesText = facilities.join(' ').toLowerCase();
+  
+  propertyData.balcony = facilitiesText.includes('balkong');
+  propertyData.terrace = facilitiesText.includes('terrasse');
+  propertyData.fireplace = facilitiesText.includes('peis') || facilitiesText.includes('ildsted');
+  propertyData.elevator = facilitiesText.includes('heis');
+  propertyData.garage = facilitiesText.includes('garasje') || facilitiesText.includes('p-plass');
+  propertyData.garden = facilitiesText.includes('hage');
+  propertyData.chargingStation = facilitiesText.includes('lademulighet') || facilitiesText.includes('ladestasjon');
+  propertyData.internet = facilitiesText.includes('bredbånd') || facilitiesText.includes('fiber');
+  propertyData.internetIncluded = facilitiesText.includes('bredbånd') || facilitiesText.includes('fiber');
+  propertyData.petsAllowed = facilitiesText.includes('kjæledyr');
+  propertyData.childFriendly = facilitiesText.includes('barnevennlig');
+  propertyData.quietArea = facilitiesText.includes('rolig');
+  propertyData.centralLocation = facilitiesText.includes('sentralt');
+  propertyData.hiking = facilitiesText.includes('turterreng');
+  propertyData.basement = facilitiesText.includes('kjeller');
+  propertyData.attic = facilitiesText.includes('loft');
+  propertyData.publicWaterSewer = facilitiesText.includes('offentlig vann') || facilitiesText.includes('kloakk');
+  
+  if (facilitiesText.includes('utsikt')) {
+    propertyData.viewType = 'Utsikt';
+  }
+  if (facilitiesText.includes('moderne')) {
+    propertyData.condition = 'Moderne';
+  }
+  if (facilitiesText.includes('varmepumpe')) {
+    propertyData.heatingType = 'Varmepumpe';
+  }
 }
 
 // Improved scraping with better headers and error handling
