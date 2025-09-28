@@ -378,18 +378,72 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
                   <p className="text-xs text-muted-foreground">Pris</p>
                   <p className="font-semibold">{formatNumberWithSpaces(propertyData.price)} kr</p>
                 </div>
+                {propertyData.totalPrice && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Totalpris</p>
+                    <p className="font-semibold">{formatNumberWithSpaces(propertyData.totalPrice)} kr</p>
+                  </div>
+                )}
+                {propertyData.additionalCosts && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Omkostninger</p>
+                    <p className="font-semibold">{formatNumberWithSpaces(propertyData.additionalCosts)} kr</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-xs text-muted-foreground">Type</p>
                   <p className="font-semibold capitalize">{propertyData.propertyType}</p>
                 </div>
+                {propertyData.ownershipType && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Eieform</p>
+                    <p className="font-semibold">{propertyData.ownershipType}</p>
+                  </div>
+                )}
                 <div>
-                  <p className="text-xs text-muted-foreground">Areal</p>
+                  <p className="text-xs text-muted-foreground">Boligareal</p>
                   <p className="font-semibold">{propertyData.livingArea} m²</p>
                 </div>
+                {propertyData.totalArea && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Totalareal</p>
+                    <p className="font-semibold">{propertyData.totalArea} m²</p>
+                  </div>
+                )}
+                {propertyData.balconyArea && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Balkong/Terrasse</p>
+                    <p className="font-semibold">{propertyData.balconyArea} m²</p>
+                  </div>
+                )}
                 {propertyData.bedrooms && (
                   <div>
                     <p className="text-xs text-muted-foreground">Soverom</p>
                     <p className="font-semibold">{propertyData.bedrooms}</p>
+                  </div>
+                )}
+                {propertyData.totalRooms && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Totalt rom</p>
+                    <p className="font-semibold">{propertyData.totalRooms}</p>
+                  </div>
+                )}
+                {propertyData.floor && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Etasje</p>
+                    <p className="font-semibold">{propertyData.floor}</p>
+                  </div>
+                )}
+                {propertyData.yearBuilt && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Byggeår</p>
+                    <p className="font-semibold">{propertyData.yearBuilt}</p>
+                  </div>
+                )}
+                {propertyData.energyRating && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Energimerking</p>
+                    <p className="font-semibold">{propertyData.energyRating}</p>
                   </div>
                 )}
                 {propertyData.monthlyRent && (
@@ -406,8 +460,14 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
                 )}
                 {propertyData.sharedCosts && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Fellesutgifter</p>
+                    <p className="text-xs text-muted-foreground">Felleskost</p>
                     <p className="font-semibold">{formatNumberWithSpaces(propertyData.sharedCosts)} kr/mnd</p>
+                  </div>
+                )}
+                {propertyData.sharedEquity && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Fellesformue</p>
+                    <p className="font-semibold">{formatNumberWithSpaces(propertyData.sharedEquity)} kr</p>
                   </div>
                 )}
                 {propertyData.pricePerSqm && (
@@ -416,19 +476,83 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
                     <p className="font-semibold">{formatNumberWithSpaces(propertyData.pricePerSqm)} kr/m²</p>
                   </div>
                 )}
-                {propertyData.yearBuilt && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Byggeår</p>
-                    <p className="font-semibold">{propertyData.yearBuilt}</p>
-                  </div>
-                )}
-                {propertyData.energyRating && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Energimerking</p>
-                    <p className="font-semibold">{propertyData.energyRating}</p>
-                  </div>
-                )}
               </div>
+
+              {/* Facilities Section */}
+              {(propertyData.balcony || propertyData.elevator || propertyData.garage || 
+                propertyData.garden || propertyData.terrace || propertyData.fireplace || 
+                propertyData.basement || propertyData.attic || propertyData.petsAllowed || 
+                propertyData.childFriendly || propertyData.quietArea || propertyData.centralLocation || 
+                propertyData.publicWaterSewer || propertyData.hiking || propertyData.chargingStation || 
+                propertyData.internet) && (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Fasiliteter</p>
+                  <div className="flex flex-wrap gap-1">
+                    {propertyData.balcony && <Badge variant="outline" className="text-xs">Balkong</Badge>}
+                    {propertyData.terrace && <Badge variant="outline" className="text-xs">Terrasse</Badge>}
+                    {propertyData.elevator && <Badge variant="outline" className="text-xs">Heis</Badge>}
+                    {propertyData.garage && <Badge variant="outline" className="text-xs">Garasje</Badge>}
+                    {propertyData.garden && <Badge variant="outline" className="text-xs">Hage</Badge>}
+                    {propertyData.fireplace && <Badge variant="outline" className="text-xs">Peis</Badge>}
+                    {propertyData.basement && <Badge variant="outline" className="text-xs">Kjeller</Badge>}
+                    {propertyData.attic && <Badge variant="outline" className="text-xs">Loft</Badge>}
+                    {propertyData.petsAllowed && <Badge variant="outline" className="text-xs">Kjæledyr tillatt</Badge>}
+                    {propertyData.childFriendly && <Badge variant="outline" className="text-xs">Barnevennlig</Badge>}
+                    {propertyData.quietArea && <Badge variant="outline" className="text-xs">Rolig</Badge>}
+                    {propertyData.centralLocation && <Badge variant="outline" className="text-xs">Sentralt</Badge>}
+                    {propertyData.publicWaterSewer && <Badge variant="outline" className="text-xs">Offentlig vann/kloakk</Badge>}
+                    {propertyData.hiking && <Badge variant="outline" className="text-xs">Turterreng</Badge>}
+                    {propertyData.chargingStation && <Badge variant="outline" className="text-xs">Ladestasjon</Badge>}
+                    {propertyData.internet && <Badge variant="outline" className="text-xs">Internett</Badge>}
+                  </div>
+                </div>
+              )}
+
+              {/* Agent Information */}
+              {(propertyData.agentName || propertyData.agencyName) && (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Megler</p>
+                  <div className="text-sm">
+                    {propertyData.agentName && (
+                      <p className="font-medium">{propertyData.agentName}</p>
+                    )}
+                    {propertyData.agentTitle && (
+                      <p className="text-xs text-muted-foreground">{propertyData.agentTitle}</p>
+                    )}
+                    {propertyData.agencyName && (
+                      <p className="text-xs text-muted-foreground">{propertyData.agencyName}</p>
+                    )}
+                    {propertyData.agentPhone && (
+                      <p className="text-xs text-muted-foreground">📞 {propertyData.agentPhone}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Viewing Information */}
+              {propertyData.viewingDates && propertyData.viewingDates.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Visninger</p>
+                  <div className="space-y-1">
+                    {propertyData.viewingDates.map((viewing, index) => (
+                      <div key={index} className="text-sm">
+                        <p className="font-medium">{viewing.date}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {viewing.timeFrom} - {viewing.timeTo}
+                          {viewing.description && ` (${viewing.description})`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {propertyData.description && propertyData.description.length > 100 && (
+                <div className="mt-4">
+                  <p className="text-xs text-muted-foreground mb-1">Beskrivelse</p>
+                  <p className="text-xs text-muted-foreground line-clamp-3">{propertyData.description}</p>
+                </div>
+              )}
 
               <div className="pt-2 border-t border-primary/10">
                 <p className="text-xs text-muted-foreground">

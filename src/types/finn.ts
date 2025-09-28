@@ -9,13 +9,17 @@ export interface FinnPropertyData {
   propertyType: 'leilighet' | 'enebolig' | 'rekkehus' | 'tomannsbolig';
   livingArea: number;
   totalArea?: number;
+  balconyArea?: number; // Balkong/Terrasse area
   bedrooms?: number;
+  totalRooms?: number; // Total number of rooms
+  floor?: string; // Which floor
   yearBuilt?: number;
   energyRating?: string;
   description: string;
   images: string[];
   municipalFees?: number; // Monthly amount
   sharedCosts?: number;
+  sharedEquity?: number; // Fellesformue
   monthlyRent?: number;
   loanCostsFrom?: number; // Pris på lån fra X kr/mnd
   
@@ -44,6 +48,8 @@ export interface FinnPropertyData {
   centralLocation?: boolean; // Sentralt
   publicWaterSewer?: boolean; // Offentlig vann/kloakk
   hiking?: boolean; // Turterreng
+  chargingStation?: boolean; // Ladestasjon
+  internet?: boolean; // Internett/Fiber
   
   // Location and coordinates
   coordinates?: {
@@ -62,6 +68,7 @@ export interface FinnPropertyData {
   agentName?: string;
   agentPhone?: string;
   agentEmail?: string;
+  agentTitle?: string; // Partner, Eiendomsmegler, etc.
   agencyName?: string;
   
   // Viewing information

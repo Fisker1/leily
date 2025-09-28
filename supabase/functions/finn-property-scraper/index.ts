@@ -18,13 +18,17 @@ interface FinnPropertyData {
   propertyType: string;
   livingArea: number;
   totalArea?: number;
+  balconyArea?: number; // Balkong/Terrasse area
   bedrooms?: number;
+  totalRooms?: number; // Total number of rooms
+  floor?: string; // Which floor
   yearBuilt?: number;
   energyRating?: string;
   description: string;
   images: string[];
   municipalFees?: number; // Monthly amount
   sharedCosts?: number;
+  sharedEquity?: number; // Fellesformue
   monthlyRent?: number;
   loanCostsFrom?: number; // Pris på lån fra X kr/mnd
   
@@ -53,6 +57,8 @@ interface FinnPropertyData {
   centralLocation?: boolean; // Sentralt
   publicWaterSewer?: boolean; // Offentlig vann/kloakk
   hiking?: boolean; // Turterreng
+  chargingStation?: boolean; // Ladestasjon
+  internet?: boolean; // Internett/Fiber
   
   // Location and coordinates
   coordinates?: {
@@ -71,6 +77,7 @@ interface FinnPropertyData {
   agentName?: string;
   agentPhone?: string;
   agentEmail?: string;
+  agentTitle?: string; // Partner, Eiendomsmegler, etc.
   agencyName?: string;
   
   // Viewing information
@@ -145,51 +152,67 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
 
     const prompt = `Du er en EKSPERT på å ekstrahere KOMPLETT eiendomsinformasjon fra Finn.no HTML. 
 
-EKSTREMT VIKTIG - SØKER ETTER ALLE DISSE FELTENE:
+KRITISK: SØK GRUNDIG etter ALL INFORMASJON i HTML-en - ikke bare overfladisk!
 
-PRIS-INFORMASJON:
-- "Prisantydning" (hovedpris)
-- "Totalpris" (inkl alle kostnader)  
+PRIS-INFORMASJON (SØK ETTER DISSE EKSAKTE ORDENE):
+- "Prisantydning" (hovedpris - ofte stor tekst øverst)
+- "Totalpris" (total sum inkl omkostninger)
 - "Omkostninger" (tilleggskostnader)
-- "Formuesverdi" 
-- "Kommunale avgifter" (per år eller måned)
-- "Fellesutgifter" / "Felleskostnader"
+- "Formuesverdi" (ofte mindre tekst)
+- "Felleskost" / "Fellesutgifter" (månedlig)
+- "Fellesformue" (andel av felleseie)
+- "Kommunale" (avgifter per år eller måned)
 - "Pris på lån" / "Lånekostnader" (fra X kr/mnd)
+- "kr/mnd" (månedlige kostnader)
 
-EIENDOMSDETALJER:
-- Boligtype: "Tomannsbolig", "Enebolig", "Leilighet", "Rekkehus"
-- "Eieform": "Eier", "Selveier", "Andel", etc.
-- "Soverom" / "Rom" (antall)
-- "Primærareal" / "Boligareal" (m²)
-- "Bruttoareal" / "Totalareal" (m²)
-- Byggeår
-- "Energimerking" (A-G)
+NØKKELINFO SEKSJON (SØK SYSTEMATISK):
+- "Boligtype": Leilighet, Enebolig, Rekkehus, Tomannsbolig
+- "Eieform": Eier, Selveier, Andel, Aksje
+- "Soverom" eller "Rom" (totalt antall rom)
+- "Intern bruksareal", "Primærareal", "BRA-i" (m²)
+- "Bruksareal", "Totalareal", "BRA-e" (m²)
+- "Balkong", "Terrasse", "TBA" (m²)
+- "Etasje" (hvilken etasje)
+- "Byggeår" (årstall)
+- "Energimerking" (bokstav A-G, ofte fargekodet)
 
-FASILITETER (søk etter disse ordene):
-- "Balkong", "Terrasse"  
-- "Hage", "Have"
-- "Peis", "Ildsted", "Peisovn"
-- "Garasje", "P-plass", "Parkering"
-- "Kjeller", "Loft" 
-- "Barnevennlig"
-- "Kjæledyr tillatt", "Pets allowed"
-- "Rolig", "Quiet"
-- "Sentralt", "Central"
-- "Offentlig vann", "Offentlig kloakk"
-- "Turterreng", "Hiking"
+DETALJERT FASILITETER (SØK I HTML ETTER DISSE):
+- "Balkong/Terrasse", "Balkong", "Terrasse"
+- "Heis", "Elevator" 
+- "Garasje", "Garasje/P-plass", "Parkering"
+- "Hage", "Have", "Uteområde"
+- "Peis", "Ildsted", "Peisovn", "Vedovn"
+- "Kjeller", "Basement"
+- "Loft", "Attic"
+- "Barnevennlig", "Barnehage", "Skole"
+- "Kjæledyr tillatt", "Pets"
+- "Rolig", "Stille"
+- "Sentralt", "Sentrum"
+- "Ladestasjon", "El-bil"
+- "Turterreng", "Hiking", "Natur"
+- "Offentlig vann/kloakk"
+- "Bademulighet", "Badeland"
+- "Internett", "Fiber"
 
-MEGLER/VISNING:
-- Meglers navn (ofte under DNB Eiendom, Privatmegleren, etc.)
-- Telefonnummer (format: XX XX XX XX)
-- Eiendomsmeglerfirma navn
-- Visningsdato og tidspunkt
-- "Neste visning", "Visning"
+MEGLER OG VISNING (SØK GRUNDIG):
+- Meglers fulle navn (f.eks "Lillian Tunge")
+- Telefonnummer (format: XX XX XX XX eller +47 XX XX XX XX)
+- Eiendomsmeglerfirma (DNB Eiendom, Privatmegleren, MNEF, etc.)
+- "Partner", "Eiendomsmegler", tittel
+- Visningsdato (dag, dato, måned)
+- Visningstidspunkt (klokkeslett format XX:XX - XX:XX)
+- "Neste visning", "Visning", "Åpen visning"
+
+BESKRIVELSE OG BILDER:
+- Finn den KOMPLETTE beskrivelsen av eiendommen (lang tekst)
+- Alle bildeURLer (https://images.finncdn.no/...)
+- Spesiell informasjon om lokasjon og omgivelser
 
 ADMINISTRATIVT:
-- "FINN-kode" / "Finn-kode" (8-9 siffer)
-- "Referanse" nummer
-- "Sist endret" / "Publisert" dato
-- Adresse (gate + postnummer + by)
+- "FINN-kode" (8-9 siffer)
+- "Referanse" nummer (ofte kortere)
+- "Sist endret", "Publisert", datoer
+- Komplett adresse med gate, nummer, postnummer og by
 
 ${structuredData ? `STRUKTURERT DATA (JSON-LD) - BRUK DETTE FØRST:
 ${structuredData}
@@ -278,7 +301,7 @@ KRITISKE INSTRUKSJONER:
           }
         ],
         temperature: 0.05, // Very low for consistent extraction
-        max_tokens: 2000 // More tokens for complete data
+        max_tokens: 4000 // Much more tokens for comprehensive data extraction
       }),
     });
 
@@ -325,17 +348,25 @@ KRITISKE INSTRUKSJONER:
 
       // Ensure numeric fields are numbers and handle nulls properly
       propertyData.price = Number(propertyData.price) || 0;
+      propertyData.totalPrice = propertyData.totalPrice ? Number(propertyData.totalPrice) : undefined;
+      propertyData.additionalCosts = propertyData.additionalCosts ? Number(propertyData.additionalCosts) : undefined;
+      propertyData.propertyValue = propertyData.propertyValue ? Number(propertyData.propertyValue) : undefined;
       propertyData.livingArea = Number(propertyData.livingArea) || 0;
       propertyData.totalArea = propertyData.totalArea ? Number(propertyData.totalArea) : undefined;
+      propertyData.balconyArea = propertyData.balconyArea ? Number(propertyData.balconyArea) : undefined;
       propertyData.bedrooms = propertyData.bedrooms ? Number(propertyData.bedrooms) : undefined;
+      propertyData.totalRooms = propertyData.totalRooms ? Number(propertyData.totalRooms) : undefined;
       propertyData.yearBuilt = propertyData.yearBuilt ? Number(propertyData.yearBuilt) : undefined;
       propertyData.municipalFees = propertyData.municipalFees ? Number(propertyData.municipalFees) : undefined;
       propertyData.sharedCosts = propertyData.sharedCosts ? Number(propertyData.sharedCosts) : undefined;
+      propertyData.sharedEquity = propertyData.sharedEquity ? Number(propertyData.sharedEquity) : undefined;
       propertyData.monthlyRent = propertyData.monthlyRent ? Number(propertyData.monthlyRent) : undefined;
+      propertyData.loanCostsFrom = propertyData.loanCostsFrom ? Number(propertyData.loanCostsFrom) : undefined;
       propertyData.parkingSpaces = propertyData.parkingSpaces ? Number(propertyData.parkingSpaces) : undefined;
       propertyData.pricePerSqm = propertyData.pricePerSqm ? Number(propertyData.pricePerSqm) : undefined;
       propertyData.depositAmount = propertyData.depositAmount ? Number(propertyData.depositAmount) : undefined;
       propertyData.minRentalPeriod = propertyData.minRentalPeriod ? Number(propertyData.minRentalPeriod) : undefined;
+      propertyData.floors = propertyData.floors ? Number(propertyData.floors) : undefined;
       
       // Calculate pricePerSqm if not provided but we have both price and area
       if (!propertyData.pricePerSqm && propertyData.price > 0 && propertyData.livingArea > 0) {
