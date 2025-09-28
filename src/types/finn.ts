@@ -97,6 +97,9 @@ export interface FinnPropertyData {
   
   // Calculated fields
   totalMonthlyCosts?: number; // Sum of all monthly costs
+  
+  // Raw data for future analysis
+  rawFacilities?: string[]; // Store all facilities as found in Finn.no for analysis
 }
 
 export interface FinnPropertyResponse {

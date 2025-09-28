@@ -106,6 +106,9 @@ interface FinnPropertyData {
   
   // Calculated fields
   totalMonthlyCosts?: number; // Sum of all monthly costs
+  
+  // Raw data for future analysis
+  rawFacilities?: string[]; // Store all facilities as found in Finn.no for analysis
 }
 
 // Use OpenAI to extract structured data from Finn.no HTML - WITH ENHANCED STRUCTURED DATA PARSING
@@ -161,23 +164,48 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
         // Parse facilities into boolean flags
         const facilities = getTargetValues('facilities');
         
+        // Extract comprehensive property data
         const propertyData: FinnPropertyData = {
           finnCode: finnCode,
           title: advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`,
           address: getTargetValue('local_area_name') || 'Adresse ikke tilgjengelig',
+          
+          // Pricing information - store all available pricing data
           price: parseInt(getTargetValue('price')) || 0,
+          totalPrice: undefined, // Will be extracted from HTML if available
+          additionalCosts: undefined,
+          propertyValue: undefined,
+          
+          // Property classification
           propertyType: mapPropertyType(getTargetValue('property_type') || ''),
           ownershipType: mapOwnershipType(getTargetValue('ownership_type') || ''),
+          
+          // Area measurements - capture all available area data
           livingArea: parseInt(getTargetValue('primary_size')) || 0,
           totalArea: parseInt(getTargetValue('plot_area')) || undefined,
+          balconyArea: parseInt(getTargetValue('open_area_size')) || undefined,
+          
+          // Room information
           bedrooms: parseInt(getTargetValue('bedrooms')) || undefined,
           totalRooms: parseInt(getTargetValue('rooms')) || undefined,
           floor: getTargetValue('floor') || undefined,
+          
+          // Building details
           yearBuilt: parseInt(getTargetValue('construction_year')) || undefined,
+          energyRating: undefined, // Will extract from HTML if available
+          
           description: `Eiendom i ${getTargetValue('local_area_name') || 'Norge'}`,
           images: images,
           
-          // Parse facilities into boolean features
+          // Monthly costs - will be extracted from HTML parsing
+          municipalFees: undefined,
+          sharedCosts: undefined,
+          sharedEquity: undefined,
+          monthlyRent: undefined,
+          loanCostsFrom: undefined,
+          
+          // Property features - comprehensive facility parsing
+          parkingSpaces: facilities.some((f: string) => f.includes('Garasje') || f.includes('P-plass')) ? 1 : undefined,
           balcony: facilities.some((f: string) => f.includes('Balkong') || f.includes('Terrasse')),
           elevator: facilities.some((f: string) => f.includes('Heis')),
           garage: facilities.some((f: string) => f.includes('Garasje')),
@@ -186,18 +214,50 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           fireplace: facilities.some((f: string) => f.includes('Peis') || f.includes('Ildsted')),
           basement: facilities.some((f: string) => f.includes('Kjeller')),
           attic: facilities.some((f: string) => f.includes('Loft')),
+          viewType: facilities.some((f: string) => f.includes('Utsikt')) ? 'Utsikt' : undefined,
+          condition: facilities.some((f: string) => f.includes('Moderne')) ? 'Moderne' : undefined,
+          heatingType: facilities.some((f: string) => f.includes('Varmepumpe')) ? 'Varmepumpe' : undefined,
+          internetIncluded: facilities.some((f: string) => f.includes('Bredbånd') || f.includes('Fiber')),
           petsAllowed: facilities.some((f: string) => f.includes('Kjæledyr')),
+          smokingAllowed: undefined,
+          furnished: facilities.some((f: string) => f.includes('Møblert')),
           childFriendly: facilities.some((f: string) => f.includes('Barnevennlig')),
           quietArea: facilities.some((f: string) => f.includes('Rolig')),
           centralLocation: facilities.some((f: string) => f.includes('Sentralt')),
           publicWaterSewer: facilities.some((f: string) => f.includes('Offentlig vann') || f.includes('kloakk')),
           hiking: facilities.some((f: string) => f.includes('Turterreng')),
-          chargingStation: facilities.some((f: string) => f.includes('Ladestasjon')),
+          chargingStation: facilities.some((f: string) => f.includes('Ladestasjon') || f.includes('Lademulighet')),
           internet: facilities.some((f: string) => f.includes('Bredbånd') || f.includes('Fiber')),
+          
+          // Store raw facilities array for future analysis
+          rawFacilities: facilities,
           
           coordinates: undefined,
           neighborhood: getTargetValue('local_area_name'),
-          pricePerSqm: undefined
+          pricePerSqm: undefined,
+          
+          // Additional building details
+          floors: undefined,
+          roomDescription: undefined,
+          buildingDescription: undefined,
+          locationDescription: undefined,
+          
+          // Agent information - will be extracted if available
+          agentName: undefined,
+          agentPhone: undefined,
+          agentEmail: undefined,
+          agentTitle: undefined,
+          agencyName: undefined,
+          
+          // Administrative
+          referenceNumber: finnCode,
+          datePublished: undefined,
+          dateModified: undefined,
+          
+          // Energy and technical
+          energyCertificate: undefined,
+          waterHeating: undefined,
+          sewageSystem: undefined
         };
         
         // Calculate price per sqm if we have both values
@@ -212,7 +272,12 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           address: propertyData.address,
           propertyType: propertyData.propertyType,
           livingArea: propertyData.livingArea,
-          facilities: facilities
+          totalArea: propertyData.totalArea,
+          bedrooms: propertyData.bedrooms,
+          totalRooms: propertyData.totalRooms,
+          yearBuilt: propertyData.yearBuilt,
+          rawFacilities: propertyData.rawFacilities,
+          extractedFeatureCount: propertyData.rawFacilities?.length || 0
         });
         
         return propertyData;
