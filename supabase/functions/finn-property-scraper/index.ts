@@ -160,7 +160,7 @@ Viktige instruksjoner:
 // Improved scraping with better headers and error handling
 async function scrapeFinnPropertyHTML(finnCode: string): Promise<string | null> {
   try {
-    const url = `https://www.finn.no/realestate/homes/ad/${finnCode}`;
+    const url = `https://www.finn.no/realestate/homes/ad.html?finnkode=${finnCode}`;
     console.log(`Scraping Finn property HTML: ${url}`);
     
     const response = await fetch(url, {
