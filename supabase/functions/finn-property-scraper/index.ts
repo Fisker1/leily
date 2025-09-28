@@ -170,11 +170,23 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           console.warn('No facilities found in advertising config, will try HTML fallback');
         }
         
+        // Extract title and address properly - address should be from structured data or HTML fallback
+        let propertyTitle = advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`;
+        let propertyAddress = getTargetValue('street_address') || getTargetValue('address') || getTargetValue('location') || 'Adresse ikke tilgjengelig';
+        
+        // If we didn't find a proper address in structured data, try to extract from HTML
+        if (propertyAddress === 'Adresse ikke tilgjengelig' || !propertyAddress.includes(',')) {
+          const addressFromHTML = extractAddressFromHTML(htmlContent);
+          if (addressFromHTML) {
+            propertyAddress = addressFromHTML;
+          }
+        }
+        
         // Extract comprehensive property data
         const propertyData: FinnPropertyData = {
           finnCode: finnCode,
-          title: advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`,
-          address: getTargetValue('local_area_name') || 'Adresse ikke tilgjengelig',
+          title: propertyTitle,
+          address: propertyAddress,
           
           // Pricing information - store all available pricing data
           price: parseInt(getTargetValue('price')) || 0,
@@ -463,6 +475,44 @@ function preprocessHtmlForPricing(html: string): string {
   );
   
   return processedHtml;
+}
+
+// Extract address from HTML when structured data doesn't have the full address
+function extractAddressFromHTML(htmlContent: string): string | null {
+  // Look for address patterns in HTML - typically in blue links or specific containers
+  const addressPatterns = [
+    // Look for blue links that typically contain addresses
+    /<a[^>]*class="[^"]*text-blue[^"]*"[^>]*>([^<]*\d+[^<]*,\s*\d{4}\s*[^<]*)<\/a>/gi,
+    /<a[^>]*href="[^"]*"[^>]*>([^<]*\d+[A-Za-z]?,\s*\d{4}\s*[^<]*)<\/a>/gi,
+    
+    // Look for address in structured sections
+    /<div[^>]*class="[^"]*address[^"]*"[^>]*>([^<]*\d+[^<]*,\s*\d{4}\s*[^<]*)<\/div>/gi,
+    /<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]*\d+[^<]*,\s*\d{4}\s*[^<]*)<\/span>/gi,
+    
+    // Generic pattern for Norwegian addresses (street number, postal code city)
+    />([A-Za-zæøåÆØÅ\s]+\d+[A-Za-z]?,\s*\d{4}\s*[A-Za-zæøåÆØÅ\s]+)</gi
+  ];
+  
+  for (const pattern of addressPatterns) {
+    const matches = htmlContent.match(pattern);
+    if (matches && matches.length > 0) {
+      for (const match of matches) {
+        // Extract the address from the match
+        const addressMatch = match.match(/([A-Za-zæøåÆØÅ\s]+\d+[A-Za-z]?,\s*\d{4}\s*[A-Za-zæøåÆØÅ\s]+)/);
+        if (addressMatch) {
+          const address = addressMatch[1].trim();
+          // Validate that this looks like a real address
+          if (address.length > 10 && address.includes(',')) {
+            console.log(`Extracted address from HTML: ${address}`);
+            return address;
+          }
+        }
+      }
+    }
+  }
+  
+  console.log('Could not extract address from HTML');
+  return null;
 }
 
 // Extract facilities from HTML content when structured data is not available
