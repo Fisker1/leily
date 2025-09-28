@@ -4,7 +4,7 @@ import { z } from 'zod'
 const EnvSchema = z.object({
   VITE_ENVIRONMENT: z.enum(['development', 'staging', 'production']).optional(),
   VITE_SUPABASE_URL: z.string().url().optional(),
-  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(10).optional(),
+  VITE_SUPABASE_ANON_KEY: z.string().min(10).optional(),
   VITE_SUPABASE_PROJECT_ID: z.string().min(5).optional(),
   VITE_APP_URL: z.string().url().optional(),
   VITE_ENABLE_ANALYTICS: z.string().optional(),
@@ -26,7 +26,7 @@ export const ENV_CONFIG = {
   isProduction: currentEnv === 'production',
   supabase: {
     url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-    anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
+    anonKey: env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
     projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id'
   },
   app: {

@@ -5,7 +5,7 @@ import { env } from '@/lib/env';
 
 // Handle preview environment where env vars might not be available
 const supabaseUrl = env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key';
+const supabaseKey = env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
 console.info('[supabase] using:', new URL(supabaseUrl).host);
 

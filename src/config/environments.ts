@@ -27,7 +27,7 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
     name: env.VITE_ENVIRONMENT || 'production',
     supabase: {
       url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-      anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
+      anonKey: env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
       projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id'
     },
     app: {
