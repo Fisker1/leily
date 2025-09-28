@@ -26,7 +26,7 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
   className,
   disabled = false
 }) => {
-  const [finnCode, setFinnCode] = useState(initialFinnCode);
+  const [finnInput, setFinnInput] = useState(initialFinnCode);
   const [loading, setLoading] = useState(false);
   const [propertyData, setPropertyData] = useState<FinnPropertyData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,29 +35,48 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
   const { toast } = useToast();
   const { isPro } = useSubscription();
 
-  const validateFinnCode = (code: string): boolean => {
-    return utilValidateFinnCode(code);
+  const extractFinnCodeFromUrl = (input: string): string | null => {
+    // If it's already just a Finn code (8-9 digits), return it
+    if (/^\d{8,9}$/.test(input.trim())) {
+      return input.trim();
+    }
+    
+    // Extract from URL
+    const urlPattern = /finnkode=(\d{8,9})/;
+    const match = input.match(urlPattern);
+    return match ? match[1] : null;
+  };
+
+  const validateFinnInput = (input: string): { isValid: boolean; finnCode: string | null } => {
+    const extractedCode = extractFinnCodeFromUrl(input);
+    return {
+      isValid: extractedCode !== null && utilValidateFinnCode(extractedCode),
+      finnCode: extractedCode
+    };
   };
 
   const handleFetchProperty = async () => {
     console.log('🚀🚀🚀 STARTING FINN PROPERTY FETCH 🚀🚀🚀');
-    console.log('Input finn code:', finnCode);
+    console.log('Input finn input:', finnInput);
     console.log('User isPro:', isPro);
     
-    if (!finnCode.trim()) {
-      console.log('❌ Empty finn code');
-      setError('Vennligst fyll inn en Finn-kode');
+    if (!finnInput.trim()) {
+      console.log('❌ Empty finn input');
+      setError('Vennligst fyll inn en Finn.no URL eller Finn-kode');
       return;
     }
 
-    const cleanCode = finnCode.trim();
-    console.log('Cleaned finn code:', cleanCode);
+    const validation = validateFinnInput(finnInput);
+    console.log('Validation result:', validation);
     
-    if (!validateFinnCode(cleanCode)) {
-      console.log('❌ Invalid finn code format');
-      setError('Ugyldig Finn-kode format. Koden skal være 8-9 siffer.');
+    if (!validation.isValid || !validation.finnCode) {
+      console.log('❌ Invalid finn input format');
+      setError('Ugyldig URL eller Finn-kode format. Koden skal være 8-9 siffer.');
       return;
     }
+
+    const cleanCode = validation.finnCode;
+    console.log('Extracted finn code:', cleanCode);
 
     if (!isPro) {
       console.log('❌ User not Pro');
@@ -296,30 +315,30 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
           <Badge variant="secondary" className="text-xs">Pro</Badge>
         </CardTitle>
         <CardDescription className="text-sm">
-          Hent eiendomsdata automatisk med Finn-kode fra annonsen. Data lagres i 6 måneder for raskere tilgang.
+          Hent eiendomsdata automatisk med Finn.no URL eller Finn-kode fra annonsen. Data lagres i 6 måneder for raskere tilgang.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!propertyData && (
           <>
             <div>
-              <Label htmlFor="finn-code-input" className="text-sm">Finn-kode</Label>
+              <Label htmlFor="finn-input" className="text-sm">Finn.no URL eller Finn-kode</Label>
               <Input
-                id="finn-code-input"
-                value={finnCode}
-                onChange={(e) => setFinnCode(e.target.value)}
-                placeholder="f.eks. 123456789"
+                id="finn-input"
+                value={finnInput}
+                onChange={(e) => setFinnInput(e.target.value)}
+                placeholder="https://www.finn.no/realestate/homes/ad.html?finnkode=123456789 eller bare 123456789"
                 disabled={loading || disabled}
                 className="text-sm"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Finner du i URL-en på Finn.no annonsen, f.eks. finn.no/realestate/homes/ad/<strong>123456789</strong>
+                Kopier hele URL-en fra Finn.no eller skriv bare Finn-koden (8-9 siffer)
               </p>
             </div>
 
             <Button 
               onClick={handleFetchProperty} 
-              disabled={loading || disabled || !finnCode.trim()}
+              disabled={loading || disabled || !finnInput.trim()}
               size="sm"
               className="w-full"
             >
