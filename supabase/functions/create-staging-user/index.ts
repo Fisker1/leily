@@ -34,111 +34,133 @@ serve(async (req) => {
     // Create Supabase client with service role key (can manage auth)
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-    const testEmail = 'anderslundoy@protonmail.com'
-    const testPassword = 'blåmeis'
-
-    // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabase.auth.admin.getUserByEmail(testEmail)
-    
-    if (existingUser && existingUser.user) {
-      return new Response(
-        JSON.stringify({ 
-          message: 'Test user already exists',
-          user_id: existingUser.user.id,
-          email: testEmail
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Create the test user
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-      email: testEmail,
-      password: testPassword,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        full_name: 'Stager Test User'
-      }
-    })
-
-    if (createError) {
-      console.error('Error creating user:', createError)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to create user',
-          details: createError.message 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    if (!newUser.user) {
-      return new Response(
-        JSON.stringify({ error: 'User creation returned no user data' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Update profile with premium subscription
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: 'Stager Test User',
+    const testUsers = [
+      {
+        email: 'gjest@leily.no',
+        password: 'blåmeis',
+        full_name: 'Gjest Bruker',
+        subscription_tier: 'free',
+        role: 'user'
+      },
+      {
+        email: 'pro@leily.no', 
+        password: 'rødspette',
+        full_name: 'Pro Bruker',
         subscription_tier: 'premium',
-        subscription_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
-      })
-      .eq('id', newUser.user.id)
+        role: 'user'
+      },
+      {
+        email: 'ambassadør@leily.no',
+        password: 'clinton', 
+        full_name: 'Ambassadør Bruker',
+        subscription_tier: 'premium',
+        role: 'ambassador'
+      }
+    ]
 
-    if (profileError) {
-      console.error('Error updating profile:', profileError)
-    }
+    const createdUsers = []
 
-    // Assign admin role
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: newUser.user.id,
-        role: 'admin'
-      })
+    for (const testUser of testUsers) {
+      // Check if user already exists
+      const { data: existingUsers } = await supabase.auth.admin.listUsers()
+      const existingUser = existingUsers?.users?.find(user => user.email === testUser.email)
+      
+      if (existingUser) {
+        createdUsers.push({
+          ...testUser,
+          user_id: existingUser.id,
+          status: 'already_exists'
+        })
+        continue
+      }
 
-    if (roleError) {
-      console.error('Error assigning admin role:', roleError)
-    }
-
-    // Log the creation
-    await supabase
-      .from('audit_log')
-      .insert({
-        table_name: 'auth_users',
-        action: 'STAGING_TEST_USER_CREATED',
-        user_id: newUser.user.id,
-        details: {
-          email: testEmail,
-          environment: 'staging',
-          created_by_function: true,
-          subscription_tier: 'premium',
-          role: 'admin',
-          created_at: new Date().toISOString()
+      // Create the test user
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: testUser.email,
+        password: testUser.password,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          full_name: testUser.full_name
         }
       })
+
+      if (createError) {
+        console.error('Error creating user:', testUser.email, createError)
+        createdUsers.push({
+          ...testUser,
+          status: 'error',
+          error: createError.message
+        })
+        continue
+      }
+
+      if (!newUser.user) {
+        createdUsers.push({
+          ...testUser,
+          status: 'error',
+          error: 'User creation returned no user data'
+        })
+        continue
+      }
+
+      // Update profile with subscription
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: testUser.full_name,
+          subscription_tier: testUser.subscription_tier,
+          subscription_end: testUser.subscription_tier === 'premium' 
+            ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() 
+            : null
+        })
+        .eq('id', newUser.user.id)
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError)
+      }
+
+      // Assign role if not default user
+      if (testUser.role !== 'user') {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: newUser.user.id,
+            role: testUser.role
+          })
+
+        if (roleError) {
+          console.error('Error assigning role:', roleError)
+        }
+      }
+
+      // Log the creation
+      await supabase
+        .from('audit_log')
+        .insert({
+          table_name: 'auth_users',
+          action: 'STAGING_TEST_USER_CREATED',
+          user_id: newUser.user.id,
+          details: {
+            email: testUser.email,
+            environment: 'staging',
+            created_by_function: true,
+            subscription_tier: testUser.subscription_tier,
+            role: testUser.role,
+            created_at: new Date().toISOString()
+          }
+        })
+
+      createdUsers.push({
+        ...testUser,
+        user_id: newUser.user.id,
+        status: 'created'
+      })
+    }
 
     return new Response(
       JSON.stringify({ 
-        message: 'Staging test user created successfully',
-        user_id: newUser.user.id,
-        email: testEmail,
-        password_hint: 'blåmeis',
-        subscription_tier: 'premium',
-        role: 'admin'
+        message: 'Staging test users processed',
+        users: createdUsers
       }),
       { 
         status: 200, 
@@ -151,7 +173,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500, 

@@ -13,8 +13,9 @@ const SimpleAuth = () => {
   const { translations } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [showStagerPassword, setShowStagerPassword] = useState(false);
-  const [stagerPassword, setStagerPassword] = useState('');
+  const [showTestLogin, setShowTestLogin] = useState(false);
+  const [selectedTestUser, setSelectedTestUser] = useState('');
+  const [testPassword, setTestPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // Automatic redirect when user is authenticated
@@ -25,75 +26,78 @@ const SimpleAuth = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const handleStagerLogin = async () => {
-    console.log('🥷 Stager login attempt with password:', stagerPassword);
-    
-    if (stagerPassword !== 'blåmeis') {
+  const testUsers = [
+    { email: 'gjest@leily.no', password: 'blåmeis', name: 'Gjest', icon: '👤' },
+    { email: 'pro@leily.no', password: 'rødspette', name: 'Pro', icon: '⭐' },
+    { email: 'ambassadør@leily.no', password: 'clinton', name: 'Ambassadør', icon: '🎯' }
+  ];
+
+  const handleTestLogin = async () => {
+    const user = testUsers.find(u => u.name === selectedTestUser);
+    if (!user) {
+      alert('Velg en testbruker!');
+      return;
+    }
+
+    if (testPassword !== user.password) {
       alert('Feil passord!');
       return;
     }
     
-    console.log('🥷 Correct password, starting login...');
     setLoading(true);
     try {
-      console.log('🥷 Trying to sign in with Stager credentials...');
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'anderslundoy@protonmail.com',
-        password: 'blåmeis'
+        email: user.email,
+        password: user.password
       });
       
-      console.log('🥷 Login result:', { data: !!data, error: error?.message });
-      
       if (error) {
-        console.error('🥷 Stager login error:', error);
+        console.error('Test login error:', error);
         
-        // If user doesn't exist, try to create them automatically in staging
+        // If user doesn't exist, try to create them automatically
         if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
-          console.log('🥷 User might not exist, attempting to create staging user...');
+          console.log('User might not exist, attempting to create test users...');
           try {
             const createResponse = await supabase.functions.invoke('create-staging-user', {
               method: 'POST'
             });
             
-            console.log('🥷 User creation result:', createResponse);
+            console.log('User creation result:', createResponse);
             
             if (!createResponse.error) {
-              alert('Testbruker opprettet! Prøv å logge inn igjen.');
+              alert('Testbrukere opprettet! Prøv å logge inn igjen.');
               // Try login again after user creation
               const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-                email: 'anderslundoy@protonmail.com',
-                password: 'blåmeis'
+                email: user.email,
+                password: user.password
               });
               
               if (retryError) {
                 alert('Innlogging feilet selv etter brukeroppretting: ' + retryError.message);
               } else {
-                console.log('🥷 Retry login success:', retryData);
-                setStagerPassword('');
-                setShowStagerPassword(false);
+                console.log('Retry login success:', retryData);
+                setTestPassword('');
+                setShowTestLogin(false);
               }
             } else {
-              alert('Kunne ikke opprette testbruker: ' + createResponse.error + '\n\nKontakt administrator for å sette opp testbrukeren manuelt.');
+              alert('Kunne ikke opprette testbrukere: ' + createResponse.error);
             }
           } catch (createErr) {
-            console.error('🥷 Error creating user:', createErr);
-            alert('Testbruker eksisterer ikke og kunne ikke opprettes automatisk.\n\nFor å løse dette:\n1. Gå til Supabase Dashboard\n2. Authentication → Users\n3. Opprett bruker: anderslundoy@protonmail.com\n4. Sett passord: blåmeis\n5. Bekreft epost');
+            console.error('Error creating users:', createErr);
+            alert('Testbrukere eksisterer ikke og kunne ikke opprettes automatisk.');
           }
         } else {
           alert('Innlogging feilet: ' + error.message);
         }
       } else {
-        console.log('🥷 Stager login success:', data);
-        // Reset password input
-        setStagerPassword('');
-        setShowStagerPassword(false);
-        // Let AuthContext handle the redirect automatically
+        console.log('Test login success:', data);
+        setTestPassword('');
+        setShowTestLogin(false);
       }
     } catch (err) {
-      console.error('🥷 Unexpected error:', err);
+      console.error('Unexpected error:', err);
       alert('Uventet feil: ' + (err as Error).message);
     } finally {
-      console.log('🥷 Login attempt finished');
       setLoading(false);
     }
   };
@@ -275,41 +279,44 @@ const SimpleAuth = () => {
               Fortsett med Vipps
             </Button>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                console.log('🥷 Stager button clicked - showing password input');
-                setShowStagerPassword(true);
-              }}
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <div className="w-4 h-4 mr-2 text-slate-700">
-                  🥷
-                </div>
-              )}
-              Stager
-            </Button>
+            {testUsers.map((user) => (
+              <Button
+                key={user.name}
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setSelectedTestUser(user.name);
+                  setShowTestLogin(true);
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <span className="w-4 h-4 mr-2">
+                    {user.icon}
+                  </span>
+                )}
+                {user.name}
+              </Button>
+            ))}
 
-            {/* Stager Password Input */}
-            {showStagerPassword && (
+            {/* Test Login Password Input */}
+            {showTestLogin && (
               <Card className="bg-muted/50 border-2 border-primary/20">
                 <CardContent className="p-4 space-y-3">
                   <div className="text-sm font-medium text-foreground">
-                    Skriv inn passordet for Stager:
+                    Skriv inn passordet for {selectedTestUser}:
                   </div>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Passord..."
-                      value={stagerPassword}
-                      onChange={(e) => setStagerPassword(e.target.value)}
+                      value={testPassword}
+                      onChange={(e) => setTestPassword(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          handleStagerLogin();
+                          handleTestLogin();
                         }
                       }}
                       className="pr-10"
@@ -331,7 +338,7 @@ const SimpleAuth = () => {
                   </div>
                   <div className="flex space-x-2">
                     <Button
-                      onClick={handleStagerLogin}
+                      onClick={handleTestLogin}
                       disabled={loading}
                       className="flex-1"
                     >
@@ -343,8 +350,9 @@ const SimpleAuth = () => {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        setShowStagerPassword(false);
-                        setStagerPassword('');
+                        setShowTestLogin(false);
+                        setTestPassword('');
+                        setSelectedTestUser('');
                       }}
                       disabled={loading}
                     >
