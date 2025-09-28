@@ -154,11 +154,11 @@ export const FinnPropertyDisplay: React.FC<FinnPropertyDisplayProps> = ({
               <CardTitle className="text-sm font-medium">Nøkkelinfo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {keyInfo.map((item, index) => (
-                  <div key={index}>
+                  <div key={index} className="space-y-1">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
-                    <p className="font-medium">
+                    <p className="font-medium break-words leading-tight">
                       {typeof item.value === 'string' && item.value.toLowerCase() === item.value ? 
                         item.value.charAt(0).toUpperCase() + item.value.slice(1) : 
                         item.value}{item.suffix || ''}
