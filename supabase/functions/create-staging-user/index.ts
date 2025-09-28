@@ -48,14 +48,14 @@ serve(async (req) => {
         email: 'pro@leily.no', 
         password: 'rødspette',
         full_name: 'Pro Bruker',
-        subscription_tier: 'premium',
+        subscription_tier: 'pro',
         role: 'user'
       },
       {
         email: 'ambassador@leily.no',
         password: 'hærverk', 
         full_name: 'Ambassador Bruker',
-        subscription_tier: 'premium',
+        subscription_tier: 'pro',
         role: 'ambassador'
       }
     ]
@@ -122,7 +122,7 @@ serve(async (req) => {
           email: testUser.email,
           full_name: testUser.full_name,
           subscription_tier: testUser.subscription_tier,
-          subscription_end: testUser.subscription_tier === 'premium' 
+          subscription_end: testUser.subscription_tier === 'pro' 
             ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() 
             : null
         }, { onConflict: 'id' })

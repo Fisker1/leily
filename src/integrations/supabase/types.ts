@@ -124,33 +124,6 @@ export type Database = {
         }
         Relationships: []
       }
-      finn_property_cache: {
-        Row: {
-          created_at: string
-          finn_code: string
-          id: string
-          property_data: Json
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          finn_code: string
-          id?: string
-          property_data: Json
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          finn_code?: string
-          id?: string
-          property_data?: Json
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       deposit_accounts: {
         Row: {
           account_number: string | null
@@ -197,6 +170,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      finn_property_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          extracted_at: string
+          finn_code: string
+          id: string
+          property_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code: string
+          id?: string
+          property_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code?: string
+          id?: string
+          property_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       lease_agreements: {
         Row: {
@@ -768,6 +771,10 @@ export type Database = {
           severity: string
           status: string
         }[]
+      }
+      cleanup_expired_finn_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
