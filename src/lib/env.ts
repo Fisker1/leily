@@ -3,9 +3,9 @@ import { z } from 'zod'
 // Strongly-typed, validated environment config for client-only usage
 const EnvSchema = z.object({
   VITE_ENVIRONMENT: z.enum(['development', 'staging', 'production']).optional(),
-  VITE_SUPABASE_URL: z.string().url(),
-  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(10),
-  VITE_SUPABASE_PROJECT_ID: z.string().min(5),
+  VITE_SUPABASE_URL: z.string().url().optional(),
+  VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(10).optional(),
+  VITE_SUPABASE_PROJECT_ID: z.string().min(5).optional(),
   VITE_APP_URL: z.string().url().optional(),
   VITE_ENABLE_ANALYTICS: z.string().optional(),
   VITE_DEBUG: z.string().optional(),
@@ -25,9 +25,9 @@ export const ENV_CONFIG = {
   isStaging: currentEnv === 'staging',
   isProduction: currentEnv === 'production',
   supabase: {
-    url: env.VITE_SUPABASE_URL,
-    anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    projectId: env.VITE_SUPABASE_PROJECT_ID
+    url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+    anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
+    projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id'
   },
   app: {
     baseUrl: env.VITE_APP_URL || window.location.origin,

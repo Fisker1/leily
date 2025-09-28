@@ -3,9 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { env } from '@/lib/env';
 
-console.info('[supabase] using:', new URL(env.VITE_SUPABASE_URL).host);
+// Handle preview environment where env vars might not be available
+const supabaseUrl = env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key';
 
-export const supabase = createClient<Database>(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_PUBLISHABLE_KEY, {
+console.info('[supabase] using:', new URL(supabaseUrl).host);
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
     storage: localStorage,
     persistSession: true,
