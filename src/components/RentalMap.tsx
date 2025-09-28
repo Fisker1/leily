@@ -302,28 +302,30 @@ const RentalMap = () => {
     // Update markers ref
     markers.current = addedMarkers;
 
-    // Auto-fit bounds for ALL markers (calculations included) - FIXED
+    // FIXED: Single, non-conflicting map centering
     if (addedMarkers.length > 0) {
       console.log(`🎯 Centering map on ${addedMarkers.length} markers`);
+      
+      // Stop any existing animations to prevent conflicts
+      map.current?.stop();
+      
       setTimeout(() => {
         try {
           if (primaryResidenceMarker) {
             // Priority: Center on primary residence
             const lngLat = primaryResidenceMarker.getLngLat();
             console.log('📍 Centering on primary residence:', lngLat);
-            map.current?.flyTo({
+            map.current?.jumpTo({
               center: [lngLat.lng, lngLat.lat],
-              zoom: 12,
-              duration: 2000
+              zoom: 12
             });
           } else if (addedMarkers.length === 1) {
             // Single marker: Center on it (could be calculation or property)
             const lngLat = addedMarkers[0].getLngLat();
             console.log('📍 Centering on single marker:', lngLat);
-            map.current?.flyTo({
+            map.current?.jumpTo({
               center: [lngLat.lng, lngLat.lat],
-              zoom: 12,
-              duration: 1500
+              zoom: 12
             });
           } else {
             // Multiple markers: Fit bounds to show all
@@ -335,30 +337,29 @@ const RentalMap = () => {
             console.log('📍 Fitting bounds for multiple markers');
             map.current?.fitBounds(bounds, {
               padding: 100,
-              duration: 1500,
-              maxZoom: 14
+              maxZoom: 14,
+              animate: false // Disable animation to prevent conflicts
             });
           }
         } catch (boundsError) {
           console.log('⚠️ Bounds calculation failed, using fallback center:', boundsError);
           // Fallback to center of Norway/Oslo
-          map.current?.flyTo({
+          map.current?.jumpTo({
             center: [10.7522, 59.9139], 
-            zoom: 6,
-            duration: 1000
+            zoom: 6
           });
         }
-      }, 800); // Increased delay to ensure map is ready
+      }, 300); // Reduced timeout
     } else {
       // No markers found - center on Norway
       console.log('📍 No markers found, centering on Norway');
       setTimeout(() => {
-        map.current?.flyTo({
+        map.current?.stop();
+        map.current?.jumpTo({
           center: [10.7522, 59.9139],
-          zoom: 6,
-          duration: 1000
+          zoom: 6
         });
-      }, 1000);
+      }, 300);
     }
 
     console.log(`✅ Added ${addedMarkers.length} markers total`);
