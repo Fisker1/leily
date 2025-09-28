@@ -8,20 +8,17 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy, useEffect } from "react";
 import ComingSoon from "./pages/ComingSoon";
-const COMING_SOON = import.meta.env.VITE_COMING_SOON === "true";
-const ALLOWLIST_PATH_PREFIXES: string[] = [];
-function isAllowedPath(pathname: string) {
-  return ALLOWLIST_PATH_PREFIXES.some((p) => pathname.startsWith(p));
-}
+import { APP_CONFIG, isProduction, FEATURES } from "@/lib/env";
 
-// Safe staging logs
-if (typeof window !== 'undefined') {
-  const host = window.location.host
-  if (host.includes('stage.leily.no') || host.includes('vercel.app')) {
-    // Log only flags, never secrets
-    // eslint-disable-next-line no-console
-    console.info('env flags', { COMING_SOON: (import.meta.env as Record<string, unknown>)?.VITE_COMING_SOON })
-  }
+// Coming soon logic: show for production only (unless explicitly disabled)
+const SHOULD_SHOW_COMING_SOON = isProduction && APP_CONFIG.comingSoon;
+
+// Debug logging for staging only
+if (typeof window !== 'undefined' && FEATURES.debug) {
+  console.info('Environment config:', { 
+    comingSoon: APP_CONFIG.comingSoon,
+    shouldShow: SHOULD_SHOW_COMING_SOON 
+  });
 }
 
 // Lazy load all pages for better performance
@@ -66,9 +63,11 @@ const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  if (COMING_SOON && !isAllowedPath(window.location.pathname)) {
+  // Show coming soon page for production environment when flag is enabled
+  if (SHOULD_SHOW_COMING_SOON) {
     return <ComingSoon />;
   }
+  
   return (
   <QueryClientProvider client={queryClient}>
       <ThemeProvider

@@ -1,10 +1,10 @@
 import React from 'react'
-import { env } from '@/lib/env'
+import { CURRENT_ENV } from '@/lib/env'
 
 export default function Health() {
   const info = {
     status: 'ok',
-    environment: env.VITE_ENVIRONMENT || 'unknown',
+    environment: CURRENT_ENV,
     ts: new Date().toISOString(),
   }
   return (

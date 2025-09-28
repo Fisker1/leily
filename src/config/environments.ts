@@ -1,7 +1,7 @@
-// Environment-specific configuration (now reads exclusively from env)
-import { env } from '@/lib/env';
+// Environment configuration - simplified and centralized
+import { CURRENT_ENV, SUPABASE_CONFIG, APP_CONFIG, FEATURES } from '@/lib/env';
 
-interface EnvironmentConfig {
+export interface EnvironmentConfig {
   name: string;
   supabase: {
     url: string;
@@ -11,33 +11,27 @@ interface EnvironmentConfig {
   app: {
     baseUrl: string;
     domain: string;
+    comingSoon: boolean;
   };
   features: {
     analytics: boolean;
-    debugging: boolean;
-    errorReporting: boolean;
+    debug: boolean;
   };
 }
 
-// Single source of truth from env
+// Single source of truth
 export const getEnvironmentConfig = (): EnvironmentConfig => {
-  const baseUrl = env.VITE_APP_URL || window.location.origin
-  const domain = new URL(baseUrl).host
+  const baseUrl = APP_CONFIG.baseUrl;
+  const domain = typeof window !== 'undefined' ? window.location.host : new URL(baseUrl || 'http://localhost').host;
+  
   return {
-    name: env.VITE_ENVIRONMENT || 'production',
-    supabase: {
-      url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-      anonKey: env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
-      projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id'
-    },
+    name: CURRENT_ENV,
+    supabase: SUPABASE_CONFIG,
     app: {
       baseUrl,
-      domain
+      domain,
+      comingSoon: APP_CONFIG.comingSoon
     },
-    features: {
-      analytics: false,
-      debugging: false,
-      errorReporting: true
-    }
-  }
-}
+    features: FEATURES
+  };
+};
