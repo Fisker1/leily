@@ -173,7 +173,7 @@ const RentalMap = () => {
     markers.current = [];
   };
 
-  // Create marker element with specific styling
+  // Create marker element with specific styling - FIXED hover issue
   const createMarkerElement = (type: 'my-property' | 'rental' | 'calculation' | 'market', data?: any) => {
     const el = document.createElement('div');
     el.className = 'custom-marker';
@@ -196,6 +196,7 @@ const RentalMap = () => {
         break;
     }
     
+    // FIXED: Removed problematic hover effects that caused jumping
     el.style.cssText = `
       width: 12px;
       height: 12px;
@@ -204,17 +205,7 @@ const RentalMap = () => {
       border-radius: 50%;
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease;
     `;
-    
-    // Add hover effect
-    el.addEventListener('mouseenter', () => {
-      el.style.transform = 'scale(1.2)';
-    });
-    
-    el.addEventListener('mouseleave', () => {
-      el.style.transform = 'scale(1)';
-    });
 
     return el;
   };
@@ -227,6 +218,12 @@ const RentalMap = () => {
     }
 
     console.log('🎯 Adding markers to map...');
+    console.log('🔍 Available data:', {
+      properties: properties?.length || 0,
+      calculationProperties: calculationProperties?.length || 0,
+      showMyProperties,
+      showCalculationProperties
+    });
     clearMarkers();
 
     let addedMarkers: any[] = [];
@@ -265,10 +262,17 @@ const RentalMap = () => {
       });
     }
 
-    // Add calculation markers if enabled
+    // Add calculation markers if enabled - DEBUG this section
     if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
       console.log(`🧮 Adding ${calculationProperties.length} calculation markers`);
-      calculationProperties.forEach((calc) => {
+      console.log('🔍 First calculation sample:', calculationProperties[0]);
+      calculationProperties.forEach((calc, index) => {
+        console.log(`🔍 Processing calculation ${index}:`, {
+          address: calc.property_address,
+          hasCoordinates: !!calc.coordinates,
+          coordinates: calc.coordinates
+        });
+        
         if (calc.coordinates && calc.coordinates.length === 2) {
           const el = createMarkerElement('calculation', calc);
           
@@ -288,6 +292,9 @@ const RentalMap = () => {
             .addTo(map.current);
             
           addedMarkers.push(marker);
+          console.log(`✅ Added calculation marker at [${calc.coordinates[0]}, ${calc.coordinates[1]}]`);
+        } else {
+          console.log(`❌ Calculation ${index} missing coordinates:`, calc);
         }
       });
     }
@@ -295,43 +302,63 @@ const RentalMap = () => {
     // Update markers ref
     markers.current = addedMarkers;
 
-    // Auto-fit bounds or center on primary residence
+    // Auto-fit bounds for ALL markers (calculations included) - FIXED
     if (addedMarkers.length > 0) {
+      console.log(`🎯 Centering map on ${addedMarkers.length} markers`);
       setTimeout(() => {
         try {
           if (primaryResidenceMarker) {
-            // Center on primary residence with nice zoom
+            // Priority: Center on primary residence
             const lngLat = primaryResidenceMarker.getLngLat();
+            console.log('📍 Centering on primary residence:', lngLat);
             map.current?.flyTo({
               center: [lngLat.lng, lngLat.lat],
               zoom: 12,
               duration: 2000
             });
           } else if (addedMarkers.length === 1) {
-            // Center on single marker
+            // Single marker: Center on it (could be calculation or property)
             const lngLat = addedMarkers[0].getLngLat();
+            console.log('📍 Centering on single marker:', lngLat);
             map.current?.flyTo({
               center: [lngLat.lng, lngLat.lat],
               zoom: 12,
-              duration: 2000
+              duration: 1500
             });
           } else {
-            // Fit all markers
+            // Multiple markers: Fit bounds to show all
             const bounds = new mapboxgl.LngLatBounds();
             addedMarkers.forEach(marker => {
               bounds.extend(marker.getLngLat());
             });
             
+            console.log('📍 Fitting bounds for multiple markers');
             map.current?.fitBounds(bounds, {
-              padding: 50,
-              duration: 2000,
-              maxZoom: 12
+              padding: 100,
+              duration: 1500,
+              maxZoom: 14
             });
           }
         } catch (boundsError) {
-          console.log('ℹ️ Bounds calculation skipped (safe to ignore):', boundsError);
+          console.log('⚠️ Bounds calculation failed, using fallback center:', boundsError);
+          // Fallback to center of Norway/Oslo
+          map.current?.flyTo({
+            center: [10.7522, 59.9139], 
+            zoom: 6,
+            duration: 1000
+          });
         }
-      }, 500); // Give map time to fully render
+      }, 800); // Increased delay to ensure map is ready
+    } else {
+      // No markers found - center on Norway
+      console.log('📍 No markers found, centering on Norway');
+      setTimeout(() => {
+        map.current?.flyTo({
+          center: [10.7522, 59.9139],
+          zoom: 6,
+          duration: 1000
+        });
+      }, 1000);
     }
 
     console.log(`✅ Added ${addedMarkers.length} markers total`);
