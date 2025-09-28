@@ -200,10 +200,11 @@ const RentalMap = () => {
         if (mapContainer.current && !map.current) {
           mapInstance = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v11',
+            style: 'mapbox://styles/mapbox/streets-v12',
             center: [10.7522, 59.9139], // Oslo
             zoom: 6,
-            attributionControl: false
+            attributionControl: false,
+            preserveDrawingBuffer: true
           });
 
           map.current = mapInstance;
@@ -212,21 +213,39 @@ const RentalMap = () => {
           const navControl = new mapboxgl.NavigationControl();
           mapInstance.addControl(navControl, 'top-right');
 
-          // Wait for map to load
+          // Wait for map to load and handle style loading
           mapInstance.on('load', () => {
+            console.log('✅ Map loaded successfully');
             setLoading(false);
             setError(null);
             addMarkers();
           });
 
-          // Handle only critical errors
-          mapInstance.on('error', (e: any) => {
-            if (e.error && e.error.status && e.error.status === 401) {
-              setError('Kartfeil: Autorisasjonsfeil');
-            } else if (e.error && e.error.message && e.error.message.includes('network')) {
-              setError('Kartfeil: Nettverksfeil');
-            }
+          mapInstance.on('styledata', () => {
+            console.log('🎨 Map style loaded');
           });
+
+          // Handle map errors more specifically
+          mapInstance.on('error', (e: any) => {
+            console.log('❌ Map error:', e);
+            // Only set error for critical issues, not tile loading errors
+            if (e.error && e.error.status === 401) {
+              setError('Kartfeil: Autorisasjonsfeil med Mapbox token');
+              setLoading(false);
+            } else if (e.error && e.error.message && e.error.message.includes('network')) {
+              setError('Kartfeil: Nettverksfeil - sjekk internettforbindelsen');
+              setLoading(false);
+            }
+            // Ignore tile-specific errors as they're usually temporary
+          });
+
+          // Force map to refresh after a short delay to help with tile loading
+          setTimeout(() => {
+            if (mapInstance && mapInstance.isStyleLoaded()) {
+              mapInstance.resize();
+              mapInstance.redraw();
+            }
+          }, 1000);
         }
       } catch (error: any) {
         setError(`Kunne ikke initialisere kartet: ${error.message}`);
