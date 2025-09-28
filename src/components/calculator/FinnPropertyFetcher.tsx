@@ -40,18 +40,27 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
   };
 
   const handleFetchProperty = async () => {
+    console.log('🚀🚀🚀 STARTING FINN PROPERTY FETCH 🚀🚀🚀');
+    console.log('Input finn code:', finnCode);
+    console.log('User isPro:', isPro);
+    
     if (!finnCode.trim()) {
+      console.log('❌ Empty finn code');
       setError('Vennligst fyll inn en Finn-kode');
       return;
     }
 
     const cleanCode = finnCode.trim();
+    console.log('Cleaned finn code:', cleanCode);
+    
     if (!validateFinnCode(cleanCode)) {
+      console.log('❌ Invalid finn code format');
       setError('Ugyldig Finn-kode format. Koden skal være 8-9 siffer.');
       return;
     }
 
     if (!isPro) {
+      console.log('❌ User not Pro');
       toast({
         title: "Pro-abonnement påkrevd",
         description: "Automatisk henting fra Finn.no krever Pro-abonnement",
@@ -60,23 +69,34 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
       return;
     }
 
+    console.log('✅ All validations passed, proceeding with fetch...');
     setLoading(true);
     setError(null);
     setPropertyData(null);
 
     try {
-      console.log('🔍 Fetching Finn property data for code:', cleanCode);
+      console.log('🔍 About to call edge function with cleanCode:', cleanCode);
+      console.log('🔧 Supabase client exists:', !!supabase);
+      console.log('📤 Request body will be:', { finnCode: cleanCode });
       
       // Use Supabase edge function for real Finn.no data
       const { data, error: functionError } = await supabase.functions.invoke('finn-property-scraper', {
         body: { finnCode: cleanCode }
       });
 
-      console.log('📊 Edge function response:', { data, functionError });
+      console.log('📊 COMPLETE Edge function response:');
+      console.log('  📄 data type:', typeof data);
+      console.log('  📄 data value:', data);
+      console.log('  ❌ error type:', typeof functionError);
+      console.log('  ❌ error value:', functionError);
+      console.log('  ❌ error name:', functionError?.name);
+      console.log('  ❌ error message:', functionError?.message);
+      console.log('  ❌ error context:', functionError?.context);
 
       // Handle both function errors and error responses
       if (functionError) {
-        console.error('❌ Function error:', functionError);
+        console.error('❌❌❌ FUNCTION ERROR DETECTED ❌❌❌');
+        console.error('Full error object:', JSON.stringify(functionError, null, 2));
         
         // Try to extract error details from the error object
         let errorMessage = 'Kunne ikke hente eiendomsdata';
