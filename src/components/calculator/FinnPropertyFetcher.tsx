@@ -65,21 +65,38 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
     setPropertyData(null);
 
     try {
+      console.log('🔍 Fetching Finn property data for code:', cleanCode);
+      
       // Use Supabase edge function for real Finn.no data
       const { data, error: functionError } = await supabase.functions.invoke('finn-property-scraper', {
         body: { finnCode: cleanCode }
       });
 
+      console.log('📊 Edge function response:', { data, functionError });
+
       // Handle both function errors and error responses
       if (functionError) {
-        // If there's function data with error info, use that
-        if (data && typeof data === 'object' && 'error' in data) {
-          throw new Error(data.message || 'Kunne ikke hente eiendomsdata');
+        console.error('❌ Function error:', functionError);
+        
+        // Try to extract error details from the error object
+        let errorMessage = 'Kunne ikke hente eiendomsdata';
+        
+        // Check if the error has details about the response
+        if (functionError.message) {
+          if (functionError.message.includes('quota exceeded') || functionError.message.includes('429')) {
+            errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+          } else if (functionError.message.includes('404') || functionError.message.includes('not found')) {
+            errorMessage = 'Fant ikke eiendommen. Sjekk Finn-koden og prøv igjen.';
+          } else {
+            errorMessage = functionError.message;
+          }
         }
-        throw functionError;
+        
+        throw new Error(errorMessage);
       }
 
       const response = data as FinnPropertyResponse;
+      console.log('✅ Parsed response:', response);
 
       if (!response.success) {
         throw new Error(response.message || 'Kunne ikke hente eiendomsdata');
@@ -108,12 +125,45 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
       }
 
     } catch (error: any) {
-      console.error('Error fetching Finn property:', error);
+      console.error('❌ Error fetching Finn property:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        context: error.context
+      });
       
       // Handle different error types from the edge function
       let errorMessage = 'Kunne ikke hente eiendomsdata';
       
-      if (error.message) {
+      // Try to handle Supabase FunctionsHttpError specifically
+      if (error.name === 'FunctionsHttpError' || error.message?.includes('non-2xx status code')) {
+        console.log('🔍 Attempting to fetch error details manually...');
+        
+        // Try to fetch the actual error response manually
+        try {
+          const response = await fetch(`https://rkhzyzuttsvsjcgzrokt.supabase.co/functions/v1/finn-property-scraper`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${(supabase as any).supabaseKey}`,
+              'apikey': (supabase as any).supabaseKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ finnCode: cleanCode })
+          });
+          
+          const errorData = await response.json();
+          console.log('📝 Manual fetch response:', errorData);
+          
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error === 'quota_exceeded') {
+            errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+          }
+        } catch (fetchError) {
+          console.error('❌ Manual fetch also failed:', fetchError);
+        }
+      } else if (error.message) {
         if (error.message.includes('OpenAI API quota exceeded') || error.message.includes('quota exceeded')) {
           errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
         } else if (error.message.includes('Property not found')) {
@@ -125,6 +175,7 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
         }
       }
       
+      console.log('🎯 Final error message:', errorMessage);
       setError(errorMessage);
       
       toast({

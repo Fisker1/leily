@@ -571,29 +571,42 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Finn scraper error:', error);
+    console.error('❌ Finn scraper error:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // Handle specific error types with user-friendly messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.log('🔍 Error message:', errorMessage);
     
     let statusCode = 500;
     let userMessage = 'An error occurred while fetching property data. Please try again.';
+    let errorType = 'extraction_failed';
     
     if (errorMessage.includes('OpenAI API quota exceeded')) {
+      console.log('🚫 OpenAI quota exceeded detected');
       statusCode = 429;
       userMessage = 'OpenAI API quota exceeded. Property extraction is temporarily unavailable. Please try again later.';
+      errorType = 'quota_exceeded';
     } else if (errorMessage.includes('Property not found') || errorMessage.includes('Failed to fetch property page')) {
+      console.log('🏠 Property not found detected');
       statusCode = 404;
       userMessage = 'Property not found. Please check the Finn code and try again.';
+      errorType = 'property_not_found';
     } else if (errorMessage.includes('OpenAI API authentication failed')) {
+      console.log('🔐 OpenAI auth failed detected');
       statusCode = 500;
       userMessage = 'Service configuration error. Please contact support.';
+      errorType = 'auth_failed';
     }
+    
+    console.log('📤 Returning error response:', { errorType, userMessage, statusCode });
     
     return new Response(
       JSON.stringify({ 
-        error: errorMessage.includes('quota exceeded') ? 'quota_exceeded' : 'extraction_failed',
-        message: userMessage
+        success: false,
+        error: errorType,
+        message: userMessage,
+        details: errorMessage  // Include technical details for debugging
       }),
       { 
         status: statusCode, 
