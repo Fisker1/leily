@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/Navigation";
-import RentalMap from "@/components/RentalMap";
+import RentalMapLeaflet from "@/components/RentalMapLeaflet";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { PropertyEditDialog } from "@/components/PropertyEditDialog";
 import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
@@ -861,7 +861,7 @@ const Rental = () => {
           </TabsContent>
 
           <TabsContent value="map">
-            <RentalMap />
+            <RentalMapLeaflet />
           </TabsContent>
         </Tabs>
       </div>
