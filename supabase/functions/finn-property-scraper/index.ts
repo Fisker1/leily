@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,129 +28,111 @@ interface FinnPropertyData {
   };
 }
 
-// Helper function to extract numeric value from text
-function extractNumber(text: string): number {
-  const match = text.replace(/\s/g, '').match(/\d+/);
-  return match ? parseInt(match[0]) : 0;
-}
-
-// Helper function to clean and extract price
-function extractPrice(text: string): number {
-  const cleanText = text.replace(/[^\d]/g, '');
-  return parseInt(cleanText) || 0;
-}
-
-// Helper function to determine property type from Finn categories
-function mapPropertyType(finnType: string): string {
-  const type = finnType.toLowerCase();
-  if (type.includes('leilighet')) return 'leilighet';
-  if (type.includes('enebolig')) return 'enebolig';
-  if (type.includes('rekkehus') || type.includes('radhus')) return 'rekkehus';
-  if (type.includes('tomannsbolig')) return 'tomannsbolig';
-  return 'leilighet'; // default
-}
-
-async function scrapeFinnProperty(finnCode: string): Promise<FinnPropertyData | null> {
+async function scrapeFinnPropertyWithOpenAI(finnCode: string): Promise<FinnPropertyData | null> {
   try {
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const url = `https://www.finn.no/realestate/homes/ad/${finnCode}`;
+    console.log(`Using OpenAI to scrape Finn property: ${url}`);
     
-    // Use a web scraping service or headless browser
-    // For now, we'll simulate the data structure that would be scraped
-    const response = await fetch(url, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `Du er en ekspert på å analysere norske eiendomsannonser. Din oppgave er å besøke en Finn.no URL og ekstrahere strukturert eiendomsdata.
+
+Returner alltid data i dette eksakte JSON-formatet:
+{
+  "finnCode": "string",
+  "title": "string", 
+  "address": "string",
+  "price": number,
+  "propertyType": "leilighet|enebolig|rekkehus|tomannsbolig",
+  "livingArea": number,
+  "totalArea": number,
+  "bedrooms": number,
+  "yearBuilt": number,
+  "energyRating": "string",
+  "description": "string (max 500 chars)",
+  "images": ["array of image URLs"],
+  "municipalFees": number,
+  "sharedCosts": number,
+  "coordinates": {"lat": number, "lng": number}
+}
+
+Viktige instrukser:
+- Pris skal være totalpris uten mellomrom (f.eks 4500000, ikke "4 500 000")
+- Areal skal være kun tall (f.eks 85, ikke "85 m²")
+- Hvis noe ikke finnes, bruk null eller tom streng
+- Description maksimum 500 tegn
+- propertyType må være en av de fire verdiene
+- Finn geografiske koordinater hvis mulig`
+          },
+          {
+            role: 'user',
+            content: `Vennligst besøk denne Finn.no URL og ekstraher eiendomsdata: ${url}
+
+Returner kun gyldig JSON uten ekstra tekst eller forklaring.`
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1
+      }),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const html = await response.text();
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
     
-    // Parse HTML to extract property data
-    // This is a simplified version - in production you'd use a proper HTML parser
-    const data: Partial<FinnPropertyData> = {
-      finnCode: finnCode
-    };
-
-    // Extract title
-    const titleMatch = html.match(/<h1[^>]*class="[^"]*"[^>]*>([^<]+)<\/h1>/);
-    if (titleMatch) {
-      data.title = titleMatch[1].trim();
+    if (!content) {
+      throw new Error('No response from OpenAI');
     }
 
-    // Extract price
-    const priceMatch = html.match(/Prisantydning[^>]*>.*?(\d[\d\s]+)\s*kr/i) || 
-                      html.match(/Totalpris[^>]*>.*?(\d[\d\s]+)\s*kr/i);
-    if (priceMatch) {
-      data.price = extractPrice(priceMatch[1]);
+    console.log('OpenAI response:', content);
+
+    // Parse the JSON response
+    try {
+      const propertyData = JSON.parse(content);
+      
+      // Validate and clean the data
+      return {
+        finnCode: finnCode,
+        title: propertyData.title || 'Ukjent eiendom',
+        address: propertyData.address || 'Ukjent adresse',
+        price: parseInt(propertyData.price) || 0,
+        propertyType: propertyData.propertyType || 'leilighet',
+        livingArea: parseInt(propertyData.livingArea) || 0,
+        totalArea: parseInt(propertyData.totalArea) || parseInt(propertyData.livingArea) || 0,
+        bedrooms: parseInt(propertyData.bedrooms) || undefined,
+        yearBuilt: parseInt(propertyData.yearBuilt) || undefined,
+        energyRating: propertyData.energyRating || undefined,
+        description: propertyData.description ? propertyData.description.substring(0, 500) : '',
+        images: Array.isArray(propertyData.images) ? propertyData.images.slice(0, 5) : [],
+        municipalFees: parseInt(propertyData.municipalFees) || undefined,
+        sharedCosts: parseInt(propertyData.sharedCosts) || undefined,
+        coordinates: propertyData.coordinates || undefined
+      };
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response as JSON:', parseError);
+      console.error('Raw response:', content);
+      throw new Error('Invalid JSON response from OpenAI');
     }
-
-    // Extract address
-    const addressMatch = html.match(/address[^>]*>([^<]+)</i) ||
-                        html.match(/"address"[^>]*>([^<]+)</i);
-    if (addressMatch) {
-      data.address = addressMatch[1].trim();
-    }
-
-    // Extract living area
-    const areaMatch = html.match(/(\d+)\s*m²/i);
-    if (areaMatch) {
-      data.livingArea = parseInt(areaMatch[1]);
-    }
-
-    // Extract bedrooms
-    const bedroomMatch = html.match(/(\d+)\s*soverom/i);
-    if (bedroomMatch) {
-      data.bedrooms = parseInt(bedroomMatch[1]);
-    }
-
-    // Extract year built
-    const yearMatch = html.match(/byggeår[^>]*>.*?(\d{4})/i);
-    if (yearMatch) {
-      data.yearBuilt = parseInt(yearMatch[1]);
-    }
-
-    // Extract municipal fees
-    const municipalMatch = html.match(/kommunale\s+avgifter[^>]*>.*?(\d[\d\s]+)/i);
-    if (municipalMatch) {
-      data.municipalFees = extractNumber(municipalMatch[1]);
-    }
-
-    // Extract shared costs
-    const sharedMatch = html.match(/fellesutgifter[^>]*>.*?(\d[\d\s]+)/i);
-    if (sharedMatch) {
-      data.sharedCosts = extractNumber(sharedMatch[1]);
-    }
-
-    // Extract property type (simplified)
-    if (html.toLowerCase().includes('leilighet')) {
-      data.propertyType = 'leilighet';
-    } else if (html.toLowerCase().includes('enebolig')) {
-      data.propertyType = 'enebolig';
-    } else if (html.toLowerCase().includes('rekkehus')) {
-      data.propertyType = 'rekkehus';
-    } else if (html.toLowerCase().includes('tomannsbolig')) {
-      data.propertyType = 'tomannsbolig';
-    } else {
-      data.propertyType = 'leilighet';
-    }
-
-    // Extract description (simplified)
-    const descMatch = html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([^<]+)</i);
-    if (descMatch) {
-      data.description = descMatch[1].trim().substring(0, 500); // Limit description length
-    }
-
-    // Extract images (simplified)
-    const imageMatches = html.matchAll(/https:\/\/images\.finncdn\.no[^"'\s]+/g);
-    data.images = Array.from(imageMatches).slice(0, 5).map(match => match[0]); // Limit to 5 images
-
-    return data as FinnPropertyData;
 
   } catch (error) {
-    console.error('Error scraping Finn property:', error);
+    console.error('Error scraping with OpenAI:', error);
     return null;
   }
 }
@@ -244,8 +227,8 @@ serve(async (req) => {
     if (cachedData) {
       propertyData = cachedData.property_data as FinnPropertyData;
     } else {
-      // Scrape fresh data
-      propertyData = await scrapeFinnProperty(finnCode);
+      // Scrape fresh data using OpenAI
+      propertyData = await scrapeFinnPropertyWithOpenAI(finnCode);
       
       if (propertyData) {
         // Cache the result
@@ -254,7 +237,7 @@ serve(async (req) => {
           .upsert({
             finn_code: finnCode,
             property_data: propertyData,
-            user_id: user.id
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
           });
       }
     }
