@@ -41,72 +41,80 @@ serve(async (req) => {
     const fullAddress = city ? `${address}, ${city}` : address
     console.log(`🌍 Geocoding address: ${fullAddress}`)
     
-    // Make geocoding request to Mapbox with retries
-    const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${MAPBOX_PUBLIC_TOKEN}&country=${country}&limit=1`
-    
-    let response: Response | undefined;
-    let attempt = 0;
-    const maxAttempts = 3;
-    
-    while (attempt < maxAttempts) {
-      try {
-        console.log(`🔄 Geocoding attempt ${attempt + 1}/${maxAttempts}`)
-        response = await fetch(geocodeUrl, {
-          headers: {
-            'User-Agent': 'Leily-PropertyApp/1.0'
-          }
-        })
-        
-        if (response.ok) {
-          break;
-        }
-        
-        if (response.status === 403) {
-          console.error(`❌ Forbidden error (403) on attempt ${attempt + 1}`)
-        } else {
-          console.error(`❌ HTTP ${response.status} on attempt ${attempt + 1}`)
-        }
-        
-        attempt++;
-        if (attempt < maxAttempts) {
-          // Wait before retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        }
-      } catch (fetchError) {
-        console.error(`❌ Network error on attempt ${attempt + 1}:`, fetchError)
-        attempt++;
-        if (attempt < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        }
-      }
-    }
-    
-    if (!response || !response.ok) {
-      const errorText = response ? await response.text().catch(() => 'Unknown error') : 'No response received'
-      console.error(`❌ All geocoding attempts failed. Status: ${response?.status || 'unknown'}, Error: ${errorText}`)
+    // Try Mapbox geocoding first, fallback to Nominatim if it fails
+    let geocodingResult = null;
+    let geocodingSource = 'unknown';
+
+    // Attempt Mapbox geocoding
+    try {
+      console.log('🗺️ Attempting Mapbox geocoding...');
+      const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${MAPBOX_PUBLIC_TOKEN}&country=${country}&limit=1`
       
-      return new Response(
-        JSON.stringify({ 
-          error: 'Geocoding failed after retries',
-          status: response?.status || 0,
-          details: errorText,
-          address: fullAddress
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: response?.status || 500,
+      const mapboxResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'Leily-PropertyApp/1.0'
         }
-      )
+      });
+
+      if (mapboxResponse.ok) {
+        const mapboxData = await mapboxResponse.json();
+        if (mapboxData.features && mapboxData.features.length > 0) {
+          console.log('✅ Mapbox geocoding successful');
+          geocodingResult = {
+            coordinates: mapboxData.features[0].center,
+            place_name: mapboxData.features[0].place_name
+          };
+          geocodingSource = 'mapbox';
+        }
+      } else if (mapboxResponse.status === 403) {
+        console.log('⚠️ Mapbox geocoding forbidden (403) - token may not have geocoding permissions');
+      } else {
+        console.log(`⚠️ Mapbox geocoding failed with status ${mapboxResponse.status}`);
+      }
+    } catch (error) {
+      console.log('⚠️ Mapbox geocoding failed:', error instanceof Error ? error.message : 'Unknown error');
     }
 
-    const data = await response.json()
-    
-    if (!data.features || data.features.length === 0) {
-      console.log(`❌ No geocoding results found for: ${fullAddress}`)
+    // Fallback to Nominatim if Mapbox failed
+    if (!geocodingResult) {
+      try {
+        console.log('🌍 Falling back to Nominatim geocoding...');
+        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&countrycodes=${country.toLowerCase()}&limit=1&addressdetails=1`;
+        
+        const nominatimResponse = await fetch(nominatimUrl, {
+          headers: {
+            'User-Agent': 'Leily-PropertyApp/1.0',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (nominatimResponse.ok) {
+          const nominatimData = await nominatimResponse.json();
+          if (nominatimData && nominatimData.length > 0) {
+            const result = nominatimData[0];
+            console.log('✅ Nominatim geocoding successful');
+            geocodingResult = {
+              coordinates: [parseFloat(result.lon), parseFloat(result.lat)],
+              place_name: result.display_name
+            };
+            geocodingSource = 'nominatim';
+          }
+        } else {
+          console.log(`⚠️ Nominatim geocoding failed with status ${nominatimResponse.status}`);
+        }
+      } catch (error) {
+        console.log('⚠️ Nominatim geocoding failed:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    }
+
+    // If both services failed
+    if (!geocodingResult) {
+      console.log(`❌ All geocoding services failed for: ${fullAddress}`);
       return new Response(
         JSON.stringify({ 
-          error: 'No geocoding results found',
-          address: fullAddress
+          error: 'All geocoding services failed',
+          address: fullAddress,
+          attempted_services: ['mapbox', 'nominatim']
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -115,16 +123,15 @@ serve(async (req) => {
       )
     }
 
-    const feature = data.features[0]
-    const [lng, lat] = feature.center
-    
-    console.log(`✅ Successfully geocoded ${fullAddress} to [${lng}, ${lat}]`)
+    const [lng, lat] = geocodingResult.coordinates;
+    console.log(`✅ Successfully geocoded ${fullAddress} to [${lng}, ${lat}] using ${geocodingSource}`);
     
     return new Response(
       JSON.stringify({ 
         coordinates: [lng, lat],
-        place_name: feature.place_name,
+        place_name: geocodingResult.place_name,
         address: fullAddress,
+        source: geocodingSource,
         success: true
       }),
       {
