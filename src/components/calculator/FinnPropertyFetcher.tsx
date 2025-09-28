@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FinnPropertyData, FinnPropertyResponse } from '@/types/finn';
 import { formatNumberWithSpaces } from '@/lib/utils';
-import { mockFinnPropertyData, validateFinnCode as utilValidateFinnCode } from '@/utils/finnScraper';
+import { validateFinnCode as utilValidateFinnCode } from '@/utils/finnScraper';
 
 interface FinnPropertyFetcherProps {
   onPropertyDataReceived?: (data: FinnPropertyData) => void;
@@ -65,59 +65,39 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
     setPropertyData(null);
 
     try {
-      // For development, use mock data. In production, use the Supabase edge function
-      const isDevelopment = import.meta.env.DEV;
-      
-      if (isDevelopment) {
-        // Use mock data for development
-        const result = await mockFinnPropertyData(cleanCode);
+      // Use Supabase edge function for real Finn.no data
+      const { data, error: functionError } = await supabase.functions.invoke('finn-property-scraper', {
+        body: { finnCode: cleanCode }
+      });
+
+      if (functionError) throw functionError;
+
+      const response = data as FinnPropertyResponse;
+
+      if (!response.success) {
+        throw new Error(response.message || 'Kunne ikke hente eiendomsdata');
+      }
+
+      if (response.data) {
+        setPropertyData(response.data);
+        setCached(response.cached || false);
         
-        if (!result.success) {
-          throw new Error(result.error || 'Kunne ikke hente eiendomsdata');
+        if (onPropertyDataReceived) {
+          onPropertyDataReceived(response.data);
         }
 
-        if (result.data) {
-          setPropertyData(result.data);
-          setCached(false);
-          
-          if (onPropertyDataReceived) {
-            onPropertyDataReceived(result.data);
-          }
-
-          toast({
-            title: "Eiendomsdata hentet! (Demo)",
-            description: "Demo-data for utvikling. I produksjon hentes ekte data fra Finn.no",
-          });
-        }
-      } else {
-        // Production: use Supabase edge function
-        const { data, error: functionError } = await supabase.functions.invoke('finn-property-scraper', {
-          body: { finnCode: cleanCode }
+        toast({
+          title: "Eiendomsdata hentet!",
+          description: response.cached 
+            ? "Data hentet fra hurtiglager (cache)" 
+            : "Ferske data hentet fra Finn.no",
         });
-
-        if (functionError) throw functionError;
-
-        const response = data as FinnPropertyResponse;
-
-        if (!response.success) {
-          throw new Error(response.message || 'Kunne ikke hente eiendomsdata');
-        }
-
-        if (response.data) {
-          setPropertyData(response.data);
-          setCached(response.cached || false);
-          
-          if (onPropertyDataReceived) {
-            onPropertyDataReceived(response.data);
-          }
-
-          toast({
-            title: "Eiendomsdata hentet!",
-            description: response.cached 
-              ? "Data hentet fra cache (oppdatert i dag)" 
-              : "Ferske data hentet fra Finn.no",
-          });
-        }
+        toast({
+          title: "Eiendomsdata hentet!",
+          description: response.cached 
+            ? "Data hentet fra hurtiglager (cache)" 
+            : "Ferske data hentet fra Finn.no",
+        });
       }
 
     } catch (error: any) {
