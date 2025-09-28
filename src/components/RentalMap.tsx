@@ -1,48 +1,56 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { MapPin, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useOptimizedPropertyData } from '@/hooks/useOptimizedPropertyData';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-
-// Stable map reference outside component to prevent re-initialization
-let mapInstance: any = null;
-let mapboxgl: any = null;
-let isMapboxLoaded = false;
+import React, { useEffect, useRef, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Loader2, MapPin, TrendingUp, Home, DollarSign, Calculator } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useOptimizedPropertyData } from "@/hooks/useOptimizedPropertyData";
+import { formatNumberWithSpaces } from "@/lib/utils";
 
 const RentalMap = () => {
+  const { isPro } = useSubscription();
   const { user } = useAuth();
-  const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
   const { toast } = useToast();
-  
-  // Stable refs
   const mapContainer = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<any[]>([]);
-  const isInitializedRef = useRef(false);
-  
-  // Stable state with refs to prevent unnecessary re-renders
+  const map = useRef<any>(null);
+  const markers = useRef<any[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [mapboxgl, setMapboxgl] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [mapReady, setMapReady] = useState(false);
-  
-  // Layer toggles with localStorage persistence
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastTokenFetch, setLastTokenFetch] = useState<number>(0);
+
+  // Prevent error loops - simple flag
+  const [errorShown, setErrorShown] = useState(false);
+
+  // Layer toggles with localStorage persistence - RESET TO ENSURE THEY'RE ON
   const [showMyProperties, setShowMyProperties] = useState(() => {
-    return localStorage.getItem('rentalMap_showMyProperties') !== 'false';
+    // Reset localStorage for debugging
+    localStorage.removeItem('rentalMap_showMyProperties');
+    return true; // Force to true
   });
   const [showRentalProperties, setShowRentalProperties] = useState(() => {
-    return localStorage.getItem('rentalMap_showRentalProperties') !== 'false';
+    // Reset localStorage for debugging  
+    localStorage.removeItem('rentalMap_showRentalProperties');
+    return true; // Force to true
   });
   const [showCalculationProperties, setShowCalculationProperties] = useState(() => {
-    return localStorage.getItem('rentalMap_showCalculationProperties') !== 'false';
+    localStorage.removeItem('rentalMap_showCalculationProperties');
+    return true; // Force to true
   });
   const [showMarketData, setShowMarketData] = useState(() => {
-    return localStorage.getItem('rentalMap_showMarketData') !== 'false';
+    localStorage.removeItem('rentalMap_showMarketData');
+    return true; // Force to true
   });
+
+  // Get data
+  const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
 
   // Persist layer toggle states
   useEffect(() => {
@@ -61,304 +69,429 @@ const RentalMap = () => {
     localStorage.setItem('rentalMap_showMarketData', String(showMarketData));
   }, [showMarketData]);
 
-  // Stable function to load Mapbox
-  const loadMapbox = useCallback(async () => {
-    if (isMapboxLoaded && mapboxgl) return mapboxgl;
-    
-    try {
-      const mapboxModule = await import('mapbox-gl');
-      mapboxgl = mapboxModule.default;
-      isMapboxLoaded = true;
-      return mapboxgl;
-    } catch (error) {
-      console.error('Failed to load Mapbox GL:', error);
-      throw new Error('Could not load map library');
-    }
-  }, []);
+  // Load Mapbox GL JS dynamically
+  useEffect(() => {
+    const loadMapbox = async () => {
+      try {
+        const mapboxModule = await import('mapbox-gl');
+        setMapboxgl(mapboxModule.default);
+        console.log('✅ Mapbox GL loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to load Mapbox GL:', error);
+        if (!errorShown) {
+          setError('Could not load map library');
+          setErrorShown(true);
+        }
+      }
+    };
+    loadMapbox();
+  }, [errorShown]);
 
-  // Stable function to fetch token
-  const fetchMapboxToken = useCallback(async () => {
+  // Fetch Mapbox token with enhanced error handling
+  const fetchMapboxToken = async (forceRefresh = false) => {
+    const now = Date.now();
+    const tokenAge = now - lastTokenFetch;
+    const TOKEN_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+    
+    // Use cached token if it's fresh and not forcing refresh
+    if (mapboxToken && tokenAge < TOKEN_CACHE_DURATION && !forceRefresh) {
+      console.log('🔄 Using cached Mapbox token (age:', Math.round(tokenAge / 60000), 'minutes)');
+      return mapboxToken;
+    }
+
     try {
+      console.log('🔑 Fetching fresh Mapbox token from edge function...');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error) {
-        throw new Error(`Token service failed: ${error.message}`);
+        console.error('❌ Edge function error:', error);
+        throw new Error(`Edge function failed: ${error.message || 'Unknown error'}`);
       }
 
-      if (data?.success && data?.token) {
+      if (data?.success && data?.token && data.token.startsWith('pk.')) {
+        console.log('✅ Valid Mapbox token received');
+        console.log('Token prefix:', data.tokenPrefix);
+        
+        setMapboxToken(data.token);
+        setLastTokenFetch(now);
+        setRetryCount(0);
         return data.token;
       } else {
-        throw new Error('Invalid token response');
+        console.error('❌ Invalid response from edge function:', data);
+        throw new Error('Invalid response format from token service');
       }
     } catch (error: any) {
-      console.error('Token fetch failed:', error);
+      console.error('❌ Failed to fetch token:', error);
       throw error;
     }
-  }, []);
+  };
 
-  // Stable function to clear markers
-  const clearMarkers = useCallback(() => {
-    markersRef.current.forEach(marker => {
-      try {
-        marker.remove();
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-    });
-    markersRef.current = [];
-  }, []);
-
-  // Stable function to create marker elements
-  const createMarkerElement = useCallback((type: 'my-property' | 'rental' | 'calculation' | 'market', data?: any) => {
-    const el = document.createElement('div');
-    el.className = 'custom-marker';
-    el.style.cursor = 'pointer';
+  // Auto-refresh token before expiration
+  useEffect(() => {
+    if (!user || !mapboxToken) return;
     
-    const colors = {
-      'my-property': '#3b82f6',
-      'rental': '#10b981', 
-      'calculation': '#f59e0b',
-      'market': '#ef4444'
+    const TOKEN_REFRESH_INTERVAL = 80 * 60 * 1000; // 80 minutes
+    const refreshTimer = setTimeout(() => {
+      console.log('🔄 Auto-refreshing Mapbox token...');
+      fetchMapboxToken(true).catch(console.error);
+    }, TOKEN_REFRESH_INTERVAL);
+
+    return () => clearTimeout(refreshTimer);
+  }, [mapboxToken, user]);
+
+  // Initial token fetch with better error handling
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    const initializeToken = async () => {
+      try {
+        await fetchMapboxToken();
+      } catch (error: any) {
+        console.error('Token fetch failed:', error);
+        if (!errorShown) {
+          setError(`Kunne ikke hente Mapbox token: ${error.message}`);
+          setErrorShown(true);
+        }
+      } finally {
+        setLoading(false);
+      }
     };
 
-    el.innerHTML = `
-      <div style="
-        width: 12px;
-        height: 12px;
-        background: ${colors[type]};
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>
+    if (!mapboxToken) {
+      initializeToken();
+    } else {
+      setLoading(false);
+    }
+  }, [user, mapboxToken, errorShown]);
+
+  // Clear all markers
+  const clearMarkers = () => {
+    markers.current.forEach(marker => marker.remove());
+    markers.current = [];
+  };
+
+  // Create marker element with specific styling
+  const createMarkerElement = (type: 'my-property' | 'rental' | 'calculation' | 'market', data?: any) => {
+    const el = document.createElement('div');
+    el.className = 'custom-marker';
+    
+    let backgroundColor = '#3b82f6'; // Default blue
+    let borderColor = 'white';
+    
+    switch (type) {
+      case 'my-property':
+        backgroundColor = '#3b82f6'; // Blue
+        break;
+      case 'rental':
+        backgroundColor = '#10b981'; // Green
+        break;
+      case 'calculation':
+        backgroundColor = '#f59e0b'; // Amber/Yellow
+        break;
+      case 'market':
+        backgroundColor = '#ef4444'; // Red
+        break;
+    }
+    
+    el.style.cssText = `
+      width: 12px;
+      height: 12px;
+      background: ${backgroundColor};
+      border: 2px solid ${borderColor};
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
     `;
+    
+    // Add hover effect
+    el.addEventListener('mouseenter', () => {
+      el.style.transform = 'scale(1.2)';
+    });
+    
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = 'scale(1)';
+    });
 
     return el;
-  }, []);
+  };
 
-  // Stable function to add markers
-  const addMarkersToMap = useCallback(() => {
-    if (!mapInstance || !mapboxgl || !mapInstance.isStyleLoaded()) {
+  // Add markers to map based on current layer visibility
+  const addMarkersToMap = () => {
+    if (!map.current || !mapboxgl || !map.current.isStyleLoaded()) {
+      console.log('⚠️ Map not ready for markers');
       return;
     }
 
+    console.log('🎯 Adding markers to map...');
     clearMarkers();
 
-    const addedMarkers: any[] = [];
+    let addedMarkers: any[] = [];
+    let primaryResidenceMarker: any = null;
 
-    // Add property markers
-    if (showMyProperties && properties) {
-      properties.forEach(property => {
+    // Add property markers if enabled
+    if (showMyProperties && properties && properties.length > 0) {
+      console.log(`📍 Adding ${properties.length} property markers`);
+      properties.forEach((property) => {
         if (property.coordinates && property.coordinates.length === 2) {
           const el = createMarkerElement('my-property', property);
           
+          // Create popup with property info
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold">${property.address}</h3>
-              <p class="text-sm">Type: ${property.property_type || 'Ikke spesifisert'}</p>
-              ${property.monthly_rent ? `<p class="text-sm">Månedlig leie: ${property.monthly_rent} NOK</p>` : ''}
+            <div style="padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1f2937;">${property.address}</h3>
+              <p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
+              ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
+              ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
+              ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
             </div>
           `);
           
           const marker = new mapboxgl.Marker(el)
             .setLngLat([property.coordinates[0], property.coordinates[1]])
             .setPopup(popup)
-            .addTo(mapInstance);
+            .addTo(map.current);
             
           addedMarkers.push(marker);
+          
+          // Track primary residence for special centering
+          if (property.primary_residence) {
+            primaryResidenceMarker = marker;
+          }
         }
       });
     }
 
-    // Add calculation markers
-    if (showCalculationProperties && calculationProperties) {
-      calculationProperties.forEach(calc => {
+    // Add calculation markers if enabled
+    if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
+      console.log(`🧮 Adding ${calculationProperties.length} calculation markers`);
+      calculationProperties.forEach((calc) => {
         if (calc.coordinates && calc.coordinates.length === 2) {
           const el = createMarkerElement('calculation', calc);
           
+          // Create popup with calculation info
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold">${calc.property_address}</h3>
-              <p class="text-sm">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
-              <p class="text-sm">Finn-kode: ${calc.finn_code}</p>
+            <div style="padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1f2937;">${calc.property_address}</h3>
+              <p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
+              <p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Finn-kode: ${calc.finn_code}</p>
+              ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #6b7280;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
             </div>
           `);
           
           const marker = new mapboxgl.Marker(el)
             .setLngLat([calc.coordinates[0], calc.coordinates[1]])
             .setPopup(popup)
-            .addTo(mapInstance);
+            .addTo(map.current);
             
           addedMarkers.push(marker);
         }
       });
     }
 
-    markersRef.current = addedMarkers;
+    // Update markers ref
+    markers.current = addedMarkers;
 
-    // Auto-fit bounds if we have markers
+    // Auto-fit bounds or center on primary residence
     if (addedMarkers.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      addedMarkers.forEach(marker => bounds.extend(marker.getLngLat()));
-      
       setTimeout(() => {
         try {
-          if (addedMarkers.length === 1) {
-            const markerLngLat = addedMarkers[0].getLngLat();
-            mapInstance?.flyTo({
-              center: [markerLngLat.lng, markerLngLat.lat],
+          if (primaryResidenceMarker) {
+            // Center on primary residence with nice zoom
+            const lngLat = primaryResidenceMarker.getLngLat();
+            map.current?.flyTo({
+              center: [lngLat.lng, lngLat.lat],
               zoom: 12,
-              duration: 1500
+              duration: 2000
+            });
+          } else if (addedMarkers.length === 1) {
+            // Center on single marker
+            const lngLat = addedMarkers[0].getLngLat();
+            map.current?.flyTo({
+              center: [lngLat.lng, lngLat.lat],
+              zoom: 12,
+              duration: 2000
             });
           } else {
-            mapInstance?.fitBounds(bounds, {
+            // Fit all markers
+            const bounds = new mapboxgl.LngLatBounds();
+            addedMarkers.forEach(marker => {
+              bounds.extend(marker.getLngLat());
+            });
+            
+            map.current?.fitBounds(bounds, {
               padding: 50,
-              duration: 1500,
+              duration: 2000,
               maxZoom: 12
             });
           }
-        } catch (error) {
-          // Ignore bounds errors
-          console.log('Bounds calculation skipped:', error);
+        } catch (boundsError) {
+          console.log('ℹ️ Bounds calculation skipped (safe to ignore):', boundsError);
         }
-      }, 100);
+      }, 500); // Give map time to fully render
     }
-  }, [showMyProperties, showCalculationProperties, properties, calculationProperties, clearMarkers, createMarkerElement]);
 
-  // Initialize everything once
+    console.log(`✅ Added ${addedMarkers.length} markers total`);
+  };
+
+  // Initialize map - STABLE version with minimal error handling
   useEffect(() => {
-    if (!user || isInitializedRef.current) return;
+    const initMap = () => {
+      console.log('🗺️ Map initialization check:', {
+        hasToken: !!mapboxToken,
+        hasMapboxgl: !!mapboxgl,
+        hasContainer: !!mapContainer.current,
+        hasExistingMap: !!map.current,
+        loading,
+        dataLoading,
+        user: !!user,
+        error
+      });
 
-    const initialize = async () => {
+      // Only initialize if we have all requirements and no existing map
+      if (!mapboxToken || !mapboxgl || !mapContainer.current || map.current || loading || dataLoading || !user || error) {
+        console.log('❌ Map initialization requirements not met');
+        return;
+      }
+
       try {
-        setLoading(true);
-        setError(null);
+        console.log('🚀 Initializing map...');
+        mapboxgl.accessToken = mapboxToken;
 
-        // Load Mapbox and token in parallel
-        const [mapboxModule, token] = await Promise.all([
-          loadMapbox(),
-          fetchMapboxToken()
-        ]);
+        // Check if we're in an iframe
+        const isInIframe = window.self !== window.top;
+        console.log('🖼️ Running in iframe:', isInIframe);
+        
+        // Check for WebGL support
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+          console.error('❌ WebGL not supported');
+          if (!errorShown) {
+            setError('WebGL støttes ikke av din nettleser eller er deaktivert');
+            setErrorShown(true);
+          }
+          return;
+        }
+        
+        console.log('✅ WebGL support detected');
+        canvas.remove();
 
-        setMapboxToken(token);
-
-        // Wait for container
-        await new Promise(resolve => {
-          const checkContainer = () => {
-            if (mapContainer.current) {
-              resolve(true);
-            } else {
-              setTimeout(checkContainer, 10);
-            }
-          };
-          checkContainer();
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v11',
+          center: [10.7522, 59.9139], // Oslo
+          zoom: 6,
+          attributionControl: false,
+          projection: 'mercator',
+          preserveDrawingBuffer: isInIframe,
+          antialias: !isInIframe,
+          failIfMajorPerformanceCaveat: false,
+          trackResize: true,
+          maxTileCacheSize: isInIframe ? 50 : 100,
+          refreshExpiredTiles: !isInIframe,
         });
 
-        // Initialize map once
-        if (!mapInstance && mapContainer.current) {
-          mapboxModule.accessToken = token;
+        console.log('✅ Map instance created');
+
+        map.current.addControl(
+          new mapboxgl.NavigationControl(),
+          'top-right'
+        );
+
+        map.current.on('load', () => {
+          console.log('✅ Map loaded successfully');
+          setTimeout(() => {
+            if (map.current && map.current.isStyleLoaded()) {
+              console.log('✅ Map style loaded, adding markers');
+              addMarkersToMap();
+            }
+          }, 500);
+        });
+
+        // SIMPLIFIED error handling to prevent loops
+        map.current.on('error', (e) => {
+          const errorMessage = e.error?.message || e.message || 'Ukjent feil';
+          console.error('❌ Map error:', errorMessage);
           
-          mapInstance = new mapboxModule.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v11',
-            center: [10.7522, 59.9139], // Oslo
-            zoom: 6,
-            attributionControl: false,
-            preserveDrawingBuffer: true,
-            antialias: true,
-            failIfMajorPerformanceCaveat: false,
-            trackResize: true
-          });
+          // Only set error once to prevent loops
+          if (!errorShown) {
+            setError(`Kartfeil: ${errorMessage}`);
+            setErrorShown(true);
+          }
+        });
 
-          mapInstance.addControl(new mapboxModule.NavigationControl(), 'top-right');
-
-          mapInstance.on('load', () => {
-            console.log('Map loaded successfully');
-            setMapReady(true);
-            setLoading(false);
-          });
-
-          mapInstance.on('error', (e: any) => {
-            console.error('Map error:', e);
-            setError('Kartfeil: ' + (e.error?.message || e.message || 'Ukjent feil'));
-            setLoading(false);
-          });
-
-          isInitializedRef.current = true;
+      } catch (error) {
+        console.error('❌ Map initialization failed:', error);
+        if (!errorShown) {
+          setError(`Kunne ikke initialisere kartet: ${error instanceof Error ? error.message : 'Ukjent feil'}`);
+          setErrorShown(true);
         }
-      } catch (error: any) {
-        console.error('Initialization failed:', error);
-        setError('Kunne ikke laste kart: ' + error.message);
-        setLoading(false);
       }
     };
 
-    initialize();
+    // Small timeout to ensure DOM is ready
+    const timeoutId = setTimeout(initMap, 100);
+    return () => clearTimeout(timeoutId);
+  }, [mapboxToken, mapboxgl, loading, dataLoading, user, error, errorShown]);
 
-    // Cleanup on unmount
-    return () => {
-      if (mapInstance) {
-        clearMarkers();
-        try {
-          mapInstance.remove();
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-        mapInstance = null;
-        isInitializedRef.current = false;
-        setMapReady(false);
-      }
-    };
-  }, [user, loadMapbox, fetchMapboxToken, clearMarkers]);
-
-  // Update markers when data or toggles change
+  // Cleanup map only when component unmounts
   useEffect(() => {
-    if (mapReady && !loading && !dataLoading) {
-      const timeoutId = setTimeout(addMarkersToMap, 100);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [mapReady, loading, dataLoading, addMarkersToMap]);
-
-  // Stable toggle handlers
-  const handleMyPropertiesToggle = useCallback((checked: boolean) => {
-    setShowMyProperties(checked);
-  }, []);
-
-  const handleRentalPropertiesToggle = useCallback((checked: boolean) => {
-    setShowRentalProperties(checked);
-  }, []);
-
-  const handleCalculationPropertiesToggle = useCallback((checked: boolean) => {
-    setShowCalculationProperties(checked);
-  }, []);
-
-  const handleMarketDataToggle = useCallback((checked: boolean) => {
-    setShowMarketData(checked);
-  }, []);
-
-  // Stable retry handler
-  const handleRetry = useCallback(() => {
-    setError(null);
-    setLoading(true);
-    setMapReady(false);
-    isInitializedRef.current = false;
-    
-    if (mapInstance) {
+    return () => {
       clearMarkers();
-      try {
-        mapInstance.remove();
-      } catch (e) {
-        // Ignore
+      if (map.current) {
+        try {
+          map.current.remove();
+        } catch (error) {
+          console.log('Map cleanup error (safe to ignore):', error);
+        }
+        map.current = null;
       }
-      mapInstance = null;
-    }
-    
-    // Force re-initialization
-    setTimeout(() => {
-      isInitializedRef.current = false;
-    }, 100);
-  }, [clearMarkers]);
+    };
+  }, []);
 
-  // Don't render anything if no user
+  // Update markers when data or layer toggles change - THROTTLED
+  useEffect(() => {
+    if (!map.current || !mapboxgl || !mapboxToken || loading || dataLoading) {
+      return;
+    }
+
+    const updateMarkers = () => {
+      if (map.current && map.current.isStyleLoaded() && mapboxgl) {
+        addMarkersToMap();
+      } else {
+        setTimeout(updateMarkers, 200);
+      }
+    };
+
+    // Throttle marker updates to prevent excessive re-rendering
+    const timeoutId = setTimeout(updateMarkers, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [properties, calculationProperties, showMyProperties, showRentalProperties, showCalculationProperties, showMarketData, mapboxToken, loading, dataLoading]);
+
+  // Layer toggle handlers
+  const handleMyPropertiesToggle = (checked: boolean) => {
+    setShowMyProperties(checked);
+  };
+
+  const handleRentalPropertiesToggle = (checked: boolean) => {
+    setShowRentalProperties(checked);
+  };
+
+  const handleCalculationPropertiesToggle = (checked: boolean) => {
+    setShowCalculationProperties(checked);
+  };
+
+  const handleMarketDataToggle = (checked: boolean) => {
+    setShowMarketData(checked);
+  };
+
+  // Show message if user is not authenticated
   if (!user) {
     return (
       <Card>
@@ -439,8 +572,16 @@ const RentalMap = () => {
             </div>
           </Card>
 
-          {/* Map Container */}
-          {error ? (
+          {loading || dataLoading ? (
+            <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">
+                  {loading ? 'Laster inn kart...' : 'Henter eiendommer...'}
+                </p>
+              </div>
+            </div>
+          ) : error ? (
             <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
               <div className="text-center">
                 <MapPin className="h-8 w-8 mx-auto mb-2 text-red-500" />
@@ -449,19 +590,25 @@ const RentalMap = () => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={handleRetry}
+                  onClick={() => {
+                    setError(null);
+                    setErrorShown(false);
+                    setLoading(true);
+                    setRetryCount(0);
+                    // Force re-initialization
+                    if (map.current) {
+                      clearMarkers();
+                      try {
+                        map.current.remove();
+                      } catch (e) {
+                        // ignore
+                      }
+                      map.current = null;
+                    }
+                  }}
                 >
                   Prøv igjen
                 </Button>
-              </div>
-            </div>
-          ) : loading || dataLoading ? (
-            <div className="flex items-center justify-center h-96 bg-muted/50 rounded-lg">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                <p className="text-muted-foreground">
-                  {loading ? 'Laster inn kart...' : 'Henter eiendommer...'}
-                </p>
               </div>
             </div>
           ) : (
@@ -475,7 +622,7 @@ const RentalMap = () => {
           )}
 
           {/* Map Legend */}
-          {mapReady && !loading && !error && (
+          {!loading && !error && !dataLoading && (
             <Card className="p-4 bg-muted/50">
               <h4 className="font-medium mb-3">Forklaring</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
@@ -502,7 +649,7 @@ const RentalMap = () => {
       </Card>
 
       {/* Summary Cards */}
-      {mapReady && !loading && !error && (
+      {!loading && !error && !dataLoading && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
