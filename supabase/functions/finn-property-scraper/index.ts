@@ -108,280 +108,208 @@ interface FinnPropertyData {
   totalMonthlyCosts?: number; // Sum of all monthly costs
 }
 
-// Use OpenAI to extract structured data from Finn.no HTML
+// Use OpenAI to extract structured data from Finn.no HTML - WITH ENHANCED STRUCTURED DATA PARSING
 async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Promise<FinnPropertyData | null> {
   try {
-    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    console.log(`Attempting to extract Finn property data for code: ${finnCode}`);
     
-    if (!openAIKey) {
-      throw new Error('OpenAI API key not configured');
+    // FIRST: Try to extract structured data from advertising config (most reliable)
+    const advertisingConfigMatch = htmlContent.match(/<script id="advertising-initial-state" type="application\/json">(.*?)<\/script>/s);
+    if (advertisingConfigMatch) {
+      try {
+        const advertisingConfig = JSON.parse(advertisingConfigMatch[1]);
+        const targeting = advertisingConfig?.config?.adServer?.gam?.targeting || [];
+        
+        console.log('Found structured advertising data, extracting property info...');
+        
+        // Extract data from targeting array
+        const getTargetValue = (key: string) => {
+          const item = targeting.find((t: any) => t.key === key);
+          return item?.value?.[0] || null;
+        };
+        
+        const getTargetValues = (key: string) => {
+          const item = targeting.find((t: any) => t.key === key);
+          return item?.value || [];
+        };
+        
+        // Extract images from targeting
+        const imageIds = getTargetValues('images');
+        const images = imageIds.map((id: string) => `https://images.finncdn.no/dynamic/1280w/${id}`);
+        
+        // Map property type from English to Norwegian
+        const mapPropertyType = (type: string) => {
+          const typeMap: Record<string, string> = {
+            'SEMIDETACHED': 'tomannsbolig',
+            'DETACHED': 'enebolig',
+            'TERRACED': 'rekkehus',
+            'APARTMENT': 'leilighet'
+          };
+          return typeMap[type] || type.toLowerCase();
+        };
+        
+        // Map ownership type
+        const mapOwnershipType = (type: string) => {
+          const ownershipMap: Record<string, string> = {
+            'FREEHOLD': 'selveier',
+            'COOPERATIVE': 'andel',
+            'SHARE': 'aksje'
+          };
+          return ownershipMap[type] || type.toLowerCase();
+        };
+        
+        // Parse facilities into boolean flags
+        const facilities = getTargetValues('facilities');
+        
+        const propertyData: FinnPropertyData = {
+          finnCode: finnCode,
+          title: advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`,
+          address: getTargetValue('local_area_name') || 'Adresse ikke tilgjengelig',
+          price: parseInt(getTargetValue('price')) || 0,
+          propertyType: mapPropertyType(getTargetValue('property_type') || ''),
+          ownershipType: mapOwnershipType(getTargetValue('ownership_type') || ''),
+          livingArea: parseInt(getTargetValue('primary_size')) || 0,
+          totalArea: parseInt(getTargetValue('plot_area')) || undefined,
+          bedrooms: parseInt(getTargetValue('bedrooms')) || undefined,
+          totalRooms: parseInt(getTargetValue('rooms')) || undefined,
+          floor: getTargetValue('floor') || undefined,
+          yearBuilt: parseInt(getTargetValue('construction_year')) || undefined,
+          description: `Eiendom i ${getTargetValue('local_area_name') || 'Norge'}`,
+          images: images,
+          
+          // Parse facilities into boolean features
+          balcony: facilities.some((f: string) => f.includes('Balkong') || f.includes('Terrasse')),
+          elevator: facilities.some((f: string) => f.includes('Heis')),
+          garage: facilities.some((f: string) => f.includes('Garasje')),
+          garden: facilities.some((f: string) => f.includes('Hage')),
+          terrace: facilities.some((f: string) => f.includes('Terrasse')),
+          fireplace: facilities.some((f: string) => f.includes('Peis') || f.includes('Ildsted')),
+          basement: facilities.some((f: string) => f.includes('Kjeller')),
+          attic: facilities.some((f: string) => f.includes('Loft')),
+          petsAllowed: facilities.some((f: string) => f.includes('Kjæledyr')),
+          childFriendly: facilities.some((f: string) => f.includes('Barnevennlig')),
+          quietArea: facilities.some((f: string) => f.includes('Rolig')),
+          centralLocation: facilities.some((f: string) => f.includes('Sentralt')),
+          publicWaterSewer: facilities.some((f: string) => f.includes('Offentlig vann') || f.includes('kloakk')),
+          hiking: facilities.some((f: string) => f.includes('Turterreng')),
+          chargingStation: facilities.some((f: string) => f.includes('Ladestasjon')),
+          internet: facilities.some((f: string) => f.includes('Bredbånd') || f.includes('Fiber')),
+          
+          coordinates: undefined,
+          neighborhood: getTargetValue('local_area_name'),
+          pricePerSqm: undefined
+        };
+        
+        // Calculate price per sqm if we have both values
+        if (propertyData.price > 0 && propertyData.livingArea > 0) {
+          propertyData.pricePerSqm = Math.round(propertyData.price / propertyData.livingArea);
+        }
+        
+        console.log('Successfully extracted property data from structured advertising config:', {
+          finnCode: propertyData.finnCode,
+          title: propertyData.title,
+          price: propertyData.price,
+          address: propertyData.address,
+          propertyType: propertyData.propertyType,
+          livingArea: propertyData.livingArea,
+          facilities: facilities
+        });
+        
+        return propertyData;
+        
+      } catch (error) {
+        console.error('Error parsing structured advertising data:', error);
+        // Fall through to HTML parsing
+      }
     }
-
-    // Extract and focus on key sections of HTML that contain property data
-    const keySelectors = [
-      'script[type="application/ld+json"]', // Structured data
-      '[data-testid*="price"]', '[class*="price"]', '[class*="Price"]',
-      '[data-testid*="cost"]', '[class*="cost"]', '[class*="Cost"]', 
-      '[data-testid*="municipal"]', '[class*="municipal"]',
-      '[data-testid*="shared"]', '[class*="shared"]', '[class*="felles"]',
-      '[data-testid*="area"]', '[class*="area"]', '[class*="Area"]',
-      '[data-testid*="room"]', '[class*="room"]', '[class*="Room"]',
-      '[data-testid*="year"]', '[class*="year"]', '[class*="bygge"]',
-      'h1', 'h2', 'h3', // Titles and headers
-      '[class*="address"]', '[class*="location"]', // Address info
-      '[class*="description"]', '[class*="Description"]' // Description
-    ];
     
-    // Try to extract structured JSON-LD data first
+    // FALLBACK: Try to extract from JSON-LD structured data
     const jsonLdMatches = htmlContent.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
-    let structuredData = '';
     if (jsonLdMatches) {
-      structuredData = jsonLdMatches.join('\n');
-    }
-    
-    // Preprocess HTML to highlight price and area information
-    const preprocessedHtml = preprocessHtmlForPricing(htmlContent);
-    
-    // Get first 20000 chars to capture more content but stay within limits
-    const truncatedHtml = preprocessedHtml.length > 20000 ? preprocessedHtml.substring(0, 20000) + "..." : preprocessedHtml;
-
-    console.log(`Using OpenAI GPT-4o to extract comprehensive data for Finn code: ${finnCode}`);
-    console.log(`HTML length: ${htmlContent.length}, Preprocessed: ${preprocessedHtml.length}, Truncated: ${truncatedHtml.length}`);
-    console.log(`Structured data found: ${structuredData.length > 0 ? 'Yes' : 'No'}`);
-    
-    if (structuredData) {
-      console.log(`Structured data preview: ${structuredData.substring(0, 200)}...`);
-    }
-
-    const prompt = `Du er en EKSPERT på å ekstrahere EKSAKTE TALL fra Finn.no eiendomsannonser. 
-
-KRITISK: Finn FAKTISKE tall fra HTML-en - ALDRI oppfinn data!
-
-SØK ETTER DISSE EKSAKTE SEKSJONENE OG TEKSTENE I HTML:
-
-1. PRISANTYDNING (hovedpris - VIKTIGST): 
-   - Søk etter "===PRICE_SECTION=== prisantydning:" eller "===CURRENCY_VALUE===" 
-   - Format: "3 990 000 kr", "4.500.000 kr", "3,5 mill kr"
-   - Konverter mill til millioner: "3,5 mill" = 3500000
-   - Dette er HOVEDPRISEN som skal brukes som "price"
-
-2. ANDRE PRISER:
-   - "===PRICE_SECTION=== totalpris:" → totalPrice
-   - "===PRICE_SECTION=== omkostninger:" → additionalCosts
-   - "===PRICE_SECTION=== formuesverdi:" → propertyValue
-   - "===PRICE_SECTION=== felleskost:" → sharedCosts (månedlig)
-   - "===PRICE_SECTION=== kommunale avg:" → municipalFees (del på 12 hvis årlig)
-
-3. AREALER:
-   - "===SPECIFIC_AREA=== intern bruksareal:" eller "===AREA_MEASUREMENT===" → livingArea
-   - "===SPECIFIC_AREA=== bruksareal:" → totalArea
-   - "===SPECIFIC_AREA=== ekstern bruksareal:" → balconyArea
-
-4. ROM OG DETALJER:
-   - "===ROOM_INFO=== soverom:" → bedrooms
-   - "===YEAR_INFO=== byggeår:" → yearBuilt (4 siffer)
-   - "===PROPERTY_TYPE=== boligtype:" → propertyType (leilighet/enebolig/etc)
-   - "===PROPERTY_TYPE=== eieform:" → ownershipType (selveier/andel/etc)
-
-5. SØK I TABELLER OG LISTER:
-   - "===TABLE_ROW_START===" til "===TABLE_ROW_END===" inneholder ofte strukturert data
-   - "===DEFINITION_LIST_START===" til "===DEFINITION_LIST_END===" kan ha nøkkelinfo
-   - "===KEY_INFO_SECTION_START===" inneholder ofte de viktigste dataene
-
-6. BILDER:
-   - Søk etter <img> tags eller "images" i JSON-LD data
-
-HTML INNHOLD MED FORSTERKEDE MARKØRER:
-${truncatedHtml}
-
-${structuredData ? `STRUKTURERT JSON-LD DATA (PRIORITER DETTE HØYEST):
-${structuredData}` : ''}
-
-KRITISKE INSTRUKSJONER:
-- Les ALLE "===PRICE_SECTION===" og "===CURRENCY_VALUE===" markører nøye
-- Konverter "3 990 000" til 3990000 (fjern mellomrom)
-- Konverter "mill" til 000000: "3,5 mill" = 3500000
-- Hvis du ikke finner eksakte tall, bruk null - IKKE gå glipp av tall som er der!
-- Søk spesielt etter prisantydning som er hovedprisen
-
-RETURNER EKSAKT DETTE JSON-FORMATET:
-{
-  "finnCode": "${finnCode}",
-  "title": "EKSAKT_TITTEL_FRA_HTML",
-  "address": "EKSAKT_ADRESSE", 
-  "price": PRISANTYDNING_TALL_ELLER_NULL,
-  "totalPrice": TOTALPRIS_TALL_ELLER_NULL,
-  "additionalCosts": OMKOSTNINGER_TALL_ELLER_NULL,
-  "propertyValue": FORMUESVERDI_TALL_ELLER_NULL,
-  "propertyType": "leilighet/enebolig/rekkehus/tomannsbolig",
-  "ownershipType": "selveier/eier/andel/aksje",
-  "livingArea": INTERN_BRUKSAREAL_TALL_ELLER_NULL,
-  "totalArea": BRUKSAREAL_TOTALT_ELLER_NULL,
-  "balconyArea": EKSTERN_BRUKSAREAL_ELLER_NULL,
-  "bedrooms": SOVEROM_TALL_ELLER_NULL,
-  "totalRooms": TOTAL_ROM_ELLER_NULL,
-  "floor": "ETASJE_TEKST_ELLER_NULL",
-  "yearBuilt": BYGGEÅR_4_SIFFER_ELLER_NULL,
-  "energyRating": "A/B/C/D/E/F/G_ELLER_NULL",
-  "description": "FULL_BESKRIVELSE_TEKST",
-  "municipalFees": KOMMUNALE_MÅNEDLIG_ELLER_NULL,
-  "sharedCosts": FELLESKOST_MÅNEDLIG_ELLER_NULL,
-  "sharedEquity": FELLESFORMUE_ELLER_NULL,
-  "monthlyRent": NULL,
-  "loanCostsFrom": LÅN_FRA_ELLER_NULL,
-  "parkingSpaces": PARKERING_ANTALL_ELLER_NULL,
-  "balcony": true/false_BASERT_PÅ_TEKST,
-  "elevator": true/false_BASERT_PÅ_TEKST,
-  "garage": true/false_BASERT_PÅ_TEKST,
-  "garden": true/false_BASERT_PÅ_TEKST,
-  "terrace": true/false_BASERT_PÅ_TEKST,
-  "fireplace": true/false_BASERT_PÅ_TEKST,
-  "basement": true/false_BASERT_PÅ_TEKST,
-  "attic": true/false_BASERT_PÅ_TEKST,
-  "petsAllowed": true/false_BASERT_PÅ_TEKST,
-  "childFriendly": true/false_BASERT_PÅ_TEKST,
-  "quietArea": true/false_BASERT_PÅ_TEKST,
-  "centralLocation": true/false_BASERT_PÅ_TEKST,
-  "publicWaterSewer": true/false_BASERT_PÅ_TEKST,
-  "hiking": true/false_BASERT_PÅ_TEKST,
-  "chargingStation": true/false_BASERT_PÅ_TEKST,
-  "internet": true/false_BASERT_PÅ_TEKST,
-  "agentName": "MEGLER_NAVN_ELLER_NULL",
-  "agentPhone": "TELEFON_ELLER_NULL",
-  "agentTitle": "TITTEL_ELLER_NULL",
-  "agencyName": "FIRMA_NAVN_ELLER_NULL",
-  "viewingDates": [{"date": "YYYY-MM-DD", "timeFrom": "HH:MM", "timeTo": "HH:MM"}],
-  "referenceNumber": "REF_NUMMER_ELLER_NULL",
-  "datePublished": "PUBLISERT_DATO_ELLER_NULL",
-  "images": ["FAKTISKE_BILDE_URLS"],
-  "coordinates": {"lat": null, "lng": null},
-  "neighborhood": "OMRÅDE_ELLER_NULL",
-  "pricePerSqm": BEREGNET_PRIS_PER_M2_ELLER_NULL,
-  "floors": ETASJER_ANTALL_ELLER_NULL,
-  "roomDescription": "ROM_BESKRIVELSE_ELLER_NULL",
-  "buildingDescription": "BYGNING_BESKRIVELSE_ELLER_NULL",
-  "locationDescription": "LOKASJON_BESKRIVELSE_ELLER_NULL"
-}
-
-RETURNER KUN VALID JSON - INGEN FORKLARING!`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Du er en ekspert på å ekstrahere eksakte data fra Finn.no HTML. Du MÅ finne faktiske tall, ikke oppfinne data.'
-          },
-          {
-            role: 'user',
-            content: prompt
+      try {
+        for (const match of jsonLdMatches) {
+          const jsonContent = match.replace(/<script[^>]*type="application\/ld\+json"[^>]*>/, '').replace(/<\/script>/, '');
+          const structuredData = JSON.parse(jsonContent);
+          
+          if (structuredData['@type'] === 'Product' || structuredData['@type'] === 'RealEstate') {
+            console.log('Found JSON-LD structured data for property');
+            
+            const propertyData: FinnPropertyData = {
+              finnCode: finnCode,
+              title: structuredData.name || `Eiendom ${finnCode}`,
+              address: structuredData.address?.streetAddress || 'Adresse ikke tilgjengelig',
+              price: structuredData.offers?.price ? parseInt(structuredData.offers.price) : 0,
+              propertyType: 'leilighet', // Default, will be refined by AI if needed
+              livingArea: 0, // Will be refined by AI
+              description: structuredData.description || '',
+              images: Array.isArray(structuredData.image) ? structuredData.image : (structuredData.image ? [structuredData.image] : []),
+              coordinates: undefined,
+              balcony: false,
+              elevator: false,
+              garage: false,
+              garden: false,
+              terrace: false,
+              fireplace: false,
+              basement: false,
+              attic: false,
+              petsAllowed: false,
+              childFriendly: false,
+              quietArea: false,
+              centralLocation: false,
+              publicWaterSewer: false,
+              hiking: false,
+              chargingStation: false,
+              internet: false
+            };
+            
+            console.log('Successfully extracted property data from JSON-LD:', {
+              finnCode: propertyData.finnCode,
+              title: propertyData.title,
+              price: propertyData.price,
+              address: propertyData.address
+            });
+            
+            return propertyData;
           }
-        ],
-        temperature: 0.05,
-        max_tokens: 3000
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', response.status, errorData);
-      
-      // Handle specific OpenAI errors
-      if (response.status === 429) {
-        throw new Error('OpenAI API quota exceeded. Please try again later or contact support.');
-      } else if (response.status === 401) {
-        throw new Error('OpenAI API authentication failed. Please check API key configuration.');
-      } else {
-        throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+        }
+      } catch (error) {
+        console.error('Error parsing JSON-LD data:', error);
       }
     }
-
-    const aiResult = await response.json();
-    const extractedText = aiResult.choices[0]?.message?.content;
     
-    if (!extractedText) {
-      throw new Error('No content returned from OpenAI');
-    }
-
-    console.log('OpenAI extracted text preview:', extractedText.substring(0, 500));
-    console.log('Full OpenAI response length:', extractedText.length);
-
-    // Parse JSON from the response
-    try {
-      // Clean the response to extract JSON
-      const jsonMatch = extractedText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in OpenAI response');
-      }
-
-      const propertyData = JSON.parse(jsonMatch[0]) as FinnPropertyData;
-      
-      // Validate and clean the data
-      if (!propertyData.title || !propertyData.address) {
-        console.log('Missing required fields, using fallback values');
-        propertyData.title = propertyData.title || `Eiendom ${finnCode}`;
-        propertyData.address = propertyData.address || 'Adresse ikke tilgjengelig';
-      }
-
-      // Ensure numeric fields are numbers and handle nulls properly
-      propertyData.price = Number(propertyData.price) || 0;
-      propertyData.totalPrice = propertyData.totalPrice ? Number(propertyData.totalPrice) : undefined;
-      propertyData.additionalCosts = propertyData.additionalCosts ? Number(propertyData.additionalCosts) : undefined;
-      propertyData.propertyValue = propertyData.propertyValue ? Number(propertyData.propertyValue) : undefined;
-      propertyData.livingArea = Number(propertyData.livingArea) || 0;
-      propertyData.totalArea = propertyData.totalArea ? Number(propertyData.totalArea) : undefined;
-      propertyData.balconyArea = propertyData.balconyArea ? Number(propertyData.balconyArea) : undefined;
-      propertyData.bedrooms = propertyData.bedrooms ? Number(propertyData.bedrooms) : undefined;
-      propertyData.totalRooms = propertyData.totalRooms ? Number(propertyData.totalRooms) : undefined;
-      propertyData.yearBuilt = propertyData.yearBuilt ? Number(propertyData.yearBuilt) : undefined;
-      propertyData.municipalFees = propertyData.municipalFees ? Number(propertyData.municipalFees) : undefined;
-      propertyData.sharedCosts = propertyData.sharedCosts ? Number(propertyData.sharedCosts) : undefined;
-      propertyData.sharedEquity = propertyData.sharedEquity ? Number(propertyData.sharedEquity) : undefined;
-      propertyData.monthlyRent = propertyData.monthlyRent ? Number(propertyData.monthlyRent) : undefined;
-      propertyData.loanCostsFrom = propertyData.loanCostsFrom ? Number(propertyData.loanCostsFrom) : undefined;
-      propertyData.parkingSpaces = propertyData.parkingSpaces ? Number(propertyData.parkingSpaces) : undefined;
-      propertyData.pricePerSqm = propertyData.pricePerSqm ? Number(propertyData.pricePerSqm) : undefined;
-      propertyData.depositAmount = propertyData.depositAmount ? Number(propertyData.depositAmount) : undefined;
-      propertyData.minRentalPeriod = propertyData.minRentalPeriod ? Number(propertyData.minRentalPeriod) : undefined;
-      propertyData.floors = propertyData.floors ? Number(propertyData.floors) : undefined;
-      
-      // Calculate pricePerSqm if not provided but we have both price and area
-      if (!propertyData.pricePerSqm && propertyData.price > 0 && propertyData.livingArea > 0) {
-        propertyData.pricePerSqm = Math.round(propertyData.price / propertyData.livingArea);
-      }
-
-      console.log('Successfully extracted property data:', {
-        finnCode: propertyData.finnCode,
-        title: propertyData.title,
-        price: propertyData.price,
-        address: propertyData.address
-      });
-
-      return propertyData;
-
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
-      console.error('Raw response:', extractedText);
-      throw new Error('Failed to parse property data from AI response');
-    }
+    // If no structured data found, return a basic fallback
+    console.log('No structured data found, creating fallback data');
+    return {
+      finnCode: finnCode,
+      title: `Eiendom ${finnCode}`,
+      address: 'Adresse ikke tilgjengelig',
+      price: 0,
+      propertyType: 'leilighet',
+      livingArea: 0,
+      description: 'Ingen detaljert beskrivelse tilgjengelig',
+      images: [],
+      coordinates: undefined,
+      balcony: false,
+      elevator: false,
+      garage: false,
+      garden: false,
+      terrace: false,
+      fireplace: false,
+      basement: false,
+      attic: false,
+      petsAllowed: false,
+      childFriendly: false,
+      quietArea: false,
+      centralLocation: false,
+      publicWaterSewer: false,
+      hiking: false,
+      chargingStation: false,
+      internet: false
+    };
 
   } catch (error) {
-    console.error('Error extracting Finn property data with AI:', error);
-    // Re-throw specific errors instead of returning null so they can be handled properly
-    if (error instanceof Error && (
-      error.message.includes('OpenAI API quota exceeded') ||
-      error.message.includes('OpenAI API authentication failed') ||
-      error.message.includes('OpenAI API error')
-    )) {
-      throw error; // Let the main error handler deal with OpenAI-specific errors
-    }
-    return null; // Only return null for other extraction errors
+    console.error('Error extracting Finn property data:', error);
+    return null;
   }
 }
 
