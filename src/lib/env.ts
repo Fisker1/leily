@@ -10,8 +10,6 @@ const EnvSchema = z.object({
   VITE_ENABLE_ANALYTICS: z.string().optional(),
   VITE_DEBUG: z.string().optional(),
   VITE_LOG_LEVEL: z.string().optional(),
-  // Legacy support - remove after migration
-  VITE_SUPABASE_ANON_KEY: z.string().optional(),
 })
 
 export const env = EnvSchema.parse(import.meta.env as Record<string, string>)
@@ -28,7 +26,7 @@ export const ENV_CONFIG = {
   isProduction: currentEnv === 'production',
   supabase: {
     url: env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-    anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
+    anonKey: env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
     projectId: env.VITE_SUPABASE_PROJECT_ID || 'placeholder-id'
   },
   app: {
