@@ -29,7 +29,7 @@ const SimpleAuth = () => {
   const testUsers = [
     { email: 'gjest@leily.no', password: 'blåmeis', name: 'Gjest', icon: '👤' },
     { email: 'pro@leily.no', password: 'rødspette', name: 'Pro', icon: '⭐' },
-    { email: 'ambassadør@leily.no', password: 'clinton', name: 'Ambassadør', icon: '🎯' }
+    { email: 'ambassadør@leily.no', password: 'clinton', name: 'Ambassadør', icon: '🏅' }
   ];
 
   const handleTestLogin = async () => {
@@ -64,8 +64,19 @@ const SimpleAuth = () => {
             
             console.log('User creation result:', createResponse);
             
-            if (!createResponse.error) {
-              alert('Testbrukere opprettet! Prøv å logge inn igjen.');
+            if (!createResponse.error && createResponse.data) {
+              const userData = createResponse.data;
+              if (userData.users && Array.isArray(userData.users)) {
+                const createdUser = userData.users.find((u: any) => u.email === user.email);
+                if (createdUser && createdUser.status === 'created') {
+                  alert(`Testbruker ${user.name} opprettet! Prøv å logge inn igjen.`);
+                } else {
+                  alert(`Testbrukere behandlet! Bruker ${user.name} eksisterte allerede. Prøv å logge inn igjen.`);
+                }
+              } else {
+                alert('Testbrukere opprettet! Prøv å logge inn igjen.');
+              }
+              
               // Try login again after user creation
               const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
                 email: user.email,
@@ -80,7 +91,7 @@ const SimpleAuth = () => {
                 setShowTestLogin(false);
               }
             } else {
-              alert('Kunne ikke opprette testbrukere: ' + createResponse.error);
+              alert('Kunne ikke opprette testbrukere: ' + (createResponse.error || 'Ukjent feil'));
             }
           } catch (createErr) {
             console.error('Error creating users:', createErr);
