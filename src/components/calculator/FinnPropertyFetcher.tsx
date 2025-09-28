@@ -187,9 +187,21 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
             
             console.log('📡 Manual fetch response status:', response.status);
             console.log('📡 Manual fetch response ok:', response.ok);
+            console.log('📡 Manual fetch response headers:', Object.fromEntries(response.headers.entries()));
             
-            const errorData = await response.json();
-            console.log('📄 Manual fetch response data:', errorData);
+            const responseText = await response.text();
+            console.log('📄 Raw response text:', responseText);
+            
+            let errorData;
+            try {
+              errorData = JSON.parse(responseText);
+              console.log('📄 Parsed response data:', errorData);
+            } catch (parseError) {
+              console.error('❌ Failed to parse response as JSON:', parseError);
+              console.log('📄 Response was not valid JSON:', responseText.substring(0, 500));
+              errorMessage = 'Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+              return;
+            }
             
             if (errorData.success === false && errorData.message) {
               console.log('✅ Found actual error message from edge function:', errorData.message);
@@ -203,6 +215,15 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
             } else if (response.status === 403) {
               console.log('🔐 Authentication failed - invalid JWT');
               errorMessage = 'Sesjonen din har utløpt. Vennligst logg inn på nytt.';
+            } else if (response.status === 429) {
+              console.log('🚫 Rate limit or quota exceeded (429)');
+              errorMessage = 'OpenAI API kvote overskredet. Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.';
+            } else if (response.status === 404) {
+              console.log('🏠 Property not found (404)');
+              errorMessage = 'Fant ikke eiendommen. Sjekk Finn-koden og prøv igjen.';
+            } else {
+              console.log('⚠️ Unknown error response:', { status: response.status, data: errorData });
+              errorMessage = errorData.message || `HTTP ${response.status} feil fra tjenesten.`;
             }
           }
         } catch (fetchError) {
