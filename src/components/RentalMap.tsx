@@ -171,13 +171,23 @@ const RentalMap = () => {
           mapInstance.on('load', () => {
             console.log('🎉 Map loaded successfully!');
             setLoading(false);
+            setError(null); // Clear any previous errors
             addMarkers();
           });
 
-          // Handle errors
+          // Handle errors - only critical ones
           mapInstance.on('error', (e: any) => {
             console.error('❌ Map error event:', e);
-            setError('Kartfeil oppstod');
+            
+            // Only set error for critical failures, not tile loading issues
+            if (e.error && e.error.status && e.error.status === 401) {
+              // Token/auth issues are critical
+              setError('Kartfeil: Autorisasjonsfeil');
+            } else if (e.error && e.error.message && e.error.message.includes('network')) {
+              // Network failures are critical
+              setError('Kartfeil: Nettverksfeil');
+            }
+            // Ignore tile loading errors - they're normal and non-critical
           });
 
           // Additional debugging events
