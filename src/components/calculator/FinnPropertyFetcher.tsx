@@ -156,7 +156,7 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
           <Badge variant="secondary" className="text-xs">Pro</Badge>
         </CardTitle>
         <CardDescription className="text-sm">
-          Hent eiendomsdata automatisk med Finn-kode fra annonsen
+          Hent eiendomsdata automatisk med Finn-kode fra annonsen. Data lagres i 6 måneder for raskere tilgang.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -252,6 +252,12 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
                     <p className="font-semibold">{propertyData.bedrooms}</p>
                   </div>
                 )}
+                {propertyData.monthlyRent && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Månedlig leie</p>
+                    <p className="font-semibold">{formatNumberWithSpaces(propertyData.monthlyRent)} kr/mnd</p>
+                  </div>
+                )}
                 {propertyData.municipalFees && (
                   <div>
                     <p className="text-xs text-muted-foreground">Kommunale avgifter</p>
@@ -264,11 +270,29 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
                     <p className="font-semibold">{formatNumberWithSpaces(propertyData.sharedCosts)} kr/mnd</p>
                   </div>
                 )}
+                {propertyData.pricePerSqm && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pris per m²</p>
+                    <p className="font-semibold">{formatNumberWithSpaces(propertyData.pricePerSqm)} kr/m²</p>
+                  </div>
+                )}
+                {propertyData.yearBuilt && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Byggeår</p>
+                    <p className="font-semibold">{propertyData.yearBuilt}</p>
+                  </div>
+                )}
+                {propertyData.energyRating && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Energimerking</p>
+                    <p className="font-semibold">{propertyData.energyRating}</p>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 border-t border-primary/10">
                 <p className="text-xs text-muted-foreground">
-                  Data automatisk hentet fra Finn.no. Du kan fortsatt redigere verdiene manuelt nedenfor.
+                  Data automatisk hentet fra Finn.no og lagret i 6 måneder. Du kan fortsatt redigere verdiene manuelt nedenfor.
                 </p>
               </div>
             </div>

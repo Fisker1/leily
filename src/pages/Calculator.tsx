@@ -93,10 +93,16 @@ const Calculator = () => {
     if (!manualOverride.sharedExpenses && data.sharedCosts) {
       handleInputChange('sharedExpenses', data.sharedCosts.toString());
     }
+    
+    // Auto-fill rental information if available
+    if (data.monthlyRent && !manualOverride.expectedAnnualRent) {
+      handleInputChange('isRental', true);
+      handleInputChange('expectedAnnualRent', (data.monthlyRent * 12).toString());
+    }
 
     toast({
       title: "Eiendomsdata importert",
-      description: "Data fra Finn.no er fylt inn i kalkulatoren. Du kan fortsatt redigere verdiene.",
+      description: `Data fra Finn.no er fylt inn i kalkulatoren${data.monthlyRent ? ' (utleiebolig detektert)' : ''}. Du kan fortsatt redigere verdiene.`,
     });
   };
 

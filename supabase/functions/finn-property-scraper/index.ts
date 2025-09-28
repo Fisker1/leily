@@ -22,10 +22,28 @@ interface FinnPropertyData {
   images: string[];
   municipalFees?: number;
   sharedCosts?: number;
+  monthlyRent?: number;
+  parkingSpaces?: number;
+  balcony?: boolean;
+  elevator?: boolean;
+  garage?: boolean;
+  garden?: boolean;
+  viewType?: string;
+  condition?: string;
+  heatingType?: string;
+  internetIncluded?: boolean;
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
+  furnished?: boolean;
   coordinates?: {
     lat: number;
     lng: number;
   };
+  neighborhood?: string;
+  pricePerSqm?: number;
+  availableFrom?: string;
+  depositAmount?: number;
+  minRentalPeriod?: number;
 }
 
 // Use OpenAI to extract structured data from Finn.no HTML
@@ -42,7 +60,7 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
     // Truncate HTML to avoid token limits (keep first 8000 chars which should contain main property info)
     const truncatedHtml = htmlContent.length > 8000 ? htmlContent.substring(0, 8000) + "..." : htmlContent;
 
-    const prompt = `Du er en ekspert på å ekstrahere eiendomsinformasjon fra Finn.no HTML. Analyser denne HTML-koden og trekk ut all relevant eiendomsinformasjon.
+    const prompt = `Du er en ekspert på å ekstrahere eiendomsinformasjon fra Finn.no HTML. Analyser denne HTML-koden og trekk ut ALL TILGJENGELIG eiendomsinformasjon for å kunne fylle ut en eiendomskalkulator automatisk.
 
 HTML innhold:
 ${truncatedHtml}
@@ -62,16 +80,37 @@ Returner informasjonen som JSON i eksakt dette formatet (bruk null for manglende
   "description": "beskrivelse av eiendommen",
   "municipalFees": 0,
   "sharedCosts": 0,
+  "monthlyRent": 0,
+  "parkingSpaces": 0,
+  "balcony": false,
+  "elevator": false,
+  "garage": false,
+  "garden": false,
+  "viewType": "gate/hav/skog",
+  "condition": "god/dårlig/utmerket",
+  "heatingType": "fjernvarme/elektrisk/ved",
+  "internetIncluded": false,
+  "petsAllowed": false,
+  "smokingAllowed": false,
+  "furnished": false,
   "images": ["url1", "url2"],
-  "coordinates": {"lat": 0, "lng": 0}
+  "coordinates": {"lat": 0, "lng": 0},
+  "neighborhood": "Grünerløkka/Majorstuen/etc",
+  "pricePerSqm": 0,
+  "availableFrom": "2025-01-15",
+  "depositAmount": 0,
+  "minRentalPeriod": 12
 }
 
 Viktige instruksjoner:
-- Bruk kun faktiske verdier fra HTML-en
+- Bruk kun faktiske verdier fra HTML-en - ikke gjett eller finn på verdier
 - Pris skal være totalpris i NOK som et tall (ikke string)
-- propertyType skal være: "leilighet", "enebolig", "rekkehus", eller "tomannsbolig"
+- propertyType skal være: "leilighet", "enebolig", "rekkehus", eller "tomannsbolig" 
 - livingArea og totalArea skal være tall i m²
-- Hvis en verdi ikke finnes, bruk null
+- municipalFees og sharedCosts skal være månedlige beløp i NOK
+- monthlyRent skal være månedlig leiepris hvis det er en utleiebolig
+- balcony, elevator, garage, garden skal være true/false basert på om det nevnes
+- Hvis en verdi ikke finnes, bruk null for tall og strings, false for booleans
 - Returner KUN JSON, ingen annen tekst`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -129,12 +168,24 @@ Viktige instruksjoner:
         propertyData.address = propertyData.address || 'Adresse ikke tilgjengelig';
       }
 
-      // Ensure numeric fields are numbers
+      // Ensure numeric fields are numbers and handle nulls properly
       propertyData.price = Number(propertyData.price) || 0;
       propertyData.livingArea = Number(propertyData.livingArea) || 0;
-      propertyData.bedrooms = Number(propertyData.bedrooms) || 0;
-      propertyData.municipalFees = Number(propertyData.municipalFees) || 0;
-      propertyData.sharedCosts = Number(propertyData.sharedCosts) || 0;
+      propertyData.totalArea = propertyData.totalArea ? Number(propertyData.totalArea) : undefined;
+      propertyData.bedrooms = propertyData.bedrooms ? Number(propertyData.bedrooms) : undefined;
+      propertyData.yearBuilt = propertyData.yearBuilt ? Number(propertyData.yearBuilt) : undefined;
+      propertyData.municipalFees = propertyData.municipalFees ? Number(propertyData.municipalFees) : undefined;
+      propertyData.sharedCosts = propertyData.sharedCosts ? Number(propertyData.sharedCosts) : undefined;
+      propertyData.monthlyRent = propertyData.monthlyRent ? Number(propertyData.monthlyRent) : undefined;
+      propertyData.parkingSpaces = propertyData.parkingSpaces ? Number(propertyData.parkingSpaces) : undefined;
+      propertyData.pricePerSqm = propertyData.pricePerSqm ? Number(propertyData.pricePerSqm) : undefined;
+      propertyData.depositAmount = propertyData.depositAmount ? Number(propertyData.depositAmount) : undefined;
+      propertyData.minRentalPeriod = propertyData.minRentalPeriod ? Number(propertyData.minRentalPeriod) : undefined;
+      
+      // Calculate pricePerSqm if not provided but we have both price and area
+      if (!propertyData.pricePerSqm && propertyData.price > 0 && propertyData.livingArea > 0) {
+        propertyData.pricePerSqm = Math.round(propertyData.price / propertyData.livingArea);
+      }
 
       console.log('Successfully extracted property data:', {
         finnCode: propertyData.finnCode,
@@ -289,7 +340,7 @@ serve(async (req) => {
       .from('finn_property_cache')
       .select('*')
       .eq('finn_code', finnCode)
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24 hours cache
+      .gte('created_at', new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()) // 6 months cache
       .single();
 
     let propertyData: FinnPropertyData | null = null;
@@ -319,7 +370,7 @@ serve(async (req) => {
             finn_code: finnCode,
             property_data: propertyData,
             extracted_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+            expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months (180 days)
           });
       }
     }

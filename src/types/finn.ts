@@ -13,10 +13,28 @@ export interface FinnPropertyData {
   images: string[];
   municipalFees?: number;
   sharedCosts?: number;
+  monthlyRent?: number;
+  parkingSpaces?: number;
+  balcony?: boolean;
+  elevator?: boolean;
+  garage?: boolean;
+  garden?: boolean;
+  viewType?: string;
+  condition?: string;
+  heatingType?: string;
+  internetIncluded?: boolean;
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
+  furnished?: boolean;
   coordinates?: {
     lat: number;
     lng: number;
   };
+  neighborhood?: string;
+  pricePerSqm?: number;
+  availableFrom?: string;
+  depositAmount?: number;
+  minRentalPeriod?: number;
 }
 
 export interface FinnPropertyResponse {
