@@ -8,7 +8,7 @@ export default function SupabaseInfo() {
     environment: env.VITE_ENVIRONMENT || 'unknown',
     supabase: {
       url: env.VITE_SUPABASE_URL,
-      anonKeyPresent: Boolean(env.VITE_SUPABASE_ANON_KEY && env.VITE_SUPABASE_ANON_KEY.length > 5),
+      anonKeyPresent: Boolean(env.VITE_SUPABASE_PUBLISHABLE_KEY && env.VITE_SUPABASE_PUBLISHABLE_KEY.length > 5),
       host,
       projectId: env.VITE_SUPABASE_PROJECT_ID,
     },
