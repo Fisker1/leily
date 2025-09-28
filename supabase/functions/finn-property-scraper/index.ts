@@ -302,7 +302,7 @@ serve(async (req) => {
     console.error('Finn scraper error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
         message: 'An error occurred while fetching property data. Please try again.' 
       }),
       { 

@@ -92,7 +92,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to get property valuation',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500, 
@@ -118,9 +118,9 @@ async function getKartverketPropertyData(address: string, postalCode?: string) {
         data: {
           ...addressLookup.data,
           ...propertyDetails.data,
-          municipality: addressLookup.data.municipality,
-          county: addressLookup.data.county,
-          coordinates: addressLookup.data.coordinates,
+          municipality: addressLookup.data?.municipality,
+          county: addressLookup.data?.county,
+          coordinates: addressLookup.data?.coordinates,
         }
       };
     }
@@ -130,7 +130,7 @@ async function getKartverketPropertyData(address: string, postalCode?: string) {
     
   } catch (error) {
     console.error('Kartverket API error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -184,7 +184,7 @@ async function getAddressFromKartverket(address: string, postalCode?: string) {
     
   } catch (error) {
     console.error('Address lookup error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -226,7 +226,7 @@ async function getPropertyDetailsFromMatrikkel(addressData: any) {
     
   } catch (error) {
     console.error('Property details error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -275,7 +275,7 @@ async function basicKartverketSearch(address: string, postalCode?: string) {
     
   } catch (error) {
     console.error('Basic search error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

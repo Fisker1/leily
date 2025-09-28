@@ -44,7 +44,7 @@ serve(async (req) => {
     // Make geocoding request to Mapbox with retries
     const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${MAPBOX_PUBLIC_TOKEN}&country=${country}&limit=1`
     
-    let response: Response;
+    let response: Response | undefined;
     let attempt = 0;
     const maxAttempts = 3;
     
@@ -81,9 +81,9 @@ serve(async (req) => {
       }
     }
     
-    if (!response! || !response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error')
-      console.error(`❌ All geocoding attempts failed. Status: ${response?.status}, Error: ${errorText}`)
+    if (!response || !response.ok) {
+      const errorText = response ? await response.text().catch(() => 'Unknown error') : 'No response received'
+      console.error(`❌ All geocoding attempts failed. Status: ${response?.status || 'unknown'}, Error: ${errorText}`)
       
       return new Response(
         JSON.stringify({ 
@@ -133,11 +133,11 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('❌ Geocoding function error:', error.message)
+    console.error('❌ Geocoding function error:', error instanceof Error ? error.message : 'Unknown error')
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
         success: false
       }),
