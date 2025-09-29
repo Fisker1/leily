@@ -114,7 +114,7 @@ serve(async (req) => {
       .from('properties')
       .select(`
         *,
-        lease_agreements!fk_lease_agreements_property_id (
+        lease_agreements!lease_agreements_property_id_fkey (
           *,
           tenants!fk_lease_agreements_tenant_id (
             id,
