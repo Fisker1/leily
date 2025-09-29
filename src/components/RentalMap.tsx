@@ -246,28 +246,16 @@ const RentalMap = () => {
           addDebug('Oppretter kart instans...');
           
           try {
-            console.log('🔧 Creating simple mapbox instance...');
-            addDebug('Oppretter enkel Mapbox instans...');
+            console.log('🔧 Creating mapbox instance with updated token...');
+            addDebug('Oppretter Mapbox instans med oppdatert token...');
             
-            // Create the simplest possible working map
+            // Use standard Mapbox style with updated token
             mapInstance = new mapboxgl.Map({
               container: mapContainer.current,
-              style: {
-                version: 8,
-                sources: {},
-                layers: [
-                  {
-                    id: 'background',
-                    type: 'background',
-                    paint: {
-                      'background-color': '#f0f0f0'
-                    }
-                  }
-                ]
-              },
+              style: 'mapbox://styles/mapbox/streets-v12',
               center: [10.7522, 59.9139], // Oslo
               zoom: 6,
-              attributionControl: false,
+              attributionControl: true,
               preserveDrawingBuffer: true
             });
 
