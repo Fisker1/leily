@@ -10,7 +10,7 @@ import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
 import { PropertyDocumentsDialog } from "@/components/PropertyDocumentsDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { 
@@ -735,27 +735,27 @@ const Rental = () => {
                           </PropertyAddDialog>
                         </div>
                        ) : (
-                          <PropertyActionsBalloon
-                            property={property}
-                            onDocuments={() => {
-                              setSelectedProperty(property);
-                              setDocumentsDialogOpen(true);
-                            }}
-                            onTenantChat={() => {
-                              setSelectedProperty(property);
-                              setTenantChatDialogOpen(true);
-                            }}
-                            onDetails={() => {
-                              setSelectedProperty(property);
-                              setDetailsDialogOpen(true);
-                            }}
-                            onEdit={() => {
-                              setSelectedProperty(property);
-                              setEditDialogOpen(true);
-                            }}
-                            onToggleVisibility={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
-                            onDelete={() => handleDeleteProperty(property.id)}
-                          />
+                           <PropertyActionsBalloon
+                             property={property}
+                             onDocuments={() => {
+                               setSelectedProperty(property);
+                               setDocumentsDialogOpen(true);
+                             }}
+                             onTenantChat={() => {
+                               setSelectedProperty(property);
+                               setTenantChatDialogOpen(true);
+                             }}
+                             onDetails={() => {
+                               setSelectedProperty(property);
+                               setDetailsDialogOpen(true);
+                             }}
+                             onEdit={() => {
+                               setSelectedProperty(property);
+                               setEditDialogOpen(true);
+                             }}
+                             onToggleVisibility={() => handleToggleShowInRental(property.id, property.show_in_rental !== false)}
+                             onDelete={() => handleDeleteProperty(property.id)}
+                           />
                        )}
                     </div>
                   </div>

@@ -8,7 +8,7 @@ import {
   Edit, 
   EyeOff, 
   Trash,
-  CircleDot
+  PartyPopper
 } from 'lucide-react';
 
 interface Property {
@@ -37,6 +37,7 @@ interface PropertyActionsBalloonProps {
   onEdit: () => void;
   onToggleVisibility: () => void;
   onDelete: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
@@ -47,6 +48,7 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
   onEdit,
   onToggleVisibility,
   onDelete,
+  onMouseLeave,
 }) => {
   const [isPopped, setIsPopped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -66,6 +68,9 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
   const handleReset = () => {
     setIsPopped(false);
     setIsAnimating(false);
+    if (onMouseLeave) {
+      onMouseLeave();
+    }
   };
 
   if (!isPopped) {
@@ -75,11 +80,11 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
           className={`cursor-pointer transition-all duration-300 ${
             isAnimating 
               ? 'animate-ping scale-150 opacity-0' 
-              : 'hover:scale-110 hover:rotate-12'
+              : 'hover:scale-110 hover:-translate-y-2 hover:rotate-12'
           }`}
           onClick={handleBalloonClick}
         >
-          <CircleDot 
+          <PartyPopper 
             className={`h-12 w-12 text-primary transition-all duration-200 ${
               isAnimating ? 'scale-0' : ''
             }`} 
