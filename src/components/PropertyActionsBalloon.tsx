@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   FileText, 
   MessageCircle, 
@@ -50,6 +51,7 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
 }) => {
   const [isPopped, setIsPopped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { isAmbassador, loading } = useUserRole();
 
   const handleBalloonClick = () => {
     if (isPopped || isAnimating) return;
@@ -75,22 +77,27 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
           className={`cursor-pointer transition-all duration-700 ${
             isAnimating 
               ? 'animate-[fly-away_0.8s_ease-out_forwards] opacity-0 scale-75' 
-              : 'hover:scale-110 hover:-translate-y-2 hover:rotate-12 animate-[money-float_3s_ease-in-out_infinite]'
+              : 'hover:scale-110 hover:-translate-y-2 hover:rotate-12'
           }`}
           onClick={handleBalloonClick}
-          style={{
-            animationDelay: isAnimating ? '0s' : '0s'
-          }}
         >
-          <Banknote 
-            className={`h-12 w-12 text-green-500 transition-all duration-200 ${
-              isAnimating ? 'scale-0' : ''
-            }`} 
-          />
+          {isAmbassador ? (
+            <Banknote 
+              className={`h-12 w-12 text-green-500 transition-all duration-200 ${
+                isAnimating ? 'scale-0' : ''
+              }`} 
+            />
+          ) : (
+            <FileText 
+              className={`h-12 w-12 text-primary transition-all duration-200 ${
+                isAnimating ? 'scale-0' : ''
+              }`} 
+            />
+          )}
         </div>
         {!isAnimating && (
           <div className="absolute mt-16 text-xs text-muted-foreground opacity-75 animate-pulse">
-            Klikk pengene
+            {isAmbassador ? 'Klikk pengene' : 'Klikk for handlinger'}
           </div>
         )}
       </div>
@@ -101,18 +108,6 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
     <div className="animate-fade-in">
       <TooltipProvider>
         <div className="space-y-2">
-          {/* Reset button */}
-          <div className="flex justify-end mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              onClick={handleReset}
-            >
-              ×
-            </Button>
-          </div>
-
           {/* First row: Dokumenter and Leiechat (if rented) */}
           <div className={`grid gap-2 ${property.lease_agreements?.[0] ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <Tooltip>
