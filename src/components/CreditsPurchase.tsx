@@ -95,12 +95,12 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
         {creditTiers.map((tier) => (
           <Card 
             key={tier.id} 
-            className={`relative transition-all duration-200 cursor-pointer hover:shadow-lg ${
+            className={`relative h-full flex flex-col transition-all duration-200 cursor-pointer hover:shadow-lg ${
               tier.popular 
-                ? 'border-2 border-primary shadow-lg scale-105' 
+                ? 'border-2 border-primary shadow-lg transform scale-[1.02]' 
                 : tier.bestValue
-                ? 'border-2 border-orange shadow-lg'
-                : 'hover:border-primary/30'
+                ? 'border-2 border-orange-500 shadow-lg transform scale-[1.02]'
+                : 'hover:border-primary/30 hover:transform hover:scale-[1.01]'
             }`}
             onClick={() => setSelectedTier(tier.id)}
           >
@@ -114,7 +114,7 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
             
             {tier.bestValue && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="px-3 py-1 bg-orange text-orange-foreground">
+                <Badge className="px-3 py-1 bg-orange-500 text-white">
                   Beste verdi
                 </Badge>
               </div>
@@ -125,7 +125,7 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
                 tier.popular 
                   ? 'bg-primary text-primary-foreground'
                   : tier.bestValue
-                  ? 'bg-orange text-orange-foreground'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-secondary text-secondary-foreground'
               }`}>
                 {tier.icon}
@@ -135,7 +135,7 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
                 tier.popular 
                   ? 'text-primary' 
                   : tier.bestValue 
-                  ? 'text-orange' 
+                  ? 'text-orange-500' 
                   : 'text-foreground'
               }`}>
                 {tier.name}
@@ -156,8 +156,8 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-4">
-              <ul className="space-y-2">
+            <CardContent className="flex-1 flex flex-col justify-between space-y-4">
+              <ul className="space-y-2 flex-1">
                 {tier.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -167,14 +167,15 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
               </ul>
 
               <Button
-                className={`w-full ${
+                variant={selectedTier === tier.id ? "default" : "outline"}
+                className={`w-full mt-auto ${
                   selectedTier === tier.id
                     ? tier.popular
                       ? 'bg-primary hover:bg-primary/90'
                       : tier.bestValue
-                      ? 'bg-orange hover:bg-orange/90'
+                      ? 'bg-orange-500 hover:bg-orange-600'
                       : 'bg-primary hover:bg-primary/90'
-                    : 'variant-outline'
+                    : ''
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -189,15 +190,21 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
         ))}
       </div>
 
-      <div className="mt-8 text-center">
-        <Card className="inline-block p-4 bg-muted/20">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="w-4 h-4 text-green-600" />
-            <span>Credits utløper aldri</span>
-            <Check className="w-4 h-4 text-green-600 ml-4" />
-            <span>Sikkert SSL-kryptert betaling</span>
-            <Check className="w-4 h-4 text-green-600 ml-4" />
-            <span>30 dagers pengene-tilbake-garanti</span>
+      <div className="mt-12 text-center">
+        <Card className="inline-block p-6 bg-muted/20">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              <span>Credits utløper aldri</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              <span>Sikkert SSL-kryptert betaling</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              <span>30 dagers pengene-tilbake-garanti</span>
+            </div>
           </div>
         </Card>
       </div>
