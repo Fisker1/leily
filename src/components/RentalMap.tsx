@@ -16,12 +16,11 @@ const RentalMap = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const markers = useRef<any[]>([]);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
@@ -32,373 +31,242 @@ const RentalMap = () => {
   // Get data
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
 
-  const addDebug = (message: string) => {
-    console.log(`🔧 [DEBUG] ${message}`);
-    setDebugInfo(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
-
   // Fetch Mapbox token
   const fetchMapboxToken = async () => {
     try {
-      addDebug('Initierer Mapbox token henting...');
-      
+      console.log('🔑 Fetching Mapbox token...');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error) {
-        throw new Error(`Edge function feil: ${error.message}`);
+        throw new Error(`Token error: ${error.message}`);
       }
 
-      addDebug(`Token respons mottatt: ${JSON.stringify(data)}`);
-
       if (data?.success && data?.token && data.token.startsWith('pk.')) {
-        addDebug(`Gyldig token mottatt: ${data.token.substring(0, 20)}...`);
+        console.log('✅ Valid Mapbox token received');
         setMapboxToken(data.token);
         return data.token;
       } else {
-        throw new Error(`Ugyldig token respons: ${JSON.stringify(data)}`);
+        throw new Error('Invalid token response');
       }
     } catch (error: any) {
-      const errorMsg = `Token henting feilet: ${error.message}`;
-      addDebug(errorMsg);
-      setError(errorMsg);
+      console.error('❌ Token fetch failed:', error);
+      setError(`Token error: ${error.message}`);
       return null;
     }
   };
 
   // Clear markers
   const clearMarkers = () => {
-    markers.current.forEach(marker => {
-      try {
-        marker?.remove();
-      } catch (e) {
-        addDebug(`Feil ved fjerning av markør: ${e}`);
-      }
-    });
+    markers.current.forEach(marker => marker.remove());
     markers.current = [];
-    addDebug(`Fjernet ${markers.current.length} markører`);
   };
 
   // Add markers to map
-  const addMarkers = async () => {
-    if (!map.current || loading || dataLoading) {
-      addDebug(`Markører ikke klare: map=${!!map.current}, loading=${loading}, dataLoading=${dataLoading}`);
-      return;
-    }
+  const addMarkers = () => {
+    if (!map.current || loading || dataLoading) return;
 
-    addDebug('Starter markør tilføyelse...');
+    console.log('🔧 Adding markers to map...');
     clearMarkers();
 
-    let allMarkers: any[] = [];
-    let bounds: any = null;
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasMarkers = false;
 
-    try {
-      const mapboxModule = await import('mapbox-gl');
-      const mapboxgl = mapboxModule.default;
-      bounds = new mapboxgl.LngLatBounds();
-      addDebug('Mapbox GL importert OK');
+    // Add property markers
+    if (showMyProperties && properties?.length > 0) {
+      properties.forEach((property) => {
+        if (property.coordinates && property.coordinates.length === 2) {
+          const el = document.createElement('div');
+          el.className = 'marker-property';
+          el.style.cssText = `
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          `;
 
-      // Add property markers
-      if (showMyProperties && properties && properties.length > 0) {
-        addDebug(`Legger til ${properties.length} eiendom markører`);
-        properties.forEach((property, index) => {
-          if (property.coordinates && property.coordinates.length === 2) {
-            try {
-              const el = document.createElement('div');
-              el.style.cssText = `
-                width: 14px;
-                height: 14px;
-                background: #3b82f6;
-                border: 2px solid white;
-                border-radius: 50%;
-                cursor: pointer;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-              `;
+          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+            <div style="padding: 12px; font-family: system-ui; min-width: 200px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1f2937;">${property.address}</h3>
+              <div style="font-size: 12px; color: #6b7280; line-height: 1.4;">
+                <p style="margin: 2px 0;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
+                ${property.monthly_rent ? `<p style="margin: 2px 0;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
+                ${property.current_value ? `<p style="margin: 2px 0;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
+                ${property.primary_residence ? '<p style="margin: 2px 0; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
+              </div>
+            </div>
+          `);
 
-              const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-                <div style="padding: 8px; font-family: system-ui;">
-                  <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${property.address}</h3>
-                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Type: ${property.property_type || 'Ikke spesifisert'}</p>
-                  ${property.monthly_rent ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
-                  ${property.current_value ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
-                  ${property.primary_residence ? '<p style="margin: 4px 0; font-size: 12px; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
-                </div>
-              `);
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([property.coordinates[0], property.coordinates[1]])
+            .setPopup(popup)
+            .addTo(map.current);
 
-              const marker = new mapboxgl.Marker(el)
-                .setLngLat([property.coordinates[0], property.coordinates[1]])
-                .setPopup(popup)
-                .addTo(map.current);
-
-              allMarkers.push(marker);
-              bounds.extend([property.coordinates[0], property.coordinates[1]]);
-              addDebug(`Eiendom markør ${index + 1} lagt til på [${property.coordinates[0]}, ${property.coordinates[1]}]`);
-            } catch (markerError) {
-              addDebug(`Feil ved eiendom markør ${index + 1}: ${markerError}`);
-            }
-          }
-        });
-      }
-
-      // Add calculation markers
-      if (showCalculationProperties && calculationProperties && calculationProperties.length > 0) {
-        addDebug(`Legger til ${calculationProperties.length} kalkyle markører`);
-        calculationProperties.forEach((calc, index) => {
-          if (calc.coordinates && calc.coordinates.length === 2) {
-            try {
-              const el = document.createElement('div');
-              el.style.cssText = `
-                width: 14px;
-                height: 14px;
-                background: #f59e0b;
-                border: 2px solid white;
-                border-radius: 50%;
-                cursor: pointer;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-              `;
-
-              const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-                <div style="padding: 8px; font-family: system-ui;">
-                  <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${calc.property_address}</h3>
-                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
-                  <p style="margin: 4px 0; font-size: 12px; color: #666;">Finn-kode: ${calc.finn_code}</p>
-                  ${calc.results_data?.totalPrice ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
-                </div>
-              `);
-
-              const marker = new mapboxgl.Marker(el)
-                .setLngLat([calc.coordinates[0], calc.coordinates[1]])
-                .setPopup(popup)
-                .addTo(map.current);
-
-              allMarkers.push(marker);
-              bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
-              addDebug(`Kalkyle markør ${index + 1} lagt til på [${calc.coordinates[0]}, ${calc.coordinates[1]}]`);
-            } catch (markerError) {
-              addDebug(`Feil ved kalkyle markør ${index + 1}: ${markerError}`);
-            }
-          }
-        });
-      }
-
-      // Update markers ref
-      markers.current = allMarkers;
-      addDebug(`Totalt ${allMarkers.length} markører lagt til`);
-
-      // Center map on markers
-      if (allMarkers.length > 0) {
-        if (allMarkers.length === 1) {
-          const lngLat = allMarkers[0].getLngLat();
-          map.current.setCenter([lngLat.lng, lngLat.lat]);
-          map.current.setZoom(12);
-          addDebug(`Sentrert på enkelt markør: [${lngLat.lng}, ${lngLat.lat}]`);
-        } else {
-          map.current.fitBounds(bounds, {
-            padding: 50,
-            maxZoom: 14
-          });
-          addDebug(`Tilpasset til bounds for ${allMarkers.length} markører`);
+          markers.current.push(marker);
+          bounds.extend([property.coordinates[0], property.coordinates[1]]);
+          hasMarkers = true;
         }
-      } else {
-        map.current.setCenter([10.7522, 59.9139]);
-        map.current.setZoom(6);
-        addDebug('Ingen markører - bruker standard Oslo senter');
-      }
-    } catch (error) {
-      const errorMsg = `Markør feil: ${error}`;
-      addDebug(errorMsg);
-      console.error(errorMsg, error);
+      });
     }
+
+    // Add calculation markers
+    if (showCalculationProperties && calculationProperties?.length > 0) {
+      calculationProperties.forEach((calc) => {
+        if (calc.coordinates && calc.coordinates.length === 2) {
+          const el = document.createElement('div');
+          el.className = 'marker-calculation';
+          el.style.cssText = `
+            width: 16px;
+            height: 16px;
+            background: #f59e0b;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          `;
+
+          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+            <div style="padding: 12px; font-family: system-ui; min-width: 200px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1f2937;">${calc.property_address}</h3>
+              <div style="font-size: 12px; color: #6b7280; line-height: 1.4;">
+                <p style="margin: 2px 0;">Kalkyle: ${calc.calculation_data?.calculation_name || 'Uten navn'}</p>
+                <p style="margin: 2px 0;">Finn-kode: ${calc.finn_code}</p>
+                ${calc.results_data?.totalPrice ? `<p style="margin: 2px 0;">Pris: ${formatNumberWithSpaces(calc.results_data.totalPrice)} NOK</p>` : ''}
+              </div>
+            </div>
+          `);
+
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([calc.coordinates[0], calc.coordinates[1]])
+            .setPopup(popup)
+            .addTo(map.current);
+
+          markers.current.push(marker);
+          bounds.extend([calc.coordinates[0], calc.coordinates[1]]);
+          hasMarkers = true;
+        }
+      });
+    }
+
+    // Center map on markers
+    if (hasMarkers) {
+      if (markers.current.length === 1) {
+        const lngLat = markers.current[0].getLngLat();
+        map.current.setCenter([lngLat.lng, lngLat.lat]);
+        map.current.setZoom(13);
+      } else {
+        map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+      }
+    } else {
+      // Default to Norway center
+      map.current.setCenter([10.7522, 59.9139]);
+      map.current.setZoom(6);
+    }
+
+    console.log(`✅ Added ${markers.current.length} markers to map`);
   };
 
   // Initialize map
   useEffect(() => {
     if (!user) {
       setLoading(false);
-      addDebug('Ingen bruker - avslutter');
       return;
     }
 
-    let mapboxgl: any = null;
-    let mapInstance: any = null;
-
     const initializeMap = async () => {
       try {
-        addDebug('Starter kart initialisering...');
+        console.log('🔧 Initializing rental map...');
         
-        // Load Mapbox GL
-        const mapboxModule = await import('mapbox-gl');
-        mapboxgl = mapboxModule.default;
-        addDebug('Mapbox GL modul lastet');
-
-        // Get token
+        // Get token first
         const token = mapboxToken || await fetchMapboxToken();
         if (!token) {
-          addDebug('Ingen token mottatt - avbryter');
+          console.error('❌ No token available');
           return;
         }
 
         // Set access token
         mapboxgl.accessToken = token;
-        addDebug(`Mapbox token satt: ${token.substring(0, 20)}...`);
+        console.log('✅ Mapbox token set');
 
-        // Create map
+        // Create map with simple OpenStreetMap-style
         if (mapContainer.current && !map.current) {
-          addDebug('Oppretter kart instans...');
-          
           try {
-            console.log('🔧 Creating mapbox instance with CSP-compliant style...');
-            addDebug('Oppretter Mapbox instans med CSP-kompatibel stil...');
-            
-            // Use proper Mapbox style
-            mapInstance = new mapboxgl.Map({
+            map.current = new mapboxgl.Map({
               container: mapContainer.current,
-              style: 'mapbox://styles/mapbox/light-v11',
-              center: [10.7522, 59.9139], // Oslo
+              style: {
+                version: 8,
+                sources: {
+                  'osm': {
+                    type: 'raster',
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    attribution: '© OpenStreetMap contributors'
+                  }
+                },
+                layers: [
+                  {
+                    id: 'osm',
+                    type: 'raster',
+                    source: 'osm'
+                  }
+                ]
+              },
+              center: [10.7522, 59.9139], // Oslo center
               zoom: 6,
-              attributionControl: true,
-              preserveDrawingBuffer: true
+              attributionControl: true
             });
 
-            console.log('✅ Mapbox instance created');
-            addDebug('✅ Mapbox instans opprettet');
-            map.current = mapInstance;
-          } catch (mapError) {
-            console.error('❌ Map creation failed:', mapError);
-            addDebug(`❌ Kart opprettelse feilet: ${mapError}`);
-            throw mapError;
-          }
+            console.log('✅ Map created with OpenStreetMap tiles');
 
-          // Add navigation controls
-          const navControl = new mapboxgl.NavigationControl();
-          mapInstance.addControl(navControl, 'top-right');
-          addDebug('Navigasjonskontroller lagt til');
+            // Add navigation controls
+            map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-          // Wait for map to load
-          console.log('🔧 Setting up map load event...');
-          addDebug('Setter opp kart load event...');
-          
-          mapInstance.on('load', () => {
-            console.log('✅ Map loaded successfully');
-            addDebug('✅ Kart lastet ferdig');
-            setLoading(false);
-            setError(null);
-            addMarkers();
-          });
-
-          mapInstance.on('style.load', () => {
-            console.log('✅ Map style loaded');
-            addDebug('✅ Kartsstil lastet');
-          });
-
-          mapInstance.on('sourcedata', (e) => {
-            console.log('✅ Map source data loaded:', e.sourceId);
-            addDebug(`✅ Kartdata lastet: ${e.sourceId}`);
-          });
-
-          // Handle map errors gracefully - don't let tile errors stop the map
-          mapInstance.on('error', (e) => {
-            const errorMsg = e.error ? 
-              `${e.error.message} (${e.error.status})` : 
-              e.message || 'Unknown map error';
-            
-            console.error('❌ Map error:', errorMsg);
-            addDebug(`❌ Kartfeil: ${errorMsg}`);
-            
-            // Ignore common tile loading errors
-            if (e.error && (e.error.status === 403 || e.error.status === 404)) {
-              addDebug('🔧 Flisfeil ignorert - fortsetter med kart');
-              return;
-            }
-            
-            // Only stop loading for critical auth errors
-            if (e.error && e.error.status === 401) {
-              setError('Kartfeil: Ugyldig Mapbox token');
+            // Setup map events
+            map.current.on('load', () => {
+              console.log('✅ Map loaded successfully');
               setLoading(false);
-            }
-          });
+              setError(null);
+              addMarkers();
+            });
 
-          // Force loading to finish after shorter timeout
-          setTimeout(() => {
-            console.log('🕐 Timeout check - loading:', loading);
-            if (loading) {
-              console.log('🕐 Forcing map to finish loading after 3 seconds');
-              addDebug('🕐 Tidsavbrudd - tvinger kart ferdig etter 3 sekunder');
-              setLoading(false);
-              if (mapInstance) {
+            map.current.on('error', (e: any) => {
+              console.error('❌ Map error:', e);
+              // Don't stop for tile loading errors
+              if (!e.error || (e.error && e.error.status !== 403)) {
+                setError('Kartfeil: Kan ikke laste kartet');
+                setLoading(false);
+              }
+            });
+
+            // Timeout fallback
+            setTimeout(() => {
+              if (loading) {
+                console.log('🕐 Map loading timeout - forcing ready state');
+                setLoading(false);
                 addMarkers();
               }
-            }
-          }, 3000);
+            }, 5000);
 
-          mapInstance.on('styledata', () => {
-            addDebug('🎨 Kartsstil lastet');
-          });
-
-          mapInstance.on('sourcedataloading', (e: any) => {
-            addDebug(`📡 Laster kartdata: ${e.sourceId}`);
-          });
-
-          mapInstance.on('sourcedata', (e: any) => {
-            addDebug(`✅ Kartdata lastet: ${e.sourceId}`);
-          });
-
-          // Handle map errors
-          mapInstance.on('error', (e: any) => {
-            const errorDetails = {
-              type: e.type,
-              error: e.error ? {
-                message: e.error.message,
-                status: e.error.status,
-                url: e.error.url
-              } : 'Ukjent feil'
-            };
-            
-            addDebug(`❌ Kartfeil: ${JSON.stringify(errorDetails)}`);
-            
-            // For 403 errors, ignore them as they are tile loading issues
-            if (e.error && e.error.status === 403) {
-              addDebug('🔧 403-feil ignorert (vanlig kartlastingsfeil)');
-              return;
-            }
-            
-            // Only set error for critical issues
-            if (e.error && e.error.status === 401) {
-              setError('Kartfeil: Ugyldig Mapbox token');
-              setLoading(false);
-            } else if (e.error && e.error.message && e.error.message.includes('network')) {
-              setError('Kartfeil: Nettverksfeil - sjekk internettforbindelsen');
-              setLoading(false);
-            }
-          });
-
-          // Force map refresh
-          setTimeout(() => {
-            if (mapInstance && mapInstance.isStyleLoaded && mapInstance.isStyleLoaded()) {
-              mapInstance.resize();
-              addDebug('Kart størrelse justert');
-            }
-          }, 1000);
-
-        } else {
-          addDebug('Kart container ikke tilgjengelig eller kart allerede opprettet');
+          } catch (mapError) {
+            console.error('❌ Map creation failed:', mapError);
+            setError(`Kartfeil: ${mapError}`);
+            setLoading(false);
+          }
         }
       } catch (error: any) {
-        const errorMsg = `Kart initialisering feilet: ${error.message}`;
-        addDebug(errorMsg);
-        setError(errorMsg);
+        console.error('❌ Map init failed:', error);
+        setError(`Initialisering feilet: ${error.message}`);
         setLoading(false);
       }
     };
 
     initializeMap();
 
-    // Cleanup
     return () => {
-      if (mapInstance) {
-        addDebug('Rydder opp kart instans');
-        mapInstance.remove();
-      }
       if (map.current) {
+        map.current.remove();
         map.current = null;
       }
       clearMarkers();
@@ -408,14 +276,11 @@ const RentalMap = () => {
   // Update markers when data or toggles change
   useEffect(() => {
     if (!loading && !dataLoading) {
-      addDebug('Data eller innstillinger endret - oppdaterer markører');
       addMarkers();
     }
   }, [
     showMyProperties, 
-    showRentalProperties, 
     showCalculationProperties, 
-    showMarketData, 
     properties, 
     calculationProperties, 
     loading, 
@@ -423,7 +288,7 @@ const RentalMap = () => {
   ]);
 
   const resetMap = () => {
-    addDebug('Tilbakestiller kart...');
+    console.log('🔄 Resetting map...');
     setError(null);
     setLoading(true);
     setMapboxToken(null);
@@ -446,24 +311,14 @@ const RentalMap = () => {
 
   if (error) {
     return (
-      <Card className="h-[600px]">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-2 text-red-500">
+      <Card className="h-[600px] flex items-center justify-center">
+        <CardContent className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-2 text-red-500">
             <AlertTriangle className="h-5 w-5" />
             <h3 className="font-semibold">Kartfeil</h3>
           </div>
-          <p className="text-red-600">{error}</p>
-          
-          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <h4 className="font-medium text-sm">Debug informasjon:</h4>
-            <div className="text-xs font-mono space-y-1 max-h-40 overflow-y-auto">
-              {debugInfo.map((info, i) => (
-                <div key={i} className="text-gray-600">{info}</div>
-              ))}
-            </div>
-          </div>
-          
-          <Button onClick={resetMap}>
+          <p className="text-red-600 text-sm">{error}</p>
+          <Button onClick={resetMap} size="sm">
             Prøv igjen
           </Button>
         </CardContent>
@@ -485,20 +340,8 @@ const RentalMap = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Debug Panel */}
-            {debugInfo.length > 0 && (
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">System status:</h4>
-                <div className="text-xs font-mono space-y-1 max-h-32 overflow-y-auto">
-                  {debugInfo.slice(-5).map((info, i) => (
-                    <div key={i} className="text-blue-700">{info}</div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Map Controls */}
-            <div className="flex flex-wrap gap-6">
+            <div className="flex flex-wrap gap-4">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="my-properties"
@@ -513,52 +356,40 @@ const RentalMap = () => {
               
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="rental-properties"
-                  checked={showRentalProperties}
-                  onCheckedChange={setShowRentalProperties}
-                />
-                <Label htmlFor="rental-properties" className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full border border-white"></div>
-                  Utleie-enheter
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="calculation-properties"
+                  id="calculations"
                   checked={showCalculationProperties}
                   onCheckedChange={setShowCalculationProperties}
                 />
-                <Label htmlFor="calculation-properties" className="flex items-center gap-2">
+                <Label htmlFor="calculations" className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-amber-500 rounded-full border border-white"></div>
                   Kalkulasjoner
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="market-data"
-                  checked={showMarketData}
-                  onCheckedChange={setShowMarketData}
-                />
-                <Label htmlFor="market-data" className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full border border-white"></div>
-                  Markedsdata
                 </Label>
               </div>
             </div>
 
             {/* Map Container */}
-            <div className="relative w-full h-[500px] rounded-lg overflow-hidden border">
+            <div className="relative">
+              <div 
+                ref={mapContainer}
+                className="w-full h-[500px] rounded-lg border overflow-hidden bg-muted"
+              />
+              
               {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                  <div className="flex items-center gap-2">
+                <div className="absolute inset-0 bg-muted/50 flex items-center justify-center rounded-lg">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Laster kart...</span>
                   </div>
                 </div>
               )}
-              <div ref={mapContainer} className="w-full h-full" />
+            </div>
+
+            {/* Map Info */}
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Kartdata fra OpenStreetMap. 
+                {markers.current.length > 0 && ` Viser ${markers.current.length} eiendom${markers.current.length !== 1 ? 'mer' : ''}.`}
+              </p>
             </div>
           </div>
         </CardContent>

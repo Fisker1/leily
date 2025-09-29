@@ -36,46 +36,20 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
   useEffect(() => {
     if (shouldShowSatellite) {
-      const fetchMapboxToken = async (retryCount = 0) => {
+      const fetchMapboxToken = async () => {
         try {
-          console.log(`🔑 Fetching Mapbox token for property image... (attempt ${retryCount + 1})`);
+          console.log('🔑 Fetching Mapbox token for satellite image...');
           const { data, error } = await supabase.functions.invoke('get-mapbox-token');
           
-          if (error) {
-            console.error('❌ Token fetch error:', error);
-            
-            // Retry up to 2 times with exponential backoff
-            if (retryCount < 2) {
-              const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
-              console.log(`⏳ Retrying in ${delay}ms... (error recovery)`);
-              setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
-              return;
-            }
-            console.error('❌ All retry attempts failed for property image');
+          if (error || !data?.success || !data?.token) {
+            console.error('❌ Token fetch failed:', error);
             return;
           }
 
-          if (data?.success && data?.token && data.token.startsWith('pk.')) {
-            console.log('✅ Valid Mapbox token received for property image');
-            
-            // Skip validation - just use the token directly
-            setMapboxToken(data.token);
-          } else {
-            console.error('❌ Invalid response from token service:', data);
-            if (retryCount < 2) {
-              const delay = Math.pow(2, retryCount) * 1000;
-              setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
-            }
-          }
+          console.log('✅ Token received for satellite image');
+          setMapboxToken(data.token);
         } catch (error) {
-          console.error('❌ Error fetching Mapbox token:', error);
-          
-          // Retry on network/other errors
-          if (retryCount < 2) {
-            const delay = Math.pow(2, retryCount) * 1000;
-            console.log(`⏳ Retrying in ${delay}ms... (network error recovery)`);
-            setTimeout(() => fetchMapboxToken(retryCount + 1), delay);
-          }
+          console.error('❌ Error fetching token:', error);
         }
       };
 
@@ -87,16 +61,16 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   useEffect(() => {
     if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
-    
-    // Use coordinates from database if available, otherwise geocode
     const initializeMap = async () => {
-      let lng: number, lat: number;
-      
       try {
-        // First try to get coordinates from properties table if this address exists there
-        console.log(`🔍 Looking for cached coordinates for ${address}, ${city || ''}`);
+        mapboxgl.accessToken = mapboxToken;
         
+        // Get coordinates from database or geocode
+        let lng: number, lat: number;
+        
+        console.log(`🔍 Looking for coordinates for ${address}, ${city || ''}`);
+        
+        // Try database first
         const { data: properties } = await supabase
           .from('properties')
           .select('coordinates')
@@ -105,105 +79,87 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           .not('coordinates', 'is', null)
           .limit(1);
         
-        if (properties && properties[0]?.coordinates && Array.isArray(properties[0].coordinates) && properties[0].coordinates.length === 2) {
+        if (properties?.[0]?.coordinates?.length === 2) {
           [lng, lat] = properties[0].coordinates;
-          console.log(`✅ Using cached coordinates [${lng}, ${lat}] for ${address}`);
+          console.log(`✅ Using cached coordinates [${lng}, ${lat}]`);
         } else {
-          // Fallback to simple geocoding
-          console.log(`🌍 No cached coordinates, geocoding: ${address}, ${city || ''}`);
-          
+          // Geocode with Nominatim
           const fullAddress = `${address}${city ? ', ' + city : ''}, Norge`;
           const response = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=no`
           );
           const data = await response.json();
           
-          if (data && data.length > 0) {
+          if (data?.[0]) {
             lng = parseFloat(data[0].lon);
             lat = parseFloat(data[0].lat);
-            console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+            console.log(`✅ Geocoded to [${lng}, ${lat}]`);
           } else {
-            console.error('❌ Geocoding failed');
-            if (mapContainer.current) {
-              mapContainer.current.innerHTML = `
-                <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
-                  <div class="text-center p-4">
-                    <p>📍 Adresse ikke funnet</p>
-                    <p class="text-xs mt-1 opacity-75">${address}</p>
-                  </div>
-                </div>
-              `;
-            }
-            return;
+            throw new Error('Geocoding failed');
           }
         }
         
-        // Create the map with coordinates
-        if (!mapContainer.current) return;
-        
-        try {
-          map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: [lng, lat],
-            zoom: 17,
-            bearing: 0,
-            pitch: 0,
-            attributionControl: false,
-            logoPosition: 'bottom-right',
-            interactive: false,
-            preserveDrawingBuffer: true,
-            failIfMajorPerformanceCaveat: false
-          });
+        // Create satellite map
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: {
+            version: 8,
+            sources: {
+              'satellite': {
+                type: 'raster',
+                tiles: [`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`],
+                tileSize: 512
+              }
+            },
+            layers: [
+              {
+                id: 'satellite',
+                type: 'raster',
+                source: 'satellite'
+              }
+            ]
+          },
+          center: [lng, lat],
+          zoom: 17,
+          interactive: false,
+          attributionControl: false
+        });
 
-          // Add marker when map loads
-          map.current.on('load', () => {
-            if (map.current) {
-              new mapboxgl.Marker({ 
-                color: '#ef4444',
-                scale: 0.8
-              })
-                .setLngLat([lng, lat])
-                .addTo(map.current);
-              
-              console.log(`✅ Satellite map loaded for ${address}`);
-            }
-          });
+        // Add marker
+        map.current.on('load', () => {
+          if (map.current) {
+            new mapboxgl.Marker({ 
+              color: '#ef4444',
+              scale: 0.8
+            })
+              .setLngLat([lng, lat])
+              .addTo(map.current);
+            
+            console.log(`✅ Satellite image loaded for ${address}`);
+          }
+        });
 
-          map.current.on('error', (e) => {
-            console.error('❌ Mapbox GL error:', e.error?.message || e);
-            if (mapContainer.current) {
-              mapContainer.current.innerHTML = `
-                <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
-                  <div class="text-center p-4">
-                    <p>🗺️ Satellittbilde ikke tilgjengelig</p>
-                    <p class="text-xs mt-1 opacity-75">${address}</p>
-                  </div>
-                </div>
-              `;
-            }
-          });
-
-        } catch (mapError) {
-          console.error('❌ Error creating Mapbox GL map:', mapError);
+        map.current.on('error', (e) => {
+          console.error('❌ Satellite map error:', e);
           if (mapContainer.current) {
             mapContainer.current.innerHTML = `
               <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
                 <div class="text-center p-4">
-                  <p>🗺️ Kart kunne ikke lastes</p>
+                  <p>🗺️ Satellittbilde ikke tilgjengelig</p>
                   <p class="text-xs mt-1 opacity-75">${address}</p>
                 </div>
               </div>
             `;
           }
-        }
-      } catch (generalError) {
-        console.error('❌ General error in map initialization:', generalError);
+        });
+
+      } catch (error) {
+        console.error('❌ Satellite map init failed:', error);
         if (mapContainer.current) {
           mapContainer.current.innerHTML = `
             <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
               <div class="text-center p-4">
-                <p>📍 Laster satellittbilde...</p>
+                <p>📍 Adresse ikke funnet</p>
                 <p class="text-xs mt-1 opacity-75">${address}</p>
               </div>
             </div>
