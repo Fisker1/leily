@@ -29,6 +29,16 @@ export const useUserRole = () => {
         const roles = data?.map(r => r.role) || [];
         setIsAdmin(roles.includes('admin'));
         setIsAmbassador(roles.includes('ambassador'));
+        
+        // Debug logging
+        console.log('User roles check:', {
+          userId: user.id,
+          email: user.email,
+          roles: roles,
+          isAdmin: roles.includes('admin'),
+          isAmbassador: roles.includes('ambassador')
+        });
+        
       } catch (error) {
         console.error('Error checking user role:', error);
         setIsAdmin(false);

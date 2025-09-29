@@ -14,9 +14,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== Agent 007 Function Called ===');
+    console.log('Request method:', req.method);
+    
     const { message, conversationHistory, action } = await req.json();
+    console.log('Received message:', message ? 'YES' : 'NO');
+    console.log('Conversation history:', conversationHistory ? conversationHistory.length + ' messages' : 'NONE');
 
     if (!message) {
+      console.error('No message provided');
       throw new Error('Message is required');
     }
 
@@ -69,7 +75,10 @@ serve(async (req) => {
 
     // Get OpenAI API key
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('OpenAI API Key configured:', openaiApiKey ? 'YES' : 'NO');
+    
     if (!openaiApiKey) {
+      console.error('OpenAI API key not found in environment variables');
       throw new Error('OpenAI API key not configured');
     }
 
