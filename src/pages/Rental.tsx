@@ -223,39 +223,70 @@ const Rental = () => {
     if (!user) return;
 
     try {
-      // Get ALL properties that should show in rental (both empty and with leases)
-      const { data: allRentalProperties, error: allError } = await supabase
+      // First, get all properties
+      const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
-        .select(`
-          *,
-          lease_agreements!fk_lease_agreements_property_id(
-            id,
-            tenant_id,
-            monthly_rent,
-            status,
-            start_date,
-            end_date,
-            tenants!fk_lease_agreements_tenant_id(
-              id,
-              first_name,
-              last_name
-            )
-          )
-        `)
+        .select('*')
         .eq('owner_id', user.id)
         .eq('show_in_rental', true)
         .order('created_at', { ascending: false });
 
-      if (allError) {
-        console.error('Error fetching properties:', allError);
+      if (propertiesError) {
+        console.error('Error fetching properties:', propertiesError);
         setProperties([exampleProperty]);
         setAllProperties([]);
         return;
       }
 
+      // Then get lease agreements with tenant data for each property
+      const propertiesWithLeases = await Promise.all(
+        propertiesData.map(async (property) => {
+          const { data: leaseData, error: leaseError } = await supabase
+            .from('lease_agreements')
+            .select(`
+              id,
+              tenant_id,
+              monthly_rent,
+              status,
+              start_date,
+              end_date
+            `)
+            .eq('property_id', property.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          let leaseWithTenant = null;
+          if (leaseData && leaseData.length > 0) {
+            const lease = leaseData[0];
+            
+            // Get tenant data
+            const { data: tenantData, error: tenantError } = await supabase
+              .from('tenants')
+              .select('id, first_name, last_name')
+              .eq('id', lease.tenant_id)
+              .single();
+
+            if (!tenantError && tenantData) {
+              leaseWithTenant = {
+                ...lease,
+                tenants: tenantData
+              };
+            }
+          }
+
+          return {
+            ...property,
+            lease_agreements: leaseWithTenant ? [leaseWithTenant] : []
+          };
+        })
+      );
+
+      console.log('Properties with leases:', propertiesWithLeases);
+
       // Show all properties that have show_in_rental: true
-      if (allRentalProperties && allRentalProperties.length > 0) {
-        setProperties(allRentalProperties);
+      if (propertiesWithLeases && propertiesWithLeases.length > 0) {
+        setProperties(propertiesWithLeases);
       } else {
         setProperties([exampleProperty]);
       }
@@ -270,7 +301,7 @@ const Rental = () => {
       if (!allUserError && allUserProperties) {
         setAllProperties(allUserProperties);
       } else {
-        setAllProperties(allRentalProperties || []);
+        setAllProperties(propertiesWithLeases || []);
       }
 
     } catch (error) {
