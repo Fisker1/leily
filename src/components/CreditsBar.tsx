@@ -18,19 +18,19 @@ const CreditsBar = ({ credits = 0, maxCredits = 100, className = "" }: CreditsBa
   const displayCredits = isAmbassador ? maxCredits : (profile?.credits || 0);
   const creditsPercentage = isAmbassador ? 100 : Math.min((displayCredits / maxCredits) * 100, 100);
   
-  // Color logic based on credit level
+  // Color logic based on credit level - more subtle colors
   const getProgressColor = () => {
     if (isAmbassador) return "bg-gradient-to-r from-amber-400 to-yellow-500";
     if (creditsPercentage >= 70) return "bg-gradient-to-r from-green-500 to-emerald-500";
-    if (creditsPercentage >= 30) return "bg-gradient-to-r from-yellow-500 to-orange-500";
-    return "bg-gradient-to-r from-red-500 to-pink-500";
+    if (creditsPercentage >= 30) return "bg-gradient-to-r from-blue-500 to-cyan-500";
+    return "bg-gradient-to-r from-slate-500 to-gray-500";
   };
 
   const getTextColor = () => {
     if (isAmbassador) return "text-amber-600";
     if (creditsPercentage >= 70) return "text-green-600";
-    if (creditsPercentage >= 30) return "text-yellow-600";
-    return "text-red-600";
+    if (creditsPercentage >= 30) return "text-blue-600";
+    return "text-slate-600";
   };
 
   return (
@@ -42,21 +42,24 @@ const CreditsBar = ({ credits = 0, maxCredits = 100, className = "" }: CreditsBa
           Credits
         </Badge>
       ) : (
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="relative w-60 h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out ${getProgressColor()}`}
-              style={{ width: `${creditsPercentage}%` }}
-            />
-            {/* Subtle glow effect */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative w-60 h-7 bg-muted/60 rounded-full overflow-hidden border border-border/50">
             <div 
-              className={`absolute inset-y-0 left-0 rounded-full opacity-50 blur-sm ${getProgressColor()}`}
+              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
               style={{ width: `${creditsPercentage}%` }}
             />
+            {/* Subtle inner glow */}
+            <div 
+              className={`absolute inset-y-0 left-0 rounded-full opacity-30 blur-sm ${getProgressColor()}`}
+              style={{ width: `${creditsPercentage}%` }}
+            />
+            {/* Credits text overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={`text-sm font-medium tabular-nums mix-blend-difference text-white`}>
+                {displayCredits}
+              </span>
+            </div>
           </div>
-          <span className={`text-xs font-medium tabular-nums ${getTextColor()}`}>
-            {displayCredits}
-          </span>
         </div>
       )}
     </div>
