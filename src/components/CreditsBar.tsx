@@ -43,7 +43,7 @@ const CreditsBar = ({ credits = 0, maxCredits = 100, className = "" }: CreditsBa
         </Badge>
       ) : (
         <div className="flex items-center gap-3 min-w-0">
-          <div className="relative w-60 h-7 bg-muted/60 rounded-full overflow-hidden border border-border/50">
+          <div className="relative w-80 h-6 bg-muted/60 rounded-full overflow-hidden border border-border/50">
             <div 
               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
               style={{ width: `${creditsPercentage}%` }}
