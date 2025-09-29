@@ -108,24 +108,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: {
-            version: 8,
-            sources: {
-              'satellite': {
-                type: 'raster',
-                tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-                tileSize: 256,
-                attribution: '© Esri'
-              }
-            },
-            layers: [
-              {
-                id: 'satellite',
-                type: 'raster',
-                source: 'satellite'
-              }
-            ]
-          },
+          style: 'mapbox://styles/mapbox/satellite-streets-v12',
           center: [lng, lat],
           zoom: 17,
           interactive: false,

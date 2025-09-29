@@ -195,30 +195,13 @@ const RentalMap = () => {
           try {
             map.current = new mapboxgl.Map({
               container: mapContainer.current,
-              style: {
-                version: 8,
-                sources: {
-                  'osm': {
-                    type: 'raster',
-                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                    tileSize: 256,
-                    attribution: '© OpenStreetMap contributors'
-                  }
-                },
-                layers: [
-                  {
-                    id: 'osm',
-                    type: 'raster',
-                    source: 'osm'
-                  }
-                ]
-              },
+              style: 'mapbox://styles/mapbox/streets-v12',
               center: [10.7522, 59.9139], // Oslo center
               zoom: 6,
               attributionControl: true
             });
 
-            console.log('✅ Map created with OpenStreetMap tiles');
+            console.log('✅ Map created with Mapbox streets style');
 
             // Add navigation controls
             map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -387,9 +370,12 @@ const RentalMap = () => {
             {/* Map Info */}
             <div className="text-sm text-muted-foreground">
               <p>
-                Kartdata fra OpenStreetMap. 
+                Kartdata fra Mapbox. 
                 {markers.current.length > 0 && ` Viser ${markers.current.length} eiendom${markers.current.length !== 1 ? 'mer' : ''}.`}
               </p>
+              {error && (
+                <p className="text-red-500 mt-1">Kartfeil: {error}</p>
+              )}
             </div>
           </div>
         </CardContent>
