@@ -466,36 +466,38 @@ const UtleieAgent = () => {
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
                       <Input
-                        placeholder={
-                          activeTab === '007' 
-                            ? "Beskriv hva du ønsker hjelp med i utleieforvaltningen... (Agent 007)"
-                            : "Skriv din spørsmål om eiendomsinvestering eller utleieforvaltning..."
-                        }
-                        value={activeTab === '007' ? agent007InputValue : inputValue}
-                        onChange={(e) => {
-                          if (activeTab === '007') {
-                            setAgent007InputValue(e.target.value);
-                          } else {
-                            setInputValue(e.target.value);
-                          }
-                        }}
+                        placeholder="Skriv din spørsmål om eiendomsinvestering eller utleieforvaltning..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        disabled={activeTab === '007' ? agent007IsLoading : isLoading}
+                        disabled={isLoading}
                         className="resize-none"
                       />
-                      {activeTab === '007' && !hasCredits && !isActualAmbassador && (
-                        <p className="text-xs text-destructive mt-1">
-                          Du trenger credits for å bruke Agent 007. <Link to="/credits" className="underline">Kjøp credits</Link>
-                        </p>
-                      )}
                     </div>
                     <Button
-                      onClick={activeTab === '007' ? handleAgent007SendMessage : handleSendMessage}
-                      disabled={
-                        activeTab === '007' 
-                          ? (!agent007InputValue.trim() || agent007IsLoading || (!hasCredits && !isActualAmbassador))
-                          : (!inputValue.trim() || isLoading)
-                      }
+                      onClick={handleSendMessage}
+                      disabled={!inputValue.trim() || isLoading}
+                      className="flex-shrink-0"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="007">
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Beskriv hva du ønsker hjelp med i utleieforvaltningen... (Agent 007)"
+                        value={agent007InputValue}
+                        onChange={(e) => setAgent007InputValue(e.target.value)}
+                        onKeyPress={handleAgent007KeyPress}
+                        disabled={agent007IsLoading}
+                        className="resize-none"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleAgent007SendMessage}
+                      disabled={!agent007InputValue.trim() || agent007IsLoading}
                       className="flex-shrink-0"
                     >
                       <Send className="w-4 h-4" />
