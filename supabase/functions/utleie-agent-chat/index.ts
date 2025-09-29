@@ -16,6 +16,7 @@ serve(async (req) => {
   try {
     console.log('=== Utleie Agent Chat Function Called ===');
     console.log('Function deployed at:', new Date().toISOString());
+    console.log('Version: 2.0 with fixed RPC function');
     console.log('Request method:', req.method);
     
     const { message, customPrompt } = await req.json();
