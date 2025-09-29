@@ -126,8 +126,16 @@ serve(async (req) => {
       `)
       .eq('owner_id', user.id);
 
+    console.log('Properties query result:', { 
+      data: properties, 
+      error: propertiesError,
+      userId: user.id,
+      propertyCount: properties?.length || 0
+    });
+
     if (propertiesError) {
       console.error('Error fetching properties:', propertiesError);
+      // Still continue to provide meaningful context even if properties fetch fails
     }
 
     // Get recent chat messages for context - simplified approach
@@ -233,7 +241,10 @@ serve(async (req) => {
     }
 
     if (!properties?.length && !recentChats?.length) {
-      rentalContext += '\nIngen utleiedata funnet. Brukeren har ingen registrerte eiendommer eller leieforhold.';
+      rentalContext += `\nIngen utleiedata funnet for bruker ${user.id}. Brukeren har ingen registrerte eiendommer eller leieforhold i systemet.`;
+      console.log('No rental data found for user:', user.id);
+    } else {
+      console.log(`Found ${properties?.length || 0} properties and ${recentChats?.length || 0} recent chats for user:`, user.id);
     }
 
     // Create the specialized rental management agent system prompt with enhanced search capabilities
