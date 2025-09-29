@@ -457,70 +457,70 @@ const Rental = () => {
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card className="shadow-medium">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 h-16">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Totale eiendommer
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex items-center justify-start">
-                <div className="text-2xl font-bold text-primary leading-none">
+              <CardContent className="h-20 flex items-center justify-start">
+                <div className="text-3xl font-bold text-primary leading-none">
                   {isExampleProperty ? 1 : properties.length}
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-medium">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 h-16">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   Månedlige leieinntekter
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex items-center justify-start">
-                <div className="text-2xl font-bold text-primary leading-none">
+              <CardContent className="h-20 flex items-center justify-start">
+                <div className="text-3xl font-bold text-primary leading-none">
                   {totalRent.toLocaleString()} kr
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-medium">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 h-16">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   Beleggsprosent
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex items-center justify-start">
-                <div className="text-2xl font-bold text-accent leading-none">
+              <CardContent className="h-20 flex items-center justify-start">
+                <div className="text-3xl font-bold text-accent leading-none">
                   {occupancyRate.toFixed(1)}%
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-medium">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 h-16">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Gjennomsnittlig avkastning
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex items-center justify-start">
-                <div className="text-2xl font-bold text-accent leading-none">
+              <CardContent className="h-20 flex items-center justify-start">
+                <div className="text-3xl font-bold text-accent leading-none">
                   {averageYield.toFixed(1)}%
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-medium">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 h-16">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   Månedlig pengestrøm
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex items-center justify-start">
-                <div className={`text-2xl font-bold leading-none ${getCashflowColor(totalCashflow)}`}>
+              <CardContent className="h-20 flex items-center justify-start">
+                <div className={`text-3xl font-bold leading-none ${getCashflowColor(totalCashflow)}`}>
                   {totalCashflow >= 0 ? '+' : ''}{totalCashflow.toLocaleString()} kr
                 </div>
               </CardContent>
