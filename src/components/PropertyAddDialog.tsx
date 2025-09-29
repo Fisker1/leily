@@ -39,6 +39,17 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.property_type) {
+      toast({
+        title: "Feil",
+        description: "Du må velge eiendomstype",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -261,8 +272,8 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
                 </div>
 
                 <div>
-                  <Label htmlFor="property_type">Eiendomstype</Label>
-                  <Select value={formData.property_type} onValueChange={(value) => updateField("property_type", value)}>
+                  <Label htmlFor="property_type">Eiendomstype *</Label>
+                  <Select value={formData.property_type} onValueChange={(value) => updateField("property_type", value)} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Velg type" />
                     </SelectTrigger>
