@@ -33,11 +33,23 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with proper auth context
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        auth: {
+          // Pass the user session to maintain RLS context
+          persistSession: false
+        }
+      }
     );
+
+    // Set the user session for RLS context
+    await supabaseClient.auth.setSession({
+      access_token: authHeader.replace('Bearer ', ''),
+      refresh_token: '', // Not needed for this use case
+    });
 
     // Get current user using the auth header directly
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
