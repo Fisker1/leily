@@ -249,22 +249,10 @@ const RentalMap = () => {
             console.log('🔧 Creating mapbox instance with CSP-compliant style...');
             addDebug('Oppretter Mapbox instans med CSP-kompatibel stil...');
             
-            // Use minimal style that doesn't require external tiles
+            // Use proper Mapbox style
             mapInstance = new mapboxgl.Map({
               container: mapContainer.current,
-              style: {
-                version: 8,
-                sources: {},
-                layers: [
-                  {
-                    id: 'background',
-                    type: 'background',
-                    paint: {
-                      'background-color': '#f0f0f0'
-                    }
-                  }
-                ]
-              },
+              style: 'mapbox://styles/mapbox/light-v11',
               center: [10.7522, 59.9139], // Oslo
               zoom: 6,
               attributionControl: true,

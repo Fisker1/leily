@@ -109,25 +109,26 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           [lng, lat] = properties[0].coordinates;
           console.log(`✅ Using cached coordinates [${lng}, ${lat}] for ${address}`);
         } else {
-          // Fallback to geocoding
+          // Fallback to simple geocoding
           console.log(`🌍 No cached coordinates, geocoding: ${address}, ${city || ''}`);
           
-          const { data, error } = await supabase.functions.invoke('geocode-address', {
-            body: {
-              address: address,
-              city: city,
-              country: 'NO'
-            }
-          });
-
-          if (error || !data?.coordinates || !data.success) {
-            console.error('❌ Geocoding failed:', error);
-            // Show informative fallback
+          const fullAddress = `${address}${city ? ', ' + city : ''}, Norge`;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=no`
+          );
+          const data = await response.json();
+          
+          if (data && data.length > 0) {
+            lng = parseFloat(data[0].lon);
+            lat = parseFloat(data[0].lat);
+            console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
+          } else {
+            console.error('❌ Geocoding failed');
             if (mapContainer.current) {
               mapContainer.current.innerHTML = `
                 <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
                   <div class="text-center p-4">
-                    <p>📍 Satellittbilde ikke tilgjengelig</p>
+                    <p>📍 Adresse ikke funnet</p>
                     <p class="text-xs mt-1 opacity-75">${address}</p>
                   </div>
                 </div>
@@ -135,51 +136,29 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             }
             return;
           }
-
-          [lng, lat] = data.coordinates;
-          console.log(`✅ Successfully geocoded to [${lng}, ${lat}]`);
-          
-          // Cache the coordinates for future use by updating any matching property
-          try {
-            await supabase
-              .from('properties')
-              .update({ coordinates: [lng, lat] })
-              .ilike('address', `%${address}%`)
-              .eq('city', city || '')
-              .is('coordinates', null);
-            console.log(`💾 Cached coordinates for ${address}`);
-          } catch (cacheError) {
-            console.warn('⚠️ Could not cache coordinates:', cacheError);
-          }
         }
         
         // Create the map with coordinates
         if (!mapContainer.current) return;
         
         try {
-          // Check if we're in an iframe for WebGL compatibility
-          const isInIframe = window.self !== window.top;
-          
           map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/satellite-v9',
+            style: 'mapbox://styles/mapbox/satellite-streets-v12',
             center: [lng, lat],
             zoom: 17,
             bearing: 0,
             pitch: 0,
             attributionControl: false,
             logoPosition: 'bottom-right',
-            interactive: false, // Disable all interactions from the start
-            preserveDrawingBuffer: isInIframe, // Help with iframe rendering
-            antialias: !isInIframe, // Disable antialiasing in iframe for performance
-            failIfMajorPerformanceCaveat: false, // Don't fail on performance issues
-            maxTileCacheSize: isInIframe ? 20 : 50, // Smaller cache in iframe
+            interactive: false,
+            preserveDrawingBuffer: true,
+            failIfMajorPerformanceCaveat: false
           });
 
-          // Add marker and disable interactions when map loads
+          // Add marker when map loads
           map.current.on('load', () => {
             if (map.current) {
-              // Add a red marker at the property location
               new mapboxgl.Marker({ 
                 color: '#ef4444',
                 scale: 0.8
@@ -193,24 +172,12 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
 
           map.current.on('error', (e) => {
             console.error('❌ Mapbox GL error:', e.error?.message || e);
-            // Show helpful error message based on error type
             if (mapContainer.current) {
-              let errorMessage = '🗺️ Kart kunne ikke lastes';
-              let errorDetails = address;
-              
-              if (e.error?.message?.includes('401')) {
-                errorMessage = '🔑 Mapbox token ugyldig';
-                errorDetails = 'Token har utløpt eller er ikke gyldig';
-              } else if (e.error?.message?.includes('403') || e.error?.message?.includes('Forbidden')) {
-                errorMessage = '🚫 Mapbox tillatelser mangler';
-                errorDetails = 'Token har ikke nødvendige rettigheter';
-              }
-              
               mapContainer.current.innerHTML = `
                 <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
                   <div class="text-center p-4">
-                    <p>${errorMessage}</p>
-                    <p class="text-xs mt-1 opacity-75">${errorDetails}</p>
+                    <p>🗺️ Satellittbilde ikke tilgjengelig</p>
+                    <p class="text-xs mt-1 opacity-75">${address}</p>
                   </div>
                 </div>
               `;
@@ -223,7 +190,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             mapContainer.current.innerHTML = `
               <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
                 <div class="text-center p-4">
-                  <p>⚠️ Kunne ikke initialisere kart</p>
+                  <p>🗺️ Kart kunne ikke lastes</p>
                   <p class="text-xs mt-1 opacity-75">${address}</p>
                 </div>
               </div>
@@ -236,7 +203,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           mapContainer.current.innerHTML = `
             <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
               <div class="text-center p-4">
-                <p>🔄 Laster kart...</p>
+                <p>📍 Laster satellittbilde...</p>
                 <p class="text-xs mt-1 opacity-75">${address}</p>
               </div>
             </div>
