@@ -15,6 +15,7 @@ serve(async (req) => {
 
   try {
     console.log('=== Utleie Agent Chat Function Called ===');
+    console.log('Function deployed at:', new Date().toISOString());
     console.log('Request method:', req.method);
     
     const { message, customPrompt } = await req.json();
@@ -81,7 +82,7 @@ serve(async (req) => {
           .from('profiles')
           .select('credits, subscription_tier, subscription_end')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (profileError || !data) {
           console.log('Profile not found, creating one...');
