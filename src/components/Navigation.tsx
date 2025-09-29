@@ -27,7 +27,7 @@ const Navigation = () => {
         <div className="flex items-center h-16">
           {/* Logo - Left Section */}
           <div className="flex items-center flex-shrink-0 w-32">
-            <Link to="/" className="flex items-center">
+            <Link to={user ? "/dashboard" : "/"} className="flex items-center">
               <LeilyLogo 
                 showText={false}
                 className="sm:hidden scale-75"
