@@ -498,6 +498,14 @@ const Rental = () => {
                    : "Mine eiendommer"
                }
              </h2>
+             {user && !isExampleProperty && (
+               <PropertyAddDialog onPropertyAdded={fetchUserProperties}>
+                 <Button size="sm" className="bg-gradient-primary hover:opacity-90">
+                   <Plus className="h-4 w-4 mr-2" />
+                   Legg til eiendom
+                 </Button>
+               </PropertyAddDialog>
+             )}
              </div>
             
             <div className="grid gap-6">

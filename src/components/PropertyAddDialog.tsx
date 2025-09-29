@@ -75,6 +75,26 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
         imageUrl = publicUrl;
       }
 
+      // Geocode address before inserting
+      let coordinates = null;
+      if (formData.address && (formData.city || formData.postal_code)) {
+        try {
+          const fullAddress = `${formData.address}${formData.postal_code ? ', ' + formData.postal_code : ''}${formData.city ? ' ' + formData.city : ''}, Norge`;
+          
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=no`
+          );
+          const data = await response.json();
+          
+          if (data && data.length > 0) {
+            coordinates = [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+          }
+        } catch (geocodeError) {
+          console.warn('Geocoding failed:', geocodeError);
+          // Continue without coordinates
+        }
+      }
+
       const { error } = await supabase
         .from('properties')
         .insert([
@@ -93,6 +113,7 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
             current_value: formData.current_value ? parseFloat(formData.current_value) : null,
             image_url: imageUrl,
             show_in_rental: true,
+            coordinates: coordinates,
             owner_id: user.id
           }
         ]);
