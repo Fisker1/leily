@@ -29,12 +29,14 @@ import {
   EyeOff,
   Download,
   PenTool,
-  BarChart3
+  BarChart3,
+  MessageCircle
 } from "lucide-react";
 import PropertyImage from "@/components/PropertyImage";
 import { useNavigate } from "react-router-dom";
 import RentalAgreementDialog from "@/components/RentalAgreementDialog";
 import MarketAnalysisDialog from "@/components/MarketAnalysisDialog";
+import TenantChatDialog from "@/components/TenantChatDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Property {
@@ -57,6 +59,19 @@ interface Property {
   created_at?: string;
   updated_at?: string;
   show_in_rental?: boolean;
+  lease_agreements?: Array<{
+    id: string;
+    tenant_id: string;
+    monthly_rent: number;
+    status: string;
+    start_date: string;
+    end_date: string;
+    tenants: {
+      id: string;
+      first_name: string;
+      last_name: string;
+    };
+  }>;
 }
 
 const Rental = () => {
@@ -78,6 +93,7 @@ const Rental = () => {
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [rentalAgreementDialogOpen, setRentalAgreementDialogOpen] = useState(false);
   const [marketAnalysisDialogOpen, setMarketAnalysisDialogOpen] = useState(false);
+  const [tenantChatDialogOpen, setTenantChatDialogOpen] = useState(false);
 
   // Eksempel eiendom for innloggede brukere uten egne eiendommer
   const exampleProperty = {
@@ -204,11 +220,28 @@ const Rental = () => {
     if (!user) return;
 
     try {
+      // Fetch properties with their lease agreements and tenant information
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          lease_agreements!inner(
+            id,
+            tenant_id,
+            monthly_rent,
+            status,
+            start_date,
+            end_date,
+            tenants(
+              id,
+              first_name,
+              last_name
+            )
+          )
+        `)
         .eq('owner_id', user.id)
         .eq('show_in_rental', true)
+        .eq('lease_agreements.status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -224,8 +257,22 @@ const Rental = () => {
       if (data && data.length > 0) {
         setProperties(data);
       } else {
-        // Ingen egne eiendommer - vis eksempel
-        setProperties([exampleProperty]);
+        // Also try to get properties without active leases
+        const { data: allProperties, error: allError } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('owner_id', user.id)
+          .eq('show_in_rental', true)
+          .order('created_at', { ascending: false });
+
+        if (allError) {
+          console.error('Error fetching all properties:', allError);
+          setProperties([exampleProperty]);
+        } else if (allProperties && allProperties.length > 0) {
+          setProperties(allProperties);
+        } else {
+          setProperties([exampleProperty]);
+        }
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -566,11 +613,18 @@ const Rental = () => {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Status</p>
-                          <Badge 
-                            variant={property.monthly_rent ? "default" : "secondary"}
-                          >
-                            {property.monthly_rent ? "Utleid" : "Ledig"}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge 
+                              variant={property.lease_agreements?.[0] ? "default" : "secondary"}
+                            >
+                              {property.lease_agreements?.[0] ? "Utleid" : "Ledig"}
+                            </Badge>
+                            {property.lease_agreements?.[0]?.tenants && (
+                              <p className="text-xs text-muted-foreground">
+                                {property.lease_agreements[0].tenants.first_name} {property.lease_agreements[0].tenants.last_name}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -679,30 +733,52 @@ const Rental = () => {
                           </PropertyAddDialog>
                         </div>
                       ) : (
-                          <TooltipProvider>
-                            <div className="space-y-2">
-                              {/* First row: Dokumenter */}
-                              <div className="grid grid-cols-1 gap-2">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="w-full h-10 px-2 text-xs"
-                                      onClick={() => {
-                                        setSelectedProperty(property);
-                                        setDocumentsDialogOpen(true);
-                                      }}
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                      <span className="ml-1">Dokumenter</span>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Dokumenter</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
+                           <TooltipProvider>
+                             <div className="space-y-2">
+                               {/* First row: Dokumenter and Leiechat (if rented) */}
+                               <div className={`grid gap-2 ${property.lease_agreements?.[0] ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <Button 
+                                       variant="outline" 
+                                       size="sm" 
+                                       className="w-full h-10 px-2 text-xs"
+                                       onClick={() => {
+                                         setSelectedProperty(property);
+                                         setDocumentsDialogOpen(true);
+                                       }}
+                                     >
+                                       <FileText className="h-4 w-4" />
+                                       <span className="ml-1">Dokumenter</span>
+                                     </Button>
+                                   </TooltipTrigger>
+                                   <TooltipContent>
+                                     <p>Dokumenter</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                                 
+                                 {property.lease_agreements?.[0] && (
+                                   <Tooltip>
+                                     <TooltipTrigger asChild>
+                                       <Button 
+                                         variant="outline" 
+                                         size="sm" 
+                                         className="w-full h-10 px-2 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20"
+                                         onClick={() => {
+                                           setSelectedProperty(property);
+                                           setTenantChatDialogOpen(true);
+                                         }}
+                                       >
+                                         <MessageCircle className="h-4 w-4" />
+                                         <span className="ml-1">Leiechat</span>
+                                       </Button>
+                                     </TooltipTrigger>
+                                     <TooltipContent>
+                                       <p>Chat med leietaker</p>
+                                     </TooltipContent>
+                                   </Tooltip>
+                                 )}
+                               </div>
                               
                               {/* Second row: Detaljer and Rediger */}
                               <div className="grid grid-cols-2 gap-2">
@@ -911,6 +987,15 @@ const Rental = () => {
         open={marketAnalysisDialogOpen}
         onOpenChange={setMarketAnalysisDialogOpen}
         properties={properties}
+      />
+
+      {/* Tenant Chat Dialog */}
+      <TenantChatDialog
+        open={tenantChatDialogOpen}
+        onOpenChange={setTenantChatDialogOpen}
+        property={selectedProperty}
+        lease={selectedProperty?.lease_agreements?.[0]}
+        tenant={selectedProperty?.lease_agreements?.[0]?.tenants}
       />
     </div>
   );
