@@ -106,6 +106,106 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    // Fetch user's rental data to provide context to Agent 007
+    console.log('Fetching rental data for user:', user.id);
+    
+    // Get properties with lease agreements and tenants
+    const { data: properties, error: propertiesError } = await supabaseClient
+      .from('properties')
+      .select(`
+        *,
+        lease_agreements (
+          *,
+          tenants (
+            id,
+            first_name,
+            last_name,
+            property_owner_id
+          )
+        )
+      `)
+      .eq('owner_id', user.id);
+
+    if (propertiesError) {
+      console.error('Error fetching properties:', propertiesError);
+    }
+
+    // Get recent chat messages for context
+    const { data: recentChats, error: chatsError } = await supabaseClient
+      .from('chat_messages')
+      .select(`
+        *,
+        lease_agreements!inner (
+          property_id,
+          tenant_id,
+          properties!inner (
+            address,
+            owner_id
+          ),
+          tenants (
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .eq('lease_agreements.properties.owner_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (chatsError) {
+      console.error('Error fetching chat messages:', chatsError);
+    }
+
+    // Build context string with rental information
+    let rentalContext = '\n\n📊 TILGJENGELIG UTLEIEDATA:\n';
+    
+    if (properties && properties.length > 0) {
+      rentalContext += '\n🏠 EIENDOMMER OG LEIEFORHOLD:\n';
+      properties.forEach((property: any) => {
+        rentalContext += `\nEiendom: ${property.address}`;
+        if (property.lease_agreements && property.lease_agreements.length > 0) {
+          property.lease_agreements.forEach((lease: any) => {
+            if (lease.tenants) {
+              rentalContext += `\n- Leietaker: ${lease.tenants.first_name} ${lease.tenants.last_name}`;
+              rentalContext += `\n- Status: ${lease.status}`;
+              rentalContext += `\n- Leie: ${lease.monthly_rent || 'Ikke oppgitt'} kr/mnd`;
+              if (lease.start_date) rentalContext += `\n- Start: ${lease.start_date}`;
+              if (lease.end_date) rentalContext += `\n- Slutt: ${lease.end_date}`;
+            }
+          });
+        } else {
+          rentalContext += '\n- Ingen aktive leieforhold';
+        }
+        rentalContext += '\n';
+      });
+    }
+
+    if (recentChats && recentChats.length > 0) {
+      rentalContext += '\n💬 NYLIGE SAMTALER:\n';
+      const chatsByLease: { [key: string]: any[] } = {};
+      
+      recentChats.forEach((chat: any) => {
+        const leaseKey = `${chat.lease_agreements.tenants?.first_name} ${chat.lease_agreements.tenants?.last_name} - ${chat.lease_agreements.properties.address}`;
+        if (!chatsByLease[leaseKey]) {
+          chatsByLease[leaseKey] = [];
+        }
+        chatsByLease[leaseKey].push(chat);
+      });
+
+      Object.entries(chatsByLease).forEach(([leaseInfo, messages]) => {
+        rentalContext += `\nSamtale med ${leaseInfo}:\n`;
+        (messages as any[]).slice(0, 5).forEach((msg: any) => {
+          const sender = msg.sender_type === 'landlord' ? 'Utleier' : 'Leietaker';
+          const date = new Date(msg.created_at).toLocaleDateString('no-NO');
+          rentalContext += `- ${sender} (${date}): ${msg.message_content.substring(0, 100)}${msg.message_content.length > 100 ? '...' : ''}\n`;
+        });
+      });
+    }
+
+    if (!properties?.length && !recentChats?.length) {
+      rentalContext += '\nIngen utleiedata funnet. Brukeren har ingen registrerte eiendommer eller leieforhold.';
+    }
+
     // Create the specialized rental management agent system prompt
     const systemPrompt = `Du er Agent 007 - en avansert utleieforvaltningsagent som spesialiserer seg på praktisk utleieforvaltning og automatisering.
 
@@ -113,7 +213,8 @@ serve(async (req) => {
 - Hjelpe utleiere med konkrete utleieoppgaver
 - Automatisere kommunikasjon med leietakere
 - Administrere leieforhold og dokumentasjon
-- Utføre spesifikke handlinger i utleiesystemet
+- Analysere chat-historikk mellom utleier og leietakere
+- Svare på spørsmål om spesifikke leieforhold
 
 🛠️ DINE HOVEDOMRÅDER:
 📨 KOMMUNIKASJON:
@@ -121,6 +222,7 @@ serve(async (req) => {
 - Opprettholde profesjonell og juridisk korrekt kommunikasjon
 - Håndtere husleieinnkreving og påminnelser
 - Administrere flyttemeldinger og oppsigelser
+- Analysere chat-samtaler mellom utleier og leietaker
 
 📋 DOKUMENTHÅNDTERING:
 - Utarbeide leieavtaler og tillegg
@@ -133,6 +235,13 @@ serve(async (req) => {
 - Advare om juridiske fallgruver
 - Generere juridisk korrekte varsler og dokumenter
 
+🔍 LEIEFORHOLD-SØKING:
+Når brukeren spør om spesifikke leietakere:
+- Søk etter navn (fornavn og/eller etternavn)
+- Hvis flere personer har samme navn, be om adresse for å presisere
+- Vis relevant informasjon om det aktuelle leieforholdet
+- Inkluder chat-historikk hvis relevant
+
 🤖 AUTOMATISKE HANDLINGER:
 Når du får beskjed om å utføre handlinger, utfører du dem direkte i systemet:
 - Send SMS/e-post til spesifikke leietakere
@@ -144,7 +253,9 @@ Du er effektiv, presis og alltid profesjonell. Du spør om bekreftelse før du u
 
 VIKTIG: Du koster 1 credit per interaksjon fordi du utfører avanserte handlinger og automatisering.
 
-Svar alltid på norsk og vær konkret og handlingsorientert.`;
+Svar alltid på norsk og vær konkret og handlingsorientert.${rentalContext}`;
+
+    console.log('Built system prompt with rental context. Context length:', rentalContext.length);
 
     console.log('Calling OpenAI API for Agent 007');
 
