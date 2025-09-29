@@ -243,47 +243,21 @@ const RentalMap = () => {
         if (mapContainer.current && !map.current) {
           addDebug('Oppretter kart instans...');
           
-          // Use simpler, working Mapbox styles
-          const styles = [
-            'mapbox://styles/mapbox/streets-v12',
-            'mapbox://styles/mapbox/streets-v11',
-            'mapbox://styles/mapbox/light-v11',
-            'mapbox://styles/mapbox/light-v10',
-            'mapbox://styles/mapbox/outdoors-v12',
-            'mapbox://styles/mapbox/outdoors-v11'
-          ];
+          try {
+            mapInstance = new mapboxgl.Map({
+              container: mapContainer.current,
+              style: 'mapbox://styles/mapbox/streets-v11',
+              center: [10.7522, 59.9139], // Oslo
+              zoom: 6,
+              attributionControl: false,
+              preserveDrawingBuffer: true
+            });
 
-          for (let i = 0; i < styles.length; i++) {
-            try {
-              const currentStyle = styles[i];
-              addDebug(`Prøver kartsstil ${i + 1}/${styles.length}: ${currentStyle}`);
-              
-              mapInstance = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: currentStyle,
-                center: [10.7522, 59.9139], // Oslo
-                zoom: 6,
-                attributionControl: false,
-                preserveDrawingBuffer: true
-              });
-
-              map.current = mapInstance;
-              addDebug(`✅ Kartsstil ${i + 1} opprettet`);
-              break;
-            } catch (styleError) {
-              addDebug(`❌ Kartsstil ${i + 1} feilet: ${styleError}`);
-              if (mapInstance) {
-                try {
-                  mapInstance.remove();
-                } catch (e) {}
-                mapInstance = null;
-              }
-              continue;
-            }
-          }
-
-          if (!mapInstance) {
-            throw new Error('Kunne ikke opprette kart med noen stil');
+            map.current = mapInstance;
+            addDebug('✅ Kart instans opprettet');
+          } catch (mapError) {
+            addDebug(`❌ Kart opprettelse feilet: ${mapError}`);
+            throw mapError;
           }
 
           // Add navigation controls
@@ -298,6 +272,20 @@ const RentalMap = () => {
             setError(null);
             addMarkers();
           });
+
+          // Force loading to finish after timeout
+          setTimeout(() => {
+            if (loading && mapInstance && mapInstance.loaded && mapInstance.loaded()) {
+              addDebug('🕐 Tidsavbrudd - tvinger kart ferdig');
+              setLoading(false);
+              setError(null);
+              addMarkers();
+            } else if (loading) {
+              addDebug('🕐 Tidsavbrudd - kart ikke lastet, fortsetter likevel');
+              setLoading(false);
+              addMarkers();
+            }
+          }, 5000);
 
           mapInstance.on('styledata', () => {
             addDebug('🎨 Kartsstil lastet');
