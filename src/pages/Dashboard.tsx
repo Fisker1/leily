@@ -266,21 +266,21 @@ const Dashboard = () => {
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action, index) => (
-            <Card key={index} className="hover:shadow-medium transition-all hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg bg-${action.color}/10`}>
+            <Card key={index} className="hover:shadow-medium transition-all hover:scale-105 flex flex-col h-full">
+              <CardHeader className="flex-1">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg bg-${action.color}/10 flex-shrink-0`}>
                     <action.icon className={`w-5 h-5 text-${action.color}`} />
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{action.title}</CardTitle>
-                    <CardDescription className="text-sm">
+                  <div className="flex-1">
+                    <CardTitle className="text-base leading-tight">{action.title}</CardTitle>
+                    <CardDescription className="text-sm mt-1 leading-relaxed">
                       {action.description}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <Button asChild className="w-full">
                   <Link to={action.href}>
                     {action.title}
