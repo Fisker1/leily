@@ -57,21 +57,21 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
   };
 
   const handleFetchProperty = async () => {
-    console.log('🚀🚀🚀 STARTING FINN PROPERTY FETCH 🚀🚀🚀');
-    console.log('Input finn input:', finnInput);
-    console.log('User isPro:', isPro);
+    // Debug logs - remove in production
+    // console.log('🚀🚀🚀 STARTING FINN PROPERTY FETCH 🚀🚀🚀');
+    // console.log('Input finn input:', finnInput);
+    // console.log('User isPro:', isPro);
     
     if (!finnInput.trim()) {
-      console.log('❌ Empty finn input');
       setError('Vennligst fyll inn en Finn.no URL eller Finn-kode');
       return;
     }
 
     const validation = validateFinnInput(finnInput);
-    console.log('Validation result:', validation);
+    // console.log('Validation result:', validation);
     
     if (!validation.isValid || !validation.finnCode) {
-      console.log('❌ Invalid finn input format');
+      // console.log('❌ Invalid finn input format');
       setError('Ugyldig URL eller Finn-kode format. Koden skal være 8-9 siffer.');
       return;
     }
@@ -80,7 +80,7 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
     console.log('Extracted finn code:', cleanCode);
 
     if (!isPro) {
-      console.log('❌ User not Pro');
+      // console.log('❌ User not Pro');
       toast({
         title: "Pro-abonnement påkrevd",
         description: "Automatisk henting fra Finn.no krever Pro-abonnement",

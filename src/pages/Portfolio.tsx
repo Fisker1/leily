@@ -118,8 +118,8 @@ const Portfolio = () => {
   const [isUpdatingValues, setIsUpdatingValues] = useState(false);
   const [originalValues, setOriginalValues] = useState<Record<string, number>>({});
   
-  // Debug subscription status
-  console.log('User subscription status:', { isPro, subscriptionTier, user: !!user });
+  // Debug subscription status - remove in production
+  // console.log('User subscription status:', { isPro, subscriptionTier, user: !!user });
   
   // Dialog states
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);

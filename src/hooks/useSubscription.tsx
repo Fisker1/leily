@@ -20,7 +20,7 @@ export const useSubscription = () => {
   // Credits are separate from subscription tiers
   const hasCredits = () => {
     if (!profile) return false;
-    const credits = (profile as any)?.credits || 0;
+    const credits = profile?.credits || 0;
     return credits > 0;
   };
 

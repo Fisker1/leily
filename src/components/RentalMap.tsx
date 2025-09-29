@@ -65,7 +65,7 @@ const RentalMap = () => {
   const addMarkers = () => {
     if (!map.current || loading || dataLoading) return;
 
-    console.log('🔧 Adding markers to map...');
+    // console.log('🔧 Adding markers to map...');
     clearMarkers();
 
     const bounds = new mapboxgl.LngLatBounds();
@@ -177,7 +177,7 @@ const RentalMap = () => {
 
     const initializeMap = async () => {
       try {
-        console.log('🔧 Initializing rental map...');
+        // console.log('🔧 Initializing rental map...');
         
         // Get token first
         const token = mapboxToken || await fetchMapboxToken();

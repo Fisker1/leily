@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from './useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useCredits = () => {
   const { user, profile } = useAuth();
@@ -17,9 +18,8 @@ export const useCredits = () => {
       }
 
       try {
-        // For now, we'll check if there's a credits field in profile
-        // This would normally be fetched from a separate credits table
-        const userCredits = (profile as any)?.credits || 0;
+        // Get credits from profile (now properly typed)
+        const userCredits = profile?.credits || 0;
         setCredits(userCredits);
       } catch (error) {
         console.error('Error fetching credits:', error);
@@ -35,7 +35,7 @@ export const useCredits = () => {
   const hasCredits = () => {
     if (!profile) return false;
     if (isAdmin || isAmbassador) return true; // Ambassadors and admins get free access
-    const credits = (profile as any)?.credits || 0;
+    const credits = profile?.credits || 0;
     return credits > 0;
   };
 
@@ -50,9 +50,25 @@ export const useCredits = () => {
     if (isAdmin || isAmbassador) return true;
     
     if (credits > 0) {
-      setCredits(prev => prev - 1);
-      // TODO: Update credits in database via API call
-      return true;
+      try {
+        // Use the Supabase function to properly deduct credits
+        const { data, error } = await supabase.rpc('use_credits', {
+          credits_to_use: 1,
+          operation_type: 'ai_interaction'
+        });
+        
+        if (error) {
+          console.error('Error using credits:', error);
+          return false;
+        }
+        
+        if (data) {
+          setCredits(prev => prev - 1);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error calling use_credits function:', error);
+      }
     }
     return false;
   };
