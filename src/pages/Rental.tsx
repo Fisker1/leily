@@ -463,8 +463,8 @@ const Rental = () => {
                   Totale eiendommer
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex flex-col justify-start">
-                <div className="text-2xl font-bold text-primary leading-none mb-1">
+              <CardContent className="h-16 flex items-center justify-start">
+                <div className="text-2xl font-bold text-primary leading-none">
                   {isExampleProperty ? 1 : properties.length}
                 </div>
               </CardContent>
@@ -477,8 +477,8 @@ const Rental = () => {
                   Månedlige leieinntekter
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex flex-col justify-start">
-                <div className="text-2xl font-bold text-primary leading-none mb-1">
+              <CardContent className="h-16 flex items-center justify-start">
+                <div className="text-2xl font-bold text-primary leading-none">
                   {totalRent.toLocaleString()} kr
                 </div>
               </CardContent>
@@ -491,8 +491,8 @@ const Rental = () => {
                   Beleggsprosent
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex flex-col justify-start">
-                <div className="text-2xl font-bold text-accent leading-none mb-1">
+              <CardContent className="h-16 flex items-center justify-start">
+                <div className="text-2xl font-bold text-accent leading-none">
                   {occupancyRate.toFixed(1)}%
                 </div>
               </CardContent>
@@ -505,8 +505,8 @@ const Rental = () => {
                   Gjennomsnittlig avkastning
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex flex-col justify-start">
-                <div className="text-2xl font-bold text-accent leading-none mb-1">
+              <CardContent className="h-16 flex items-center justify-start">
+                <div className="text-2xl font-bold text-accent leading-none">
                   {averageYield.toFixed(1)}%
                 </div>
               </CardContent>
@@ -519,8 +519,8 @@ const Rental = () => {
                   Månedlig pengestrøm
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-16 flex flex-col justify-start">
-                <div className={`text-2xl font-bold leading-none mb-1 ${getCashflowColor(totalCashflow)}`}>
+              <CardContent className="h-16 flex items-center justify-start">
+                <div className={`text-2xl font-bold leading-none ${getCashflowColor(totalCashflow)}`}>
                   {totalCashflow >= 0 ? '+' : ''}{totalCashflow.toLocaleString()} kr
                 </div>
               </CardContent>
