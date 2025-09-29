@@ -8,7 +8,7 @@ import {
   Edit, 
   EyeOff, 
   Trash,
-  PartyPopper
+  Sparkles
 } from 'lucide-react';
 
 interface Property {
@@ -37,7 +37,6 @@ interface PropertyActionsBalloonProps {
   onEdit: () => void;
   onToggleVisibility: () => void;
   onDelete: () => void;
-  onMouseLeave?: () => void;
 }
 
 export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
@@ -48,7 +47,6 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
   onEdit,
   onToggleVisibility,
   onDelete,
-  onMouseLeave,
 }) => {
   const [isPopped, setIsPopped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -68,9 +66,6 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
   const handleReset = () => {
     setIsPopped(false);
     setIsAnimating(false);
-    if (onMouseLeave) {
-      onMouseLeave();
-    }
   };
 
   if (!isPopped) {
@@ -84,7 +79,7 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
           }`}
           onClick={handleBalloonClick}
         >
-          <PartyPopper 
+          <Sparkles 
             className={`h-12 w-12 text-primary transition-all duration-200 ${
               isAnimating ? 'scale-0' : ''
             }`} 

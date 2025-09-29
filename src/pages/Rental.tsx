@@ -86,6 +86,7 @@ const Rental = () => {
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [balloonResetKeys, setBalloonResetKeys] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   
   // Dialog states
@@ -556,11 +557,17 @@ const Rental = () => {
              </div>
             
             <div className="grid gap-6">
-            {properties.map((property) => (
-               <Card 
-                 key={property.id} 
-                 className="shadow-medium hover:shadow-large transition-shadow"
-               >
+              {properties.map((property) => (
+                <Card 
+                  key={property.id} 
+                  className="shadow-medium hover:shadow-large transition-shadow"
+                  onMouseLeave={() => {
+                    setBalloonResetKeys(prev => ({
+                      ...prev,
+                      [property.id]: (prev[property.id] || 0) + 1
+                    }));
+                  }}
+                >
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Property Image */}
@@ -731,8 +738,9 @@ const Rental = () => {
                           </PropertyAddDialog>
                         </div>
                        ) : (
-                           <PropertyActionsBalloon
-                             property={property}
+                            <PropertyActionsBalloon
+                              key={`balloon-${property.id}-${balloonResetKeys[property.id] || 0}`}
+                              property={property}
                              onDocuments={() => {
                                setSelectedProperty(property);
                                setDocumentsDialogOpen(true);
