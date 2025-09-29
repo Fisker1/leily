@@ -93,7 +93,45 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     setInputValue(''); // Clear input immediately for better UX
     
     try {
-      // Save message to database
+      const isFirstMessage = messages.length === 0;
+      
+      // If this is the first message ever, add a welcome message first
+      if (isFirstMessage) {
+        const welcomeMessage = {
+          lease_id: lease.id,
+          message_content: `Hei ${tenant?.first_name}! Velkommen som leietaker i ${property?.address}. Hvis du har noen spørsmål om eiendommen eller området, bare send meg en melding her. Jeg håper du trives!`,
+          sender_type: 'landlord',
+          sender_id: user.id
+        };
+
+        const { error: welcomeError } = await supabase
+          .from('chat_messages')
+          .insert(welcomeMessage);
+
+        if (welcomeError) {
+          console.error('Error saving welcome message:', welcomeError);
+          setInputValue(messageContent); // Restore input on error
+          toast({
+            title: "Feil",
+            description: "Kunne ikke sende velkomstmelding",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Add welcome message to local state
+        const welcomeMessageLocal: Message = {
+          id: 'welcome-' + Date.now(),
+          content: welcomeMessage.message_content,
+          sender_type: 'landlord',
+          sender_name: 'Utleier',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, welcomeMessageLocal]);
+      }
+
+      // Save the actual user message to database
       const { error } = await supabase
         .from('chat_messages')
         .insert({
@@ -114,7 +152,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
         return;
       }
 
-      // Add message to local state for immediate UI update
+      // Add user message to local state for immediate UI update
       const newMessage: Message = {
         id: Date.now().toString(),
         content: messageContent,
@@ -127,7 +165,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
 
       toast({
         title: "Melding sendt",
-        description: "Din melding er sendt til leietaker",
+        description: isFirstMessage ? "Velkomstmelding og din melding er sendt til leietaker" : "Din melding er sendt til leietaker",
       });
 
     } catch (error) {
