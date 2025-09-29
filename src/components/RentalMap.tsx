@@ -246,6 +246,9 @@ const RentalMap = () => {
           addDebug('Oppretter kart instans...');
           
           try {
+            console.log('🔧 Creating mapbox instance...');
+            addDebug('Oppretter Mapbox instans...');
+            
             mapInstance = new mapboxgl.Map({
               container: mapContainer.current,
               style: 'mapbox://styles/mapbox/streets-v11',
@@ -255,9 +258,11 @@ const RentalMap = () => {
               preserveDrawingBuffer: true
             });
 
+            console.log('✅ Mapbox instance created');
+            addDebug('✅ Mapbox instans opprettet');
             map.current = mapInstance;
-            addDebug('✅ Kart instans opprettet');
           } catch (mapError) {
+            console.error('❌ Map creation failed:', mapError);
             addDebug(`❌ Kart opprettelse feilet: ${mapError}`);
             throw mapError;
           }
@@ -268,21 +273,43 @@ const RentalMap = () => {
           addDebug('Navigasjonskontroller lagt til');
 
           // Wait for map to load
+          console.log('🔧 Setting up map load event...');
+          addDebug('Setter opp kart load event...');
+          
           mapInstance.on('load', () => {
+            console.log('✅ Map loaded successfully');
             addDebug('✅ Kart lastet ferdig');
             setLoading(false);
             setError(null);
             addMarkers();
           });
 
+          mapInstance.on('style.load', () => {
+            console.log('✅ Map style loaded');
+            addDebug('✅ Kartsstil lastet');
+          });
+
+          mapInstance.on('sourcedata', (e) => {
+            console.log('✅ Map source data loaded:', e.sourceId);
+            addDebug(`✅ Kartdata lastet: ${e.sourceId}`);
+          });
+
+          mapInstance.on('error', (e) => {
+            console.error('❌ Map error:', e);
+            addDebug(`❌ Kartfeil: ${JSON.stringify(e)}`);
+          });
+
           // Force loading to finish after timeout
           setTimeout(() => {
+            console.log('🕐 Timeout check - loading:', loading);
             if (loading && mapInstance && mapInstance.loaded && mapInstance.loaded()) {
+              console.log('🕐 Forcing map to finish loading (loaded)');
               addDebug('🕐 Tidsavbrudd - tvinger kart ferdig');
               setLoading(false);
               setError(null);
               addMarkers();
             } else if (loading) {
+              console.log('🕐 Forcing map to finish loading (not loaded)');
               addDebug('🕐 Tidsavbrudd - kart ikke lastet, fortsetter likevel');
               setLoading(false);
               addMarkers();
