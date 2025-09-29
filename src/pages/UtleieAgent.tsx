@@ -351,6 +351,10 @@ const UtleieAgent = () => {
                 <CreditCard className="w-3 h-3" />
                 {isAmbassador ? '∞ Ambassador' : `${credits} credits`}
               </Badge>
+              {/* Debug info */}
+              <Badge variant="secondary" className="text-xs">
+                Debug: Admin: {isAdmin ? 'Yes' : 'No'}, Ambassador: {isAmbassador ? 'Yes' : 'No'}
+              </Badge>
               {(isAmbassador || isAdmin) && (
                 <Button 
                   variant="outline" 
@@ -428,7 +432,14 @@ const UtleieAgent = () => {
               </TabsContent>
             </Tabs>
           ) : (
-            renderMessages(messages, isLoading, 'general')
+            <div className="space-y-4">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Agent 007 er kun tilgjengelig for ambassadører og administratorer
+                </p>
+              </div>
+              {renderMessages(messages, isLoading, 'general')}
+            </div>
           )}
         </div>
       </div>

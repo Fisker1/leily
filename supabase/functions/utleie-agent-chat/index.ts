@@ -52,31 +52,40 @@ serve(async (req) => {
     console.log('Processing message for user:', user.id);
 
     // Check if user has credits or rental subscription (no credits consumed for general agent)
-    let { data: userProfile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('credits, subscription_tier, subscription_end')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      // If profile doesn't exist, create a basic one
-      const { error: insertError } = await supabaseClient
+    let userProfile: any;
+    
+    try {
+      const { data, error: profileError } = await supabaseClient
         .from('profiles')
-        .insert({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-          credits: 0,
-          subscription_tier: 'free'
-        });
+        .select('credits, subscription_tier, subscription_end')
+        .eq('id', user.id)
+        .single();
       
-      if (insertError) {
-        console.error('Failed to create profile:', insertError);
-        throw new Error('Failed to verify user access');
+      if (profileError || !data) {
+        console.log('Profile not found, creating one...');
+        // If profile doesn't exist, create a basic one
+        const { error: insertError } = await supabaseClient
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            credits: 0,
+            subscription_tier: 'free'
+          });
+        
+        if (insertError) {
+          console.error('Failed to create profile:', insertError);
+        }
+        
+        // Set default values for new profile
+        userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
+      } else {
+        userProfile = data;
       }
-      
-      // Set default values for new profile
+    } catch (error) {
+      console.error('Profile operation failed:', error);
+      // Continue with default values for ambassadors/admins
       userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
     }
 
