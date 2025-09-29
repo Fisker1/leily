@@ -56,6 +56,9 @@ const UtleieAgent = () => {
   const [agent007InputValue, setAgent007InputValue] = useState('');
   const [agent007IsLoading, setAgent007IsLoading] = useState(false);
   
+  // Tab state to sync all tabs
+  const [activeTab, setActiveTab] = useState('general');
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -205,7 +208,11 @@ const UtleieAgent = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      if (activeTab === '007') {
+        handleAgent007SendMessage();
+      } else {
+        handleSendMessage();
+      }
     }
   };
 
@@ -409,7 +416,7 @@ const UtleieAgent = () => {
       <div className="flex-1 container mx-auto px-4 py-4 overflow-hidden">
         <div className="max-w-4xl mx-auto h-full flex flex-col">
           {(isActualAmbassador || isAdmin) ? (
-            <Tabs defaultValue="general" className="h-full flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="general" className="flex items-center gap-2">
                   <Bot className="w-4 h-4" />
@@ -454,62 +461,46 @@ const UtleieAgent = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
             {(isActualAmbassador || isAdmin) ? (
-              <Tabs defaultValue="general" className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsContent value="general">
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
                       <Input
-                        placeholder="Skriv din spørsmål om eiendomsinvestering eller utleieforvaltning..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder={
+                          activeTab === '007' 
+                            ? "Beskriv hva du ønsker hjelp med i utleieforvaltningen... (Agent 007)"
+                            : "Skriv din spørsmål om eiendomsinvestering eller utleieforvaltning..."
+                        }
+                        value={activeTab === '007' ? agent007InputValue : inputValue}
+                        onChange={(e) => {
+                          if (activeTab === '007') {
+                            setAgent007InputValue(e.target.value);
+                          } else {
+                            setInputValue(e.target.value);
+                          }
+                        }}
                         onKeyPress={handleKeyPress}
-                        disabled={isLoading}
+                        disabled={activeTab === '007' ? agent007IsLoading : isLoading}
                         className="resize-none"
                       />
+                      {activeTab === '007' && !hasCredits && !isActualAmbassador && (
+                        <p className="text-xs text-destructive mt-1">
+                          Du trenger credits for å bruke Agent 007. <Link to="/credits" className="underline">Kjøp credits</Link>
+                        </p>
+                      )}
                     </div>
                     <Button
-                      onClick={handleSendMessage}
-                      disabled={!inputValue.trim() || isLoading}
+                      onClick={activeTab === '007' ? handleAgent007SendMessage : handleSendMessage}
+                      disabled={
+                        activeTab === '007' 
+                          ? (!agent007InputValue.trim() || agent007IsLoading || (!hasCredits && !isActualAmbassador))
+                          : (!inputValue.trim() || isLoading)
+                      }
                       className="flex-shrink-0"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="007">
-                  {!hasCredits && !isActualAmbassador ? (
-                    <Card className="border-destructive bg-destructive/5">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-sm text-destructive mb-3">
-                          Du har ingen credits igjen. Kjøp Pro Credits for å fortsette med Agent 007.
-                        </p>
-                        <Button asChild size="sm">
-                          <Link to="/credits">Kjøp Credits</Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="flex gap-3 items-end">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Beskriv hva du ønsker hjelp med i utleieforvaltningen..."
-                          value={agent007InputValue}
-                          onChange={(e) => setAgent007InputValue(e.target.value)}
-                          onKeyPress={handleAgent007KeyPress}
-                          disabled={agent007IsLoading}
-                          className="resize-none"
-                        />
-                      </div>
-                      <Button
-                        onClick={handleAgent007SendMessage}
-                        disabled={!agent007InputValue.trim() || agent007IsLoading}
-                        className="flex-shrink-0"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
                 </TabsContent>
               </Tabs>
             ) : (
