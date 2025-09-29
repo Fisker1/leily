@@ -33,6 +33,7 @@ const Agent007 = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -42,6 +43,20 @@ const Agent007 = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const cancelRequest = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    setIsLoading(false);
+    setLoadingStatus('');
+    toast({
+      title: "Forespørsel avbrutt",
+      description: "Agent 007 forespørselen ble stoppet",
+      variant: "default"
+    });
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -67,6 +82,10 @@ const Agent007 = () => {
     setIsLoading(true);
     setLoadingStatus('🔍 Analyserer forespørsel...');
 
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
     // Set up a timeout to detect if the request is stuck
     const timeoutId = setTimeout(() => {
       setLoadingStatus('⚠️ Tar lengre tid enn forventet...');
@@ -91,7 +110,8 @@ const Agent007 = () => {
         body: { 
           message: inputValue,
           action: null // For future use when implementing specific actions
-        }
+        },
+        signal: controller.signal
       });
 
       // Clear all timers when we get a response
@@ -143,6 +163,7 @@ const Agent007 = () => {
     } finally {
       setIsLoading(false);
       setLoadingStatus('');
+      setAbortController(null);
     }
   };
 
@@ -263,19 +284,29 @@ const Agent007 = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
-                <div className="bg-background border shadow-sm rounded-lg px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                <div className="bg-background border shadow-sm rounded-lg px-4 py-3 max-w-[80%]">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-muted-foreground">
+                          {loadingStatus || 'Agent 007 arbeider...'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-muted-foreground">
-                        {loadingStatus || 'Agent 007 arbeider...'}
-                      </span>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={cancelRequest}
+                      className="text-xs px-2 py-1 h-7 hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      Stopp
+                    </Button>
                   </div>
                 </div>
               </div>
