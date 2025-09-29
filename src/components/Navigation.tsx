@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X, Calculator, Briefcase, PieChart, LogOut, Shield, User } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Menu, X, Calculator, Briefcase, PieChart, LogOut, Shield, User, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -61,24 +68,37 @@ const Navigation = () => {
             </div>
             {user ? (
               <>
-                <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-                  <Link to="/min-side" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="hidden lg:inline">Min side</span>
-                  </Link>
-                </Button>
-                {isAdmin && (
-                  <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-                    <Link to="/admin" className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      <span className="hidden lg:inline">Admin</span>
-                    </Link>
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" onClick={() => signOut()} className="hidden sm:flex items-center gap-2">
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden lg:inline">Logg ut</span>
-                </Button>
+                {/* Desktop Dropdown Menu */}
+                <div className="hidden sm:block">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="p-2">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem asChild>
+                        <Link to="/min-side" className="flex items-center gap-2 w-full">
+                          <User className="h-4 w-4" />
+                          Min side
+                        </Link>
+                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="flex items-center gap-2 w-full">
+                            <Shield className="h-4 w-4" />
+                            Admin
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2">
+                        <LogOut className="h-4 w-4" />
+                        Logg ut
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </>
             ) : (
               <>
@@ -138,57 +158,52 @@ const Navigation = () => {
                   Portefølje
                 </Link>
               </nav>
+              
+              {user && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Språk</span>
-                  <div className="flex items-center space-x-2">
-                    <LanguageToggle />
-                  </div>
-                </div>
-                {user ? (
-                  <>
-                     <Button variant="outline" className="w-full justify-start" size="lg" asChild>
-                       <Link to="/min-side" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                         <User className="h-5 w-5" />
-                         Min side
-                       </Link>
-                     </Button>
-                    {isAdmin && (
-                      <Button variant="outline" className="w-full justify-start" size="lg" asChild>
-                        <Link to="/admin" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
-                          <Shield className="h-5 w-5" />
-                          Admin Dashboard
-                        </Link>
-                      </Button>
-                    )}
-                    <Button 
-                      className="w-full justify-start" 
-                      size="lg" 
-                      onClick={() => {
-                        signOut();
-                        setIsMenuOpen(false);
-                      }} 
-                      variant="outline"
-                    >
-                      <LogOut className="h-5 w-5 mr-3" />
-                      Logg ut
-                    </Button>
-                  </>
-                ) : (
-                  <>
+                  <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                    <Link to="/min-side" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                      <User className="h-5 w-5" />
+                      Min side
+                    </Link>
+                  </Button>
+                  {isAdmin && (
                     <Button variant="outline" className="w-full justify-start" size="lg" asChild>
-                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                        {translations.nav.signIn}
+                      <Link to="/admin" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                        <Shield className="h-5 w-5" />
+                        Admin Dashboard
                       </Link>
                     </Button>
-                    <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
-                      <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
-                        {translations.nav.startAnalysis}
-                      </Link>
-                    </Button>
-                  </>
-                )}
-              </div>
+                  )}
+                  <Button 
+                    className="w-full justify-start" 
+                    size="lg" 
+                    onClick={() => {
+                      signOut();
+                      setIsMenuOpen(false);
+                    }} 
+                    variant="outline"
+                  >
+                    <LogOut className="h-5 w-5 mr-3" />
+                    Logg ut
+                  </Button>
+                </div>
+              )}
+              
+              {!user && (
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      {translations.nav.signIn}
+                    </Link>
+                  </Button>
+                  <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
+                    <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
+                      {translations.nav.startAnalysis}
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
