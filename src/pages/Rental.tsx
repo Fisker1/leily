@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 import { 
   Building2, 
   MapPin, 
@@ -62,9 +63,10 @@ const Rental = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin, isAmbassador, loading: roleLoading } = useUserRole();
   
-  // Access control
-  const canCreateRentalAgreement = user?.email === 'anderslundoy@gmail.com';
+  // Access control - Allow ambassadors and specific admin user
+  const canCreateRentalAgreement = isAmbassador || isAdmin || user?.email === 'anderslundoy@gmail.com';
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
