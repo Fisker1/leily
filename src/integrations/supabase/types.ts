@@ -152,7 +152,15 @@ export type Database = {
           sender_type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_chat_messages_lease_id"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deposit_accounts: {
         Row: {
@@ -194,6 +202,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "deposit_accounts_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_deposit_accounts_lease_id"
             columns: ["lease_id"]
             isOneToOne: false
             referencedRelation: "lease_agreements"
@@ -287,6 +302,20 @@ export type Database = {
           utilities_included?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_lease_agreements_property_id"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_lease_agreements_tenant_id"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lease_agreements_property_id_fkey"
             columns: ["property_id"]
@@ -716,6 +745,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_transfer_protocols_lease_id"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transfer_protocols_lease_id_fkey"
             columns: ["lease_id"]
