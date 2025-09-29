@@ -222,26 +222,12 @@ const Rental = () => {
     if (!user) return;
 
     try {
-      // First, get ALL properties for rental agreement dialog
-      const { data: allProperties, error: allError } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('owner_id', user.id)
-        .eq('show_in_rental', true)
-        .order('created_at', { ascending: false });
-
-      if (allError) {
-        console.error('Error fetching all properties:', allError);
-        setProperties([exampleProperty]);
-        return;
-      }
-
-      // Then, get properties with active lease agreements for display
-      const { data: propertiesWithLeases, error: leasesError } = await supabase
+      // Get ALL properties that should show in rental (both empty and with leases)
+      const { data: allRentalProperties, error: allError } = await supabase
         .from('properties')
         .select(`
           *,
-          lease_agreements!inner(
+          lease_agreements(
             id,
             tenant_id,
             monthly_rent,
@@ -257,24 +243,34 @@ const Rental = () => {
         `)
         .eq('owner_id', user.id)
         .eq('show_in_rental', true)
-        .eq('lease_agreements.status', 'active')
         .order('created_at', { ascending: false });
 
-      if (leasesError) {
-        console.error('Error fetching properties with leases:', leasesError);
+      if (allError) {
+        console.error('Error fetching properties:', allError);
+        setProperties([exampleProperty]);
+        setAllProperties([]);
+        return;
       }
 
-      // Use properties with leases for display if available, otherwise all properties
-      if (propertiesWithLeases && propertiesWithLeases.length > 0) {
-        setProperties(propertiesWithLeases);
-      } else if (allProperties && allProperties.length > 0) {
-        setProperties(allProperties);
+      // Show all properties that have show_in_rental: true
+      if (allRentalProperties && allRentalProperties.length > 0) {
+        setProperties(allRentalProperties);
       } else {
         setProperties([exampleProperty]);
       }
 
-      // Store all properties separately for rental dialog
-      setAllProperties(allProperties || []);
+      // Store all properties for rental dialog (including those not marked for rental)
+      const { data: allUserProperties, error: allUserError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!allUserError && allUserProperties) {
+        setAllProperties(allUserProperties);
+      } else {
+        setAllProperties(allRentalProperties || []);
+      }
 
     } catch (error) {
       console.error('Error fetching properties:', error);
