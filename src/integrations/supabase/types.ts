@@ -869,6 +869,10 @@ export type Database = {
           status: string
         }[]
       }
+      get_user_roles_for_edge_function: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       has_legitimate_tenant_access: {
         Args: { tenant_property_owner_id: string }
         Returns: boolean

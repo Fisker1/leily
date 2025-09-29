@@ -54,18 +54,17 @@ serve(async (req) => {
 
     // Check if user is admin or ambassador FIRST (free access)
     console.log('Checking user roles for:', user.id);
-    const { data: userRoles, error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
+    const { data: userRolesData, error: rolesError } = await supabaseClient
+      .rpc('get_user_roles_for_edge_function', { target_user_id: user.id });
 
     if (rolesError) {
       console.error('Error fetching user roles:', rolesError);
     }
 
-    console.log('User roles data:', userRoles);
-    const isAdmin = userRoles?.some(r => r.role === 'admin');
-    const isAmbassador = userRoles?.some(r => r.role === 'ambassador');
+    console.log('User roles data from function:', userRolesData);
+    const userRoles = userRolesData || [];
+    const isAdmin = userRoles.includes('admin');
+    const isAmbassador = userRoles.includes('ambassador');
     
     console.log('Role check results:', { isAdmin, isAmbassador });
 
