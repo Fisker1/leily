@@ -51,7 +51,7 @@ const PricingOverview = () => {
                   <span className="text-sm">Community-støtte</span>
                 </li>
               </ul>
-              <Button variant="outline" className="w-full" asChild>
+              <Button className="w-full" asChild>
                 <Link to="/auth">Kom i gang gratis</Link>
               </Button>
             </CardContent>
