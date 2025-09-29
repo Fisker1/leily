@@ -116,7 +116,7 @@ serve(async (req) => {
         *,
         lease_agreements!lease_agreements_property_id_fkey (
           *,
-          tenants!fk_lease_agreements_tenant_id (
+          tenants!lease_agreements_tenant_id_fkey (
             id,
             first_name,
             last_name,
@@ -206,13 +206,13 @@ serve(async (req) => {
               id,
               monthly_rent,
               status,
-              properties (
-                address
-              ),
-              tenants (
-                first_name,
-                last_name
-              )
+               properties!lease_agreements_property_id_fkey (
+                 address
+               ),
+               tenants!lease_agreements_tenant_id_fkey (
+                 first_name,
+                 last_name
+               )
             `)
             .eq('id', chat.lease_id)
             .single();
