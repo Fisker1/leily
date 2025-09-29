@@ -85,6 +85,7 @@ const Rental = () => {
   const canCreateRentalAgreement = isAmbassador || isAdmin || user?.email === 'anderslundoy@gmail.com';
   
   const [properties, setProperties] = useState<Property[]>([]);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Dialog states
@@ -221,8 +222,22 @@ const Rental = () => {
     if (!user) return;
 
     try {
-      // Fetch properties with their lease agreements and tenant information
-      const { data, error } = await supabase
+      // First, get ALL properties for rental agreement dialog
+      const { data: allProperties, error: allError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', user.id)
+        .eq('show_in_rental', true)
+        .order('created_at', { ascending: false });
+
+      if (allError) {
+        console.error('Error fetching all properties:', allError);
+        setProperties([exampleProperty]);
+        return;
+      }
+
+      // Then, get properties with active lease agreements for display
+      const { data: propertiesWithLeases, error: leasesError } = await supabase
         .from('properties')
         .select(`
           *,
@@ -245,36 +260,22 @@ const Rental = () => {
         .eq('lease_agreements.status', 'active')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching properties:', error);
-        toast({
-          title: "Feil",
-          description: "Feil ved henting av eiendommer",
-          variant: "destructive",
-        });
-        return;
+      if (leasesError) {
+        console.error('Error fetching properties with leases:', leasesError);
       }
 
-      if (data && data.length > 0) {
-        setProperties(data);
+      // Use properties with leases for display if available, otherwise all properties
+      if (propertiesWithLeases && propertiesWithLeases.length > 0) {
+        setProperties(propertiesWithLeases);
+      } else if (allProperties && allProperties.length > 0) {
+        setProperties(allProperties);
       } else {
-        // Also try to get properties without active leases
-        const { data: allProperties, error: allError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('owner_id', user.id)
-          .eq('show_in_rental', true)
-          .order('created_at', { ascending: false });
-
-        if (allError) {
-          console.error('Error fetching all properties:', allError);
-          setProperties([exampleProperty]);
-        } else if (allProperties && allProperties.length > 0) {
-          setProperties(allProperties);
-        } else {
-          setProperties([exampleProperty]);
-        }
+        setProperties([exampleProperty]);
       }
+
+      // Store all properties separately for rental dialog
+      setAllProperties(allProperties || []);
+
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast({
@@ -866,7 +867,7 @@ const Rental = () => {
       <RentalAgreementDialog
         open={rentalAgreementDialogOpen}
         onOpenChange={setRentalAgreementDialogOpen}
-        properties={properties}
+        properties={allProperties}
         onPropertyAdded={fetchUserProperties}
       />
 
