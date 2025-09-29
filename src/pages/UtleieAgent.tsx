@@ -27,16 +27,7 @@ const UtleieAgent = () => {
   const { isAdmin, isAmbassador: roleIsAmbassador, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   
-  // Use role from useUserRole hook instead of useCredits
   const isActualAmbassador = roleIsAmbassador || isAmbassador;
-  
-  console.log('UtleieAgent render:', { 
-    isAdmin, 
-    roleIsAmbassador, 
-    isAmbassador, 
-    isActualAmbassador, 
-    roleLoading 
-  });
   
   // General agent state
   const [messages, setMessages] = useState<Message[]>([
@@ -359,10 +350,6 @@ const UtleieAgent = () => {
               <Badge variant="outline" className="flex items-center gap-1">
                 <CreditCard className="w-3 h-3" />
                 {isActualAmbassador ? '∞ Ambassador' : `${credits} credits`}
-              </Badge>
-              {/* Debug info */}
-              <Badge variant="secondary" className="text-xs">
-                Debug: Admin: {isAdmin ? 'Yes' : 'No'}, Ambassador: {isActualAmbassador ? 'Yes' : 'No'}
               </Badge>
               {(isActualAmbassador || isAdmin) && (
                 <Button 
