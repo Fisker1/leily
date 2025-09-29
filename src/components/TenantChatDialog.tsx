@@ -50,26 +50,31 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     if (!lease?.id) return;
 
     try {
-      // For now, we'll create some example messages since we don't have a chat table yet
-      // In a real implementation, you'd fetch from a chat_messages table
-      const exampleMessages: Message[] = [
-        {
-          id: '1',
-          content: `Hei ${tenant?.first_name}! Velkommen som leietaker i ${property?.address}. Hvis du har noen spørsmål om eiendommen, bare send meg en melding her.`,
-          sender_type: 'landlord',
-          sender_name: 'Utleier',
-          timestamp: new Date(Date.now() - 86400000) // 1 day ago
-        },
-        {
-          id: '2',
-          content: 'Takk for fin velkomst! Jeg gleder meg til å flytte inn. Har du noen tips om området?',
-          sender_type: 'tenant',
-          sender_name: `${tenant?.first_name} ${tenant?.last_name}`,
-          timestamp: new Date(Date.now() - 43200000) // 12 hours ago
-        }
-      ];
+      const { data: chatMessages, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('lease_id', lease.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: "Feil",
+          description: "Kunne ikke laste samtale",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const formattedMessages: Message[] = (chatMessages || []).map(msg => ({
+        id: msg.id,
+        content: msg.message_content,
+        sender_type: msg.sender_type as 'landlord' | 'tenant',
+        sender_name: msg.sender_type === 'landlord' ? 'Utleier' : `${tenant?.first_name} ${tenant?.last_name}`,
+        timestamp: new Date(msg.created_at)
+      }));
       
-      setMessages(exampleMessages);
+      setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -84,28 +89,41 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     if (!inputValue.trim() || !user) return;
 
     setLoading(true);
+    const messageContent = inputValue;
+    setInputValue(''); // Clear input immediately for better UX
     
     try {
+      // Save message to database
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          lease_id: lease.id,
+          message_content: messageContent,
+          sender_type: 'landlord',
+          sender_id: user.id
+        });
+
+      if (error) {
+        console.error('Error saving message:', error);
+        setInputValue(messageContent); // Restore input on error
+        toast({
+          title: "Feil",
+          description: "Kunne ikke sende melding",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add message to local state for immediate UI update
       const newMessage: Message = {
         id: Date.now().toString(),
-        content: inputValue,
-        sender_type: 'landlord', // Always landlord since this is the property owner view
+        content: messageContent,
+        sender_type: 'landlord',
         sender_name: 'Utleier',
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, newMessage]);
-      setInputValue('');
-
-      // TODO: In a real implementation, save to database
-      // const { error } = await supabase
-      //   .from('chat_messages')
-      //   .insert({
-      //     lease_id: lease.id,
-      //     content: inputValue,
-      //     sender_type: 'landlord',
-      //     sender_id: user.id
-      //   });
 
       toast({
         title: "Melding sendt",
@@ -114,6 +132,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
 
     } catch (error) {
       console.error('Error sending message:', error);
+      setInputValue(messageContent); // Restore input on error
       toast({
         title: "Feil",
         description: "Kunne ikke sende melding",
@@ -149,46 +168,54 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto border rounded-lg p-4 bg-muted/10">
           <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.sender_type === 'landlord' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {message.sender_type === 'tenant' && (
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-1">
-                    <User className="w-4 h-4" />
-                  </div>
-                )}
-                
+            {messages.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Ingen meldinger ennå</p>
+                <p className="text-xs mt-1">Start en samtale med leietakeren din</p>
+              </div>
+            ) : (
+              messages.map((message) => (
                 <div
-                  className={`max-w-[70%] rounded-lg px-4 py-3 ${
-                    message.sender_type === 'landlord'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background border shadow-sm'
+                  key={message.id}
+                  className={`flex gap-3 ${
+                    message.sender_type === 'landlord' ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs opacity-70">
-                      {message.timestamp.toLocaleString('no-NO', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                  {message.sender_type === 'tenant' && (
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`max-w-[70%] rounded-lg px-4 py-3 ${
+                      message.sender_type === 'landlord'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background border shadow-sm'
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs opacity-70">
+                        {message.timestamp.toLocaleString('no-NO', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
                   </div>
+                  
+                  {message.sender_type === 'landlord' && (
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                  )}
                 </div>
-                
-                {message.sender_type === 'landlord' && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
-                    <User className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
             
             <div ref={messagesEndRef} />
           </div>
