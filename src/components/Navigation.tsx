@@ -28,9 +28,9 @@ const Navigation = () => {
   } = useUserRole();
   return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sticky top-0 z-50 w-full border-b border-border/50">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center h-16">
           {/* Logo - Left Section */}
-          <div className="flex items-center flex-shrink-0">
+          <div className="flex items-center flex-shrink-0 w-32">
             <Link to="/" className="flex items-center">
               <LeilyLogo 
                 showText={false}
@@ -62,15 +62,15 @@ const Navigation = () => {
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          <div className="flex items-center justify-end space-x-2 flex-shrink-0 w-32">
             {user ? (
               <>
                 {/* Desktop Dropdown Menu */}
                 <div className="hidden sm:block">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="p-2">
-                        <MoreVertical className="h-5 w-5" />
+                      <Button variant="outline" size="sm" className="p-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40">
+                        <MoreVertical className="h-5 w-5 text-primary" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
