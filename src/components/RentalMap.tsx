@@ -243,49 +243,24 @@ const RentalMap = () => {
         if (mapContainer.current && !map.current) {
           addDebug('Oppretter kart instans...');
           
-          // Try different map styles to find one that works
+          // Use simpler, working Mapbox styles
           const styles = [
-            // Basic styles that should work with any token
-            {
-              name: 'Basic',
-              style: {
-                "version": 8,
-                "name": "Basic",
-                "sources": {
-                  "osm": {
-                    "type": "raster",
-                    "tiles": [
-                      "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    ],
-                    "tileSize": 256,
-                    "attribution": "© OpenStreetMap contributors"
-                  }
-                },
-                "layers": [
-                  {
-                    "id": "osm",
-                    "type": "raster",
-                    "source": "osm"
-                  }
-                ]
-              }
-            },
-            // Mapbox fallbacks 
+            'mapbox://styles/mapbox/streets-v12',
             'mapbox://styles/mapbox/streets-v11',
-            'mapbox://styles/mapbox/light-v10', 
+            'mapbox://styles/mapbox/light-v11',
+            'mapbox://styles/mapbox/light-v10',
+            'mapbox://styles/mapbox/outdoors-v12',
             'mapbox://styles/mapbox/outdoors-v11'
           ];
 
           for (let i = 0; i < styles.length; i++) {
             try {
               const currentStyle = styles[i];
-              addDebug(`Prøver kartsstil ${i + 1}/${styles.length}: ${typeof currentStyle === 'string' ? currentStyle : currentStyle.name}`);
+              addDebug(`Prøver kartsstil ${i + 1}/${styles.length}: ${currentStyle}`);
               
               mapInstance = new mapboxgl.Map({
                 container: mapContainer.current,
-                style: typeof currentStyle === 'string' ? currentStyle : currentStyle.style,
+                style: currentStyle,
                 center: [10.7522, 59.9139], // Oslo
                 zoom: 6,
                 attributionControl: false,
