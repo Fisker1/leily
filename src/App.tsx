@@ -26,7 +26,6 @@ const Index = lazy(() => import("./pages/Index"));
 const SimpleAuth = lazy(() => import("./pages/SimpleAuth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Rental = lazy(() => import("./pages/Rental"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
@@ -92,7 +91,6 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/auth" element={<SimpleAuth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/pricing" element={<Pricing />} />
                      <Route path="/utleie" element={<Rental />} />
                      <Route path="/utleie-agent" element={<UtleieAgent />} />
                      <Route path="/agent-007" element={<Agent007 />} />

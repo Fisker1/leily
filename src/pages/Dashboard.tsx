@@ -208,7 +208,7 @@ const Dashboard = () => {
           </Badge>
           {profile?.subscription_tier === 'free' && (
             <Button asChild variant="outline" size="sm">
-              <Link to="/pricing">
+              <Link to="/#pricing">
                 {translations.dashboard.upgrade}
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>

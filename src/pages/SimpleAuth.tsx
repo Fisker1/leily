@@ -391,7 +391,7 @@ const SimpleAuth = () => {
 
         <div className="text-center">
           <Link 
-            to="/pricing" 
+            to="/#pricing" 
             className="text-sm text-primary hover:text-primary/80 transition-colors"
           >
             Lær om våre abonnementsplaner

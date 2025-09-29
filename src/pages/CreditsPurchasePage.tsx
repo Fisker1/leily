@@ -16,7 +16,7 @@ const CreditsPurchasePage = () => {
       <div className="bg-background/95 backdrop-blur border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
-            <Link to="/pricing" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/#pricing" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
               Tilbake til priser
             </Link>

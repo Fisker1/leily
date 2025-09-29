@@ -326,7 +326,7 @@ const Auth = () => {
 
         <div className="text-center">
           <Link 
-            to="/pricing" 
+            to="/#pricing" 
             className="text-sm text-primary hover:text-primary/80 transition-colors"
           >
             {translations.auth.learnAboutPlans}
