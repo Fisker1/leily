@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -262,7 +263,9 @@ const UtleieAgent = () => {
                 : 'bg-background border shadow-sm'
             }`}
           >
-            <p className="text-sm leading-relaxed">{message.content}</p>
+            <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
             {message.actionExecuted && (
               <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded text-xs">
                 <span className="font-medium text-orange-700 dark:text-orange-400">
@@ -325,9 +328,9 @@ const UtleieAgent = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-soft">
+    <div className="h-screen bg-gradient-soft flex flex-col">
       {/* Header */}
-      <div className="bg-background/95 backdrop-blur border-b sticky top-16 z-40">
+      <div className="bg-background/95 backdrop-blur border-b flex-shrink-0">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -369,7 +372,7 @@ const UtleieAgent = () => {
 
       {/* Settings Panel - Only for Admin/Ambassador */}
       {showSettings && (isActualAmbassador || isAdmin) && (
-        <div className="bg-background border-b p-4">
+        <div className="bg-background border-b p-4 flex-shrink-0">
           <div className="container mx-auto">
             <Card>
               <CardHeader>
@@ -402,12 +405,12 @@ const UtleieAgent = () => {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto">
+      {/* Main Content - Flexible height container */}
+      <div className="flex-1 container mx-auto px-4 py-4 overflow-hidden">
+        <div className="max-w-4xl mx-auto h-full flex flex-col">
           {(isActualAmbassador || isAdmin) ? (
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+            <Tabs defaultValue="general" className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="general" className="flex items-center gap-2">
                   <Bot className="w-4 h-4" />
                   Utleie Agent
@@ -419,29 +422,35 @@ const UtleieAgent = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="general" className="mt-6">
-                {renderMessages(messages, isLoading, 'general')}
+              <TabsContent value="general" className="flex-1 mt-4 overflow-y-auto">
+                <div className="h-full">
+                  {renderMessages(messages, isLoading, 'general')}
+                </div>
               </TabsContent>
               
-              <TabsContent value="007" className="mt-6">
-                {renderMessages(agent007Messages, agent007IsLoading, '007')}
+              <TabsContent value="007" className="flex-1 mt-4 overflow-y-auto">
+                <div className="h-full">
+                  {renderMessages(agent007Messages, agent007IsLoading, '007')}
+                </div>
               </TabsContent>
             </Tabs>
           ) : (
-            <div className="space-y-4">
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <div className="h-full flex flex-col">
+              <div className="text-center p-4 bg-muted/50 rounded-lg mb-4 flex-shrink-0">
                 <p className="text-sm text-muted-foreground">
                   Agent 007 er kun tilgjengelig for ambassadører og administratorer
                 </p>
               </div>
-              {renderMessages(messages, isLoading, 'general')}
+              <div className="flex-1 overflow-y-auto">
+                {renderMessages(messages, isLoading, 'general')}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t">
+      {/* Input Area - Fixed at bottom */}
+      <div className="bg-background/95 backdrop-blur border-t flex-shrink-0">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
             {(isActualAmbassador || isAdmin) ? (
