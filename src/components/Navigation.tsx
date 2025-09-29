@@ -63,9 +63,6 @@ const Navigation = () => {
 
           {/* Right Section - Actions */}
           <div className="flex items-center space-x-2 flex-shrink-0">
-            <div className="hidden sm:block">
-              <LanguageToggle />
-            </div>
             {user ? (
               <>
                 {/* Desktop Dropdown Menu */}
