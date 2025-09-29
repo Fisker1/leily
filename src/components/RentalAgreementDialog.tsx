@@ -107,7 +107,13 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
 
   const validateStep1 = () => {
     const required = ['firstName', 'lastName', 'email', 'phone', 'nationalId'];
-    return required.every(field => tenantData[field as keyof TenantData].trim() !== '');
+    const hasRequiredFields = required.every(field => tenantData[field as keyof TenantData].trim() !== '');
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailRegex.test(tenantData.email.trim());
+    
+    return hasRequiredFields && isValidEmail;
   };
 
   const validateStep2 = () => {
