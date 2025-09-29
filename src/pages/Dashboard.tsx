@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Home, Users, FileText, DollarSign, Calendar, ArrowRight, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
+import CreditsBar from '@/components/CreditsBar';
 
 interface DashboardStats {
   totalProperties: number;
@@ -202,10 +203,11 @@ const Dashboard = () => {
         <p className="text-muted-foreground">
           {translations.dashboard.welcomeMessage}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
           <Badge variant={profile?.subscription_tier === 'pro' ? 'default' : 'secondary'}>
             {profile?.subscription_tier === 'pro' ? translations.dashboard.proPlan : translations.dashboard.freePlan}
           </Badge>
+          <CreditsBar />
           {profile?.subscription_tier === 'free' && (
             <Button asChild variant="outline" size="sm">
               <Link to="/#pricing">
