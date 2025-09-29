@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import demoProperty1 from '@/assets/demo-property-1.jpg';
 import demoProperty3 from '@/assets/demo-property-3.jpg';
-
 import lofoteApartment from '@/assets/lofoten-apartment.jpg';
 
 interface PropertyImageProps {
@@ -27,7 +26,8 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showMap, setShowMap] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   // Check if this is a demo address
@@ -43,6 +43,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           
           if (error || !data?.success || !data?.token) {
             console.error('❌ Token fetch failed:', error);
+            setError('Kunne ikke hente Mapbox token');
             return;
           }
 
@@ -50,18 +51,21 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           setMapboxToken(data.token);
         } catch (error) {
           console.error('❌ Error fetching token:', error);
+          setError('Kunne ikke hente Mapbox token');
         }
       };
 
       fetchMapboxToken();
-      setShowMap(true);
     }
   }, [shouldShowSatellite, address]);
 
   useEffect(() => {
-    if (!showMap || !mapContainer.current || !mapboxToken || map.current) return;
+    if (!shouldShowSatellite || !mapContainer.current || !mapboxToken || map.current) return;
 
     const initializeMap = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
         mapboxgl.accessToken = mapboxToken;
         
@@ -83,7 +87,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           [lng, lat] = properties[0].coordinates;
           console.log(`✅ Using cached coordinates [${lng}, ${lat}]`);
         } else {
-          // Geocode with Nominatim
+          // Geocode with Nominatim as fallback
           const fullAddress = `${address}${city ? ', ' + city : ''}, Norge`;
           const response = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&countrycodes=no`
@@ -95,11 +99,13 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             lat = parseFloat(data[0].lat);
             console.log(`✅ Geocoded to [${lng}, ${lat}]`);
           } else {
-            throw new Error('Geocoding failed');
+            throw new Error('Adresse ikke funnet');
           }
         }
         
-        // Create satellite map
+        // Create simple satellite map using OpenStreetMap style with satellite overlay
+        if (!mapContainer.current) return;
+        
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
           style: {
@@ -107,8 +113,9 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
             sources: {
               'satellite': {
                 type: 'raster',
-                tiles: [`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`],
-                tileSize: 512
+                tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                tileSize: 256,
+                attribution: '© Esri'
               }
             },
             layers: [
@@ -125,7 +132,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           attributionControl: false
         });
 
-        // Add marker
+        // Add marker when map loads
         map.current.on('load', () => {
           if (map.current) {
             new mapboxgl.Marker({ 
@@ -136,35 +143,20 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
               .addTo(map.current);
             
             console.log(`✅ Satellite image loaded for ${address}`);
+            setLoading(false);
           }
         });
 
         map.current.on('error', (e) => {
           console.error('❌ Satellite map error:', e);
-          if (mapContainer.current) {
-            mapContainer.current.innerHTML = `
-              <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
-                <div class="text-center p-4">
-                  <p>🗺️ Satellittbilde ikke tilgjengelig</p>
-                  <p class="text-xs mt-1 opacity-75">${address}</p>
-                </div>
-              </div>
-            `;
-          }
+          setError('Satellittbilde ikke tilgjengelig');
+          setLoading(false);
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Satellite map init failed:', error);
-        if (mapContainer.current) {
-          mapContainer.current.innerHTML = `
-            <div class="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
-              <div class="text-center p-4">
-                <p>📍 Adresse ikke funnet</p>
-                <p class="text-xs mt-1 opacity-75">${address}</p>
-              </div>
-            </div>
-          `;
-        }
+        setError(error.message || 'Kunne ikke laste satellittbilde');
+        setLoading(false);
       }
     };
 
@@ -176,7 +168,7 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         map.current = null;
       }
     };
-  }, [showMap, mapboxToken, address, city]);
+  }, [shouldShowSatellite, mapboxToken, address, city]);
 
   // Handle custom uploaded images
   if (imageUrl) {
@@ -208,13 +200,29 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           ref={mapContainer} 
           className="absolute inset-0 w-full h-full" 
         />
+        {loading && (
+          <div className="absolute inset-0 bg-muted/80 flex items-center justify-center">
+            <div className="text-center p-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-xs text-muted-foreground">Laster satellittbilde...</p>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 bg-muted flex items-center justify-center">
+            <div className="text-center p-4">
+              <p className="text-muted-foreground text-sm">📍 {error}</p>
+              <p className="text-xs mt-1 opacity-75">{address}</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   // Fallback for non-logged in users with real addresses
   return (
-    <div className={`relative ${className} bg-muted flex items-center justify-center aspect-square`}>
+    <div className={`relative ${className} bg-muted flex items-center justify-center aspect-square rounded-lg`}>
       <p className="text-muted-foreground text-sm">Logg inn for satellittbilde</p>
     </div>
   );
