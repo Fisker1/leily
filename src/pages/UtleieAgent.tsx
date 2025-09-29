@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/hooks/useCredits';
+import { supabase } from '@/integrations/supabase/client';
 import { Send, Bot, User, Settings, CreditCard, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -19,7 +20,7 @@ interface Message {
 
 const UtleieAgent = () => {
   const { user } = useAuth();
-  const { credits, hasCredits, useCredit } = useCredits();
+  const { credits, hasCredits, useCredit, isAmbassador } = useCredits();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -46,7 +47,7 @@ const UtleieAgent = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    if (!hasCredits) {
+    if (!hasCredits && !isAmbassador) {
       toast({
         title: "Ingen credits igjen",
         description: "Du må kjøpe Pro Credits for å bruke Utleie Agent",
@@ -67,22 +68,46 @@ const UtleieAgent = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement AI API call here
-      // This is where you would call your AI service
+      // Call Supabase Edge Function for AI chat
+      const { data, error } = await supabase.functions.invoke('utleie-agent-chat', {
+        body: { 
+          message: inputValue,
+          customPrompt: customPrompt 
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to get AI response');
+      }
+
+      if (data.error) {
+        if (data.needsCredits) {
+          toast({
+            title: "Ingen credits igjen",
+            description: "Du må kjøpe Pro Credits for å fortsette",
+            variant: "destructive"
+          });
+          return;
+        }
+        throw new Error(data.error);
+      }
+
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.response,
+        role: 'assistant',
+        timestamp: new Date()
+      };
       
-      // Simulate AI response for now
-      setTimeout(() => {
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: 'Dette er en simulert respons fra Utleie Agent. I den virkelige implementasjonen ville jeg gi deg ekspertråd basert på din spørsmål om eiendomsinvestering og utleieforvaltning.',
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiMessage]);
-        useCredit(); // Subtract one credit
-        setIsLoading(false);
-      }, 2000);
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Only use credits if not ambassador
+      if (!isAmbassador) {
+        useCredit();
+      }
+      
+      setIsLoading(false);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -146,7 +171,7 @@ const UtleieAgent = () => {
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="flex items-center gap-1">
                 <CreditCard className="w-3 h-3" />
-                {credits} credits
+                {isAmbassador ? '∞ Ambassador' : `${credits} credits`}
               </Badge>
               <Button 
                 variant="outline" 
@@ -265,7 +290,7 @@ const UtleieAgent = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
-            {!hasCredits ? (
+            {!hasCredits && !isAmbassador ? (
               <Card className="border-destructive bg-destructive/5">
                 <CardContent className="p-4 text-center">
                   <p className="text-sm text-destructive mb-3">
