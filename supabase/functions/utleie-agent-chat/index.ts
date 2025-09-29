@@ -38,6 +38,7 @@ serve(async (req) => {
     // Get current user
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       throw new Error('Authentication required');
     }
 

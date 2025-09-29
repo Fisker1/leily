@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, action } = await req.json();
+    const { message, conversationHistory, action } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
