@@ -109,28 +109,49 @@ serve(async (req) => {
     // Fetch user's rental data to provide context to Agent 007
     console.log('Fetching rental data for user:', user.id);
     
-    // Get properties with lease agreements and tenants
+    // Get properties with lease agreements and tenants - simplified approach
     const { data: properties, error: propertiesError } = await supabaseClient
       .from('properties')
-      .select(`
-        *,
-        lease_agreements!lease_agreements_property_id_fkey (
-          *,
-          tenants!lease_agreements_tenant_id_fkey (
-            id,
-            first_name,
-            last_name,
-            property_owner_id
-          )
-        )
-      `)
+      .select('*')
       .eq('owner_id', user.id);
 
-    console.log('Properties query result:', { 
+    console.log('Simple properties query result:', { 
       data: properties, 
       error: propertiesError,
       userId: user.id,
       propertyCount: properties?.length || 0
+    });
+
+    let propertiesWithLeases = [];
+    
+    if (properties && properties.length > 0) {
+      // Get lease agreements for each property
+      for (const property of properties) {
+        const { data: leases, error: leasesError } = await supabaseClient
+          .from('lease_agreements')
+          .select(`
+            *,
+            tenants!lease_agreements_tenant_id_fkey (*)
+          `)
+          .eq('property_id', property.id);
+        
+        if (!leasesError && leases) {
+          propertiesWithLeases.push({
+            ...property,
+            lease_agreements: leases
+          });
+        } else {
+          propertiesWithLeases.push({
+            ...property,
+            lease_agreements: []
+          });
+        }
+      }
+    }
+
+    console.log('Properties with leases:', { 
+      count: propertiesWithLeases.length,
+      data: propertiesWithLeases
     });
 
     if (propertiesError) {
@@ -180,9 +201,9 @@ serve(async (req) => {
     // Build context string with rental information
     let rentalContext = '\n\n📊 TILGJENGELIG UTLEIEDATA:\n';
     
-    if (properties && properties.length > 0) {
+    if (propertiesWithLeases && propertiesWithLeases.length > 0) {
       rentalContext += '\n🏠 EIENDOMMER OG LEIEFORHOLD:\n';
-      properties.forEach((property: any) => {
+      propertiesWithLeases.forEach((property: any) => {
         rentalContext += `\nEiendom: ${property.address}`;
         if (property.lease_agreements && property.lease_agreements.length > 0) {
           property.lease_agreements.forEach((lease: any) => {
@@ -240,11 +261,11 @@ serve(async (req) => {
       }
     }
 
-    if (!properties?.length && !recentChats?.length) {
+    if (!propertiesWithLeases?.length && !recentChats?.length) {
       rentalContext += `\nIngen utleiedata funnet for bruker ${user.id}. Brukeren har ingen registrerte eiendommer eller leieforhold i systemet.`;
       console.log('No rental data found for user:', user.id);
     } else {
-      console.log(`Found ${properties?.length || 0} properties and ${recentChats?.length || 0} recent chats for user:`, user.id);
+      console.log(`Found ${propertiesWithLeases?.length || 0} properties and ${recentChats?.length || 0} recent chats for user:`, user.id);
     }
 
     // Create the specialized rental management agent system prompt with enhanced search capabilities
