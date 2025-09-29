@@ -235,7 +235,7 @@ const Rental = () => {
             status,
             start_date,
             end_date,
-            tenants!tenant_id(
+            tenants!fk_lease_agreements_tenant_id(
               id,
               first_name,
               last_name
