@@ -36,6 +36,7 @@ const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPr
 const BankReport = lazy(() => import("./pages/BankReport"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
 const UtleieAgent = lazy(() => import("./pages/UtleieAgent"));
+const Agent007 = lazy(() => import("./pages/Agent007"));
 const CreditsPurchasePage = lazy(() => import("./pages/CreditsPurchasePage"));
 const EnvDebug = lazy(() => import("./pages/__env"));
 const Health = lazy(() => import("./pages/__health"));
@@ -92,9 +93,10 @@ const App = () => {
                     <Route path="/auth" element={<SimpleAuth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/pricing" element={<Pricing />} />
-                    <Route path="/utleie" element={<Rental />} />
-                    <Route path="/utleie-agent" element={<UtleieAgent />} />
-                    <Route path="/credits" element={<CreditsPurchasePage />} />
+                     <Route path="/utleie" element={<Rental />} />
+                     <Route path="/utleie-agent" element={<UtleieAgent />} />
+                     <Route path="/agent-007" element={<Agent007 />} />
+                     <Route path="/credits" element={<CreditsPurchasePage />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/calculator" element={<Calculator />} />
                     <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />

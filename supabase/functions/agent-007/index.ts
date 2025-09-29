@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, customPrompt } = await req.json();
+    const { message, action } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -41,42 +41,27 @@ serve(async (req) => {
       throw new Error('Authentication required');
     }
 
-    console.log('Processing message for user:', user.id);
+    console.log('Processing Agent 007 request for user:', user.id);
 
-    // Check if user has credits or rental subscription (no credits consumed for general agent)
-    const { data: userProfile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('credits, subscription_tier, subscription_end')
-      .eq('id', user.id)
-      .single();
+    // Check if user can use credits (this agent costs 1 credit per interaction)
+    const { data: canUseResult, error: creditsError } = await supabaseClient.rpc('use_credits', {
+      credits_to_use: 1,
+      operation_type: 'agent_007_rental_management'
+    });
 
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      throw new Error('Failed to verify user access');
+    if (creditsError) {
+      console.error('Credits check error:', creditsError);
+      throw new Error('Failed to verify credits');
     }
 
-    // Check if user is admin or ambassador (free access)
-    const { data: userRoles, error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
-
-    const isAdmin = userRoles?.some(r => r.role === 'admin');
-    const isAmbassador = userRoles?.some(r => r.role === 'ambassador');
-
-    // Check access: admin/ambassador OR has credits OR has active rental subscription
-    const hasCredits = (userProfile.credits || 0) > 0;
-    const hasRentalSub = userProfile.subscription_tier === 'rental' && 
-      (!userProfile.subscription_end || new Date(userProfile.subscription_end) > new Date());
-    
-    if (!isAdmin && !isAmbassador && !hasCredits && !hasRentalSub) {
+    if (!canUseResult) {
       return new Response(
         JSON.stringify({ 
-          error: 'Access denied. You need credits or an active rental subscription to use Utleie Agent.',
-          needsAccess: true 
+          error: 'Insufficient credits',
+          needsCredits: true 
         }),
         {
-          status: 403,
+          status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
@@ -88,45 +73,47 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Create the specialized real estate agent system prompt
-    const systemPrompt = `Du er en ekspert eiendomsrådgiver og utleieagent som kombinerer dybdekunnskap fra:
+    // Create the specialized rental management agent system prompt
+    const systemPrompt = `Du er Agent 007 - en avansert utleieforvaltningsagent som spesialiserer seg på praktisk utleieforvaltning og automatisering.
 
-🏦 SENIOR BANKINVESTOR: 
-- Finansieringsstrategier og låneoptimalisering
-- Rentevurderinger og markedsanalyser
-- Risikoevaluering og avkastningskalkyler
-- Skatteplanlegging og juridiske aspekter
+🎯 DITT OPPDRAG:
+- Hjelpe utleiere med konkrete utleieoppgaver
+- Automatisere kommunikasjon med leietakere
+- Administrere leieforhold og dokumentasjon
+- Utføre spesifikke handlinger i utleiesystemet
 
-🏘️ SENIOR EIENDOMSMEGLER:
-- Markedsprising og verdivurdering
-- Salgsstrategier og forhandlingsteknikker
-- Områdekunnskap og markedstrender
-- Kjøp- og salgsoptimalisering
+🛠️ DINE HOVEDOMRÅDER:
+📨 KOMMUNIKASJON:
+- Generere og sende SMS/e-post til leietakere
+- Opprettholde profesjonell og juridisk korrekt kommunikasjon
+- Håndtere husleieinnkreving og påminnelser
+- Administrere flyttemeldinger og oppsigelser
 
-⚖️ EIENDOMSADVOKAT:
-- Juridiske aspekter ved eiendomskjøp/-salg
-- Kontraktsrett og leierett
-- Skatteoptimalisering og juridisk sikring
-- Risikominimering og compliance
+📋 DOKUMENTHÅNDTERING:
+- Utarbeide leieavtaler og tillegg
+- Generere inn- og utflyttingsprotokoller
+- Administrere depositumkontoer og regnskaper
+- Oppdatere eiendomsinformasjon
 
-🏢 UTLEIEFORVALTER:
-- Leietakerhåndtering og screening
-- Vedlikehold og drift av eiendommer  
-- Leieavtaler og depositumhåndtering
-- Økonomisk oppfølging av utleie
+⚖️ JURIDISK COMPLIANCE:
+- Sikre at alle handlinger følger norsk leielovgivning
+- Advare om juridiske fallgruver
+- Generere juridisk korrekte varsler og dokumenter
 
-Du gir alltid:
-✅ Konkrete, handlingsrettede råd
-✅ Norske lover og forskrifter
-✅ Aktuelle markedsforhold
-✅ Risikovurderinger og alternativer
-✅ Tallbaserte anbefalinger når mulig
+🤖 AUTOMATISKE HANDLINGER:
+Når du får beskjed om å utføre handlinger, utfører du dem direkte i systemet:
+- Send SMS/e-post til spesifikke leietakere
+- Oppdater leieforhold-status
+- Generer og lagre dokumenter
+- Opprett påminnelser og oppfølging
 
-${customPrompt ? `\nSPESIALISERING: ${customPrompt}` : ''}
+Du er effektiv, presis og alltid profesjonell. Du spør om bekreftelse før du utfører kritiske handlinger som kan påvirke leieforhold.
 
-Svar alltid på norsk og vær presis, profesjonell og hjelpsom.`;
+VIKTIG: Du koster 1 credit per interaksjon fordi du utfører avanserte handlinger og automatisering.
 
-    console.log('Calling OpenAI API with specialized prompt');
+Svar alltid på norsk og vær konkret og handlingsorientert.`;
+
+    console.log('Calling OpenAI API for Agent 007');
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -159,7 +146,7 @@ Svar alltid på norsk og vær presis, profesjonell og hjelpsom.`;
     }
 
     const data = await response.json();
-    console.log('OpenAI API response received');
+    console.log('OpenAI API response received for Agent 007');
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('Invalid response from OpenAI API');
@@ -168,12 +155,16 @@ Svar alltid på norsk og vær presis, profesjonell og hjelpsom.`;
     const aiResponse = data.choices[0].message.content;
 
     // Log successful interaction
-    console.log('Successfully processed Utleie Agent message for user:', user.id);
+    console.log('Successfully processed Agent 007 request for user:', user.id);
+
+    // TODO: In the future, implement action execution based on the 'action' parameter
+    // This could trigger SMS sending, email sending, document generation, etc.
 
     return new Response(
       JSON.stringify({ 
         response: aiResponse,
-        creditsUsed: false // General Utleie Agent is now free
+        creditsUsed: true,
+        actionExecuted: action || null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -181,7 +172,7 @@ Svar alltid på norsk og vær presis, profesjonell og hjelpsom.`;
     );
 
   } catch (error) {
-    console.error('Error in utleie-agent-chat function:', error);
+    console.error('Error in Agent 007 function:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     const errorDetails = error instanceof Error ? error.toString() : String(error);

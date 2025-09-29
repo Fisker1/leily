@@ -3,12 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/hooks/useCredits';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Settings, CreditCard, ArrowLeft } from 'lucide-react';
+import { Send, Shield, User, CreditCard, ArrowLeft, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Message {
@@ -16,24 +15,23 @@ interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  actionExecuted?: string | null;
 }
 
-const UtleieAgent = () => {
+const Agent007 = () => {
   const { user } = useAuth();
   const { credits, hasCredits, useCredit, isAmbassador } = useCredits();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hei! Jeg er din personlige eiendomsrådgiver og utleieekspert. Jeg kombinerer kunnskap fra senior bankinvestorer, eiendomsmeglere og advokater for å gi deg de beste rådene om eiendomsinvestering og utleieforvaltning. Hvordan kan jeg hjelpe deg i dag?',
+      content: 'Hei! Jeg er Agent 007 - din avanserte utleieforvaltningsagent. Jeg kan hjelpe deg med konkrete utleieoppgaver som å sende SMS/e-post til leietakere, administrere leieforhold, og automatisere prosesser. Hver interaksjon koster 1 credit. Hvordan kan jeg assistere deg i dag?',
       role: 'assistant',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -47,8 +45,14 @@ const UtleieAgent = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    // General Utleie Agent is now free for users with credits or rental subscription
-    // No need to check credits here as the backend handles access control
+    if (!hasCredits && !isAmbassador) {
+      toast({
+        title: "Ingen credits igjen",
+        description: "Du må kjøpe Pro Credits for å bruke Agent 007",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -62,24 +66,24 @@ const UtleieAgent = () => {
     setIsLoading(true);
 
     try {
-      // Call Supabase Edge Function for AI chat
-      const { data, error } = await supabase.functions.invoke('utleie-agent-chat', {
+      // Call Supabase Edge Function for Agent 007
+      const { data, error } = await supabase.functions.invoke('agent-007', {
         body: { 
           message: inputValue,
-          customPrompt: customPrompt 
+          action: null // For future use when implementing specific actions
         }
       });
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to get AI response');
+        throw new Error(error.message || 'Failed to get Agent 007 response');
       }
 
       if (data.error) {
-        if (data.needsAccess) {
+        if (data.needsCredits) {
           toast({
-            title: "Ingen tilgang",
-            description: "Du trenger credits eller et aktivt leieabonnement for å bruke Utleie Agent",
+            title: "Ingen credits igjen",
+            description: "Du må kjøpe Pro Credits for å fortsette med Agent 007",
             variant: "destructive"
           });
           return;
@@ -91,19 +95,24 @@ const UtleieAgent = () => {
         id: (Date.now() + 1).toString(),
         content: data.response,
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        actionExecuted: data.actionExecuted
       };
       
       setMessages(prev => [...prev, aiMessage]);
       
-      // General Utleie Agent is now free - no credits consumed
+      // Use credits if not ambassador
+      if (!isAmbassador) {
+        useCredit();
+      }
+      
       setIsLoading(false);
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending message to Agent 007:', error);
       toast({
         title: "Feil",
-        description: "Kunne ikke sende meldingen. Prøv igjen.",
+        description: "Kunne ikke sende meldingen til Agent 007. Prøv igjen.",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -122,10 +131,10 @@ const UtleieAgent = () => {
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <Bot className="w-16 h-16 mx-auto mb-4 text-primary" />
+            <Shield className="w-16 h-16 mx-auto mb-4 text-primary" />
             <h2 className="text-2xl font-bold mb-2">Logg inn påkrevd</h2>
             <p className="text-muted-foreground mb-4">
-              Du må være logget inn for å bruke Utleie Agent
+              Du må være logget inn for å bruke Agent 007
             </p>
             <Button asChild className="w-full">
               <Link to="/auth">Logg inn</Link>
@@ -143,17 +152,20 @@ const UtleieAgent = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <Link to="/rental" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-4 h-4" />
-                Tilbake
+                Tilbake til Utleie
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">Utleie Agent</h1>
-                  <p className="text-sm text-muted-foreground">Din personlige eiendomsrådgiver</p>
+                  <h1 className="text-xl font-bold flex items-center gap-2">
+                    Agent 007
+                    <Zap className="w-4 h-4 text-orange-500" />
+                  </h1>
+                  <p className="text-sm text-muted-foreground">Avansert utleieforvaltningsagent</p>
                 </div>
               </div>
             </div>
@@ -163,54 +175,13 @@ const UtleieAgent = () => {
                 <CreditCard className="w-3 h-3" />
                 {isAmbassador ? '∞ Ambassador' : `${credits} credits`}
               </Badge>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowSettings(!showSettings)}
-                className="flex items-center gap-2"
-              >
-                <Settings className="w-4 h-4" />
-                Innstillinger
-              </Button>
+              <Badge variant="secondary" className="text-xs">
+                1 credit per melding
+              </Badge>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="bg-background border-b p-4">
-          <div className="container mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Agent Innstillinger</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Tilpass agentens ekspertise (valgfritt)
-                    </label>
-                    <Textarea
-                      placeholder="F.eks: Jeg er spesielt interessert i kommersielle eiendommer i Oslo, fokuser på skatteoptimalisering og finansieringsstrategier..."
-                      value={customPrompt}
-                      onChange={(e) => setCustomPrompt(e.target.value)}
-                      rows={3}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Skriv inn spesifikke områder eller fokusområder du ønsker agenten skal prioritere
-                    </p>
-                  </div>
-                  <Button size="sm">
-                    Lagre innstillinger
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
 
       {/* Chat Messages */}
       <div className="container mx-auto px-4 py-6">
@@ -224,8 +195,8 @@ const UtleieAgent = () => {
                 }`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Bot className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <Shield className="w-4 h-4 text-white" />
                   </div>
                 )}
                 
@@ -237,6 +208,13 @@ const UtleieAgent = () => {
                   }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
+                  {message.actionExecuted && (
+                    <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded text-xs">
+                      <span className="font-medium text-orange-700 dark:text-orange-400">
+                        Handling utført: {message.actionExecuted}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xs opacity-70 mt-2">
                     {message.timestamp.toLocaleTimeString('no-NO', {
                       hour: '2-digit',
@@ -255,17 +233,17 @@ const UtleieAgent = () => {
             
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <Bot className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <Shield className="w-4 h-4 text-white" />
                 </div>
                 <div className="bg-background border shadow-sm rounded-lg px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
-                    <span className="text-xs text-muted-foreground">Agenten tenker...</span>
+                    <span className="text-xs text-muted-foreground">Agent 007 arbeider...</span>
                   </div>
                 </div>
               </div>
@@ -280,12 +258,22 @@ const UtleieAgent = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
-            {/* General Utleie Agent is now free for users with access */}
-            {(
+            {!hasCredits && !isAmbassador ? (
+              <Card className="border-destructive bg-destructive/5">
+                <CardContent className="p-4 text-center">
+                  <p className="text-sm text-destructive mb-3">
+                    Du har ingen credits igjen. Kjøp Pro Credits for å fortsette med Agent 007.
+                  </p>
+                  <Button asChild size="sm">
+                    <Link to="/credits">Kjøp Credits</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <Input
-                    placeholder="Skriv din spørsmål om eiendomsinvestering eller utleieforvaltning..."
+                    placeholder="Beskriv hva du ønsker hjelp med i utleieforvaltningen..."
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -309,4 +297,4 @@ const UtleieAgent = () => {
   );
 };
 
-export default UtleieAgent;
+export default Agent007;
