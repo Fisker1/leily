@@ -59,20 +59,42 @@ serve(async (req) => {
 
     if (creditsError) {
       console.error('Credits check error:', creditsError);
-      throw new Error('Failed to verify credits');
+      // For ambassadors/admins, continue anyway
+      const { data: userRoles } = await supabaseClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      const isAdmin = userRoles?.some(r => r.role === 'admin');
+      const isAmbassador = userRoles?.some(r => r.role === 'ambassador');
+      
+      if (!isAdmin && !isAmbassador) {
+        throw new Error('Failed to verify credits');
+      }
     }
 
     if (!canUseResult) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Insufficient credits',
-          needsCredits: true 
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      // Check if user is admin/ambassador
+      const { data: userRoles } = await supabaseClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      const isAdmin = userRoles?.some(r => r.role === 'admin');
+      const isAmbassador = userRoles?.some(r => r.role === 'ambassador');
+      
+      if (!isAdmin && !isAmbassador) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Insufficient credits',
+            needsCredits: true 
+          }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     // Get OpenAI API key

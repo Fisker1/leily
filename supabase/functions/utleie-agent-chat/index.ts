@@ -52,7 +52,7 @@ serve(async (req) => {
     console.log('Processing message for user:', user.id);
 
     // Check if user has credits or rental subscription (no credits consumed for general agent)
-    const { data: userProfile, error: profileError } = await supabaseClient
+    let { data: userProfile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('credits, subscription_tier, subscription_end')
       .eq('id', user.id)
@@ -60,7 +60,24 @@ serve(async (req) => {
 
     if (profileError) {
       console.error('Profile fetch error:', profileError);
-      throw new Error('Failed to verify user access');
+      // If profile doesn't exist, create a basic one
+      const { error: insertError } = await supabaseClient
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          credits: 0,
+          subscription_tier: 'free'
+        });
+      
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        throw new Error('Failed to verify user access');
+      }
+      
+      // Set default values for new profile
+      userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
     }
 
     // Check if user is admin or ambassador (free access)
