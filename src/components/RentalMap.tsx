@@ -249,10 +249,27 @@ const RentalMap = () => {
             console.log('🔧 Creating mapbox instance with CSP-compliant style...');
             addDebug('Oppretter Mapbox instans med CSP-kompatibel stil...');
             
-            // Use basic Mapbox style compatible with most token permissions
+            // Use simple raster style that works with basic tokens
             mapInstance = new mapboxgl.Map({
               container: mapContainer.current,
-              style: 'mapbox://styles/mapbox/streets-v11',  // Basic streets style
+              style: {
+                version: 8,
+                sources: {
+                  'osm': {
+                    type: 'raster',
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    attribution: '© OpenStreetMap contributors'
+                  }
+                },
+                layers: [
+                  {
+                    id: 'osm',
+                    type: 'raster',
+                    source: 'osm'
+                  }
+                ]
+              },
               center: [10.7522, 59.9139], // Oslo
               zoom: 6,
               attributionControl: true,
