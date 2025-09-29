@@ -32,6 +32,7 @@ const Agent007 = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -64,8 +65,27 @@ const Agent007 = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    setLoadingStatus('🔍 Analyserer forespørsel...');
+
+    // Set up a timeout to detect if the request is stuck
+    const timeoutId = setTimeout(() => {
+      setLoadingStatus('⚠️ Tar lengre tid enn forventet...');
+    }, 10000); // 10 seconds
+
+    const finalTimeoutId = setTimeout(() => {
+      setLoadingStatus('❌ Forespørselen ser ut til å være stuck. Prøv igjen.');
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingStatus('');
+      }, 3000);
+    }, 30000); // 30 seconds
 
     try {
+      // Simulate different loading phases with status updates
+      const statusTimer1 = setTimeout(() => setLoadingStatus('📊 Henter utleiedata...'), 500);
+      const statusTimer2 = setTimeout(() => setLoadingStatus('🤖 Agent 007 tenker...'), 1500);
+      const statusTimer3 = setTimeout(() => setLoadingStatus('📝 Forbereder svar...'), 3000);
+
       // Call Supabase Edge Function for Agent 007
       const { data, error } = await supabase.functions.invoke('agent-007', {
         body: { 
@@ -73,6 +93,13 @@ const Agent007 = () => {
           action: null // For future use when implementing specific actions
         }
       });
+
+      // Clear all timers when we get a response
+      clearTimeout(timeoutId);
+      clearTimeout(finalTimeoutId);
+      clearTimeout(statusTimer1);
+      clearTimeout(statusTimer2);
+      clearTimeout(statusTimer3);
 
       if (error) {
         console.error('Edge function error:', error);
@@ -105,8 +132,6 @@ const Agent007 = () => {
       if (!isAmbassador) {
         useCredit();
       }
-      
-      setIsLoading(false);
 
     } catch (error) {
       console.error('Error sending message to Agent 007:', error);
@@ -115,7 +140,9 @@ const Agent007 = () => {
         description: "Kunne ikke sende meldingen til Agent 007. Prøv igjen.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
+      setLoadingStatus('');
     }
   };
 
@@ -237,13 +264,18 @@ const Agent007 = () => {
                   <Shield className="w-4 h-4 text-white" />
                 </div>
                 <div className="bg-background border shadow-sm rounded-lg px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
                     </div>
-                    <span className="text-xs text-muted-foreground">Agent 007 arbeider...</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-muted-foreground">
+                        {loadingStatus || 'Agent 007 arbeider...'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
