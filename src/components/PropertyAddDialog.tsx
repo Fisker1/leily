@@ -41,6 +41,15 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
     e.preventDefault();
     
     // Validate required fields
+    if (!formData.address.trim()) {
+      toast({
+        title: "Feil",
+        description: "Du må fylle inn adresse",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!formData.property_type) {
       toast({
         title: "Feil",
@@ -129,7 +138,17 @@ export const PropertyAddDialog = ({ children, onPropertyAdded }: PropertyAddDial
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        console.log('Form data being inserted:', {
+          address: formData.address,
+          city: formData.city,
+          postal_code: formData.postal_code,
+          property_type: formData.property_type,
+          coordinates: coordinates
+        });
+        throw error;
+      }
 
       toast({
         title: "Suksess",
