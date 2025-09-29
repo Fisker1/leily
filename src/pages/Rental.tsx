@@ -228,7 +228,7 @@ const Rental = () => {
         .from('properties')
         .select(`
           *,
-          lease_agreements(
+          lease_agreements!fk_lease_agreements_property_id(
             id,
             tenant_id,
             monthly_rent,
