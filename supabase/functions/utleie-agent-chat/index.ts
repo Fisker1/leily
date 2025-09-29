@@ -51,69 +51,86 @@ serve(async (req) => {
 
     console.log('Processing message for user:', user.id);
 
-    // Check if user has credits or rental subscription (no credits consumed for general agent)
-    let userProfile: any;
-    
-    try {
-      const { data, error: profileError } = await supabaseClient
-        .from('profiles')
-        .select('credits, subscription_tier, subscription_end')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError || !data) {
-        console.log('Profile not found, creating one...');
-        // If profile doesn't exist, create a basic one
-        const { error: insertError } = await supabaseClient
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-            credits: 0,
-            subscription_tier: 'free'
-          });
-        
-        if (insertError) {
-          console.error('Failed to create profile:', insertError);
-        }
-        
-        // Set default values for new profile
-        userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
-      } else {
-        userProfile = data;
-      }
-    } catch (error) {
-      console.error('Profile operation failed:', error);
-      // Continue with default values for ambassadors/admins
-      userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
-    }
-
-    // Check if user is admin or ambassador (free access)
+    // Check if user is admin or ambassador FIRST (free access)
+    console.log('Checking user roles for:', user.id);
     const { data: userRoles, error: rolesError } = await supabaseClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id);
 
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+    }
+
+    console.log('User roles data:', userRoles);
     const isAdmin = userRoles?.some(r => r.role === 'admin');
     const isAmbassador = userRoles?.some(r => r.role === 'ambassador');
-
-    // Check access: admin/ambassador OR has credits OR has active rental subscription
-    const hasCredits = (userProfile.credits || 0) > 0;
-    const hasRentalSub = userProfile.subscription_tier === 'rental' && 
-      (!userProfile.subscription_end || new Date(userProfile.subscription_end) > new Date());
     
-    if (!isAdmin && !isAmbassador && !hasCredits && !hasRentalSub) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Access denied. You need credits or an active rental subscription to use Utleie Agent.',
-          needsAccess: true 
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    console.log('Role check results:', { isAdmin, isAmbassador });
+
+    // Ambassadors and admins get immediate access
+    if (isAdmin || isAmbassador) {
+      console.log('User granted access via role:', isAdmin ? 'admin' : 'ambassador');
+    } else {
+      // Only check profile/credits for non-privileged users
+      console.log('Checking credits and subscription for regular user');
+      
+      let userProfile: any;
+      try {
+        const { data, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('credits, subscription_tier, subscription_end')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError || !data) {
+          console.log('Profile not found, creating one...');
+          // If profile doesn't exist, create a basic one
+          const { error: insertError } = await supabaseClient
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email || '',
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+              credits: 0,
+              subscription_tier: 'free'
+            });
+          
+          if (insertError) {
+            console.error('Failed to create profile:', insertError);
+          }
+          
+          // Set default values for new profile
+          userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
+        } else {
+          userProfile = data;
         }
-      );
+      } catch (error) {
+        console.error('Profile operation failed:', error);
+        // Continue with default values
+        userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
+      }
+
+      // Check access for regular users
+      const hasCredits = (userProfile.credits || 0) > 0;
+      const hasRentalSub = userProfile.subscription_tier === 'rental' && 
+        (!userProfile.subscription_end || new Date(userProfile.subscription_end) > new Date());
+      
+      console.log('Access check:', { hasCredits, hasRentalSub });
+      
+      if (!hasCredits && !hasRentalSub) {
+        console.log('Access denied - no credits or subscription');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Access denied. You need credits or an active rental subscription to use Utleie Agent.',
+            needsAccess: true 
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     // Get OpenAI API key
