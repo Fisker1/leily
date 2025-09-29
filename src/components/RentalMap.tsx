@@ -249,12 +249,36 @@ const RentalMap = () => {
             console.log('🔧 Creating mapbox instance...');
             addDebug('Oppretter Mapbox instans...');
             
+            // Try a more basic style that might work with limited token permissions
             mapInstance = new mapboxgl.Map({
               container: mapContainer.current,
-              style: 'mapbox://styles/mapbox/streets-v11',
+              style: {
+                version: 8,
+                sources: {
+                  'raster-tiles': {
+                    type: 'raster',
+                    tiles: [
+                      'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    ],
+                    tileSize: 256,
+                    attribution: '© OpenStreetMap contributors'
+                  }
+                },
+                layers: [
+                  {
+                    id: 'simple-tiles',
+                    type: 'raster',
+                    source: 'raster-tiles',
+                    minzoom: 0,
+                    maxzoom: 22
+                  }
+                ]
+              },
               center: [10.7522, 59.9139], // Oslo
               zoom: 6,
-              attributionControl: false,
+              attributionControl: true,
               preserveDrawingBuffer: true
             });
 
