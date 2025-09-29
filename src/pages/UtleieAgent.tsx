@@ -24,8 +24,19 @@ interface Message {
 const UtleieAgent = () => {
   const { user } = useAuth();
   const { credits, hasCredits, useCredit, isAmbassador } = useCredits();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAmbassador: roleIsAmbassador, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
+  
+  // Use role from useUserRole hook instead of useCredits
+  const isActualAmbassador = roleIsAmbassador || isAmbassador;
+  
+  console.log('UtleieAgent render:', { 
+    isAdmin, 
+    roleIsAmbassador, 
+    isAmbassador, 
+    isActualAmbassador, 
+    roleLoading 
+  });
   
   // General agent state
   const [messages, setMessages] = useState<Message[]>([
@@ -126,7 +137,7 @@ const UtleieAgent = () => {
   const handleAgent007SendMessage = async () => {
     if (!agent007InputValue.trim()) return;
     
-    if (!hasCredits && !isAmbassador) {
+    if (!hasCredits && !isActualAmbassador) {
       toast({
         title: "Ingen credits igjen",
         description: "Du må kjøpe Pro Credits for å bruke Agent 007",
@@ -182,7 +193,7 @@ const UtleieAgent = () => {
       
       setAgent007Messages(prev => [...prev, aiMessage]);
       
-      if (!isAmbassador) {
+      if (!isActualAmbassador) {
         useCredit();
       }
       
@@ -213,19 +224,17 @@ const UtleieAgent = () => {
     }
   };
 
-  if (!user) {
+  // Don't render until roles are loaded
+  if (roleLoading) {
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <Bot className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h2 className="text-2xl font-bold mb-2">Logg inn påkrevd</h2>
+            <Bot className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse" />
+            <h2 className="text-2xl font-bold mb-2">Laster...</h2>
             <p className="text-muted-foreground mb-4">
-              Du må være logget inn for å bruke Utleie Agent
+              Kontrollerer tilganger...
             </p>
-            <Button asChild className="w-full">
-              <Link to="/auth">Logg inn</Link>
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -349,13 +358,13 @@ const UtleieAgent = () => {
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="flex items-center gap-1">
                 <CreditCard className="w-3 h-3" />
-                {isAmbassador ? '∞ Ambassador' : `${credits} credits`}
+                {isActualAmbassador ? '∞ Ambassador' : `${credits} credits`}
               </Badge>
               {/* Debug info */}
               <Badge variant="secondary" className="text-xs">
-                Debug: Admin: {isAdmin ? 'Yes' : 'No'}, Ambassador: {isAmbassador ? 'Yes' : 'No'}
+                Debug: Admin: {isAdmin ? 'Yes' : 'No'}, Ambassador: {isActualAmbassador ? 'Yes' : 'No'}
               </Badge>
-              {(isAmbassador || isAdmin) && (
+              {(isActualAmbassador || isAdmin) && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -372,7 +381,7 @@ const UtleieAgent = () => {
       </div>
 
       {/* Settings Panel - Only for Admin/Ambassador */}
-      {showSettings && (isAmbassador || isAdmin) && (
+      {showSettings && (isActualAmbassador || isAdmin) && (
         <div className="bg-background border-b p-4">
           <div className="container mx-auto">
             <Card>
@@ -409,7 +418,7 @@ const UtleieAgent = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          {(isAmbassador || isAdmin) ? (
+          {(isActualAmbassador || isAdmin) ? (
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general" className="flex items-center gap-2">
@@ -448,7 +457,7 @@ const UtleieAgent = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
-            {(isAmbassador || isAdmin) ? (
+            {(isActualAmbassador || isAdmin) ? (
               <Tabs defaultValue="general" className="w-full">
                 <TabsContent value="general">
                   <div className="flex gap-3 items-end">
@@ -473,7 +482,7 @@ const UtleieAgent = () => {
                 </TabsContent>
                 
                 <TabsContent value="007">
-                  {!hasCredits && !isAmbassador ? (
+                  {!hasCredits && !isActualAmbassador ? (
                     <Card className="border-destructive bg-destructive/5">
                       <CardContent className="p-4 text-center">
                         <p className="text-sm text-destructive mb-3">
