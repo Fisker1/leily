@@ -319,6 +319,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          credits: number | null
           email: string
           full_name: string | null
           id: string
@@ -329,6 +330,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          credits?: number | null
           email: string
           full_name?: string | null
           id: string
@@ -339,6 +341,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          credits?: number | null
           email?: string
           full_name?: string | null
           id?: string
@@ -718,6 +721,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_credits_to_user: {
+        Args: {
+          credits_amount: number
+          justification?: string
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       admin_access_payment_records: {
         Args: { admin_justification: string; target_user_id?: string }
         Returns: {
@@ -905,6 +916,10 @@ export type Database = {
       track_failed_auth_attempts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      use_credits: {
+        Args: { credits_to_use?: number; operation_type?: string }
+        Returns: boolean
       }
       validate_password_strength: {
         Args: { password_text: string }
