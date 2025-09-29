@@ -116,7 +116,7 @@ const Dashboard = () => {
       title: translations.dashboard.createLease,
       description: translations.dashboard.createLeaseDesc,
       icon: FileText,
-      href: '/leases/new',
+      href: '/utleie',
       color: 'accent',
     },
     {
@@ -255,7 +255,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline">
-              <Link to="/leases">{translations.dashboard.viewLeases}</Link>
+              <Link to="/utleie">{translations.dashboard.viewLeases}</Link>
             </Button>
           </CardContent>
         </Card>
