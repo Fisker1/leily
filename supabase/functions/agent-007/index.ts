@@ -115,6 +115,25 @@ Svar alltid på norsk og vær konkret og handlingsorientert.`;
 
     console.log('Calling OpenAI API for Agent 007');
 
+    // Build messages array with conversation history
+    const messages = [
+      { 
+        role: 'system', 
+        content: systemPrompt
+      }
+    ];
+
+    // Add conversation history if provided
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      messages.push(...conversationHistory);
+    }
+
+    // Add current user message
+    messages.push({ 
+      role: 'user', 
+      content: message 
+    });
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -124,16 +143,7 @@ Svar alltid på norsk og vær konkret og handlingsorientert.`;
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [
-          { 
-            role: 'system', 
-            content: systemPrompt
-          },
-          { 
-            role: 'user', 
-            content: message 
-          }
-        ],
+        messages: messages,
         max_tokens: 1500,
         temperature: 0.7,
       }),
