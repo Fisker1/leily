@@ -54,19 +54,31 @@ serve(async (req) => {
 
     // Check if user is admin or ambassador FIRST (free access)
     console.log('Checking user roles for:', user.id);
+    console.log('About to call RPC function...');
+    
     const { data: userRolesData, error: rolesError } = await supabaseClient
       .rpc('get_user_roles_for_edge_function', { target_user_id: user.id });
 
+    console.log('RPC call completed. Error:', rolesError);
+    console.log('RPC call completed. Data:', userRolesData);
+
     if (rolesError) {
       console.error('Error fetching user roles:', rolesError);
+      // Fallback to direct table query if RPC fails
+      console.log('Falling back to direct table query...');
+      const { data: fallbackRoles } = await supabaseClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      console.log('Fallback roles:', fallbackRoles);
     }
 
     console.log('User roles data from function:', userRolesData);
     const userRoles = userRolesData || [];
-    const isAdmin = userRoles.includes('admin');
-    const isAmbassador = userRoles.includes('ambassador');
+    const isAdmin = Array.isArray(userRoles) ? userRoles.includes('admin') : false;
+    const isAmbassador = Array.isArray(userRoles) ? userRoles.includes('ambassador') : false;
     
-    console.log('Role check results:', { isAdmin, isAmbassador });
+    console.log('Role check results:', { isAdmin, isAmbassador, userRoles, userRolesType: typeof userRoles });
 
     // Ambassadors and admins get immediate access
     if (isAdmin || isAmbassador) {
