@@ -195,10 +195,6 @@ const CreditsPurchase: React.FC<CreditsPurchaseProps> = ({ onPurchase }) => {
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-green-600" />
-              <span>Credits utløper aldri</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-600" />
               <span>Sikkert SSL-kryptert betaling</span>
             </div>
             <div className="flex items-center gap-2">
