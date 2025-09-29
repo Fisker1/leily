@@ -130,30 +130,43 @@ serve(async (req) => {
       console.error('Error fetching properties:', propertiesError);
     }
 
-    // Get recent chat messages for context
-    const { data: recentChats, error: chatsError } = await supabaseClient
-      .from('chat_messages')
-      .select(`
-        *,
-        lease_agreements!inner (
-          property_id,
-          tenant_id,
-          properties!inner (
-            address,
-            owner_id
-          ),
-          tenants (
-            first_name,
-            last_name
-          )
-        )
-      `)
-      .eq('lease_agreements.properties.owner_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    // Get recent chat messages for context - simplified approach
+    let recentChats = null;
+    try {
+      // First get all lease agreements for this user
+      const { data: userLeases, error: leasesError } = await supabaseClient
+        .from('lease_agreements')
+        .select('id')
+        .eq('property_owner_id', user.id);
 
-    if (chatsError) {
-      console.error('Error fetching chat messages:', chatsError);
+      if (leasesError) {
+        console.error('Error fetching user leases:', leasesError);
+      } else if (userLeases && userLeases.length > 0) {
+        const leaseIds = userLeases.map(lease => lease.id);
+        
+        // Then get chat messages for these leases
+        const { data: chats, error: chatsError } = await supabaseClient
+          .from('chat_messages')
+          .select(`
+            id,
+            message_content,
+            sender_type,
+            sender_id,
+            lease_id,
+            created_at
+          `)
+          .in('lease_id', leaseIds)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (chatsError) {
+          console.error('Error fetching chat messages:', chatsError);
+        } else {
+          recentChats = chats;
+        }
+      }
+    } catch (error) {
+      console.error('Error in chat messages fetch:', error);
     }
 
     // Build context string with rental information
@@ -182,24 +195,41 @@ serve(async (req) => {
 
     if (recentChats && recentChats.length > 0) {
       rentalContext += '\n💬 NYLIGE SAMTALER:\n';
-      const chatsByLease: { [key: string]: any[] } = {};
       
-      recentChats.forEach((chat: any) => {
-        const leaseKey = `${chat.lease_agreements.tenants?.first_name} ${chat.lease_agreements.tenants?.last_name} - ${chat.lease_agreements.properties.address}`;
-        if (!chatsByLease[leaseKey]) {
-          chatsByLease[leaseKey] = [];
-        }
-        chatsByLease[leaseKey].push(chat);
-      });
+      // Get additional info for each chat message
+      for (const chat of recentChats) {
+        try {
+          // Get lease agreement info for this message
+          const { data: leaseInfo } = await supabaseClient
+            .from('lease_agreements')
+            .select(`
+              id,
+              monthly_rent,
+              status,
+              properties (
+                address
+              ),
+              tenants (
+                first_name,
+                last_name
+              )
+            `)
+            .eq('id', chat.lease_id)
+            .single();
 
-      Object.entries(chatsByLease).forEach(([leaseInfo, messages]) => {
-        rentalContext += `\nSamtale med ${leaseInfo}:\n`;
-        (messages as any[]).slice(0, 5).forEach((msg: any) => {
-          const sender = msg.sender_type === 'landlord' ? 'Utleier' : 'Leietaker';
-          const date = new Date(msg.created_at).toLocaleDateString('no-NO');
-          rentalContext += `- ${sender} (${date}): ${msg.message_content.substring(0, 100)}${msg.message_content.length > 100 ? '...' : ''}\n`;
-        });
-      });
+          if (leaseInfo && leaseInfo.tenants && leaseInfo.properties) {
+            const sender = chat.sender_type === 'landlord' ? 'Utleier' : 'Leietaker';
+            const date = new Date(chat.created_at).toLocaleDateString('no-NO');
+            const tenantName = `${leaseInfo.tenants.first_name} ${leaseInfo.tenants.last_name}`;
+            const address = leaseInfo.properties.address;
+            
+            rentalContext += `\n${tenantName} - ${address}:\n`;
+            rentalContext += `- ${sender} (${date}): ${chat.message_content.substring(0, 100)}${chat.message_content.length > 100 ? '...' : ''}\n`;
+          }
+        } catch (error) {
+          console.error('Error getting chat context:', error);
+        }
+      }
     }
 
     if (!properties?.length && !recentChats?.length) {
