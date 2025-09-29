@@ -294,27 +294,40 @@ const RentalMap = () => {
             addDebug(`✅ Kartdata lastet: ${e.sourceId}`);
           });
 
+          // Handle map errors gracefully - don't let tile errors stop the map
           mapInstance.on('error', (e) => {
-            console.error('❌ Map error:', e);
-            addDebug(`❌ Kartfeil: ${JSON.stringify(e)}`);
+            const errorMsg = e.error ? 
+              `${e.error.message} (${e.error.status})` : 
+              e.message || 'Unknown map error';
+            
+            console.error('❌ Map error:', errorMsg);
+            addDebug(`❌ Kartfeil: ${errorMsg}`);
+            
+            // Ignore common tile loading errors
+            if (e.error && (e.error.status === 403 || e.error.status === 404)) {
+              addDebug('🔧 Flisfeil ignorert - fortsetter med kart');
+              return;
+            }
+            
+            // Only stop loading for critical auth errors
+            if (e.error && e.error.status === 401) {
+              setError('Kartfeil: Ugyldig Mapbox token');
+              setLoading(false);
+            }
           });
 
-          // Force loading to finish after timeout
+          // Force loading to finish after shorter timeout
           setTimeout(() => {
             console.log('🕐 Timeout check - loading:', loading);
-            if (loading && mapInstance && mapInstance.loaded && mapInstance.loaded()) {
-              console.log('🕐 Forcing map to finish loading (loaded)');
-              addDebug('🕐 Tidsavbrudd - tvinger kart ferdig');
+            if (loading) {
+              console.log('🕐 Forcing map to finish loading after 3 seconds');
+              addDebug('🕐 Tidsavbrudd - tvinger kart ferdig etter 3 sekunder');
               setLoading(false);
-              setError(null);
-              addMarkers();
-            } else if (loading) {
-              console.log('🕐 Forcing map to finish loading (not loaded)');
-              addDebug('🕐 Tidsavbrudd - kart ikke lastet, fortsetter likevel');
-              setLoading(false);
-              addMarkers();
+              if (mapInstance) {
+                addMarkers();
+              }
             }
-          }, 5000);
+          }, 3000);
 
           mapInstance.on('styledata', () => {
             addDebug('🎨 Kartsstil lastet');
