@@ -19,19 +19,20 @@ const Pricing = () => {
       "Gratis støtte via community"
     ],
     pro: [
-      "Ubegrensede avanserte kalkyler",
-      "Komplett dashboard og analyser",
-      "Avanserte bankrapporter", 
-      "PDF-eksport av alle rapporter",
-      "Prioritert kundeservice"
+      "AI-genererte bankrapporter",
+      "Avanserte kalkyler og analyser",
+      "PDF-eksport av alle rapporter", 
+      "Komplett dashboard",
+      "Prioritert kundeservice",
+      "Credits som ikke utløper"
     ],
     rental: [
-      "Inkluderer alle Pro-funksjoner",
       "Komplett leieforholdshåndtering",
       "Leietakersporing og dokumenter",
       "Leieavtaler og depositum",
       "Overleveringsprotokoller",
-      "Husleieoppfølging"
+      "Husleieoppfølging",
+      "Statisk løsning - ingen AI"
     ]
   };
 
@@ -106,25 +107,30 @@ const Pricing = () => {
             </CardContent>
           </Card>
 
-          {/* Pro Plan - Kalkyler og Dashboard */}
+          {/* Pro Plan - Credits-basert */}
           <Card className="relative shadow-large border-primary/20 hover:border-primary/40 transition-all">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <Badge className="px-4 py-1 bg-primary text-primary-foreground">
                 <Star className="w-4 h-4 mr-1" />
-                Mest populær
+                AI-drevet
               </Badge>
             </div>
             
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-primary">
-                Pro
+                Pro Credits
               </CardTitle>
               <CardDescription className="text-lg">
-                Kalkyler og dashboard
+                AI-genererte rapporter
               </CardDescription>
-              <div className="py-4">
-                <span className="text-4xl font-bold text-foreground">49 kr</span>
-                <span className="text-muted-foreground">/måned</span>
+              <div className="py-4 space-y-2">
+                <div>
+                  <span className="text-3xl font-bold text-foreground">100 kr</span>
+                  <span className="text-muted-foreground text-sm"> = 10 credits</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  1 credit = 1 AI-generert rapport
+                </p>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -138,19 +144,13 @@ const Pricing = () => {
               </ul>
               
               <div className="pt-4">
-                {profile?.subscription_tier === 'pro' ? (
-                  <Button className="w-full" size="lg" disabled>
-                    Nåværende plan
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={handleUpgradeToPro}
-                    className="w-full" 
-                    size="lg"
-                  >
-                    Oppgrader til Pro
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleUpgradeToPro}
+                  className="w-full" 
+                  size="lg"
+                >
+                  Kjøp Credits
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -159,7 +159,7 @@ const Pricing = () => {
           <Card className="relative border-orange-border border-2 bg-orange-muted/10 shadow-large hover:shadow-large transition-all">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <Badge className="px-4 py-1 bg-orange text-orange-foreground">
-                Populær for utleiere
+                Statisk løsning
               </Badge>
             </div>
             
@@ -168,11 +168,11 @@ const Pricing = () => {
                 Utleieforvaltning
               </CardTitle>
               <CardDescription className="text-lg">
-                Per leieforhold
+                Fast månedsavgift
               </CardDescription>
               <div className="py-4">
-                <span className="text-4xl font-bold text-foreground">99 kr</span>
-                <span className="text-muted-foreground">/leieforhold</span>
+                <span className="text-4xl font-bold text-foreground">199 kr</span>
+                <span className="text-muted-foreground">/måned</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -197,8 +197,8 @@ const Pricing = () => {
 
               <div className="bg-orange-muted/20 border border-orange-border/30 p-3 rounded-lg mt-4">
                 <p className="text-xs text-muted-foreground text-center">
-                  <strong>Inkluderer automatisk Pro-abonnement</strong><br />
-                  Betales kun når du legger til et nytt leieforhold
+                  <strong>Uavhengig av Pro Credits</strong><br />
+                  Fast månedsavgift for statiske funksjoner
                 </p>
               </div>
             </CardContent>

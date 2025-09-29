@@ -5,23 +5,34 @@ export const useSubscription = () => {
   const { profile } = useAuth();
   const { isAdmin, isAmbassador } = useUserRole();
 
-  const isPro = () => {
+  const hasRentalSubscription = () => {
     if (!profile) return false;
-    // Admin users and ambassadors automatically get Pro access
     if (isAdmin || isAmbassador) return true;
-    return profile.subscription_tier === 'premium' || profile.subscription_tier === 'pro';
+    return profile.subscription_tier === 'rental' || profile.subscription_tier === 'rental_active';
   };
 
   const isFree = () => {
     if (!profile) return true;
-    // Admins and ambassadors are never considered "free" users
     if (isAdmin || isAmbassador) return false;
     return profile.subscription_tier === 'free';
   };
 
-  // Show effective subscription tier (Pro for admins/ambassadors)
+  // Credits are separate from subscription tiers
+  const hasCredits = () => {
+    if (!profile) return false;
+    const credits = (profile as any)?.credits || 0;
+    return credits > 0;
+  };
+
+  // For backwards compatibility - isPro now means has credits OR rental subscription
+  const isPro = () => {
+    if (isAdmin || isAmbassador) return true;
+    return hasCredits() || hasRentalSubscription();
+  };
+
+  // Show effective subscription tier
   const getEffectiveSubscriptionTier = () => {
-    if (isAdmin || isAmbassador) return 'pro';
+    if (isAdmin || isAmbassador) return 'admin';
     return profile?.subscription_tier || 'free';
   };
 
@@ -29,10 +40,13 @@ export const useSubscription = () => {
   const subscriptionEnd = profile?.subscription_end;
 
   return {
-    isPro: isPro(),
+    hasRentalSubscription: hasRentalSubscription(),
+    hasCredits: hasCredits(),
     isFree: isFree(),
+    isPro: isPro(), // Backwards compatibility
     subscriptionTier,
     subscriptionEnd,
+    hasActiveRentalSubscription: hasRentalSubscription() && (!subscriptionEnd || new Date(subscriptionEnd) > new Date()),
     hasActiveSubscription: isPro() && (!subscriptionEnd || new Date(subscriptionEnd) > new Date())
   };
 };
