@@ -35,6 +35,7 @@ const RiskAnalysis = lazy(() => import("./pages/calculator/RiskAnalysis"));
 const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPropertyDetails"));
 const BankReport = lazy(() => import("./pages/BankReport"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const UtleieAgent = lazy(() => import("./pages/UtleieAgent"));
 const EnvDebug = lazy(() => import("./pages/__env"));
 const Health = lazy(() => import("./pages/__health"));
 const SupabaseInfo = lazy(() => import("./pages/__supabase"));
@@ -91,6 +92,7 @@ const App = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/utleie" element={<Rental />} />
+                    <Route path="/utleie-agent" element={<UtleieAgent />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/calculator" element={<Calculator />} />
                     <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />

@@ -94,7 +94,7 @@ const PricingOverview = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-xl text-orange">Utleieforvaltning</CardTitle>
               <div className="py-4">
-                <span className="text-3xl font-bold text-foreground">199 kr</span>
+                <span className="text-3xl font-bold text-foreground">99 kr</span>
                 <span className="text-muted-foreground">/måned</span>
               </div>
             </CardHeader>

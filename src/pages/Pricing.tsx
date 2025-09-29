@@ -19,20 +19,20 @@ const Pricing = () => {
       "Gratis støtte via community"
     ],
     pro: [
-      "AI-genererte bankrapporter",
-      "Avanserte kalkyler og analyser",
-      "PDF-eksport av alle rapporter", 
-      "Komplett dashboard",
-      "Prioritert kundeservice",
-      "Credits som ikke utløper"
+      "🤖 AI Eiendomsagent - personlig rådgiver",
+      "📊 AI-genererte bankrapporter",
+      "🧮 Avanserte kalkyler og analyser",
+      "📄 PDF-eksport av alle rapporter", 
+      "💎 Credits som aldri utløper",
+      "⚡ Prioritert kundeservice"
     ],
     rental: [
-      "Komplett leieforholdshåndtering",
-      "Leietakersporing og dokumenter",
-      "Leieavtaler og depositum",
-      "Overleveringsprotokoller",
-      "Husleieoppfølging",
-      "Statisk løsning - ingen AI"
+      "📋 Leieforholdssporing og dokumenter",
+      "📝 Digitale leieavtaler",
+      "💰 Depositumhåndtering", 
+      "📋 Overleveringsprotokoller",
+      "📈 Husleieoppfølging og statistikk",
+      "🔧 Statisk løsning - ingen AI nødvendig"
     ]
   };
 
@@ -121,7 +121,7 @@ const Pricing = () => {
                 Pro Credits
               </CardTitle>
               <CardDescription className="text-lg">
-                AI-genererte rapporter
+                AI-drevne kalkyler og eiendomsagent
               </CardDescription>
               <div className="py-4 space-y-2">
                 <div>
@@ -129,7 +129,7 @@ const Pricing = () => {
                   <span className="text-muted-foreground text-sm"> = 10 credits</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  1 credit = 1 AI-generert rapport
+                  Bruk til bankrapporter og eiendomsrådgivning
                 </p>
               </div>
             </CardHeader>
@@ -171,7 +171,7 @@ const Pricing = () => {
                 Fast månedsavgift
               </CardDescription>
               <div className="py-4">
-                <span className="text-4xl font-bold text-foreground">199 kr</span>
+                <span className="text-4xl font-bold text-foreground">99 kr</span>
                 <span className="text-muted-foreground">/måned</span>
               </div>
             </CardHeader>
@@ -197,8 +197,8 @@ const Pricing = () => {
 
               <div className="bg-orange-muted/20 border border-orange-border/30 p-3 rounded-lg mt-4">
                 <p className="text-xs text-muted-foreground text-center">
-                  <strong>Uavhengig av Pro Credits</strong><br />
-                  Fast månedsavgift for statiske funksjoner
+                  <strong>Kun for leieoppfølging</strong><br />
+                  Trenger du kalkyler og AI-rådgivning? Kjøp Pro Credits i tillegg.
                 </p>
               </div>
             </CardContent>

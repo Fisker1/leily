@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Calculator, Briefcase, PieChart, LogOut, Shield, User, MoreVertical } from "lucide-react";
+import { Menu, X, Calculator, Briefcase, PieChart, LogOut, Shield, User, MoreVertical, Bot } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -14,19 +14,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import LanguageToggle from "./LanguageToggle";
 import LeilyLogo from "./LeilyLogo";
+
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const {
-    translations
-  } = useLanguage();
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const {
-    isAdmin
-  } = useUserRole();
-  return <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sticky top-0 z-50 w-full border-b border-border/50">
+  const { translations } = useLanguage();
+  const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
+
+  return (
+    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sticky top-0 z-50 w-full border-b border-border/50">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center h-16">
           {/* Logo - Left Section */}
@@ -62,9 +58,17 @@ const Navigation = () => {
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex items-center justify-end space-x-2 flex-shrink-0 w-32">
+          <div className="flex items-center justify-end space-x-2 flex-shrink-0 w-48">
             {user ? (
               <>
+                {/* Utleie Agent Button */}
+                <Button variant="outline" size="sm" asChild className="border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 hidden lg:flex">
+                  <Link to="/utleie-agent" className="text-sm font-medium text-primary flex items-center gap-1">
+                    <Bot className="h-4 w-4" />
+                    Utleie Agent
+                  </Link>
+                </Button>
+                
                 {/* Desktop Dropdown Menu */}
                 <div className="hidden sm:block">
                   <DropdownMenu>
@@ -154,6 +158,16 @@ const Navigation = () => {
                   <PieChart className="h-5 w-5" />
                   Portefølje
                 </Link>
+                {user && (
+                  <Link 
+                    to="/utleie-agent" 
+                    className="text-primary hover:text-primary/80 transition-colors font-medium text-lg flex items-center gap-3 py-2 border-t pt-4"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Bot className="h-5 w-5" />
+                    Utleie Agent
+                  </Link>
+                )}
               </nav>
               
               {user && (
@@ -205,6 +219,8 @@ const Navigation = () => {
           </div>
         )}
       </div>
-    </nav>;
+    </nav>
+  );
 };
+
 export default Navigation;
