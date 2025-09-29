@@ -38,18 +38,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
         auth: {
-          // Pass the user session to maintain RLS context
-          persistSession: false
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
         }
       }
     );
-
-    // Set the user session for RLS context
-    await supabaseClient.auth.setSession({
-      access_token: authHeader.replace('Bearer ', ''),
-      refresh_token: '', // Not needed for this use case
-    });
 
     // Get current user using the auth header directly
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
@@ -122,6 +122,7 @@ serve(async (req) => {
     console.log('Fetching rental data for user:', user.id);
     
     // Get properties with lease agreements and tenants - simplified approach
+    console.log('Querying properties for user_id:', user.id);
     const { data: properties, error: propertiesError } = await supabaseClient
       .from('properties')
       .select('*')
@@ -131,7 +132,8 @@ serve(async (req) => {
       data: properties, 
       error: propertiesError,
       userId: user.id,
-      propertyCount: properties?.length || 0
+      propertyCount: properties?.length || 0,
+      authorizationUsed: 'Bearer token in headers'
     });
 
     let propertiesWithLeases = [];
