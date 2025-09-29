@@ -30,6 +30,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -75,6 +76,11 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
       }));
       
       setMessages(formattedMessages);
+      
+      // If there are any messages in the database, hide the welcome message
+      if (formattedMessages.length > 0) {
+        setShowWelcomeMessage(false);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -93,7 +99,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     setInputValue(''); // Clear input immediately for better UX
     
     try {
-      const isFirstMessage = messages.length === 0;
+      const isFirstMessage = messages.length === 0 && showWelcomeMessage;
       
       // If this is the first message ever, add a welcome message first
       if (isFirstMessage) {
@@ -129,6 +135,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
         };
 
         setMessages(prev => [...prev, welcomeMessageLocal]);
+        setShowWelcomeMessage(false); // Hide the welcome message display after first real message
       }
 
       // Save the actual user message to database
@@ -206,7 +213,28 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto border rounded-lg p-4 bg-muted/10">
           <div className="space-y-4">
-            {messages.length === 0 ? (
+            {/* Welcome message - shown only when no messages exist yet */}
+            {showWelcomeMessage && messages.length === 0 && (
+              <div className="flex gap-3 justify-end">
+                <div className="max-w-[70%] rounded-lg px-4 py-3 bg-primary/10 border border-primary/20">
+                  <p className="text-sm leading-relaxed text-primary">
+                    Hei {tenant?.first_name}! Velkommen som leietaker i {property?.address}. 
+                    Hvis du har noen spørsmål om eiendommen eller området, bare send meg en melding her. 
+                    Jeg håper du trives!
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs opacity-70 text-primary">
+                      Velkomstmelding fra utleier
+                    </p>
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
+                  <User className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </div>
+            )}
+
+            {messages.length === 0 && !showWelcomeMessage ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">Ingen meldinger ennå</p>
