@@ -8,7 +8,7 @@ import {
   Edit, 
   EyeOff, 
   Trash,
-  Sparkles
+  Banknote
 } from 'lucide-react';
 
 interface Property {
@@ -56,11 +56,11 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
     
     setIsAnimating(true);
     
-    // Pop animation
+    // Flying animation - fly up and to the right, then show buttons
     setTimeout(() => {
       setIsPopped(true);
       setIsAnimating(false);
-    }, 300);
+    }, 800);
   };
 
   const handleReset = () => {
@@ -70,24 +70,27 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
 
   if (!isPopped) {
     return (
-      <div className="flex justify-center items-center h-32">
+      <div className="flex justify-center items-center h-32 relative">
         <div
-          className={`cursor-pointer transition-all duration-300 ${
+          className={`cursor-pointer transition-all duration-700 ${
             isAnimating 
-              ? 'animate-ping scale-150 opacity-0' 
-              : 'hover:scale-110 hover:-translate-y-2 hover:rotate-12'
+              ? 'animate-[fly-away_0.8s_ease-out_forwards] opacity-0 scale-75' 
+              : 'hover:scale-110 hover:-translate-y-2 hover:rotate-12 animate-[money-float_3s_ease-in-out_infinite]'
           }`}
           onClick={handleBalloonClick}
+          style={{
+            animationDelay: isAnimating ? '0s' : '0s'
+          }}
         >
-          <Sparkles 
-            className={`h-12 w-12 text-primary transition-all duration-200 ${
+          <Banknote 
+            className={`h-12 w-12 text-green-500 transition-all duration-200 ${
               isAnimating ? 'scale-0' : ''
             }`} 
           />
         </div>
         {!isAnimating && (
-          <div className="absolute mt-16 text-xs text-muted-foreground opacity-75">
-            Klikk ballongen
+          <div className="absolute mt-16 text-xs text-muted-foreground opacity-75 animate-pulse">
+            Klikk pengene
           </div>
         )}
       </div>
