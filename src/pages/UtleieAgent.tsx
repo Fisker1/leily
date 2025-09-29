@@ -297,7 +297,7 @@ const UtleieAgent = () => {
                     Du har ingen credits igjen. Kjøp Pro Credits for å fortsette å bruke Utleie Agent.
                   </p>
                   <Button asChild size="sm">
-                    <Link to="/pricing">Kjøp Credits</Link>
+                    <Link to="/credits">Kjøp Credits</Link>
                   </Button>
                 </CardContent>
               </Card>

@@ -59,9 +59,10 @@ const PricingOverview = () => {
             
             <CardHeader className="text-center">
               <CardTitle className="text-xl text-primary">Pro Credits</CardTitle>
-              <div className="py-4">
-                <span className="text-2xl font-bold text-foreground">100 kr</span>
-                <span className="text-muted-foreground text-sm"> = 10 credits</span>
+              <div className="py-2 space-y-1">
+                <div className="text-sm text-muted-foreground">Fra</div>
+                <div className="font-bold text-foreground">50-500 kr</div>
+                <div className="text-xs text-muted-foreground">5-100 credits</div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -72,11 +73,11 @@ const PricingOverview = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
-                  <span className="text-sm">Avanserte kalkyler og analyser</span>
+                  <span className="text-sm">Eiendomsagent-rådgivning</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
-                  <span className="text-sm">PDF-eksport av rapporter</span>
+                  <span className="text-sm">Avanserte kalkyler</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
@@ -84,7 +85,7 @@ const PricingOverview = () => {
                 </li>
               </ul>
               <Button className="w-full" asChild>
-                <Link to="/pricing">Kjøp Credits</Link>
+                <Link to="/credits">Kjøp Credits</Link>
               </Button>
             </CardContent>
           </Card>
