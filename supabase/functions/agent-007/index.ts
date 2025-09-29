@@ -137,20 +137,36 @@ serve(async (req) => {
     let propertiesWithLeases = [];
     
     if (properties && properties.length > 0) {
-      // Get lease agreements for each property
+      // Get lease agreements for each property using separate queries to avoid foreign key conflicts
       for (const property of properties) {
         const { data: leases, error: leasesError } = await supabaseClient
           .from('lease_agreements')
-          .select(`
-            *,
-            tenants!lease_agreements_tenant_id_fkey (*)
-          `)
+          .select('*')
           .eq('property_id', property.id);
         
-        if (!leasesError && leases) {
+        if (!leasesError && leases && leases.length > 0) {
+          // Get tenant data for each lease
+          const leasesWithTenants = [];
+          for (const lease of leases) {
+            const { data: tenant, error: tenantError } = await supabaseClient
+              .from('tenants')
+              .select('*')
+              .eq('id', lease.tenant_id)
+              .single();
+            
+            if (!tenantError && tenant) {
+              leasesWithTenants.push({
+                ...lease,
+                tenants: tenant
+              });
+            } else {
+              leasesWithTenants.push(lease);
+            }
+          }
+          
           propertiesWithLeases.push({
             ...property,
-            lease_agreements: leases
+            lease_agreements: leasesWithTenants
           });
         } else {
           propertiesWithLeases.push({
@@ -240,32 +256,37 @@ serve(async (req) => {
       // Get additional info for each chat message
       for (const chat of recentChats) {
         try {
-          // Get lease agreement info for this message
+          // Get lease agreement info for this message using separate queries
           const { data: leaseInfo } = await supabaseClient
             .from('lease_agreements')
-            .select(`
-              id,
-              monthly_rent,
-              status,
-               properties!lease_agreements_property_id_fkey (
-                 address
-               ),
-               tenants!lease_agreements_tenant_id_fkey (
-                 first_name,
-                 last_name
-               )
-            `)
+            .select('id, monthly_rent, status, property_id, tenant_id')
             .eq('id', chat.lease_id)
             .single();
 
-          if (leaseInfo && leaseInfo.tenants && leaseInfo.properties) {
-            const sender = chat.sender_type === 'landlord' ? 'Utleier' : 'Leietaker';
-            const date = new Date(chat.created_at).toLocaleDateString('no-NO');
-            const tenantName = `${leaseInfo.tenants.first_name} ${leaseInfo.tenants.last_name}`;
-            const address = leaseInfo.properties.address;
-            
-            rentalContext += `\n${tenantName} - ${address}:\n`;
-            rentalContext += `- ${sender} (${date}): ${chat.message_content.substring(0, 100)}${chat.message_content.length > 100 ? '...' : ''}\n`;
+          if (leaseInfo) {
+            // Get property info
+            const { data: propertyInfo } = await supabaseClient
+              .from('properties')
+              .select('address')
+              .eq('id', leaseInfo.property_id)
+              .single();
+
+            // Get tenant info  
+            const { data: tenantInfo } = await supabaseClient
+              .from('tenants')
+              .select('first_name, last_name')
+              .eq('id', leaseInfo.tenant_id)
+              .single();
+
+            if (propertyInfo && tenantInfo) {
+              const sender = chat.sender_type === 'landlord' ? 'Utleier' : 'Leietaker';
+              const date = new Date(chat.created_at).toLocaleDateString('no-NO');
+              const tenantName = `${tenantInfo.first_name} ${tenantInfo.last_name}`;
+              const address = propertyInfo.address;
+              
+              rentalContext += `\n${tenantName} - ${address}:\n`;
+              rentalContext += `- ${sender} (${date}): ${chat.message_content.substring(0, 100)}${chat.message_content.length > 100 ? '...' : ''}\n`;
+            }
           }
         } catch (error) {
           console.error('Error getting chat context:', error);
