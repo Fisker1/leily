@@ -34,7 +34,7 @@ const UtleieAgent = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hei! Jeg er din personlige eiendomsrådgiver og utleieekspert. Jeg kombinerer kunnskap fra senior bankinvestorer, eiendomsmeglere og advokater for å gi deg de beste rådene om eiendomsinvestering og utleieforvaltning. Hvordan kan jeg hjelpe deg i dag?',
+      content: 'Hei! 👋 Så hyggelig at du vil chatte med meg! \n\nJeg er her for å hjelpe deg med alt som har med eiendomsinvestering, utleieforvaltning og eiendomsrett å gjøre. Enten du lurer på husleieloven, trenger råd om finansiering, vil skalere porteføljen din, eller bare har et spørsmål om driften - så stiller jeg gjerne opp!\n\nHva kan jeg hjelpe deg med i dag? 😊',
       role: 'assistant',
       timestamp: new Date()
     }
