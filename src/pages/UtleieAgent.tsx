@@ -415,7 +415,7 @@ const UtleieAgent = () => {
       {/* Main Content - Flexible height container */}
       <div className="flex-1 container mx-auto px-4 py-4 overflow-hidden">
         <div className="max-w-4xl mx-auto h-full flex flex-col">
-          {(isActualAmbassador || isAdmin) ? (
+          {(isActualAmbassador || isAdmin || hasCredits) ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="general" className="flex items-center gap-2">
@@ -445,7 +445,7 @@ const UtleieAgent = () => {
             <div className="h-full flex flex-col">
               <div className="text-center p-4 bg-muted/50 rounded-lg mb-4 flex-shrink-0">
                 <p className="text-sm text-muted-foreground">
-                  Agent 007 er kun tilgjengelig for ambassadører og administratorer
+                  Agent 007 krever credits eller ambassadør/admin tilgang
                 </p>
               </div>
               <div className="flex-1 overflow-y-auto">
@@ -460,7 +460,7 @@ const UtleieAgent = () => {
       <div className="bg-background/95 backdrop-blur border-t flex-shrink-0">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-4xl mx-auto">
-            {(isActualAmbassador || isAdmin) ? (
+            {(isActualAmbassador || isAdmin || hasCredits) ? (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsContent value="general">
                   <div className="flex gap-3 items-end">
