@@ -35,22 +35,25 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
-    // Initialize Supabase client with service role for admin access
-    const supabaseClient = createClient(
+    // Create client for auth with anon key
+    const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
+        global: {
+          headers: { Authorization: authHeader }
         }
       }
     );
 
-    // Get current user using the auth header directly
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
+    // Create admin client for data access (bypasses RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Get current user using auth client
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     
     if (authError || !user) {
       console.error('Authentication error:', authError);
@@ -63,7 +66,7 @@ serve(async (req) => {
     console.log('Checking user roles for:', user.id);
     console.log('About to call RPC function...');
     
-    const { data: userRolesData, error: rolesError } = await supabaseClient
+    const { data: userRolesData, error: rolesError } = await supabaseAdmin
       .rpc('get_user_roles_for_edge_function', { target_user_id: user.id });
 
     console.log('RPC call completed. Error:', rolesError);
@@ -73,7 +76,7 @@ serve(async (req) => {
       console.error('Error fetching user roles:', rolesError);
       // Fallback to direct table query if RPC fails
       console.log('Falling back to direct table query...');
-      const { data: fallbackRoles } = await supabaseClient
+      const { data: fallbackRoles } = await supabaseAdmin
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
@@ -92,45 +95,40 @@ serve(async (req) => {
       console.log('User granted access via role:', isAdmin ? 'admin' : 'ambassador');
     } else {
       // Only check profile/credits for non-privileged users
-      console.log('Checking credits and subscription for regular user');
+      console.log('Checking subscription for regular user');
       
-      let userProfile: any;
-      try {
-        const { data, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('credits, subscription_tier, subscription_end')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
-        } else if (!data) {
-          console.log('Profile not found, user has default access with 0 credits');
-          userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
-        } else {
-          userProfile = data;
-        }
-      } catch (error) {
-        console.error('Profile operation failed:', error);
-        // Continue with default values
-        userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
-      }
-
-      // Allow utleie agent for users with pro subscription_tier (regardless of credits)
-      const hasCredits = (userProfile.credits || 0) > 0;
-      const hasProSub = userProfile.subscription_tier === 'pro';
-      const hasRentalSub = userProfile.subscription_tier === 'rental' && 
-        (!userProfile.subscription_end || new Date(userProfile.subscription_end) > new Date());
+      // Use admin client to bypass RLS and get profile
+      const { data: userProfile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('credits, subscription_tier, subscription_end')
+        .eq('id', user.id)
+        .single();
       
-      console.log('Access check:', { hasCredits, hasProSub, hasRentalSub, subscription_tier: userProfile.subscription_tier });
-      
-      // Allow access if user has pro/rental subscription (Utleie Agent is free for pro users)
-      if (!hasCredits && !hasProSub && !hasRentalSub) {
-        console.log('Access denied - no credits or valid subscription');
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
         return new Response(
           JSON.stringify({ 
-            error: 'Access denied. You need credits, Pro subscription, or active rental subscription to use Utleie Agent.',
+            error: 'Could not fetch user profile',
+            details: profileError.message 
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      console.log('User profile:', { subscription_tier: userProfile.subscription_tier, subscription_end: userProfile.subscription_end });
+
+      // Utleie Agent is available for all users EXCEPT free tier
+      // (pro, rental, or any other subscription tier)
+      const isFreeUser = userProfile.subscription_tier === 'free';
+      
+      if (isFreeUser) {
+        console.log('Access denied - free tier user');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Utleie Agent er kun tilgjengelig for betalende brukere. Oppgrader til Pro eller Rental for å få tilgang.',
             needsAccess: true 
           }),
           {
@@ -139,6 +137,8 @@ serve(async (req) => {
           }
         );
       }
+      
+      console.log('Access granted for subscription tier:', userProfile.subscription_tier);
     }
 
     // Get OpenAI API key
