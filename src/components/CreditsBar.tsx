@@ -40,21 +40,20 @@ const CreditsBar = ({ maxCredits = 100, className = "" }: CreditsBarProps) => {
           Credits
         </Badge>
       ) : (
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="relative w-80 h-6 bg-muted/60 rounded-full overflow-hidden border border-border/50">
-            <div 
-              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
-              style={{ width: `${creditsPercentage}%` }}
-            />
-            {/* Subtle inner glow */}
-            <div 
-              className={`absolute inset-y-0 left-0 rounded-full opacity-30 blur-sm ${getProgressColor()}`}
-              style={{ width: `${creditsPercentage}%` }}
-            />
-            {/* Credits text overlay */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-medium tabular-nums mix-blend-difference text-white`}>
-                {displayCredits}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-background border rounded-lg shadow-sm">
+            <div className="relative w-20 h-4 bg-muted rounded-full overflow-hidden">
+              <div 
+                className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
+                style={{ width: `${creditsPercentage}%` }}
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className={`text-lg font-bold tabular-nums ${getTextColor()}`}>
+                {credits}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                credits
               </span>
             </div>
           </div>

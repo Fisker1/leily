@@ -716,6 +716,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_roles_for_edge_function: {
+        Args: { target_user_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

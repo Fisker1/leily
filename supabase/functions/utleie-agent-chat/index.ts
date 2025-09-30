@@ -96,24 +96,11 @@ serve(async (req) => {
           .eq('id', user.id)
           .maybeSingle();
         
-        if (profileError || !data) {
-          console.log('Profile not found, creating one...');
-          // If profile doesn't exist, create a basic one
-          const { error: insertError } = await supabaseClient
-            .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email || '',
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-              credits: 0,
-              subscription_tier: 'free'
-            });
-          
-          if (insertError) {
-            console.error('Failed to create profile:', insertError);
-          }
-          
-          // Set default values for new profile
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
+        } else if (!data) {
+          console.log('Profile not found, user has default access with 0 credits');
           userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
         } else {
           userProfile = data;
@@ -124,18 +111,20 @@ serve(async (req) => {
         userProfile = { credits: 0, subscription_tier: 'free', subscription_end: null };
       }
 
-      // Check access for regular users
+      // Allow utleie agent for users with pro subscription_tier (regardless of credits)
       const hasCredits = (userProfile.credits || 0) > 0;
+      const hasProSub = userProfile.subscription_tier === 'pro';
       const hasRentalSub = userProfile.subscription_tier === 'rental' && 
         (!userProfile.subscription_end || new Date(userProfile.subscription_end) > new Date());
       
-      console.log('Access check:', { hasCredits, hasRentalSub });
+      console.log('Access check:', { hasCredits, hasProSub, hasRentalSub, subscription_tier: userProfile.subscription_tier });
       
-      if (!hasCredits && !hasRentalSub) {
-        console.log('Access denied - no credits or subscription');
+      // Allow access if user has pro/rental subscription (Utleie Agent is free for pro users)
+      if (!hasCredits && !hasProSub && !hasRentalSub) {
+        console.log('Access denied - no credits or valid subscription');
         return new Response(
           JSON.stringify({ 
-            error: 'Access denied. You need credits or an active rental subscription to use Utleie Agent.',
+            error: 'Access denied. You need credits, Pro subscription, or active rental subscription to use Utleie Agent.',
             needsAccess: true 
           }),
           {
