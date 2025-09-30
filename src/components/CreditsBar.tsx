@@ -1,17 +1,16 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Star, Infinity } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCredits } from '@/hooks/useCredits';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface CreditsBarProps {
-  credits?: number;
   maxCredits?: number;
   className?: string;
 }
 
-const CreditsBar = ({ credits = 0, maxCredits = 100, className = "" }: CreditsBarProps) => {
-  const { profile } = useAuth();
+const CreditsBar = ({ maxCredits = 100, className = "" }: CreditsBarProps) => {
+  const { credits } = useCredits();
   const { isAmbassador } = useUserRole();
   
   const displayCredits = isAmbassador ? maxCredits : credits;
