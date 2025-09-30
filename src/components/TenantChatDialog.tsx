@@ -48,9 +48,37 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
   }, [messages]);
 
   const fetchMessages = async () => {
-    // Chat messages table not in staging DB yet
-    console.log('Chat messages feature coming soon');
-    setMessages([]);
+    if (!lease?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('lease_id', lease.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      const formattedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.message_content,
+        sender_type: msg.sender_type as 'landlord' | 'tenant',
+        sender_name: msg.sender_type === 'landlord' ? 'Utleier' : 'Leietaker',
+        timestamp: new Date(msg.created_at)
+      }));
+      
+      setMessages(formattedMessages);
+      if (formattedMessages.length > 0) {
+        setShowWelcomeMessage(false);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke laste meldinger",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendMessage = async () => {
@@ -63,10 +91,26 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     try {
       const isFirstMessage = messages.length === 0 && showWelcomeMessage;
       
-      // Chat messages feature not in staging DB yet
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          lease_id: lease.id,
+          sender_type: 'landlord',
+          sender_id: user.id,
+          message_content: messageContent
+        });
+
+      if (error) throw error;
+
+      if (isFirstMessage) {
+        setShowWelcomeMessage(false);
+      }
+
+      await fetchMessages();
+      
       toast({
-        title: "Funksjon kommer snart",
-        description: "Chat-funksjonen er ikke tilgjengelig i staging ennå",
+        title: "Melding sendt",
+        description: "Din melding er sendt til leietaker",
       });
 
     } catch (error) {

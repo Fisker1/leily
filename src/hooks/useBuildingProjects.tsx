@@ -20,9 +20,24 @@ export const useBuildingProjects = () => {
   const [loading, setLoading] = useState(false);
 
   const fetchProjects = async () => {
-    // Building projects table not in staging DB
-    setProjects([]);
-    setLoading(false);
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('building_projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error fetching building projects:', error);
+      toast.error('Kunne ikke laste byggeprosjekter');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const saveProject = async (
@@ -32,23 +47,93 @@ export const useBuildingProjects = () => {
     placedItems: any,
     totalCost: number
   ) => {
-    toast.error('Byggeprosjekt-funksjonen er ikke tilgjengelig i staging');
-    return null;
+    if (!user) {
+      toast.error('Du må være logget inn');
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('building_projects')
+        .insert({
+          user_id: user.id,
+          project_name: projectName,
+          calculation_id: calculationId,
+          floor_plans: floorPlans,
+          placed_items: placedItems,
+          total_cost: totalCost,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Byggeprosjekt lagret');
+      await fetchProjects();
+      return data;
+    } catch (error) {
+      console.error('Error saving building project:', error);
+      toast.error('Kunne ikke lagre byggeprosjekt');
+      return null;
+    }
   };
 
   const updateProject = async (
     id: string,
     updates: Partial<Omit<BuildingProject, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
   ) => {
-    return null;
+    try {
+      const { error } = await supabase
+        .from('building_projects')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Byggeprosjekt oppdatert');
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error updating building project:', error);
+      toast.error('Kunne ikke oppdatere byggeprosjekt');
+      return null;
+    }
   };
 
   const deleteProject = async (id: string) => {
-    return false;
+    try {
+      const { error } = await supabase
+        .from('building_projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Byggeprosjekt slettet');
+      await fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Error deleting building project:', error);
+      toast.error('Kunne ikke slette byggeprosjekt');
+      return false;
+    }
   };
 
   const loadProject = async (id: string) => {
-    return null;
+    try {
+      const { data, error } = await supabase
+        .from('building_projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error loading building project:', error);
+      toast.error('Kunne ikke laste byggeprosjekt');
+      return null;
+    }
   };
 
   useEffect(() => {

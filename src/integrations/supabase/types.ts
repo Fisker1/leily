@@ -41,10 +41,55 @@ export type Database = {
         }
         Relationships: []
       }
+      building_projects: {
+        Row: {
+          calculation_id: string | null
+          created_at: string
+          floor_plans: Json
+          id: string
+          placed_items: Json
+          project_name: string
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name?: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_projects_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calculation_history: {
         Row: {
           calculation_data: Json
           calculation_name: string | null
+          coordinates: number[] | null
           created_at: string
           finn_code: string | null
           id: string
@@ -56,6 +101,7 @@ export type Database = {
         Insert: {
           calculation_data: Json
           calculation_name?: string | null
+          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -67,6 +113,7 @@ export type Database = {
         Update: {
           calculation_data?: Json
           calculation_name?: string | null
+          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -76,6 +123,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          lease_id: string
+          message_content: string
+          sender_id: string
+          sender_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lease_id: string
+          message_content: string
+          sender_id: string
+          sender_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lease_id?: string
+          message_content?: string
+          sender_id?: string
+          sender_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deposit_accounts: {
         Row: {
@@ -112,6 +197,36 @@ export type Database = {
           lease_id?: string
           property_owner_id?: string
           status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finn_property_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          extracted_at: string
+          finn_code: string
+          id: string
+          property_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code: string
+          id?: string
+          property_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code?: string
+          id?: string
+          property_data?: Json
           updated_at?: string
         }
         Relationships: []
@@ -219,6 +334,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          credits: number | null
           email: string
           full_name: string | null
           id: string
@@ -233,6 +349,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          credits?: number | null
           email: string
           full_name?: string | null
           id: string
@@ -247,6 +364,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          credits?: number | null
           email?: string
           full_name?: string | null
           id?: string
@@ -265,6 +383,7 @@ export type Database = {
           address: string
           bedrooms: number | null
           city: string | null
+          coordinates: number[] | null
           created_at: string
           current_value: number | null
           id: string
@@ -288,6 +407,7 @@ export type Database = {
           address: string
           bedrooms?: number | null
           city?: string | null
+          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string
@@ -311,6 +431,7 @@ export type Database = {
           address?: string
           bedrooms?: number | null
           city?: string | null
+          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string

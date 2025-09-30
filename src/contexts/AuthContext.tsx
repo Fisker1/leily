@@ -11,6 +11,7 @@ interface Profile {
   avatar_url: string | null;
   subscription_tier: string;
   subscription_end: string | null;
+  credits: number;
 }
 
 interface AuthContextType {

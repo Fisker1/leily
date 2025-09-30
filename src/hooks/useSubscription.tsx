@@ -17,10 +17,9 @@ export const useSubscription = () => {
     return profile.subscription_tier === 'free';
   };
 
-  // Credits not in staging DB
   const hasCredits = () => {
     if (isAdmin || isAmbassador) return true;
-    return false;
+    return (profile?.credits || 0) > 0;
   };
 
   // For backwards compatibility - isPro now means has credits OR rental subscription

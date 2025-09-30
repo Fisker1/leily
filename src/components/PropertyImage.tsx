@@ -74,8 +74,17 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
         
         console.log(`🔍 Looking for coordinates for ${address}, ${city || ''}`);
         
-        // Geocode directly (coordinates column not in staging DB)
-        {
+        // Try to get coordinates from database first
+        const { data: propertyData } = await supabase
+          .from('properties')
+          .select('coordinates')
+          .eq('address', address)
+          .maybeSingle();
+        
+        if (propertyData?.coordinates && Array.isArray(propertyData.coordinates) && propertyData.coordinates.length === 2) {
+          [lng, lat] = propertyData.coordinates;
+          console.log(`✅ Using existing coordinates from database: [${lng}, ${lat}]`);
+        } else {
           // Geocode with Nominatim as fallback
           const fullAddress = `${address}${city ? ', ' + city : ''}, Norge`;
           const response = await fetch(

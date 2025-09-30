@@ -176,8 +176,16 @@ export const useOptimizedPropertyData = () => {
           // Otherwise geocode the address
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
           
-          // Coordinates column not in staging DB - skip saving
-          console.log(`Geocoded coordinates for ${property.address}:`, coords);
+          if (coords) {
+            // Save coordinates to database
+            await supabase
+              .from('properties')
+              .update({ coordinates: coords })
+              .eq('id', property.id);
+            
+            console.log(`Geocoded and saved coordinates for ${property.address}:`, coords);
+            return { ...property, coordinates: coords };
+          }
           
           return property;
         })
@@ -232,8 +240,14 @@ export const useOptimizedPropertyData = () => {
             
             if (coords) {
               console.log(`✅ Got coordinates for ${calc.property_address}:`, coords);
-              // Coordinates not in staging DB - skip saving
-              console.log(`📍 Geocoded ${calc.property_address}:`, coords);
+              // Save coordinates to calculation_history
+              await supabase
+                .from('calculation_history')
+                .update({ coordinates: coords })
+                .eq('id', calc.id);
+              
+              console.log(`📍 Geocoded and saved ${calc.property_address}:`, coords);
+              return { ...calc, coordinates: coords };
             } else {
               console.warn(`❌ Failed to geocode: ${calc.property_address}`);
             }

@@ -10,14 +10,32 @@ export const useCredits = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Credits not in staging DB - admins/ambassadors get unlimited
-    if (isAdmin || isAmbassador) {
-      setCredits(999);
-    } else {
-      setCredits(0);
-    }
-    setLoading(false);
-  }, [user, isAdmin, isAmbassador]);
+    const fetchCredits = async () => {
+      if (!user?.id) {
+        setCredits(0);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setCredits(profile?.credits || 0);
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+        setCredits(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCredits();
+  }, [user]);
 
   const hasCredits = () => {
     if (isAdmin || isAmbassador) return true;
@@ -31,9 +49,25 @@ export const useCredits = () => {
   };
 
   const useCredit = async () => {
-    // Credits system not in staging - admins/ambassadors always succeed
+    if (!user?.id) return false;
     if (isAdmin || isAmbassador) return true;
-    return false;
+
+    try {
+      const newCredits = Math.max(0, credits - 1);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits: newCredits })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setCredits(newCredits);
+      return true;
+    } catch (error) {
+      console.error('Error using credit:', error);
+      return false;
+    }
   };
 
   return {
