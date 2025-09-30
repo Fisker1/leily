@@ -35,10 +35,16 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with service role for admin access
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
     // Get current user using the auth header directly
