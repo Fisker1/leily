@@ -9,33 +9,59 @@ export const useCredits = () => {
   const [credits, setCredits] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
+  const fetchCredits = async () => {
+    if (!user?.id) {
+      setCredits(0);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setCredits(profile?.credits || 0);
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+      setCredits(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCredits = async () => {
-      if (!user?.id) {
-        setCredits(0);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setCredits(profile?.credits || 0);
-      } catch (error) {
-        console.error('Error fetching credits:', error);
-        setCredits(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCredits();
-  }, [user]);
+
+    // Set up realtime subscription for credit updates
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('credits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Credits updated:', payload);
+          if (payload.new && 'credits' in payload.new) {
+            setCredits(payload.new.credits || 0);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const hasCredits = () => {
     if (isAdmin || isAmbassador) return true;
@@ -77,6 +103,7 @@ export const useCredits = () => {
     canUseCredits: canUseCredits(),
     canGenerateReport: canUseCredits(),
     useCredit,
+    refreshCredits: fetchCredits,
     isAmbassador: isAmbassador || isAdmin // Show ambassador status
   };
 };

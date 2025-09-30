@@ -24,7 +24,7 @@ interface Message {
 
 const UtleieAgent = () => {
   const { user } = useAuth();
-  const { credits, hasCredits, useCredit, isAmbassador } = useCredits();
+  const { credits, hasCredits, refreshCredits, isAmbassador } = useCredits();
   const { isAdmin, isAmbassador: roleIsAmbassador, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   
@@ -188,8 +188,9 @@ const UtleieAgent = () => {
       
       setAgent007Messages(prev => [...prev, aiMessage]);
       
+      // Refresh credits to show updated count (edge function already deducted)
       if (!isActualAmbassador) {
-        useCredit();
+        await refreshCredits();
       }
       
       setAgent007IsLoading(false);
