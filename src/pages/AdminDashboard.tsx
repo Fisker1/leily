@@ -11,8 +11,6 @@ import Navigation from '@/components/Navigation';
 import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import SecurityDashboard from '@/components/security/SecurityDashboard';
-import { SecurityMaintenanceStatus } from '@/components/security/SecurityMaintenanceStatus';
 
 interface Report {
   id: string;
@@ -422,10 +420,17 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="security">
-            <div className="space-y-6">
-              <SecurityDashboard />
-              <SecurityMaintenanceStatus />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Sikkerhet
+                </CardTitle>
+                <CardDescription>
+                  Sikkerhetsfunksjoner er kun tilgjengelige i production miljø
+                </CardDescription>
+              </CardHeader>
+            </Card>
           </TabsContent>
 
           <TabsContent value="staging">

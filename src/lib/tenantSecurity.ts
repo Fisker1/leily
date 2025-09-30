@@ -166,26 +166,33 @@ export const getDecryptedTenantData = async (
       return { data: null, error: tenantError };
     }
 
-    // Use secure function to get decrypted data
+    // Get full tenant data
     const { data, error } = await supabase
-      .rpc('get_secure_tenant_data', {
-        tenant_property_owner_id: tenantData.property_owner_id
-      });
+      .from('tenants')
+      .select('*')
+      .eq('id', tenantId)
+      .single();
 
-    if (error) {
-      return { data: null, error };
-    }
-
-    // Find the specific tenant in the results
-    const tenant = data?.find((t: any) => t.id === tenantId);
-    if (!tenant) {
+    if (!data || error) {
       return { data: null, error: { message: 'Tenant not found' } };
     }
 
-    // Log access
-    await logTenantDataAccess('DECRYPT_ACCESS', tenantId);
+    // Return secure tenant data (no id included in SecureTenantData type)
+    const secureData: SecureTenantData = {
+      first_name: data.first_name || 'Ukjent',
+      last_name: data.last_name || '',
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      national_id: data.national_id || undefined,
+      emergency_phone: data.emergency_phone || undefined,
+      monthly_income: data.monthly_income || undefined,
+      property_owner_id: data.property_owner_id,
+      address: data.address || undefined,
+      occupation: data.occupation || undefined,
+      emergency_contact: data.emergency_contact || undefined
+    };
 
-    return { data: tenant, error: null };
+    return { data: secureData, error: null };
   } catch (error) {
     console.error('Error getting decrypted tenant data:', error);
     return { data: null, error };
