@@ -10,32 +10,17 @@ export const useCredits = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCredits = async () => {
-      if (!user) {
-        setCredits(0);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Get credits from profile (now properly typed)
-        const userCredits = profile?.credits || 0;
-        setCredits(userCredits);
-      } catch (error) {
-        console.error('Error fetching credits:', error);
-        setCredits(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCredits();
-  }, [user, profile]);
+    // Credits not in staging DB - admins/ambassadors get unlimited
+    if (isAdmin || isAmbassador) {
+      setCredits(999);
+    } else {
+      setCredits(0);
+    }
+    setLoading(false);
+  }, [user, isAdmin, isAmbassador]);
 
   const hasCredits = () => {
-    if (!profile) return false;
-    if (isAdmin || isAmbassador) return true; // Ambassadors and admins get free access
-    const credits = profile?.credits || 0;
+    if (isAdmin || isAmbassador) return true;
     return credits > 0;
   };
 
@@ -46,30 +31,8 @@ export const useCredits = () => {
   };
 
   const useCredit = async () => {
-    // Admins and ambassadors don't use actual credits
+    // Credits system not in staging - admins/ambassadors always succeed
     if (isAdmin || isAmbassador) return true;
-    
-    if (credits > 0) {
-      try {
-        // Use the Supabase function to properly deduct credits
-        const { data, error } = await supabase.rpc('use_credits', {
-          credits_to_use: 1,
-          operation_type: 'ai_interaction'
-        });
-        
-        if (error) {
-          console.error('Error using credits:', error);
-          return false;
-        }
-        
-        if (data) {
-          setCredits(prev => prev - 1);
-          return true;
-        }
-      } catch (error) {
-        console.error('Error calling use_credits function:', error);
-      }
-    }
     return false;
   };
 

@@ -72,35 +72,35 @@ const PropertyLeaseHistory = ({ propertyId, propertyAddress }: PropertyLeaseHist
     try {
       setLoading(true);
       
+      // Query without relations (not set up in staging)
       const { data, error } = await supabase
         .from('lease_agreements')
-        .select(`
-          *,
-          deposit_accounts(*),
-          transfer_protocols(*)
-        `)
+        .select('*')
         .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       if (error) {
         throw error;
       }
 
-      // Get tenant information separately due to encryption
+      // Get tenant information separately
       const leasesWithTenants = await Promise.all(
         (data || []).map(async (lease) => {
           try {
-            // Use the secure function to get tenant data
             const { data: tenantData, error: tenantError } = await supabase
-              .rpc('get_secure_tenant_data', { tenant_property_owner_id: user?.id })
+              .from('tenants')
+              .select('first_name, last_name')
               .eq('id', lease.tenant_id)
+              .eq('property_owner_id', user?.id)
               .single();
 
             if (tenantError) {
               console.error('Error fetching tenant data:', tenantError);
               return {
                 ...lease,
-                tenant: { first_name: 'Ukjent', last_name: 'Leietaker' }
+                tenant: { first_name: 'Ukjent', last_name: 'Leietaker' },
+                deposit_accounts: [],
+                transfer_protocols: []
               };
             }
 
@@ -109,13 +109,17 @@ const PropertyLeaseHistory = ({ propertyId, propertyAddress }: PropertyLeaseHist
               tenant: {
                 first_name: tenantData?.first_name || 'Ukjent',
                 last_name: tenantData?.last_name || 'Leietaker'
-              }
+              },
+              deposit_accounts: [],
+              transfer_protocols: []
             };
           } catch (error) {
             console.error('Error processing lease:', error);
             return {
               ...lease,
-              tenant: { first_name: 'Ukjent', last_name: 'Leietaker' }
+              tenant: { first_name: 'Ukjent', last_name: 'Leietaker' },
+              deposit_accounts: [],
+              transfer_protocols: []
             };
           }
         })

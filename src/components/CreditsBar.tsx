@@ -14,9 +14,9 @@ const CreditsBar = ({ credits = 0, maxCredits = 100, className = "" }: CreditsBa
   const { profile } = useAuth();
   const { isAmbassador } = useUserRole();
   
-  // Ambassador users always have "full" credits
-  const displayCredits = isAmbassador ? maxCredits : (profile?.credits || 0);
-  const creditsPercentage = isAmbassador ? 100 : Math.min((displayCredits / maxCredits) * 100, 100);
+  // Credits not in staging DB - show infinity for ambassadors, 0 for others
+  const displayCredits = isAmbassador ? maxCredits : 0;
+  const creditsPercentage = isAmbassador ? 100 : 0;
   
   // Color logic based on credit level - more subtle colors
   const getProgressColor = () => {

@@ -48,47 +48,9 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
   }, [messages]);
 
   const fetchMessages = async () => {
-    if (!lease?.id) return;
-
-    try {
-      const { data: chatMessages, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('lease_id', lease.id)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        toast({
-          title: "Feil",
-          description: "Kunne ikke laste samtale",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const formattedMessages: Message[] = (chatMessages || []).map(msg => ({
-        id: msg.id,
-        content: msg.message_content,
-        sender_type: msg.sender_type as 'landlord' | 'tenant',
-        sender_name: msg.sender_type === 'landlord' ? 'Utleier' : `${tenant?.first_name} ${tenant?.last_name}`,
-        timestamp: new Date(msg.created_at)
-      }));
-      
-      setMessages(formattedMessages);
-      
-      // If there are any messages in the database, hide the welcome message
-      if (formattedMessages.length > 0) {
-        setShowWelcomeMessage(false);
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast({
-        title: "Feil",
-        description: "Kunne ikke laste samtale",
-        variant: "destructive",
-      });
-    }
+    // Chat messages table not in staging DB yet
+    console.log('Chat messages feature coming soon');
+    setMessages([]);
   };
 
   const handleSendMessage = async () => {
@@ -101,78 +63,10 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
     try {
       const isFirstMessage = messages.length === 0 && showWelcomeMessage;
       
-      // If this is the first message ever, add a welcome message first
-      if (isFirstMessage) {
-        const welcomeMessage = {
-          lease_id: lease.id,
-          message_content: `Hei ${tenant?.first_name}! Velkommen som leietaker i ${property?.address}. Hvis du har noen spørsmål om eiendommen eller området, bare send meg en melding her. Jeg håper du trives!`,
-          sender_type: 'landlord',
-          sender_id: user.id
-        };
-
-        const { error: welcomeError } = await supabase
-          .from('chat_messages')
-          .insert(welcomeMessage);
-
-        if (welcomeError) {
-          console.error('Error saving welcome message:', welcomeError);
-          setInputValue(messageContent); // Restore input on error
-          toast({
-            title: "Feil",
-            description: "Kunne ikke sende velkomstmelding",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Add welcome message to local state
-        const welcomeMessageLocal: Message = {
-          id: 'welcome-' + Date.now(),
-          content: welcomeMessage.message_content,
-          sender_type: 'landlord',
-          sender_name: 'Utleier',
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, welcomeMessageLocal]);
-        setShowWelcomeMessage(false); // Hide the welcome message display after first real message
-      }
-
-      // Save the actual user message to database
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          lease_id: lease.id,
-          message_content: messageContent,
-          sender_type: 'landlord',
-          sender_id: user.id
-        });
-
-      if (error) {
-        console.error('Error saving message:', error);
-        setInputValue(messageContent); // Restore input on error
-        toast({
-          title: "Feil",
-          description: "Kunne ikke sende melding",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Add user message to local state for immediate UI update
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        content: messageContent,
-        sender_type: 'landlord',
-        sender_name: 'Utleier',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, newMessage]);
-
+      // Chat messages feature not in staging DB yet
       toast({
-        title: "Melding sendt",
-        description: isFirstMessage ? "Velkomstmelding og din melding er sendt til leietaker" : "Din melding er sendt til leietaker",
+        title: "Funksjon kommer snart",
+        description: "Chat-funksjonen er ikke tilgjengelig i staging ennå",
       });
 
     } catch (error) {

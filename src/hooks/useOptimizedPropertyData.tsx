@@ -176,22 +176,10 @@ export const useOptimizedPropertyData = () => {
           // Otherwise geocode the address
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
           
-          // Update the database with the geocoded coordinates only if we got valid coordinates
-          if (coords && coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-            try {
-              await supabase
-                .from('properties')
-                .update({ coordinates: coords })
-                .eq('id', property.id);
-              
-              console.log(`Updated coordinates for ${property.address}:`, coords);
-              return { ...property, coordinates: coords };
-            } catch (updateError) {
-              console.error('Error updating property coordinates:', updateError);
-            }
-          }
+          // Coordinates column not in staging DB - skip saving
+          console.log(`Geocoded coordinates for ${property.address}:`, coords);
           
-          return { ...property, coordinates: coords };
+          return property;
         })
       );
 
@@ -244,21 +232,13 @@ export const useOptimizedPropertyData = () => {
             
             if (coords) {
               console.log(`✅ Got coordinates for ${calc.property_address}:`, coords);
-              // Update the database with the geocoded coordinates
-              try {
-                await supabase
-                  .from('calculation_history')
-                  .update({ coordinates: coords })
-                  .eq('id', calc.id);
-                console.log(`💾 Saved coordinates to database for ${calc.property_address}`);
-              } catch (updateError) {
-                console.error('❌ Error updating calculation coordinates:', updateError);
-              }
+              // Coordinates not in staging DB - skip saving
+              console.log(`📍 Geocoded ${calc.property_address}:`, coords);
             } else {
               console.warn(`❌ Failed to geocode: ${calc.property_address}`);
             }
             
-            return { ...calc, coordinates: coords };
+            return calc;
           }
           return calc;
         })

@@ -11,7 +11,6 @@ interface Profile {
   avatar_url: string | null;
   subscription_tier: string;
   subscription_end: string | null;
-  credits: number | null;
 }
 
 interface AuthContextType {
@@ -100,25 +99,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Enhanced rate limiting with progressive penalties
-      const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('enhanced_rate_limit_check', {
-        endpoint_name: 'auth/login',
-        identifier_key: email,
-        max_requests: 5, // Stricter limit for login attempts
-        window_minutes: 15
-      });
-
-      if (rateLimitError || !(rateLimitResult as any)?.allowed) {
-        const violationLevel = (rateLimitResult as any)?.violation_level || 0;
-        return { 
-          error: { 
-            message: violationLevel > 1 
-              ? 'Multiple failed attempts detected. Extended cooldown applied.' 
-              : 'Rate limit exceeded. Please try again later.' 
-          } 
-        };
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -163,17 +143,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         
-        // Log failed authentication attempt with enhanced context
+        // Log failed authentication attempt
         await logSecurityEvent('auth_failure', 'auth_attempts', {
           email,
           error: error.message,
-          timestamp: new Date().toISOString(),
-          security_level: 'HIGH',
-          attempt_context: 'enhanced_monitoring'
+          timestamp: new Date().toISOString()
         });
-        
-        // Trigger brute force monitoring
-        await supabase.rpc('track_failed_auth_attempts');
       } else {
         // Log successful authentication
         await logSecurityEvent('auth_success', 'auth_attempts', {
@@ -197,35 +172,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      // Enhanced rate limiting for registration
-      const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('enhanced_rate_limit_check', {
-        endpoint_name: 'auth/register',
-        identifier_key: email,
-        max_requests: 3, // Stricter limit for registration
-        window_minutes: 60
-      });
-
-      if (rateLimitError || !(rateLimitResult as any)?.allowed) {
-        return { 
-          error: { 
-            message: 'Too many registration attempts. Please try again later.' 
-          } 
-        };
-      }
-
-      // Validate password strength before attempting registration
-      const { data: passwordValidation } = await supabase.rpc('validate_password_strength', {
-        password_text: password
-      });
-
-      if (!(passwordValidation as any)?.is_strong) {
-        return {
-          error: {
-            message: 'Password does not meet security requirements. Please choose a stronger password.'
-          }
-        };
-      }
-
       // Environment-aware redirect URL
       const redirectUrl = import.meta.env.VITE_APP_URL 
         ? `${import.meta.env.VITE_APP_URL}/`
@@ -243,21 +189,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Log failed registration attempt with enhanced context
+        // Log failed registration attempt
         await logSecurityEvent('signup_failure', 'auth_attempts', {
           email,
           error: error.message,
-          timestamp: new Date().toISOString(),
-          security_level: 'HIGH',
-          password_strength_check: 'performed'
+          timestamp: new Date().toISOString()
         });
       } else {
         // Log successful registration
         await logSecurityEvent('signup_success', 'auth_attempts', {
           email,
-          timestamp: new Date().toISOString(),
-          security_level: 'INFO',
-          password_strength_check: 'passed'
+          timestamp: new Date().toISOString()
         });
       }
 

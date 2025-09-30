@@ -112,19 +112,31 @@ export const getTenantsWithMaskedData = async (
       };
     }
 
-    // Use secure database function that handles access control, decryption, and masking
+    // Direct query in staging (no secure function available)
     const { data, error } = await supabase
-      .rpc('get_secure_tenant_data', {
-        tenant_property_owner_id: propertyOwnerId
-      });
+      .from('tenants')
+      .select('*')
+      .eq('property_owner_id', propertyOwnerId);
 
     if (error) {
-      console.error('Error fetching secure tenant data:', error);
+      console.error('Error fetching tenant data:', error);
       return { data: null, error };
     }
 
-    // Database function returns properly masked data
-    const maskedData: MaskedTenantData[] = data || [];
+    // Mask data manually in staging
+    const maskedData: MaskedTenantData[] = (data || []).map(tenant => ({
+      id: tenant.id,
+      first_name: tenant.first_name || 'Ukjent',
+      last_name: tenant.last_name || '',
+      email_masked: tenant.email ? getMaskedEmail(tenant.email) : null,
+      phone_masked: tenant.phone ? getMaskedPhone(tenant.phone) : null,
+      national_id_masked: tenant.national_id ? getMaskedNationalId(tenant.national_id) : null,
+      emergency_phone_masked: tenant.emergency_phone ? getMaskedPhone(tenant.emergency_phone) : null,
+      monthly_income: tenant.monthly_income,
+      property_owner_id: tenant.property_owner_id,
+      created_at: tenant.created_at,
+      updated_at: tenant.updated_at
+    }));
 
     return { data: maskedData, error: null };
   } catch (error) {
