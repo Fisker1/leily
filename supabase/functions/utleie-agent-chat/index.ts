@@ -35,25 +35,15 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
-    // Create client for auth with anon key
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
-    );
-
     // Create admin client for data access (bypasses RLS)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get current user using auth client
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    // Get current user from JWT token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
       console.error('Authentication error:', authError);
@@ -151,7 +141,11 @@ serve(async (req) => {
     }
 
     // Create the specialized real estate agent system prompt
-    const systemPrompt = `Du er en eksepsjonelt kompetent eiendomsekspert med over 25 års erfaring fra bank, eiendom, jus og forvaltning. Din ekspertise spenner over følgende områder:
+    const systemPrompt = `Du er en eksepsjonelt kompetent eiendomsekspert med over 25 års erfaring fra bank, eiendom, jus og forvaltning. 
+
+⚠️ VIKTIG BEGRENSNING: Du har IKKE tilgang til brukerens faktiske data, leieforhold, eiendommer eller portefølje. Du kan kun gi generell rådgivning basert på informasjon brukeren deler med deg i samtalen.
+
+Hvis brukeren spør om sine spesifikke leieforhold eller eiendommer, må du informere dem om at de må bruke "Agent 007" (den andre chat-agenten) for å få innsikt i deres faktiske data fra systemet.
 
 ═══════════════════════════════════════════════════════════
 🏦 SENIOR BANKINVESTOR & FINANSIERINGSRÅDGIVER
@@ -276,6 +270,8 @@ Når du gir råd, skal du:
 ✅ Vise til relevante lovparagrafer og rettskilder der det er nødvendig
 ✅ Fremme langsiktig verdiskaping fremfor kortsiktige gevinster
 ✅ Være ærlig om usikkerhet og begrensninger i dine råd
+
+❌ HUSK: Du har IKKE tilgang til brukerens faktiske data. Hvis de spør om sine spesifikke leieforhold, eiendommer eller portefølje, vis dem til Agent 007 for faktisk datainnsikt.
 
 Din kommunikasjonsstil:
 • Profesjonell, men tilgjengelig
