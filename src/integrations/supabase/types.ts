@@ -723,6 +723,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      use_credits: {
+        Args: { credits_to_use: number; operation_type?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "ambassador" | "user"
