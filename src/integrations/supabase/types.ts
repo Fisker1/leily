@@ -41,55 +41,10 @@ export type Database = {
         }
         Relationships: []
       }
-      building_projects: {
-        Row: {
-          calculation_id: string | null
-          created_at: string
-          floor_plans: Json
-          id: string
-          placed_items: Json
-          project_name: string
-          total_cost: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          calculation_id?: string | null
-          created_at?: string
-          floor_plans?: Json
-          id?: string
-          placed_items?: Json
-          project_name: string
-          total_cost?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          calculation_id?: string | null
-          created_at?: string
-          floor_plans?: Json
-          id?: string
-          placed_items?: Json
-          project_name?: string
-          total_cost?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "building_projects_calculation_id_fkey"
-            columns: ["calculation_id"]
-            isOneToOne: false
-            referencedRelation: "calculation_history"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       calculation_history: {
         Row: {
           calculation_data: Json
           calculation_name: string | null
-          coordinates: number[] | null
           created_at: string
           finn_code: string | null
           id: string
@@ -101,7 +56,6 @@ export type Database = {
         Insert: {
           calculation_data: Json
           calculation_name?: string | null
-          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -113,7 +67,6 @@ export type Database = {
         Update: {
           calculation_data?: Json
           calculation_name?: string | null
-          coordinates?: number[] | null
           created_at?: string
           finn_code?: string | null
           id?: string
@@ -123,44 +76,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      chat_messages: {
-        Row: {
-          created_at: string
-          id: string
-          lease_id: string
-          message_content: string
-          sender_id: string
-          sender_type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          lease_id: string
-          message_content: string
-          sender_id: string
-          sender_type: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          lease_id?: string
-          message_content?: string
-          sender_id?: string
-          sender_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_chat_messages_lease_id"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_agreements"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       deposit_accounts: {
         Row: {
@@ -197,51 +112,6 @@ export type Database = {
           lease_id?: string
           property_owner_id?: string
           status?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "deposit_accounts_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_agreements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_deposit_accounts_lease_id"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_agreements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      finn_property_cache: {
-        Row: {
-          created_at: string
-          expires_at: string
-          extracted_at: string
-          finn_code: string
-          id: string
-          property_data: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string
-          extracted_at?: string
-          finn_code: string
-          id?: string
-          property_data: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          extracted_at?: string
-          finn_code?: string
-          id?: string
-          property_data?: Json
           updated_at?: string
         }
         Relationships: []
@@ -301,36 +171,7 @@ export type Database = {
           updated_at?: string
           utilities_included?: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_lease_agreements_property_id"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_lease_agreements_tenant_id"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lease_agreements_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lease_agreements_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payment_records: {
         Row: {
@@ -378,10 +219,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          credits: number | null
           email: string
           full_name: string | null
           id: string
+          is_test_user: boolean | null
+          plan: string | null
+          plan_expires_at: string | null
+          role: string | null
           subscription_end: string | null
           subscription_tier: string | null
           updated_at: string
@@ -389,10 +233,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          credits?: number | null
           email: string
           full_name?: string | null
           id: string
+          is_test_user?: boolean | null
+          plan?: string | null
+          plan_expires_at?: string | null
+          role?: string | null
           subscription_end?: string | null
           subscription_tier?: string | null
           updated_at?: string
@@ -400,10 +247,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          credits?: number | null
           email?: string
           full_name?: string | null
           id?: string
+          is_test_user?: boolean | null
+          plan?: string | null
+          plan_expires_at?: string | null
+          role?: string | null
           subscription_end?: string | null
           subscription_tier?: string | null
           updated_at?: string
@@ -415,7 +265,6 @@ export type Database = {
           address: string
           bedrooms: number | null
           city: string | null
-          coordinates: number[] | null
           created_at: string
           current_value: number | null
           id: string
@@ -439,7 +288,6 @@ export type Database = {
           address: string
           bedrooms?: number | null
           city?: string | null
-          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string
@@ -463,7 +311,6 @@ export type Database = {
           address?: string
           bedrooms?: number | null
           city?: string | null
-          coordinates?: number[] | null
           created_at?: string
           current_value?: number | null
           id?: string
@@ -522,15 +369,7 @@ export type Database = {
           uploaded_at?: string
           uploaded_by?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "property_documents_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       property_valuations: {
         Row: {
@@ -566,15 +405,7 @@ export type Database = {
           valuation_date?: string
           valuation_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "property_valuations_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rate_limits: {
         Row: {
@@ -640,15 +471,7 @@ export type Database = {
           report_type?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "reports_payment_record_id_fkey"
-            columns: ["payment_record_id"]
-            isOneToOne: false
-            referencedRelation: "payment_records"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       tenants: {
         Row: {
@@ -744,22 +567,7 @@ export type Database = {
           signatures_completed?: boolean | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_transfer_protocols_lease_id"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_agreements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transfer_protocols_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_agreements"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -787,162 +595,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_credits_to_user: {
-        Args: {
-          credits_amount: number
-          justification?: string
-          target_user_id: string
-        }
-        Returns: boolean
-      }
-      admin_access_payment_records: {
-        Args: { admin_justification: string; target_user_id?: string }
-        Returns: {
-          amount: number
-          created_at: string
-          currency: string
-          id: string
-          payment_method_masked: string
-          payment_status: string
-          payment_type: string
-          user_id: string
-        }[]
-      }
-      admin_access_tenant_data: {
-        Args: { admin_justification: string; tenant_property_owner_id: string }
-        Returns: {
-          access_timestamp: string
-          email_partially_masked: string
-          first_name: string
-          id: string
-          last_name: string
-          national_id_partially_masked: string
-          phone_partially_masked: string
-          property_owner_id: string
-        }[]
-      }
-      admin_update_subscription: {
-        Args: {
-          admin_justification: string
-          new_subscription_end: string
-          new_subscription_tier: string
-          target_user_id: string
-        }
-        Returns: boolean
-      }
-      check_auth_security_config: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          action_required: string
-          current_status: string
-          recommendation: string
-          setting_name: string
-        }[]
-      }
-      check_security_configuration: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          action_required: string
-          check_name: string
-          description: string
-          severity: string
-          status: string
-        }[]
-      }
-      cleanup_expired_finn_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_security_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      decrypt_tenant_field: {
-        Args: { encrypted_text: string }
-        Returns: string
-      }
-      detect_security_violations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      detect_suspicious_tenant_access: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      encrypt_tenant_field: {
-        Args: { plain_text: string }
-        Returns: string
-      }
-      enhanced_auth_security_monitoring: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      enhanced_rate_limit_check: {
-        Args: {
-          endpoint_name: string
-          identifier_key: string
-          max_requests?: number
-          penalty_multiplier?: number
-          window_minutes?: number
-        }
-        Returns: Json
-      }
-      enhanced_security_cleanup: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      get_property_financial_summary: {
-        Args: { property_owner_id: string }
-        Returns: {
-          address: string
-          estimated_equity_range: string
-          id: string
-          monthly_rent: number
-          property_type: string
-          purchase_date: string
-          purchase_price_range: string
-        }[]
-      }
-      get_secure_tenant_data: {
-        Args: { tenant_property_owner_id: string }
-        Returns: {
-          address: string
-          created_at: string
-          email_masked: string
-          emergency_contact: string
-          emergency_phone_masked: string
-          first_name: string
-          id: string
-          last_name: string
-          monthly_income: number
-          national_id_masked: string
-          occupation: string
-          phone_masked: string
-          property_owner_id: string
-          updated_at: string
-        }[]
-      }
-      get_security_status_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          description: string
-          requires_manual_config: boolean
-          security_feature: string
-          status: string
-        }[]
-      }
-      get_user_roles_for_edge_function: {
-        Args: { target_user_id: string }
-        Returns: Json
-      }
-      has_legitimate_tenant_access: {
-        Args: { tenant_property_owner_id: string }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -950,62 +602,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      monitor_admin_tenant_access: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      monitor_payment_security: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      monitor_property_security: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      monitor_subscription_violations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      process_paid_subscription_upgrade: {
-        Args: {
-          duration_months?: number
-          new_tier: string
-          payment_id: string
-          user_id: string
-        }
-        Returns: boolean
-      }
-      promote_user_to_admin: {
-        Args: { target_user_id: string }
-        Returns: boolean
-      }
-      promote_user_to_ambassador: {
-        Args: { target_user_id: string }
-        Returns: boolean
-      }
-      track_failed_auth_attempts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      use_credits: {
-        Args: { credits_to_use?: number; operation_type?: string }
-        Returns: boolean
-      }
-      validate_password_strength: {
-        Args: { password_text: string }
-        Returns: Json
-      }
-      validate_property_ownership: {
-        Args: { property_id: string }
-        Returns: boolean
-      }
-      validate_tenant_ownership: {
-        Args: { tenant_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
-      app_role: "admin" | "user" | "ambassador"
+      app_role: "admin" | "ambassador" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1133,7 +732,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "ambassador"],
+      app_role: ["admin", "ambassador", "user"],
     },
   },
 } as const

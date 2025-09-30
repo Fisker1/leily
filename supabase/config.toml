@@ -1,9 +1,1 @@
 project_id = "wdwjmapvuibsqiifslno"
-
-# Rate limiting function configuration
-[functions.rate-limiter]
-verify_jwt = false
-
-# Data copy function configuration
-[functions.copy-production-data]
-verify_jwt = false
