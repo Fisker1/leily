@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useOptimizedPropertyData } from "@/hooks/useOptimizedPropertyData";
 import { formatNumberWithSpaces } from "@/lib/utils";
+import rentalMapExample from "@/assets/rental-map-example.png";
 
 const RentalMap = () => {
   const { user } = useAuth();
@@ -284,11 +285,78 @@ const RentalMap = () => {
 
   if (!user) {
     return (
-      <Card className="h-[600px] flex items-center justify-center">
-        <CardContent>
-          <p className="text-muted-foreground">Logg inn for å se kartet</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              <CardTitle>Leiekart - Avkastning per område</CardTitle>
+            </div>
+            <CardDescription>
+              Utforsk avkastning og leiepriser geografisk basert på markedsdata
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Map Controls */}
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="my-properties"
+                    checked={true}
+                    disabled
+                  />
+                  <Label htmlFor="my-properties" className="flex items-center gap-2 opacity-50">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full border border-white"></div>
+                    Mine eiendommer
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="calculations"
+                    checked={true}
+                    disabled
+                  />
+                  <Label htmlFor="calculations" className="flex items-center gap-2 opacity-50">
+                    <div className="w-3 h-3 bg-amber-500 rounded-full border border-white"></div>
+                    Kalkulasjoner
+                  </Label>
+                </div>
+              </div>
+
+              {/* Example Map Image */}
+              <div className="relative">
+                <img 
+                  src={rentalMapExample} 
+                  alt="Eksempel på leiekart med eiendommer" 
+                  className="w-full h-[500px] rounded-lg border object-cover"
+                />
+                
+                <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded-lg backdrop-blur-sm">
+                  <div className="text-center space-y-4 p-6">
+                    <MapPin className="h-12 w-12 mx-auto text-primary" />
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">Logg inn for å se ditt leiekart</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Se dine eiendommer og kalkulasjoner på kartet
+                      </p>
+                    </div>
+                    <Button onClick={() => window.location.href = '/auth'} size="lg">
+                      Logg inn
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Map Info */}
+              <div className="text-sm text-muted-foreground">
+                <p>Kartdata fra Mapbox. Logg inn for å se dine eiendommer.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
