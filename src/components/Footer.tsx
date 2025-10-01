@@ -12,16 +12,8 @@ const Footer = () => {
     <>
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       
-      <footer className="bg-muted/30 py-12 border-t border-border relative">
+      <footer className="bg-muted/30 py-12 border-t border-border relative mt-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Chat-ikon til høyre */}
-          <Button
-            onClick={() => setFeedbackOpen(true)}
-            size="lg"
-            className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg z-50"
-          >
-            <MessageCircle className="h-6 w-6" />
-          </Button>
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <h3 className="text-2xl font-bold text-primary mb-4">{translations.footer.company}</h3>
@@ -39,13 +31,22 @@ const Footer = () => {
               <li><a href="/calculator" className="hover:text-primary transition-colors">Investeringskalkulator</a></li>
               <li><a href="/portfolio" className="hover:text-primary transition-colors">Portfolio</a></li>
               <li><a href="/rental" className="hover:text-primary transition-colors">Utleie</a></li>
-              <li><a href="/pricing" className="hover:text-primary transition-colors">Priser</a></li>
+              <li><a href="/#pricing" className="hover:text-primary transition-colors">Priser</a></li>
             </ul>
           </div>
           
           <div>
             <h4 className="font-semibold text-foreground mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <button 
+                  onClick={() => setFeedbackOpen(true)}
+                  className="hover:text-primary transition-colors flex items-center gap-2 group"
+                >
+                  <MessageCircle className="h-4 w-4 animate-pulse group-hover:animate-bounce" />
+                  Tilbakemelding
+                </button>
+              </li>
               <li><a href="#" className="hover:text-primary transition-colors">Hjelpesenter</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">{translations.footer.links.contact}</a></li>
               <li><a href="/privacy" className="hover:text-primary transition-colors">{translations.footer.links.privacy}</a></li>

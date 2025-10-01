@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import RentalMap from "@/components/RentalMap";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { PropertyEditDialog } from "@/components/PropertyEditDialog";
@@ -844,6 +845,7 @@ const Rental = () => {
         lease={selectedProperty?.lease_agreements?.[0]}
         tenant={selectedProperty?.lease_agreements?.[0]?.tenants}
       />
+      <Footer />
     </div>
   );
 };
