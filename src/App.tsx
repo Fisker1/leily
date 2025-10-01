@@ -37,6 +37,8 @@ const MyProfile = lazy(() => import("./pages/MyProfile"));
 const UtleieAgent = lazy(() => import("./pages/UtleieAgent"));
 const Agent007 = lazy(() => import("./pages/Agent007"));
 const CreditsPurchasePage = lazy(() => import("./pages/CreditsPurchasePage"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const EnvDebug = lazy(() => import("./pages/__env"));
 const Health = lazy(() => import("./pages/__health"));
 const SupabaseInfo = lazy(() => import("./pages/__supabase"));
@@ -102,6 +104,8 @@ const App = () => {
                     <Route path="/bank-report" element={<BankReport />} />
                     <Route path="/min-side" element={<MyProfile />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="/__env" element={<EnvDebug />} />
                     <Route path="/__health" element={<Health />} />
                     <Route path="/__supabase" element={<SupabaseInfo />} />

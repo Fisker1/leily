@@ -32,8 +32,8 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-primary transition-colors">Hjelpesenter</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">{translations.footer.links.contact}</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">{translations.footer.links.privacy}</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">{translations.footer.links.terms}</a></li>
+              <li><a href="/privacy" className="hover:text-primary transition-colors">{translations.footer.links.privacy}</a></li>
+              <li><a href="/terms" className="hover:text-primary transition-colors">{translations.footer.links.terms}</a></li>
             </ul>
           </div>
         </div>
