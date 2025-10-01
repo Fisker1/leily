@@ -80,7 +80,7 @@ const PricingOverview = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ul className="space-y-3">
+              <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <ChartBar className="w-3 h-3 text-primary" />
