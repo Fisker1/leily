@@ -1,16 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUserRole } from '@/hooks/useUserRole';
-import { 
-  FileText, 
-  MessageCircle, 
-  Eye, 
-  Edit, 
-  EyeOff, 
-  Trash,
-  Banknote
-} from 'lucide-react';
+import { FileText, MessageCircle, Eye, Edit, EyeOff, Trash } from 'lucide-react';
 
 interface Property {
   id: string;
@@ -38,6 +29,7 @@ interface PropertyActionsBalloonProps {
   onEdit: () => void;
   onToggleVisibility: () => void;
   onDelete: () => void;
+  isLoggedIn?: boolean;
 }
 
 export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
@@ -48,10 +40,10 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
   onEdit,
   onToggleVisibility,
   onDelete,
+  isLoggedIn = true,
 }) => {
   const [isPopped, setIsPopped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const { isAmbassador, loading } = useUserRole();
 
   const handleBalloonClick = () => {
     if (isPopped || isAnimating) return;
@@ -81,23 +73,15 @@ export const PropertyActionsBalloon: React.FC<PropertyActionsBalloonProps> = ({
           }`}
           onClick={handleBalloonClick}
         >
-          {isAmbassador ? (
-            <Banknote 
-              className={`h-12 w-12 text-green-500 transition-all duration-200 ${
-                isAnimating ? 'scale-0' : ''
-              }`} 
-            />
-          ) : (
-            <FileText 
-              className={`h-12 w-12 text-primary transition-all duration-200 ${
-                isAnimating ? 'scale-0' : ''
-              }`} 
-            />
-          )}
+          <FileText 
+            className={`h-12 w-12 text-primary transition-all duration-200 ${
+              isAnimating ? 'scale-0' : ''
+            }`} 
+          />
         </div>
         {!isAnimating && (
           <div className="absolute mt-16 text-xs text-muted-foreground opacity-75 animate-pulse">
-            {isAmbassador ? 'Klikk pengene' : 'Klikk for handlinger'}
+            Klikk for handlinger
           </div>
         )}
       </div>

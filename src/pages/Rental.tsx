@@ -668,94 +668,17 @@ const Rental = () => {
                     {/* Actions */}
                     <div className="lg:col-span-1 flex flex-col justify-between">
                       {!user ? (
-                         <TooltipProvider>
-                           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 w-full max-w-[300px] mx-auto lg:w-28 lg:gap-2">
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => navigate('/auth')}
-                                 >
-                                   <FileText className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Dokumenter</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Dokumenter</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => navigate('/auth')}
-                                 >
-                                   <Eye className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Detaljer</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Detaljer</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0"
-                                   onClick={() => navigate('/auth')}
-                                 >
-                                   <Edit className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Rediger</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Rediger</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0 col-span-2 sm:col-span-1"
-                                   onClick={() => navigate('/auth')}
-                                 >
-                                   <EyeOff className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Skjul</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Skjul fra utleie</p>
-                               </TooltipContent>
-                             </Tooltip>
-                             
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="w-full h-10 px-2 text-xs lg:w-8 lg:h-8 lg:p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800/30 col-span-2 sm:col-span-1"
-                                   onClick={() => navigate('/auth')}
-                                 >
-                                   <Trash className="h-4 w-4" />
-                                   <span className="ml-1 lg:hidden">Slett</span>
-                                 </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Slett</p>
-                               </TooltipContent>
-                             </Tooltip>
-                           </div>
-                         </TooltipProvider>
+                        <PropertyActionsBalloon
+                          key={`balloon-${property.id}-${balloonResetKeys[property.id] || 0}`}
+                          property={property}
+                          isLoggedIn={false}
+                          onDocuments={() => navigate('/auth')}
+                          onTenantChat={() => navigate('/auth')}
+                          onDetails={() => navigate('/auth')}
+                          onEdit={() => navigate('/auth')}
+                          onToggleVisibility={() => navigate('/auth')}
+                          onDelete={() => navigate('/auth')}
+                        />
                       ) : isExampleProperty ? (
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground mb-4">
