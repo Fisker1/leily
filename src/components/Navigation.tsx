@@ -23,10 +23,10 @@ const Navigation = () => {
 
   return (
     <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sticky top-0 z-50 w-full border-b border-border/50">
-      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+      <div className="w-full px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto">
+        <div className="flex items-center justify-between h-16">
           {/* Logo - Left Section */}
-          <div className="flex items-center flex-shrink-0 w-32">
+          <div className="flex items-center flex-shrink-0">
             <Link to={user ? "/dashboard" : "/"} className="flex items-center">
               <LeilyLogo 
                 showText={false}
@@ -58,7 +58,7 @@ const Navigation = () => {
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex items-center justify-end space-x-2 flex-shrink-0 w-48">
+          <div className="flex items-center justify-end space-x-2 flex-shrink-0">
             {user ? (
               <>
                 {/* Utleie Agent Button */}
@@ -103,13 +103,11 @@ const Navigation = () => {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
+                {/* Desktop - Green login button */}
+                <Button size="sm" className="bg-gradient-primary hover:opacity-90 hidden sm:flex" asChild>
                   <Link to="/auth" className="text-sm">{translations.nav.signIn}</Link>
                 </Button>
-                <Button size="sm" className="bg-gradient-primary hover:opacity-90 hidden sm:flex" asChild>
-                  <Link to="/calculator" className="text-sm">{translations.nav.startAnalysis}</Link>
-                </Button>
-                {/* Mobile login button - visible only on mobile when not logged in */}
+                {/* Mobile login button */}
                 <Button variant="ghost" size="sm" asChild className="sm:hidden text-sm">
                   <Link to="/auth" className="px-2">{translations.nav.signIn}</Link>
                 </Button>
@@ -132,7 +130,7 @@ const Navigation = () => {
 
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 border-b border-border/50 bg-background shadow-lg z-50">
-            <div className="container mx-auto px-4 py-6 space-y-6">
+            <div className="px-4 py-6 space-y-6">
               <nav className="flex flex-col space-y-4">
                 <Link 
                   to="/calculator" 
@@ -203,14 +201,9 @@ const Navigation = () => {
               
               {!user && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <Button variant="outline" className="w-full justify-start" size="lg" asChild>
+                  <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
                     <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
                       {translations.nav.signIn}
-                    </Link>
-                  </Button>
-                  <Button className="w-full bg-gradient-primary hover:opacity-90" size="lg" asChild>
-                    <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
-                      {translations.nav.startAnalysis}
                     </Link>
                   </Button>
                 </div>
