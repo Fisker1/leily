@@ -41,7 +41,7 @@ const CreditsBar = ({ maxCredits = 100, className = "" }: CreditsBarProps) => {
         </Badge>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-background border rounded-lg shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-background border rounded-lg shadow-sm">
             <div className="relative w-20 h-4 bg-muted rounded-full overflow-hidden">
               <div 
                 className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
