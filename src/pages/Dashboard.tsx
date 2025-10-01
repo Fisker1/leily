@@ -21,6 +21,14 @@ interface DashboardStats {
   upcomingExpirations: number;
 }
 
+interface ActivityLog {
+  id: string;
+  action: string;
+  table_name: string;
+  details: any;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const { translations, language } = useLanguage();
@@ -31,10 +39,12 @@ const Dashboard = () => {
     totalMonthlyIncome: 0,
     upcomingExpirations: 0,
   });
+  const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchRecentActivity();
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -97,6 +107,63 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRecentActivity = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('audit_log')
+        .select('id, action, table_name, details, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setRecentActivities(data || []);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  const getActivityMessage = (activity: ActivityLog) => {
+    const { action, table_name, details } = activity;
+    
+    switch (action) {
+      case 'insert':
+        if (table_name === 'properties') return 'La til ny eiendom';
+        if (table_name === 'lease_agreements') return 'Opprettet nytt leieforhold';
+        if (table_name === 'calculation_history') return 'Lagret ny kalkyle';
+        if (table_name === 'property_documents') return 'Lastet opp dokument';
+        if (table_name === 'tenants') return 'La til ny leietaker';
+        return `Opprettet i ${table_name}`;
+      case 'update':
+        if (table_name === 'properties') return 'Oppdaterte eiendom';
+        if (table_name === 'lease_agreements') return 'Oppdaterte leieforhold';
+        if (table_name === 'property_documents') return 'Oppdaterte dokument';
+        return `Oppdaterte ${table_name}`;
+      case 'delete':
+        if (table_name === 'properties') return 'Slettet eiendom';
+        if (table_name === 'lease_agreements') return 'Slettet leieforhold';
+        return `Slettet fra ${table_name}`;
+      case 'credits_used':
+        return `Brukte ${details?.credits_used || 0} kreditter`;
+      default:
+        return action;
+    }
+  };
+
+  const getActivityIcon = (activity: ActivityLog) => {
+    const { action, table_name } = activity;
+    
+    if (table_name === 'properties') return Home;
+    if (table_name === 'lease_agreements') return FileText;
+    if (table_name === 'calculation_history') return Calculator;
+    if (table_name === 'property_documents') return FileText;
+    if (table_name === 'tenants') return Users;
+    if (action === 'credits_used') return DollarSign;
+    
+    return FileText;
   };
 
   const quickActions = [
@@ -304,10 +371,41 @@ const Dashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>{translations.dashboard.noRecentActivity}</p>
-          </div>
+          {recentActivities.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>{translations.dashboard.noRecentActivity}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivities.map((activity) => {
+                const Icon = getActivityIcon(activity);
+                const timeAgo = new Date(activity.created_at).toLocaleDateString('nb-NO', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                
+                return (
+                  <div
+                    key={activity.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {getActivityMessage(activity)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
