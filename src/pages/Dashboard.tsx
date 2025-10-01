@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import MinimalFooter from '@/components/MinimalFooter';
 import CreditsBar from '@/components/CreditsBar';
+import { UserRoleBadge } from '@/components/UserRoleBadge';
 
 interface DashboardStats {
   totalProperties: number;
@@ -205,9 +206,7 @@ const Dashboard = () => {
           {translations.dashboard.welcomeMessage}
         </p>
         <div className="flex items-center gap-3 flex-wrap">
-          <Badge variant={profile?.subscription_tier === 'pro' ? 'default' : 'secondary'} className="h-8 px-3 text-sm">
-            {profile?.subscription_tier === 'pro' ? translations.dashboard.proPlan : translations.dashboard.freePlan}
-          </Badge>
+          <UserRoleBadge />
           <CreditsBar />
           {profile?.subscription_tier === 'free' && (
             <Button asChild variant="outline" size="sm">

@@ -41,15 +41,15 @@ const CreditsBar = ({ maxCredits = 100, className = "" }: CreditsBarProps) => {
         </Badge>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center gap-2 px-4 h-8 bg-background border rounded-lg shadow-sm min-w-[320px]">
-            <div className="relative w-32 h-2.5 bg-muted rounded-full overflow-hidden">
+          <div className="inline-flex items-center gap-2 px-4 h-7 bg-background border rounded-lg shadow-sm min-w-[320px]">
+            <div className="relative w-32 h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${getProgressColor()}`}
                 style={{ width: `${creditsPercentage}%` }}
               />
             </div>
             <div className="flex items-center gap-1">
-              <span className={`text-base font-bold tabular-nums ${getTextColor()}`}>
+              <span className={`text-sm font-bold tabular-nums ${getTextColor()}`}>
                 {credits}
               </span>
               <span className="text-xs text-muted-foreground">

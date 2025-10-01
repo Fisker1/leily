@@ -123,7 +123,7 @@ const MyProfile = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="secondary" className="cursor-help">
+              <Badge variant="secondary" className="h-7 px-3 text-sm cursor-help">
                 <Shield className="w-3 h-3 mr-1" />
                 Admin
               </Badge>
@@ -142,8 +142,8 @@ const MyProfile = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="secondary" className="cursor-help">
-                <Star className="w-3 h-3 mr-1" />
+              <Badge variant="outline" className="h-7 px-3 text-sm border-amber-300 text-amber-700 bg-amber-50 cursor-help">
+                <Star className="w-3 h-3 mr-1 fill-current" />
                 Ambassadør
               </Badge>
             </TooltipTrigger>
@@ -161,8 +161,7 @@ const MyProfile = () => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="secondary" className="cursor-help">
-                <Crown className="w-3 h-3 mr-1" />
+              <Badge variant="default" className="h-7 px-3 text-sm cursor-help">
                 Pro
               </Badge>
             </TooltipTrigger>
@@ -174,7 +173,21 @@ const MyProfile = () => {
       );
     }
 
-    return null;
+    // Free tier
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="h-7 px-3 text-sm cursor-help">
+              Gratis
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Gratis bruker - Grunnleggende funksjoner</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   // Redirect to auth if no user
@@ -273,7 +286,12 @@ const MyProfile = () => {
                   <Label htmlFor="subscription">Abonnement</Label>
                   <Input
                     id="subscription"
-                    value={subscriptionTier === 'pro' ? 'Pro' : subscriptionTier === 'premium' ? 'Premium' : 'Gratis'}
+                    value={
+                      isAdmin ? 'Admin' : 
+                      isAmbassador ? 'Ambassadør' : 
+                      subscriptionTier === 'pro' || subscriptionTier === 'premium' ? 'Pro' : 
+                      'Gratis'
+                    }
                     disabled
                     className="bg-muted"
                   />
