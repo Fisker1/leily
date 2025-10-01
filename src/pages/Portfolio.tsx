@@ -13,7 +13,8 @@ import RentalAgreementDialog from "@/components/RentalAgreementDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getTenantsWithMaskedData, logTenantDataAccess } from "@/lib/tenantSecurity";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { format, parseISO, addMonths, startOfMonth } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -144,7 +145,8 @@ const Portfolio = () => {
       current_value: 3200000,
       monthly_rent: 25000,
       demo_cashflow: 2200,
-      owner_id: "example"
+      owner_id: "example",
+      created_at: "2022-03-15"
     }
   ];
 
@@ -163,7 +165,8 @@ const Portfolio = () => {
       current_value: 3200000,
       monthly_rent: 25000,
       demo_cashflow: 2800,
-      owner_id: "mock"
+      owner_id: "mock",
+      created_at: "2022-03-15"
     },
     {
       id: "mock-2", 
@@ -178,7 +181,8 @@ const Portfolio = () => {
       current_value: 1850000,
       monthly_rent: 16000,
       demo_cashflow: 800,
-      owner_id: "mock"
+      owner_id: "mock",
+      created_at: "2021-11-20"
     },
     {
       id: "mock-3",
@@ -192,7 +196,8 @@ const Portfolio = () => {
       purchase_date: "2023-01-10",
       current_value: 3350000,
       demo_cashflow: 300,
-      owner_id: "mock"
+      owner_id: "mock",
+      created_at: "2023-01-10"
     }
   ];
 
@@ -550,62 +555,97 @@ const Portfolio = () => {
   const totalReturn = currentPortfolioValue - totalInvestment;
   const averageROI = totalInvestment > 0 ? (totalReturn / totalInvestment) * 100 : 0;
 
-  // Mock data for price development chart (for demo purposes)
-  const priceChartData = [
-    { 
-      month: 'Jan 2022', 
-      'Storgata 15': 2800000, 
-        'Havnegata 7': 1600000, 
-        'Grünerløkka 8': 3100000 
-    },
-    { 
-      month: 'Apr 2022', 
-      'Storgata 15': 2850000, 
-        'Havnegata 7': 1580000, 
-        'Grünerløkka 8': 3120000 
-    },
-    { 
-      month: 'Jul 2022', 
-      'Storgata 15': 2920000, 
-        'Havnegata 7': 1650000, 
-        'Grünerløkka 8': 3150000 
-    },
-    { 
-      month: 'Okt 2022', 
-      'Storgata 15': 2980000, 
-        'Havnegata 7': 1720000, 
-        'Grünerløkka 8': 3200000 
-    },
-    { 
-      month: 'Jan 2023', 
-      'Storgata 15': 3050000, 
-        'Havnegata 7': 1750000, 
-        'Grünerløkka 8': 3280000 
-    },
-    { 
-      month: 'Apr 2023', 
-      'Storgata 15': 3100000, 
-        'Havnegata 7': 1780000, 
-        'Grünerløkka 8': 3320000 
-    },
-    { 
-      month: 'Jul 2023', 
-      'Storgata 15': 3150000, 
-        'Havnegata 7': 1810000, 
-        'Grünerløkka 8': 3340000 
-    },
-    { 
-      month: 'Okt 2023', 
-      'Storgata 15': 3180000, 
-        'Havnegata 7': 1830000, 
-        'Grünerløkka 8': 3350000 
-    },
-    { 
-      month: 'Jan 2024', 
-      'Storgata 15': 3200000, 
-        'Havnegata 7': 1850000, 
-        'Grünerløkka 8': 3350000 
+  // Generate real price development chart data based on user properties
+  const priceChartData = useMemo(() => {
+    if (!user || displayProperties.length === 0) {
+      // Mock data for demo/logged-out users
+      return [
+        { month: 'Jan 2022', 'Storgata 15': 2800000, 'Havnegata 7': 1600000, 'Grünerløkka 8': 3100000 },
+        { month: 'Apr 2022', 'Storgata 15': 2850000, 'Havnegata 7': 1580000, 'Grünerløkka 8': 3120000 },
+        { month: 'Jul 2022', 'Storgata 15': 2920000, 'Havnegata 7': 1650000, 'Grünerløkka 8': 3150000 },
+        { month: 'Okt 2022', 'Storgata 15': 2980000, 'Havnegata 7': 1720000, 'Grünerløkka 8': 3200000 },
+        { month: 'Jan 2023', 'Storgata 15': 3050000, 'Havnegata 7': 1750000, 'Grünerløkka 8': 3280000 },
+        { month: 'Apr 2023', 'Storgata 15': 3100000, 'Havnegata 7': 1780000, 'Grünerløkka 8': 3320000 },
+        { month: 'Jul 2023', 'Storgata 15': 3150000, 'Havnegata 7': 1810000, 'Grünerløkka 8': 3340000 },
+        { month: 'Okt 2023', 'Storgata 15': 3180000, 'Havnegata 7': 1830000, 'Grünerløkka 8': 3350000 },
+        { month: 'Jan 2024', 'Storgata 15': 3200000, 'Havnegata 7': 1850000, 'Grünerløkka 8': 3350000 }
+      ];
     }
+
+    // Find the earliest property date
+    const earliestDate = displayProperties.reduce((earliest, prop) => {
+      const propDate = prop.purchase_date || prop.created_at;
+      if (!propDate) return earliest;
+      const date = parseISO(propDate);
+      return !earliest || date < earliest ? date : earliest;
+    }, null as Date | null);
+
+    if (!earliestDate) return [];
+
+    // Generate monthly data points from earliest date to now
+    const now = new Date();
+    const months: Date[] = [];
+    let currentMonth = startOfMonth(earliestDate);
+    
+    while (currentMonth <= now) {
+      months.push(currentMonth);
+      currentMonth = addMonths(currentMonth, 1);
+    }
+
+    // Build chart data
+    return months.map(month => {
+      const dataPoint: any = {
+        month: format(month, 'MMM yyyy')
+      };
+
+      displayProperties.forEach(property => {
+        const propStartDate = parseISO(property.purchase_date || property.created_at || '');
+        const propertyName = `${property.address}${property.postal_code ? ', ' + property.postal_code : ''}`;
+        
+        // Only show property data from when it was added
+        if (month >= startOfMonth(propStartDate)) {
+          const purchasePrice = property.purchase_price || 0;
+          const currentValue = property.current_value || purchasePrice;
+          
+          // Calculate simple linear appreciation from purchase to current
+          const monthsSincePurchase = Math.max(1, 
+            (month.getTime() - propStartDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+          );
+          const monthsTotal = Math.max(1,
+            (now.getTime() - propStartDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+          );
+          
+          const appreciation = currentValue - purchasePrice;
+          const valueAtMonth = purchasePrice + (appreciation * (monthsSincePurchase / monthsTotal));
+          
+          dataPoint[propertyName] = Math.round(valueAtMonth);
+        }
+      });
+
+      return dataPoint;
+    });
+  }, [user, displayProperties]);
+
+  // Get property names for chart lines
+  const propertyNames = useMemo(() => {
+    if (!user || displayProperties.length === 0) {
+      return ['Storgata 15', 'Havnegata 7', 'Grünerløkka 8'];
+    }
+    return displayProperties.map(p => 
+      `${p.address}${p.postal_code ? ', ' + p.postal_code : ''}`
+    );
+  }, [user, displayProperties]);
+
+  // Colors for chart lines
+  const chartColors = [
+    'hsl(var(--primary))',
+    'hsl(var(--orange))',
+    'hsl(var(--accent))',
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))'
   ];
 
   return (
@@ -1532,50 +1572,46 @@ const Portfolio = () => {
                    {!user ? "Demo prisutvikling for eksempeleiendommene" : "Verdiutvikling for dine eiendommer"}
                  </CardDescription>
                </CardHeader>
-               <CardContent>
-                 <div className="h-80">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <LineChart data={priceChartData}>
-                       <CartesianGrid strokeDasharray="3 3" />
-                       <XAxis dataKey="month" />
-                       <YAxis 
-                         tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
-                       />
-                        <RechartsTooltip 
-                          formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
-                          labelFormatter={(label) => `Måned: ${label}`}
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={priceChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="month" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          interval="preserveStartEnd"
                         />
-                       <Legend />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Storgata 15" 
-                         stroke="hsl(var(--primary))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--primary))' }}
-                       />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Bogstadveien 42" 
-                         stroke="hsl(var(--orange))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--orange))' }}
-                       />
-                       <Line 
-                         type="monotone" 
-                         dataKey="Grünerløkka 8" 
-                         stroke="hsl(var(--accent))" 
-                         strokeWidth={3}
-                         dot={{ fill: 'hsl(var(--accent))' }}
-                       />
-                     </LineChart>
-                   </ResponsiveContainer>
-                 </div>
-                 {(!user || showExampleProperty) && (
-                   <p className="text-xs text-center text-muted-foreground mt-4">
-                     {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
-                   </p>
-                 )}
-               </CardContent>
+                        <YAxis 
+                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                        />
+                         <RechartsTooltip 
+                           formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
+                           labelFormatter={(label) => `Måned: ${label}`}
+                         />
+                        <Legend />
+                        {propertyNames.map((propertyName, index) => (
+                          <Line 
+                            key={propertyName}
+                            type="monotone" 
+                            dataKey={propertyName} 
+                            stroke={chartColors[index % chartColors.length]} 
+                            strokeWidth={2}
+                            dot={{ fill: chartColors[index % chartColors.length], r: 3 }}
+                            connectNulls
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {(!user || showExampleProperty) && (
+                    <p className="text-xs text-center text-muted-foreground mt-4">
+                      {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
+                    </p>
+                  )}
+                </CardContent>
              </Card>
            </TabsContent>
         </Tabs>
