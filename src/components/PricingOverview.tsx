@@ -4,10 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Check, Star, Calculator, Bot, Building2, CreditCard, Users, FileText, ChartBar } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const PricingOverview = () => {
-  return (
-    <section id="pricing" className="py-16 bg-gradient-soft">
+  return <section id="pricing" className="py-16 bg-gradient-soft">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
@@ -78,7 +76,7 @@ const PricingOverview = () => {
                   <span className="text-sm font-bold text-foreground">80/100</span>
                 </div>
                 <Progress value={80} className="h-2" />
-                <div className="text-xs text-center text-muted-foreground">5-100 credits tilgjengelig</div>
+                
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -154,8 +152,6 @@ const PricingOverview = () => {
           </Card>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default PricingOverview;
