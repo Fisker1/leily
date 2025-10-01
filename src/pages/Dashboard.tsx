@@ -205,7 +205,7 @@ const Dashboard = () => {
           {translations.dashboard.welcomeMessage}
         </p>
         <div className="flex items-center gap-3 flex-wrap">
-          <Badge variant={profile?.subscription_tier === 'pro' ? 'default' : 'secondary'}>
+          <Badge variant={profile?.subscription_tier === 'pro' ? 'default' : 'secondary'} className="h-8 px-3 text-sm">
             {profile?.subscription_tier === 'pro' ? translations.dashboard.proPlan : translations.dashboard.freePlan}
           </Badge>
           <CreditsBar />
