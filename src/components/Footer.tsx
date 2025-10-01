@@ -1,11 +1,27 @@
+import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
+import FeedbackDialog from "@/components/FeedbackDialog";
 
 const Footer = () => {
   const { translations } = useLanguage();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   
   return (
-    <footer className="bg-muted/30 py-12 border-t border-border">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      
+      <footer className="bg-muted/30 py-12 border-t border-border relative">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Chat-ikon til høyre */}
+          <Button
+            onClick={() => setFeedbackOpen(true)}
+            size="lg"
+            className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg z-50"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <h3 className="text-2xl font-bold text-primary mb-4">{translations.footer.company}</h3>
@@ -37,8 +53,9 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-      </div>
-    </footer>
+        </div>
+      </footer>
+    </>
   );
 };
 
