@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Check, Star, Calculator, Bot, Building2, CreditCard, Users, FileText, ChartBar } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -71,10 +72,13 @@ const PricingOverview = () => {
                 <Bot className="w-6 h-6 text-primary" />
               </div>
               <CardTitle className="text-xl text-primary">Pro Credits</CardTitle>
-              <div className="py-2 space-y-1">
-                <div className="text-sm text-muted-foreground">Fra</div>
-                <div className="font-bold text-foreground">50-500 kr</div>
-                <div className="text-xs text-muted-foreground">5-100 credits</div>
+              <div className="py-4 px-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Credits</span>
+                  <span className="text-sm font-bold text-foreground">80/100</span>
+                </div>
+                <Progress value={80} className="h-2" />
+                <div className="text-xs text-center text-muted-foreground">5-100 credits tilgjengelig</div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
