@@ -1474,21 +1474,26 @@ const Portfolio = () => {
                         <p className="text-muted-foreground">
                           {averageROI >= 0 ? '+' : ''}{averageROI.toFixed(1)}% siden oppstart
                         </p>
-                        {(!user || showExampleProperty) && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {!user ? "Demo tall" : "Legg til eiendommer for å se din faktiske utvikling"}
-                          </p>
-                        )}
                       </div>
                       {(() => {
-                        const totalRentalIncome = displayProperties
-                          .filter(p => p.monthly_rent)
-                          .reduce((sum, p) => sum + (p.monthly_rent || 0), 0);
-                        const monthsSinceStart = displayProperties.length > 0 ? 
-                          Math.max(1, Math.floor((new Date().getTime() - new Date(displayProperties[0].purchase_date || '2022-03-15').getTime()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                        const rentedProperties = displayProperties.filter(p => p.monthly_rent && p.monthly_rent > 0);
+                        const totalRentalIncome = rentedProperties.reduce((sum, p) => sum + (p.monthly_rent || 0), 0);
+                        
+                        // Calculate months since earliest rental property was added
+                        const earliestRentalDate = rentedProperties.length > 0 
+                          ? rentedProperties.reduce((earliest, p) => {
+                              const propDate = new Date(p.purchase_date || p.created_at || new Date());
+                              return !earliest || propDate < earliest ? propDate : earliest;
+                            }, null as Date | null)
+                          : null;
+                        
+                        const monthsSinceStart = earliestRentalDate
+                          ? Math.max(1, Math.floor((new Date().getTime() - earliestRentalDate.getTime()) / (1000 * 60 * 60 * 24 * 30)))
+                          : 0;
+                        
                         const totalRentalEarned = totalRentalIncome * monthsSinceStart;
                         
-                        if (totalRentalIncome > 0) {
+                        if (rentedProperties.length > 0 && totalRentalIncome > 0) {
                           return (
                             <div className="text-center p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                               <h4 className="text-lg font-semibold mb-2 text-emerald-800 dark:text-emerald-200">Total leieinntekt siden oppstart</h4>
@@ -1496,19 +1501,14 @@ const Portfolio = () => {
                                 +{totalRentalEarned.toLocaleString()} kr
                               </p>
                               <p className="text-muted-foreground">
-                                {totalRentalIncome.toLocaleString()} kr/måned fra {displayProperties.filter(p => p.monthly_rent).length} utleieobjekt{displayProperties.filter(p => p.monthly_rent).length !== 1 ? 'er' : ''}
+                                {totalRentalIncome.toLocaleString()} kr/måned fra {rentedProperties.length} utleieobjekt{rentedProperties.length !== 1 ? 'er' : ''}
                               </p>
-                              {(!user || showExampleProperty) && (
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  {!user ? "Demo leieinntekt" : "Basert på dine utleieeiendommer"}
-                                </p>
-                              )}
                             </div>
                           );
                         }
                         return null;
                       })()}
-                  </CardContent>
+                   </CardContent>
                 </Card>
 
                 <Card className="shadow-medium">
@@ -1518,43 +1518,38 @@ const Portfolio = () => {
                       {user && !showExampleProperty ? "Høyest avkastning i din portefølje" : "Eksempel på beste investering"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const bestProperty = displayProperties.reduce((best, current) => {
-                        const currentROI = current.purchase_price && current.current_value ? 
-                          ((current.current_value - current.purchase_price) / current.purchase_price) * 100 : 0;
-                        const bestROI = best.purchase_price && best.current_value ? 
-                          ((best.current_value - best.purchase_price) / best.purchase_price) * 100 : 0;
-                        return currentROI > bestROI ? current : best;
-                      });
-                      const bestROI = bestProperty.purchase_price && bestProperty.current_value ? 
-                        ((bestProperty.current_value - bestProperty.purchase_price) / bestProperty.purchase_price) * 100 : 0;
-                      const bestReturn = bestProperty.current_value && bestProperty.purchase_price ? 
-                        bestProperty.current_value - bestProperty.purchase_price : 0;
-                      
-                      return (
-                        <div className="space-y-3">
-                          <div className="p-4 bg-primary-soft rounded-lg">
-                            <h4 className="font-semibold text-primary">
-                              {bestProperty.address}
-                              {bestProperty.postal_code && `, ${bestProperty.postal_code}`} {bestProperty.city}
-                            </h4>
-                            <p className="text-2xl font-bold text-primary mt-2">
-                              +{bestROI.toFixed(1)}% avkastning
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Gevinst: +{bestReturn.toLocaleString()} kr
-                            </p>
-                            {(!user || showExampleProperty) && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                {!user ? "Demo eiendom" : "Basert på dine eiendommer"}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
+                   <CardContent>
+                     {(() => {
+                       const bestProperty = displayProperties.reduce((best, current) => {
+                         const currentROI = current.purchase_price && current.current_value ? 
+                           ((current.current_value - current.purchase_price) / current.purchase_price) * 100 : 0;
+                         const bestROI = best.purchase_price && best.current_value ? 
+                           ((best.current_value - best.purchase_price) / best.purchase_price) * 100 : 0;
+                         return currentROI > bestROI ? current : best;
+                       });
+                       const bestROI = bestProperty.purchase_price && bestProperty.current_value ? 
+                         ((bestProperty.current_value - bestProperty.purchase_price) / bestProperty.purchase_price) * 100 : 0;
+                       const bestReturn = bestProperty.current_value && bestProperty.purchase_price ? 
+                         bestProperty.current_value - bestProperty.purchase_price : 0;
+                       
+                       return (
+                         <div className="space-y-3">
+                           <div className="p-4 bg-primary-soft rounded-lg">
+                             <h4 className="font-semibold text-primary">
+                               {bestProperty.address}
+                               {bestProperty.postal_code && `, ${bestProperty.postal_code}`} {bestProperty.city}
+                             </h4>
+                             <p className="text-2xl font-bold text-primary mt-2">
+                               +{bestROI.toFixed(1)}% avkastning
+                             </p>
+                             <p className="text-sm text-muted-foreground">
+                               Gevinst: +{bestReturn.toLocaleString()} kr
+                             </p>
+                           </div>
+                         </div>
+                       );
+                     })()}
+                   </CardContent>
                 </Card>
               </div>
             )}
@@ -1568,29 +1563,24 @@ const Portfolio = () => {
                     {user && !showExampleProperty ? "Fordeling av dine investeringer" : "Eksempel på diversifisering"}
                   </CardDescription>
                 </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {displayProperties.map((property) => {
-                        const percentage = property.purchase_price && totalInvestment > 0 ? 
-                          (property.purchase_price / totalInvestment) * 100 : 0;
-                        return (
-                          <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
-                            <h5 className="font-semibold text-sm mb-2">
-                              {property.address}
-                              {property.postal_code && `, ${property.postal_code}`}
-                            </h5>
-                            <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
-                            <p className="text-xs text-muted-foreground">av portefølje</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {(!user || showExampleProperty) && (
-                      <p className="text-xs text-center text-muted-foreground mt-4">
-                        {!user ? "Demo diversifisering" : "Legg til flere eiendommer for bedre diversifisering"}
-                      </p>
-                    )}
-                   </CardContent>
+                   <CardContent>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       {displayProperties.map((property) => {
+                         const percentage = property.purchase_price && totalInvestment > 0 ? 
+                           (property.purchase_price / totalInvestment) * 100 : 0;
+                         return (
+                           <div key={property.id} className="text-center p-4 bg-muted rounded-lg">
+                             <h5 className="font-semibold text-sm mb-2">
+                               {property.address}
+                               {property.postal_code && `, ${property.postal_code}`}
+                             </h5>
+                             <p className="text-2xl font-bold text-primary">{percentage.toFixed(1)}%</p>
+                             <p className="text-xs text-muted-foreground">av portefølje</p>
+                           </div>
+                         );
+                       })}
+                     </div>
+                    </CardContent>
                </Card>
              )}
                 
