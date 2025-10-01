@@ -70,7 +70,7 @@ const PricingOverview = () => {
                 <Bot className="w-6 h-6 text-primary" />
               </div>
               <CardTitle className="text-xl text-primary">Pro Credits</CardTitle>
-              <div className="py-4 px-4 space-y-3">
+              <div className="pt-4 pb-[10px] px-4 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-muted-foreground">Credits</span>
                   <span className="text-sm font-bold text-foreground">80/100</span>
