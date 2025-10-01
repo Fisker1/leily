@@ -120,6 +120,9 @@ const Portfolio = () => {
   const [isUpdatingValues, setIsUpdatingValues] = useState(false);
   const [originalValues, setOriginalValues] = useState<Record<string, number>>({});
   
+  // Chart filtering states
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  
   // Debug subscription status - remove in production
   // console.log('User subscription status:', { isPro, subscriptionTier, user: !!user });
   
@@ -626,27 +629,57 @@ const Portfolio = () => {
     });
   }, [user, displayProperties]);
 
-  // Get property names for chart lines
-  const propertyNames = useMemo(() => {
+  // Get property names and colors for chart lines
+  const propertyChartData = useMemo(() => {
     if (!user || displayProperties.length === 0) {
-      return ['Storgata 15', 'Havnegata 7', 'Grünerløkka 8'];
+      return [
+        { name: 'Storgata 15', isRented: false },
+        { name: 'Havnegata 7', isRented: true },
+        { name: 'Grünerløkka 8', isRented: true }
+      ];
     }
-    return displayProperties.map(p => 
-      `${p.address}${p.postal_code ? ', ' + p.postal_code : ''}`
-    );
+    return displayProperties.map(p => ({
+      name: `${p.address}${p.postal_code ? ', ' + p.postal_code : ''}`,
+      isRented: !!(p.monthly_rent && p.monthly_rent > 0)
+    }));
   }, [user, displayProperties]);
 
-  // Colors for chart lines
-  const chartColors = [
-    'hsl(var(--primary))',
-    'hsl(var(--orange))',
-    'hsl(var(--accent))',
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))'
-  ];
+  // Calculate average portfolio value per month
+  const priceChartDataWithAverage = useMemo(() => {
+    return priceChartData.map(dataPoint => {
+      const propertyValues = propertyChartData
+        .map(prop => dataPoint[prop.name])
+        .filter(val => val !== undefined && val !== null) as number[];
+      
+      const average = propertyValues.length > 0 
+        ? propertyValues.reduce((sum, val) => sum + val, 0) / propertyValues.length
+        : 0;
+      
+      return {
+        ...dataPoint,
+        'Gjennomsnitt': Math.round(average)
+      };
+    });
+  }, [priceChartData, propertyChartData]);
+
+  // Handle legend click to filter properties
+  const handleLegendClick = (e: any) => {
+    const dataKey = e.dataKey as string;
+    if (dataKey === 'Gjennomsnitt') return; // Don't filter average line
+    
+    setSelectedProperties(prev => {
+      if (prev.length === 0) {
+        // If no filter active, show only clicked property
+        return [dataKey];
+      } else if (prev.includes(dataKey)) {
+        // If clicking already selected property, remove filter and show all
+        return [];
+      } else {
+        // If clicking different property, show only that one
+        return [dataKey];
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -1575,40 +1608,80 @@ const Portfolio = () => {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={priceChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
+                      <LineChart data={priceChartDataWithAverage}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis 
                           dataKey="month" 
                           angle={-45}
                           textAnchor="end"
                           height={80}
                           interval="preserveStartEnd"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
                         />
                         <YAxis 
                           tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M kr`}
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
                         />
                          <RechartsTooltip 
                            formatter={(value: number) => [`${value.toLocaleString()} kr`, '']}
                            labelFormatter={(label) => `Måned: ${label}`}
                          />
-                        <Legend />
-                        {propertyNames.map((propertyName, index) => (
-                          <Line 
-                            key={propertyName}
-                            type="monotone" 
-                            dataKey={propertyName} 
-                            stroke={chartColors[index % chartColors.length]} 
-                            strokeWidth={2}
-                            dot={{ fill: chartColors[index % chartColors.length], r: 3 }}
-                            connectNulls
-                          />
-                        ))}
+                        <Legend 
+                          onClick={handleLegendClick}
+                          wrapperStyle={{ cursor: 'pointer', userSelect: 'none' }}
+                        />
+                        {/* Property lines */}
+                        {propertyChartData.map((property) => {
+                          const isVisible = selectedProperties.length === 0 || selectedProperties.includes(property.name);
+                          return (
+                            <Line 
+                              key={property.name}
+                              type="monotone" 
+                              dataKey={property.name} 
+                              stroke={property.isRented ? 'hsl(142, 76%, 36%)' : 'hsl(221, 83%, 53%)'} 
+                              strokeWidth={2}
+                              dot={{ fill: property.isRented ? 'hsl(142, 76%, 36%)' : 'hsl(221, 83%, 53%)', r: 3 }}
+                              connectNulls
+                              hide={!isVisible}
+                              strokeOpacity={isVisible ? 1 : 0.2}
+                            />
+                          );
+                        })}
+                        {/* Average line - always white */}
+                        <Line 
+                          type="monotone" 
+                          dataKey="Gjennomsnitt" 
+                          stroke="hsl(0, 0%, 100%)" 
+                          strokeWidth={3}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          connectNulls
+                        />
                       </LineChart>
                     </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-0.5 bg-[hsl(142,76%,36%)]"></div>
+                      <span className="text-muted-foreground">Utleide eiendommer</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-0.5 bg-[hsl(221,83%,53%)]"></div>
+                      <span className="text-muted-foreground">Eide eiendommer</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-0.5 bg-white border border-muted"></div>
+                      <span className="text-muted-foreground">Gjennomsnitt</span>
+                    </div>
                   </div>
                   {(!user || showExampleProperty) && (
                     <p className="text-xs text-center text-muted-foreground mt-4">
                       {!user ? "Demo prisutvikling" : "Legg til flere eiendommer for å se faktisk prisutvikling"}
+                    </p>
+                  )}
+                  {selectedProperties.length > 0 && (
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      Klikk på egenskapen igjen for å vise alle eiendommer
                     </p>
                   )}
                 </CardContent>
