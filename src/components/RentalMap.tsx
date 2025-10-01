@@ -25,12 +25,42 @@ const RentalMap = () => {
 
   // Layer toggles
   const [showMyProperties, setShowMyProperties] = useState(true);
-  const [showRentalProperties, setShowRentalProperties] = useState(true);
+  const [showRentedProperties, setShowRentedProperties] = useState(false);
   const [showCalculationProperties, setShowCalculationProperties] = useState(true);
   const [showMarketData, setShowMarketData] = useState(true);
+  
+  // Rented properties data
+  const [rentedPropertyIds, setRentedPropertyIds] = useState<Set<string>>(new Set());
 
   // Get data
   const { properties, calculationProperties, loading: dataLoading } = useOptimizedPropertyData();
+
+  // Fetch rented properties (active leases)
+  useEffect(() => {
+    const fetchRentedProperties = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: leases, error } = await supabase
+          .from('lease_agreements')
+          .select('property_id')
+          .eq('status', 'active')
+          .eq('property_owner_id', user.id);
+        
+        if (error) {
+          console.error('Error fetching active leases:', error);
+          return;
+        }
+        
+        const rentedIds = new Set(leases?.map(lease => lease.property_id) || []);
+        setRentedPropertyIds(rentedIds);
+      } catch (error) {
+        console.error('Error fetching rented properties:', error);
+      }
+    };
+
+    fetchRentedProperties();
+  }, [user, properties]);
 
   // Fetch Mapbox token
   const fetchMapboxToken = async () => {
@@ -76,12 +106,30 @@ const RentalMap = () => {
     if (showMyProperties && properties?.length > 0) {
       properties.forEach((property) => {
         if (property.coordinates && property.coordinates.length === 2) {
+          const isRented = rentedPropertyIds.has(property.id);
+          
+          // Determine marker color
+          // If rented toggle is on and property is rented, show green
+          // Otherwise show blue (but hide if rented toggle is on and property is not rented)
+          let markerColor = '#3b82f6'; // Blue by default
+          let shouldShow = true;
+          
+          if (showRentedProperties) {
+            if (isRented) {
+              markerColor = '#22c55e'; // Green for rented
+            } else {
+              shouldShow = false; // Hide non-rented when rented toggle is on
+            }
+          }
+          
+          if (!shouldShow) return;
+          
           const el = document.createElement('div');
-          el.className = 'marker-property';
+          el.className = isRented && showRentedProperties ? 'marker-property-rented' : 'marker-property';
           el.style.cssText = `
             width: 16px;
             height: 16px;
-            background: #3b82f6;
+            background: ${markerColor};
             border: 2px solid white;
             border-radius: 50%;
             cursor: pointer;
@@ -96,6 +144,7 @@ const RentalMap = () => {
                 ${property.monthly_rent ? `<p style="margin: 2px 0;">Månedlig leie: ${formatNumberWithSpaces(property.monthly_rent)} NOK</p>` : ''}
                 ${property.current_value ? `<p style="margin: 2px 0;">Verdi: ${formatNumberWithSpaces(property.current_value)} NOK</p>` : ''}
                 ${property.primary_residence ? '<p style="margin: 2px 0; color: #059669; font-weight: 500;">🏠 Primærbolig</p>' : ''}
+                ${isRented ? '<p style="margin: 2px 0; color: #22c55e; font-weight: 500;">✓ Utleid</p>' : ''}
               </div>
             </div>
           `);
@@ -263,10 +312,12 @@ const RentalMap = () => {
       addMarkers();
     }
   }, [
-    showMyProperties, 
+    showMyProperties,
+    showRentedProperties,
     showCalculationProperties, 
     properties, 
     calculationProperties, 
+    rentedPropertyIds,
     loading, 
     dataLoading
   ]);
@@ -402,6 +453,18 @@ const RentalMap = () => {
                 <Label htmlFor="my-properties" className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full border border-white"></div>
                   Mine eiendommer
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="rented-properties"
+                  checked={showRentedProperties}
+                  onCheckedChange={setShowRentedProperties}
+                />
+                <Label htmlFor="rented-properties" className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                  Utleide eiendommer
                 </Label>
               </div>
               
