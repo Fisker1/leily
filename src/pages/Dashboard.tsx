@@ -169,14 +169,14 @@ const Dashboard = () => {
       title: translations.dashboard.addProperty,
       description: translations.dashboard.addPropertyDesc,
       icon: Plus,
-      href: '/properties/new',
+      href: '/portfolio',
       color: 'primary',
     },
     {
       title: translations.dashboard.addTenant,
       description: translations.dashboard.addTenantDesc,
       icon: Users,
-      href: '/tenants/new',
+      href: '/utleie',
       color: 'secondary',
     },
     {
