@@ -43,87 +43,84 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardStats();
-    fetchRecentActivity();
+    fetchDashboardData();
   }, []);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     if (!user) {
       setLoading(false);
       return;
     }
 
     try {
-      // Fetch properties count
-      const { count: propertiesCount } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true });
-
-      // Fetch tenants count using secure access
-      const { data: tenantsData, error: tenantsError } = await getTenantsWithMaskedData(user.id);
-      const tenantsCount = tenantsData?.length || 0;
-      
-      if (tenantsError) {
-        console.error('Error fetching secure tenant data for dashboard:', tenantsError);
-      }
-
-      // Log secure tenant data access for dashboard
-      if (tenantsCount > 0) {
-        await logTenantDataAccess('dashboard_stats', 'dashboard', {
-          action: 'count_tenants',
-          tenant_count: tenantsCount,
-          access_type: 'count_only'
-        });
-      }
-
-      // Fetch active leases and calculate monthly income
-      const { data: activeLeases, count: activeLeasesCount } = await supabase
-        .from('lease_agreements')
-        .select('monthly_rent, end_date', { count: 'exact' })
-        .eq('status', 'active');
-
-      const totalMonthlyIncome = activeLeases?.reduce((sum, lease) => 
-        sum + (parseFloat(lease.monthly_rent?.toString() || '0')), 0) || 0;
-
-      // Count leases expiring in the next 30 days
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      
-      const { count: upcomingExpirations } = await supabase
-        .from('lease_agreements')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .lt('end_date', thirtyDaysFromNow.toISOString().split('T')[0]);
 
+      // Execute all queries in parallel for maximum speed
+      const [
+        propertiesResult,
+        tenantsResult,
+        activeLeasesResult,
+        upcomingExpirationsResult,
+        recentActivityResult
+      ] = await Promise.all([
+        // Properties count - lightweight HEAD request
+        supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true }),
+        
+        // Tenants count - lightweight HEAD request instead of fetching all data
+        supabase
+          .from('tenants')
+          .select('*', { count: 'exact', head: true })
+          .eq('property_owner_id', user.id),
+        
+        // Active leases with monthly rent for income calculation
+        supabase
+          .from('lease_agreements')
+          .select('monthly_rent', { count: 'exact' })
+          .eq('status', 'active')
+          .eq('property_owner_id', user.id),
+        
+        // Upcoming expirations
+        supabase
+          .from('lease_agreements')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .eq('property_owner_id', user.id)
+          .lt('end_date', thirtyDaysFromNow.toISOString().split('T')[0]),
+        
+        // Recent activity
+        supabase
+          .from('audit_log')
+          .select('id, action, table_name, details, created_at')
+          .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
+          .order('created_at', { ascending: false })
+          .limit(5)
+      ]);
+
+      // Calculate monthly income
+      const totalMonthlyIncome = activeLeasesResult.data?.reduce(
+        (sum, lease) => sum + (parseFloat(lease.monthly_rent?.toString() || '0')), 
+        0
+      ) || 0;
+
+      // Update stats
       setStats({
-        totalProperties: propertiesCount || 0,
-        totalTenants: tenantsCount,
-        totalActiveLeases: activeLeasesCount || 0,
+        totalProperties: propertiesResult.count || 0,
+        totalTenants: tenantsResult.count || 0,
+        totalActiveLeases: activeLeasesResult.count || 0,
         totalMonthlyIncome,
-        upcomingExpirations: upcomingExpirations || 0,
+        upcomingExpirations: upcomingExpirationsResult.count || 0,
       });
+
+      // Update recent activities
+      setRecentActivities(recentActivityResult.data || []);
+
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRecentActivity = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('audit_log')
-        .select('id, action, table_name, details, created_at')
-        .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      setRecentActivities(data || []);
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
     }
   };
 
