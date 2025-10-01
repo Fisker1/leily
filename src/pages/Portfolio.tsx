@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import MinimalFooter from "@/components/MinimalFooter";
 import { PropertyAddDialog } from "@/components/PropertyAddDialog";
 import { PropertyEditDialog } from "@/components/PropertyEditDialog";
 import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
@@ -1616,7 +1616,7 @@ const Portfolio = () => {
         properties={properties}
         onPropertyAdded={fetchUserProperties}
       />
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 };

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Home, Users, FileText, DollarSign, Calendar, ArrowRight, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+import MinimalFooter from '@/components/MinimalFooter';
 import CreditsBar from '@/components/CreditsBar';
 
 interface DashboardStats {
@@ -312,7 +312,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
     </div>
-    <Footer />
+    <MinimalFooter />
     </>
   );
 };
