@@ -116,6 +116,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('audit_log')
         .select('id, action, table_name, details, created_at')
+        .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
         .order('created_at', { ascending: false })
         .limit(5);
 
