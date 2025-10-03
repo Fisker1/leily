@@ -64,7 +64,7 @@ const Calculator = () => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
   const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
-  const [showLoanCalculator, setShowLoanCalculator] = useState(false);
+  const [showProFeatures, setShowProFeatures] = useState(false);
   
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
@@ -354,14 +354,50 @@ const Calculator = () => {
           </TabsList>
           
           <TabsContent value="calculator" className="space-y-8">
-            {/* Finn Property Fetcher - Pro users only */}
-            <div className="max-w-2xl mx-auto">
-              <FinnPropertyFetcher
-                onPropertyDataReceived={handleFinnPropertyDataReceived}
-                initialFinnCode={finnCode}
-                className="mb-6"
-              />
-            </div>
+            {/* Pro Features Toggle - Only for Pro users */}
+            {isPro && (
+              <div className="max-w-2xl mx-auto">
+                <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Badge variant="secondary" className="font-semibold">PRO</Badge>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">Pro-instillinger</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Automatisk henting fra Finn og lånekalkulator
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={showProFeatures}
+                        onCheckedChange={setShowProFeatures}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Finn Property Fetcher - Only visible when Pro features are enabled */}
+            {isPro && showProFeatures && (
+              <div className="max-w-2xl mx-auto">
+                <FinnPropertyFetcher
+                  onPropertyDataReceived={handleFinnPropertyDataReceived}
+                  initialFinnCode={finnCode}
+                  className="mb-6"
+                />
+              </div>
+            )}
+
+            {/* Loan Calculator - Only visible when Pro features are enabled */}
+            {isPro && showProFeatures && (
+              <div className="max-w-2xl mx-auto">
+                <LoanCalculator />
+              </div>
+            )}
 
             {/* Centered Property Details */}
             <div className="max-w-2xl mx-auto">
@@ -531,43 +567,25 @@ const Calculator = () => {
                    </div>
 
                   {/* Loan Period */}
-                  <div className="space-y-2">
-                    <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
-                    <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="loanPeriod">Låneperiode (år)</Label>
+                     <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
 
-                  {/* Pro Feature: Loan Calculator Integration */}
-                  {isPro && (
-                    <div className="space-y-4 pt-4 border-t mt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Wallet className="h-5 w-5 text-primary" />
-                          <div>
-                            <h3 className="text-lg font-semibold text-foreground">Lånekalkulator</h3>
-                            <p className="text-sm text-muted-foreground">Planlegg egenkapital for dette kjøpet</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">Pro</Badge>
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setShowLoanCalculator(!showLoanCalculator)}
-                      >
-                        {showLoanCalculator ? 'Skjul' : 'Åpne'} Lånekalkulator
-                      </Button>
-                      
-                      {showLoanCalculator && (
-                        <div className="pt-4">
-                          <LoanCalculator />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Expenses Section */}
-                  <div className="space-y-4 pt-4 border-t">
+            {/* Expenses Section */}
+            <div className="max-w-2xl mx-auto">
+              <Card className="shadow-medium">
+                <CardHeader>
+                  <CardTitle className="text-primary">Utgifter</CardTitle>
+                  <CardDescription>
+                    Månedlige utgifter knyttet til eiendommen
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
                     
                     <div className="grid grid-cols-1 gap-4">
@@ -617,12 +635,14 @@ const Calculator = () => {
                         <span className="text-lg font-semibold">{formatNumberWithSpaces(totalExpenses)} kr</span>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
 
-              {/* Generate Report Button - Always visible */}
-              <div className="mt-6 text-center space-y-4">
+            {/* Generate Report Button - Always visible */}
+            <div className="max-w-2xl mx-auto">
+              <div className="text-center space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                   <Button 
                     size="lg" 
