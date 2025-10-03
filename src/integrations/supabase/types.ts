@@ -204,6 +204,9 @@ export type Database = {
       equity_management: {
         Row: {
           created_at: string
+          default_equity_percentage: number | null
+          default_interest_rate: number | null
+          default_loan_period_years: number | null
           id: string
           notes: string | null
           total_equity: number
@@ -212,6 +215,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_equity_percentage?: number | null
+          default_interest_rate?: number | null
+          default_loan_period_years?: number | null
           id?: string
           notes?: string | null
           total_equity?: number
@@ -220,6 +226,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_equity_percentage?: number | null
+          default_interest_rate?: number | null
+          default_loan_period_years?: number | null
           id?: string
           notes?: string | null
           total_equity?: number
