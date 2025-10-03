@@ -63,21 +63,14 @@ const Calculator = () => {
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
-  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library | loan-calculator
+  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
+  const [showLoanCalculator, setShowLoanCalculator] = useState(false);
   
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
       toast({
         title: "Byggeplanlegger (Pro)",
         description: "Oppgrader til Pro för å få tilgang til den avanserte byggeplanleggeren.",
-        duration: 4000,
-      });
-      return;
-    }
-    if (value === "loan-calculator" && !canAccessLoanCalculator) {
-      toast({
-        title: "Lånekalkulator (Pro)",
-        description: "Oppgrader til Pro för å få tilgang til lånekalkulatoren.",
         duration: 4000,
       });
       return;
@@ -335,21 +328,13 @@ const Calculator = () => {
 
         {/* Tab selector */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 sm:max-w-4xl mx-auto mb-8 h-auto p-2 gap-2">
+          <TabsList className="grid w-full grid-cols-3 sm:max-w-3xl mx-auto mb-8 h-auto p-2 gap-2">
             <TabsTrigger 
               value="calculator" 
               className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
             >
               <CalcIcon className="h-5 w-5" />
               <span className="hidden sm:inline">Eiendomskalkulator</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="loan-calculator" 
-              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
-            >
-              <Wallet className="h-5 w-5" />
-              <span className="hidden sm:inline">Lånekalkulator</span>
-              {!isPro && <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs hidden sm:inline-flex">Pro</Badge>}
             </TabsTrigger>
             <TabsTrigger 
               value="library" 
@@ -551,6 +536,36 @@ const Calculator = () => {
                     <Input id="loanPeriod" type="number" value={calculatorData.loanPeriod} onChange={e => handleInputChange('loanPeriod', e.target.value)} placeholder="30" />
                   </div>
 
+                  {/* Pro Feature: Loan Calculator Integration */}
+                  {isPro && (
+                    <div className="space-y-4 pt-4 border-t mt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Wallet className="h-5 w-5 text-primary" />
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground">Lånekalkulator</h3>
+                            <p className="text-sm text-muted-foreground">Planlegg egenkapital for dette kjøpet</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">Pro</Badge>
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowLoanCalculator(!showLoanCalculator)}
+                      >
+                        {showLoanCalculator ? 'Skjul' : 'Åpne'} Lånekalkulator
+                      </Button>
+                      
+                      {showLoanCalculator && (
+                        <div className="pt-4">
+                          <LoanCalculator />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Expenses Section */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-lg font-semibold text-foreground">Utgifter</h3>
@@ -715,26 +730,6 @@ const Calculator = () => {
               onSaveCurrentCalculation={() => setSaveDialogOpen(true)}
               currentCalculationData={canShowResults ? calculatorData : null}
             />
-          </TabsContent>
-          
-          <TabsContent value="loan-calculator">
-            {canAccessLoanCalculator ? (
-              <LoanCalculator />
-            ) : (
-              <Card className="max-w-2xl mx-auto">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                  <Wallet className="h-12 w-12 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold">Lånekalkulator</h3>
-                  <p className="text-muted-foreground">
-                    Administrer egenkapital og planlegg lånescenarier for fremtidige eiendomskjøp. Kun tilgjengelig for Pro-brukere.
-                  </p>
-                  <Badge variant="outline">Pro</Badge>
-                  <Button className="mt-4">
-                    Oppgrader til Pro
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
           
           <TabsContent value="building-planner">
