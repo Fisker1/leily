@@ -201,6 +201,33 @@ export type Database = {
         }
         Relationships: []
       }
+      equity_management: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          total_equity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          total_equity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          total_equity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       finn_property_cache: {
         Row: {
           created_at: string
@@ -421,6 +448,84 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      loan_scenarios: {
+        Row: {
+          additional_funding_amount: number | null
+          additional_funding_source: string | null
+          calculation_id: string | null
+          created_at: string
+          equity_allocated: number
+          id: string
+          interest_rate: number
+          loan_amount: number
+          loan_period_years: number
+          loan_to_value: number | null
+          monthly_payment: number | null
+          property_address: string | null
+          property_id: string | null
+          property_value: number
+          scenario_name: string
+          total_interest: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_funding_amount?: number | null
+          additional_funding_source?: string | null
+          calculation_id?: string | null
+          created_at?: string
+          equity_allocated: number
+          id?: string
+          interest_rate: number
+          loan_amount: number
+          loan_period_years: number
+          loan_to_value?: number | null
+          monthly_payment?: number | null
+          property_address?: string | null
+          property_id?: string | null
+          property_value: number
+          scenario_name: string
+          total_interest?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_funding_amount?: number | null
+          additional_funding_source?: string | null
+          calculation_id?: string | null
+          created_at?: string
+          equity_allocated?: number
+          id?: string
+          interest_rate?: number
+          loan_amount?: number
+          loan_period_years?: number
+          loan_to_value?: number | null
+          monthly_payment?: number | null
+          property_address?: string | null
+          property_id?: string | null
+          property_value?: number
+          scenario_name?: string
+          total_interest?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_scenarios_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_scenarios_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_records: {
         Row: {
@@ -850,6 +955,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_available_equity: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       get_user_roles_for_edge_function: {
         Args: { target_user_id: string }
         Returns: {

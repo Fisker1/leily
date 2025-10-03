@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save, Plus } from 'lucide-react';
+import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save, Plus, Wallet } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
@@ -28,6 +28,7 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
 import { FinnPropertyData } from '@/types/finn';
+import { LoanCalculator } from '@/components/LoanCalculator';
 
 const Calculator = () => {
   const {
@@ -56,18 +57,27 @@ const Calculator = () => {
   // Access control
   const canAccessBuildingPlanner = isPro;
   const canAccessExtendedReport = isAdmin;
+  const canAccessLoanCalculator = isPro;
 
   // Get state from navigation (if returning from module addition)
   const [locationState, setLocationState] = useState(location.state || {});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
-  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
+  const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library | loan-calculator
   
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
       toast({
         title: "Byggeplanlegger (Pro)",
         description: "Oppgrader til Pro för å få tilgang til den avanserte byggeplanleggeren.",
+        duration: 4000,
+      });
+      return;
+    }
+    if (value === "loan-calculator" && !canAccessLoanCalculator) {
+      toast({
+        title: "Lånekalkulator (Pro)",
+        description: "Oppgrader til Pro för å få tilgang til lånekalkulatoren.",
         duration: 4000,
       });
       return;
@@ -325,13 +335,21 @@ const Calculator = () => {
 
         {/* Tab selector */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:max-w-3xl mx-auto mb-8 h-auto p-2 gap-2">
+          <TabsList className="grid w-full grid-cols-4 sm:max-w-4xl mx-auto mb-8 h-auto p-2 gap-2">
             <TabsTrigger 
               value="calculator" 
               className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
             >
               <CalcIcon className="h-5 w-5" />
               <span className="hidden sm:inline">Eiendomskalkulator</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="loan-calculator" 
+              className="flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-3 sm:px-6 text-sm font-medium"
+            >
+              <Wallet className="h-5 w-5" />
+              <span className="hidden sm:inline">Lånekalkulator</span>
+              {!isPro && <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs hidden sm:inline-flex">Pro</Badge>}
             </TabsTrigger>
             <TabsTrigger 
               value="library" 
@@ -697,6 +715,26 @@ const Calculator = () => {
               onSaveCurrentCalculation={() => setSaveDialogOpen(true)}
               currentCalculationData={canShowResults ? calculatorData : null}
             />
+          </TabsContent>
+          
+          <TabsContent value="loan-calculator">
+            {canAccessLoanCalculator ? (
+              <LoanCalculator />
+            ) : (
+              <Card className="max-w-2xl mx-auto">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <Wallet className="h-12 w-12 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold">Lånekalkulator</h3>
+                  <p className="text-muted-foreground">
+                    Administrer egenkapital og planlegg lånescenarier for fremtidige eiendomskjøp. Kun tilgjengelig for Pro-brukere.
+                  </p>
+                  <Badge variant="outline">Pro</Badge>
+                  <Button className="mt-4">
+                    Oppgrader til Pro
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
           
           <TabsContent value="building-planner">
