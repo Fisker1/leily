@@ -140,7 +140,7 @@ export const ElectricityEstimator = ({
               </div>
               <p className="text-xs text-muted-foreground">
                 {estimationMethod === 'ai' 
-                  ? 'Estimert med AI basert på norske strømpriser 2025'
+                  ? 'Estimert med OpenAI basert på norske strømpriser 2025'
                   : 'Basert på forenklet formel'}
               </p>
               <Button

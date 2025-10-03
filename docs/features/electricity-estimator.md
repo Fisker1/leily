@@ -1,6 +1,6 @@
 # AI Strømestimator
 
-AI-basert strømkostnadsestimator som bruker Lovable AI (Google Gemini) til å estimere månedlige strømkostnader basert på boligegenskaper.
+AI-basert strømkostnadsestimator som bruker OpenAI (GPT-5 Mini) til å estimere månedlige strømkostnader basert på boligegenskaper.
 
 ## Funksjonalitet
 
@@ -28,7 +28,7 @@ AI-basert strømkostnadsestimator som bruker Lovable AI (Google Gemini) til å e
 
 ### Edge Function: `estimate-electricity`
 - Mottar: `size_sqm`, `bedrooms`, `property_type`, `location`
-- Kaller Lovable AI Gateway med google/gemini-2.5-flash
+- Kaller OpenAI API med gpt-5-mini-2025-08-07
 - Returnerer: `estimated_monthly_cost`, `method`, `note`
 
 ### Komponent: `ElectricityEstimator`
@@ -62,9 +62,9 @@ Når data hentes fra Finn.no:
 
 ## Kostnader
 
-- Bruker Gemini 2.5 Flash som er GRATIS til 6. Oktober 2025
-- Etter denne datoen vil det koste per forespørsel
-- Se Lovable AI pricing for detaljer
+- Bruker OpenAI GPT-5 Mini modell
+- Koster per forespørsel basert på OpenAI prising
+- Se OpenAI pricing for detaljer
 
 ## Fremtidige forbedringer
 - Sesongbaserte estimater (vinter vs sommer)
