@@ -34,6 +34,9 @@ export const LoanCalculator = () => {
   // Equity setup form
   const [totalEquity, setTotalEquity] = useState(equityData?.total_equity?.toString() || '');
   const [equityNotes, setEquityNotes] = useState(equityData?.notes || '');
+  const [defaultInterestRate, setDefaultInterestRate] = useState(equityData?.default_interest_rate?.toString() || '4.5');
+  const [defaultLoanPeriod, setDefaultLoanPeriod] = useState(equityData?.default_loan_period_years || 30);
+  const [defaultEquityPercentage, setDefaultEquityPercentage] = useState(equityData?.default_equity_percentage?.toString() || '20');
 
   // New scenario form
   const [showScenarioDialog, setShowScenarioDialog] = useState(false);
@@ -52,7 +55,13 @@ export const LoanCalculator = () => {
   const loanToValue = Number(propertyValue) > 0 ? (loanAmount / Number(propertyValue)) * 100 : 0;
 
   const handleSaveEquity = async () => {
-    await saveEquityData(Number(totalEquity), equityNotes);
+    await saveEquityData(
+      Number(totalEquity), 
+      equityNotes,
+      Number(defaultInterestRate),
+      defaultLoanPeriod,
+      Number(defaultEquityPercentage)
+    );
   };
 
   const handleSaveScenario = async () => {
@@ -272,6 +281,81 @@ export const LoanCalculator = () => {
                   placeholder="Legg til notater om din egenkapital..."
                   rows={3}
                 />
+              </div>
+
+              {/* Default Loan Settings */}
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="font-medium text-foreground">Standardverdier for lån</h4>
+                <p className="text-sm text-muted-foreground">
+                  Disse verdiene brukes automatisk når du fyller ut kalkulatoren
+                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="defaultInterestRate">Standard rente (%)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      id="defaultInterestRate"
+                      min={1}
+                      max={10}
+                      step={0.1}
+                      value={[Number(defaultInterestRate)]}
+                      onValueChange={([value]) => setDefaultInterestRate(value.toString())}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={defaultInterestRate}
+                      onChange={(e) => setDefaultInterestRate(e.target.value)}
+                      className="w-20"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="defaultLoanPeriod">Standard låneperiode (år)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      id="defaultLoanPeriod"
+                      min={5}
+                      max={35}
+                      step={5}
+                      value={[defaultLoanPeriod]}
+                      onValueChange={([value]) => setDefaultLoanPeriod(value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={defaultLoanPeriod}
+                      onChange={(e) => setDefaultLoanPeriod(Number(e.target.value))}
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="defaultEquityPercentage">Standard egenkapital (%)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      id="defaultEquityPercentage"
+                      min={10}
+                      max={50}
+                      step={5}
+                      value={[Number(defaultEquityPercentage)]}
+                      onValueChange={([value]) => setDefaultEquityPercentage(value.toString())}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={defaultEquityPercentage}
+                      onChange={(e) => setDefaultEquityPercentage(e.target.value)}
+                      className="w-20"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Brukes til å beregne lånebeløp automatisk (totalpris - {defaultEquityPercentage}%)
+                  </p>
+                </div>
               </div>
 
               <Button onClick={handleSaveEquity} disabled={loading || !totalEquity} className="w-full">

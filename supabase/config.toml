@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.send-lease-notification]
 verify_jwt = false
+
+[functions.estimate-electricity]
+verify_jwt = true

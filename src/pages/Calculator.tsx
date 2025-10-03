@@ -29,6 +29,8 @@ import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
 import { FinnPropertyData } from '@/types/finn';
 import { LoanCalculator } from '@/components/LoanCalculator';
+import { ElectricityEstimator } from '@/components/ElectricityEstimator';
+import { useLoanCalculator } from '@/hooks/useLoanCalculator';
 
 const Calculator = () => {
   const {
@@ -44,6 +46,7 @@ const Calculator = () => {
   const { isPro } = useSubscription();
   const { toast } = useToast();
   const { saveCalculation } = useCalculationHistory();
+  const { equityData } = useLoanCalculator(); // Get default loan settings
 
   // States for save dialog
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -101,6 +104,20 @@ const Calculator = () => {
     if (data.monthlyRent && !manualOverride.expectedAnnualRent) {
       handleInputChange('isRental', true);
       handleInputChange('expectedAnnualRent', (data.monthlyRent * 12).toString());
+    }
+
+    // Auto-fill loan settings from saved defaults
+    if (equityData && !manualOverride.interestRate) {
+      handleInputChange('interestRate', equityData.default_interest_rate?.toString() || '4.5');
+    }
+    if (equityData && !manualOverride.loanPeriod) {
+      handleInputChange('loanPeriod', equityData.default_loan_period_years?.toString() || '30');
+    }
+    // Auto-calculate equity based on default percentage
+    if (equityData && data.price && !manualOverride.equity) {
+      const defaultEquityPercent = equityData.default_equity_percentage || 20;
+      const calculatedEquity = (data.price * defaultEquityPercent) / 100;
+      handleInputChange('equity', calculatedEquity.toString());
     }
 
     toast({
@@ -604,9 +621,25 @@ const Calculator = () => {
 
                        {/* Monthly Electricity */}
                        <div className="space-y-2">
-                         <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
-                         <CurrencyInput id="electricityMonthly" value={calculatorData.electricityMonthly} onChange={value => handleInputChange('electricityMonthly', value)} placeholder="800" />
-                       </div>
+                          <Label htmlFor="electricityMonthly">Forventet strømbruk (pr. mnd)</Label>
+                          <CurrencyInput id="electricityMonthly" value={calculatorData.electricityMonthly} onChange={value => handleInputChange('electricityMonthly', value)} placeholder="800" />
+                        </div>
+
+                        {/* AI Electricity Estimator - Pro Feature */}
+                        {isPro && (
+                          <ElectricityEstimator
+                            size_sqm={autoFetchedData?.livingArea || undefined}
+                            bedrooms={autoFetchedData?.bedrooms || undefined}
+                            property_type={calculatorData.propertyType}
+                            location={autoFetchedData?.neighborhood || undefined}
+                            onEstimateComplete={(cost) => {
+                              if (!manualOverride.electricityMonthly) {
+                                handleInputChange('electricityMonthly', cost.toString());
+                              }
+                            }}
+                            disabled={!calculatorData.propertyType}
+                          />
+                        )}
 
                        {/* Insurance */}
                        <div className="space-y-2">

@@ -7,6 +7,9 @@ interface EquityManagement {
   id: string;
   total_equity: number;
   notes?: string;
+  default_interest_rate?: number;
+  default_loan_period_years?: number;
+  default_equity_percentage?: number;
   created_at: string;
   updated_at: string;
 }
@@ -192,7 +195,13 @@ export const useLoanCalculator = () => {
   }, [equityData, equityFromPropertyGains, scenarios]);
 
   // Save or update equity data
-  const saveEquityData = useCallback(async (totalEquity: number, notes?: string) => {
+  const saveEquityData = useCallback(async (
+    totalEquity: number, 
+    notes?: string,
+    defaultInterestRate?: number,
+    defaultLoanPeriod?: number,
+    defaultEquityPercentage?: number
+  ) => {
     if (!user) return false;
 
     setLoading(true);
@@ -204,6 +213,9 @@ export const useLoanCalculator = () => {
           .update({
             total_equity: totalEquity,
             notes,
+            default_interest_rate: defaultInterestRate,
+            default_loan_period_years: defaultLoanPeriod,
+            default_equity_percentage: defaultEquityPercentage,
             updated_at: new Date().toISOString(),
           })
           .eq('id', equityData.id);
@@ -217,6 +229,9 @@ export const useLoanCalculator = () => {
             user_id: user.id,
             total_equity: totalEquity,
             notes,
+            default_interest_rate: defaultInterestRate,
+            default_loan_period_years: defaultLoanPeriod,
+            default_equity_percentage: defaultEquityPercentage,
           });
 
         if (error) throw error;
@@ -225,7 +240,7 @@ export const useLoanCalculator = () => {
       await fetchEquityData();
       toast({
         title: 'Lagret',
-        description: 'Egenkapitaldata er oppdatert',
+        description: 'Egenkapitaldata og standardverdier er oppdatert',
       });
       return true;
     } catch (error) {
