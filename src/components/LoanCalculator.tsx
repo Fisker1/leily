@@ -151,16 +151,26 @@ export const LoanCalculator = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Tilgjengelig Egenkapital
+                  Verdiøkning fra Boligportefølje
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">
-                  {formatNumberWithSpaces(availableEquity)} kr
+                  {formatNumberWithSpaces(equityFromPropertyGains)} kr
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Manuell total minus allokerte scenarier
+                  Kun informasjon - ikke brukt i kalkulatoren
                 </p>
+                {propertyEquityDetails.length > 0 && (
+                  <div className="mt-3 pt-3 border-t space-y-1.5">
+                    {propertyEquityDetails.map((detail) => (
+                      <div key={detail.property_id} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate mr-2">{detail.address}</span>
+                        <span className="font-medium text-primary">+{formatNumberWithSpaces(detail.equity_gain)} kr</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -249,7 +259,7 @@ export const LoanCalculator = () => {
             <CardHeader>
               <CardTitle>Egenkapitaladministrasjon</CardTitle>
               <CardDescription>
-                Legg inn din totale egenkapital én gang. Systemet beregner automatisk tilgjengelig kapital basert på dine lånescenarier.
+                Legg inn din totale egenkapital. Dette beløpet brukes automatisk i lånekalkulatoren når du fyller inn eiendommer.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -357,7 +367,9 @@ export const LoanCalculator = () => {
                 <Alert>
                   <TrendingUp className="h-4 w-4" />
                   <AlertDescription>
-                    Tilgjengelig egenkapital: <strong>{formatNumberWithSpaces(availableEquity)} kr</strong>
+                    Total egenkapital satt til: <strong>{formatNumberWithSpaces(equityData.total_equity)} kr</strong>
+                    <br />
+                    <span className="text-xs">Dette beløpet brukes automatisk når du fyller ut kalkulatoren</span>
                   </AlertDescription>
                 </Alert>
               )}
