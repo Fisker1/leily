@@ -42,6 +42,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const EnvDebug = lazy(() => import("./pages/__env"));
 const Health = lazy(() => import("./pages/__health"));
 const SupabaseInfo = lazy(() => import("./pages/__supabase"));
+const LeaseSignature = lazy(() => import("./pages/LeaseSignature"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -106,6 +107,7 @@ const App = () => {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
                     <Route path="/__env" element={<EnvDebug />} />
                     <Route path="/__health" element={<Health />} />
                     <Route path="/__supabase" element={<SupabaseInfo />} />

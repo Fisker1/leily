@@ -243,6 +243,10 @@ export type Database = {
           pets_allowed: boolean | null
           property_id: string
           property_owner_id: string
+          signature_completed_at: string | null
+          signature_initiated_at: string | null
+          signature_status: string | null
+          signed_document_url: string | null
           smoking_allowed: boolean | null
           start_date: string
           status: string | null
@@ -261,6 +265,10 @@ export type Database = {
           pets_allowed?: boolean | null
           property_id: string
           property_owner_id: string
+          signature_completed_at?: string | null
+          signature_initiated_at?: string | null
+          signature_status?: string | null
+          signed_document_url?: string | null
           smoking_allowed?: boolean | null
           start_date: string
           status?: string | null
@@ -279,6 +287,10 @@ export type Database = {
           pets_allowed?: boolean | null
           property_id?: string
           property_owner_id?: string
+          signature_completed_at?: string | null
+          signature_initiated_at?: string | null
+          signature_status?: string | null
+          signed_document_url?: string | null
           smoking_allowed?: boolean | null
           start_date?: string
           status?: string | null
@@ -287,6 +299,77 @@ export type Database = {
           utilities_included?: boolean | null
         }
         Relationships: []
+      }
+      lease_signatures: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          landlord_notified: boolean | null
+          landlord_signed: boolean | null
+          landlord_signed_at: string | null
+          landlord_signing_url: string | null
+          lease_id: string
+          signed_pdf_url: string | null
+          signicat_document_id: string
+          signicat_status: string | null
+          status: string | null
+          tenant_notified: boolean | null
+          tenant_signed: boolean | null
+          tenant_signed_at: string | null
+          tenant_signing_url: string | null
+          unsigned_pdf_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          landlord_notified?: boolean | null
+          landlord_signed?: boolean | null
+          landlord_signed_at?: string | null
+          landlord_signing_url?: string | null
+          lease_id: string
+          signed_pdf_url?: string | null
+          signicat_document_id: string
+          signicat_status?: string | null
+          status?: string | null
+          tenant_notified?: boolean | null
+          tenant_signed?: boolean | null
+          tenant_signed_at?: string | null
+          tenant_signing_url?: string | null
+          unsigned_pdf_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          landlord_notified?: boolean | null
+          landlord_signed?: boolean | null
+          landlord_signed_at?: string | null
+          landlord_signing_url?: string | null
+          lease_id?: string
+          signed_pdf_url?: string | null
+          signicat_document_id?: string
+          signicat_status?: string | null
+          status?: string | null
+          tenant_notified?: boolean | null
+          tenant_signed?: boolean | null
+          tenant_signed_at?: string | null
+          tenant_signing_url?: string | null
+          unsigned_pdf_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_signatures_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_records: {
         Row: {
