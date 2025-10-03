@@ -371,6 +371,57 @@ export type Database = {
           },
         ]
       }
+      legal_documents: {
+        Row: {
+          approved_by: string | null
+          content: string
+          content_format: string
+          created_at: string
+          document_type: string
+          effective_date: string | null
+          id: string
+          notes: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: string
+        }
+        Insert: {
+          approved_by?: string | null
+          content: string
+          content_format?: string
+          created_at?: string
+          document_type: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version: string
+        }
+        Update: {
+          approved_by?: string | null
+          content?: string
+          content_format?: string
+          created_at?: string
+          document_type?: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       payment_records: {
         Row: {
           amount: number

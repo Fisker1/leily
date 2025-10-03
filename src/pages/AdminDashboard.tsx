@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
-import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft } from 'lucide-react';
+import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { LegalDocumentsManager } from '@/components/admin/LegalDocumentsManager';
 
 interface Report {
   id: string;
@@ -278,8 +279,9 @@ const AdminDashboard = () => {
 
         {/* Tabbed Dashboard Content */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
+            <TabsTrigger value="legal">Juridiske Dokumenter</TabsTrigger>
             <TabsTrigger value="security">Sikkerhet</TabsTrigger>
             <TabsTrigger value="staging">Staging</TabsTrigger>
           </TabsList>
@@ -417,6 +419,10 @@ const AdminDashboard = () => {
             )}
             </CardContent>
           </Card>
+          </TabsContent>
+
+          <TabsContent value="legal">
+            <LegalDocumentsManager />
           </TabsContent>
 
           <TabsContent value="security">
