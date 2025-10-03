@@ -36,56 +36,66 @@ Denne filen dokumenterer alle eksterne tjenester og avhengigheter i Leily-prosje
 
 ---
 
-## 📧 Resend (Email)
+## 📧 Resend (Email) - MIDLERTIDIG LØSNING
 
-**Formål:** E-post-varsling til leietakere og utleiere
+> ⚠️ **Status:** Aktiv i test-fase med `alquiz.no`  
+> 🔄 **Planlagt migrering:** Azure Communication Services (se `docs/migration/resend-to-azure.md`)
 
-**Setup:**
+**Formål:** E-post-varsling til leietakere og utleiere (midlertidig løsning)
+
+**Nåværende Setup:**
 - Dashboard: https://resend.com/
-- Legg til domene: https://resend.com/domains
-- Verifiser `leily.no` domenet
+- **Test-domene:** `alquiz.no` (verifisert)
+- **Produksjons-domene:** `leily.no` (IKKE verifisert - krever oppgradering)
 
 **Secrets (Supabase Vault):**
 - `RESEND_API_KEY` - API key fra Resend dashboard
 
 **Brukes i:**
 - `supabase/functions/send-lease-notification/index.ts` - Email sending
+- Nåværende `from`-adresse: `noreply@alquiz.no`
 
 **Dokumentasjon:**
-- Implementering: `docs/integrations/resend.md` (kommer)
+- Implementering: `docs/integrations/resend.md`
+- **Migreringsplan:** `docs/migration/resend-to-azure.md`
 
 **Kostnader:**
 - Free tier: 3000 emails/måned
 - Paid: $20/mnd for 50,000 emails
+- **Azure alternativ:** $0.0001 per email (95% billigere!)
 
-**Slik sletter du:**
-1. Slett/kommenter ut email-koden i `send-lease-notification`
-2. Fjern `RESEND_API_KEY` secret
-3. Oppdater `SignatureRequestDialog.tsx` til å ikke sende email
+**Migrering til Azure:**
+Se detaljert guide i `docs/migration/resend-to-azure.md`
 
 ---
 
-## 📱 Link Mobility (SMS) - KOMMER SNART
+## 📱 Link Mobility (SMS) - VENTER MED IMPLEMENTERING
+
+> ⚠️ **Status:** Stub implementert, men IKKE aktiv  
+> 🔄 **Planlagt løsning:** Azure Communication Services SMS (se `docs/migration/link-mobility-to-azure.md`)
 
 **Formål:** SMS-varsling til leietakere
 
-**Setup:**
-- Hjemmeside: https://www.linkmobility.no/
-- Registrer konto og bestill SMS-tjeneste
+**Nåværende Status:**
+- ❌ IKKE implementert (kun stub i kode)
+- ❌ Ingen API-nøkkel satt opp
+- ⏸️ Venter med implementering til Azure-migrering
 
-**Secrets (Supabase Vault):**
-- `LINK_MOBILITY_API_KEY` - Kommer når tjenesten aktiveres
+**Fremtidig Løsning:**
+- **Azure Communication Services SMS**
+- Norsk telefonnummer (+47)
+- ~0.40 NOK per SMS (20% billigere enn Link Mobility)
 
-**Brukes i:**
-- `supabase/functions/send-lease-notification/index.ts` - SMS sending (stub implementert)
+**Dokumentasjon:**
+- **Migreringsplan:** `docs/migration/link-mobility-to-azure.md`
+- Integrasjon: `docs/integrations/link-mobility.md`
 
-**Status:** 
-- ⚠️ Stub-implementasjon på plass
-- Venter på API-nøkkel og prising
+**Kostnader (sammenligning):**
+- Link Mobility: ~0.50 NOK per SMS
+- Azure SMS: ~0.40 NOK per SMS (20% besparelse)
 
-**Kostnader:**
-- Per SMS (norske priser)
-- Kontakt Link Mobility for avtale
+**Implementering:**
+Se detaljert guide i `docs/migration/link-mobility-to-azure.md`
 
 ---
 
@@ -148,27 +158,58 @@ ALTER TABLE lease_agreements
 
 ---
 
-## 📊 Migrering til Azure (Fremtid)
+## ☁️ Azure Communication Services (Planlagt Migrering)
 
-**Når du skal flytte til Azure:**
+> 🎯 **Status:** DOKUMENTERT - Klar for implementering  
+> 📅 **Forventet migrering:** Q2 2025
 
-**E-post:**
-- Bytt fra Resend til Azure Communication Services Email
-- Oppdater `send-lease-notification` Edge Function
-- Ny secret: `AZURE_COMMUNICATION_CONNECTION_STRING`
+**Formål:** Samlet plattform for e-post og SMS (erstatter Resend + Link Mobility)
 
-**SMS:**
-- Bytt fra Link Mobility til Azure Communication Services SMS
-- Samme Edge Function som email
-- Bruk samme Azure connection string
+**Fordeler:**
+- **95% billigere e-post** ved høye volum
+- **20% billigere SMS** sammenlignet med Link Mobility
+- **Én plattform** for begge tjenester
+- **GDPR-compliant** (West Europe data center)
+- **Skalerbar** uten daglige/månedlige limiter
 
-**BankID:**
-- Signicat fungerer uavhengig av hosting-platform
-- Ingen endringer nødvendig
+**Setup (når migrering starter):**
+1. Opprett Azure Communication Services resource
+2. Verifiser `leily.no` domene i Azure
+3. Kjøp norsk telefonnummer (+47) for SMS
+4. Hent `AZURE_COMMUNICATION_CONNECTION_STRING`
+5. Oppdater `send-lease-notification` Edge Function
 
-**Database:**
-- Supabase kan fortsatt brukes
-- Eller migrer til Azure Database for PostgreSQL
+**Secrets (Supabase Vault - fremtidig):**
+- `AZURE_COMMUNICATION_CONNECTION_STRING` - Erstatter både Resend og Link Mobility
+
+**Kostnader (estimert):**
+- E-post: $0.0001 per email (10 kr per 100,000 emails)
+- SMS: ~0.40 NOK per SMS
+- Telefonnummer: 50-100 NOK/måned
+- **Total besparelse:** ~90% vs. nåværende løsning
+
+**Dokumentasjon (komplett):**
+- **Setup-guide:** `docs/integrations/azure-communication-services.md`
+- **E-post migrering:** `docs/migration/resend-to-azure.md`
+- **SMS migrering:** `docs/migration/link-mobility-to-azure.md`
+
+**Tidsplan:**
+| Fase | Aktivitet | Tidsestimat |
+|------|-----------|-------------|
+| 1 | Setup Azure ACS | 1-2 timer |
+| 2 | E-post migrering | 4-6 timer |
+| 3 | Testing i staging | 1 uke |
+| 4 | Produksjon e-post | 1 dag |
+| 5 | SMS implementering | 3-4 timer |
+| 6 | Cleanup | 1 time |
+
+**BankID (Signicat):**
+- ✅ Fungerer uavhengig av hosting-platform
+- ✅ Ingen endringer nødvendig ved Azure-migrering
+
+**Database (Supabase):**
+- ✅ Kan fortsatt brukes med Azure hosting
+- Alternativ: Migrer til Azure Database for PostgreSQL (valgfritt)
 
 ---
 
@@ -208,5 +249,24 @@ ALTER TABLE lease_agreements
 
 ---
 
-**Sist oppdatert:** 2025-01-03
+---
+
+## 📚 Relaterte Dokumenter
+
+**Integrasjoner:**
+- Signicat: `docs/integrations/signicat.md`
+- Resend: `docs/integrations/resend.md`
+- Link Mobility: `docs/integrations/link-mobility.md`
+- **Azure Communication Services:** `docs/integrations/azure-communication-services.md`
+
+**Migreringer:**
+- **Resend → Azure:** `docs/migration/resend-to-azure.md`
+- **Link Mobility → Azure:** `docs/migration/link-mobility-to-azure.md`
+
+**Workflows:**
+- Lease Signing: `docs/workflows/lease-signing.md`
+
+---
+
+**Sist oppdatert:** 2025-01-03  
 **Vedlikeholdes av:** Leily Development Team
