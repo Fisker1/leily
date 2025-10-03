@@ -60,6 +60,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
+  const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
   const [propertyFormData, setPropertyFormData] = useState({
     address: "",
     city: "",
@@ -321,6 +322,80 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
         description: `Leieavtale for ${tenantData.firstName} ${tenantData.lastName} er opprettet`,
       });
 
+      // Store lease ID and move to step 4 for signing
+      setCreatedLeaseId(lease.id);
+      setStep(4);
+
+    } catch (error) {
+      console.error('Error creating rental agreement:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke opprette leieavtale. Prøv igjen.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendToSigning = async () => {
+    if (!createdLeaseId) {
+      toast({
+        title: "Feil",
+        description: "Ingen leieavtale å sende til signering",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log('Sending lease to signing:', createdLeaseId);
+
+      // Call Edge Function to create signature request
+      const { data: result, error } = await supabase.functions.invoke(
+        'signicat-signing/create-signature-request',
+        {
+          body: { leaseId: createdLeaseId },
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create signature request');
+      }
+
+      // Check if using mock mode
+      if (result.mock) {
+        toast({
+          title: "Test-modus aktivert",
+          description: "Signicat er ikke konfigurert. Bruker test-modus. Legg til SIGNICAT_* secrets for ekte BankID-signering.",
+        });
+      } else {
+        toast({
+          title: "Sendt til signering!",
+          description: "Du vil nå bli videresendt til BankID for signering.",
+        });
+      }
+
+      // Send notification to tenant
+      try {
+        await supabase.functions.invoke('send-lease-notification/email', {
+          body: {
+            signatureId: result.signatureId,
+            recipientType: 'tenant',
+          },
+        });
+        console.log('Tenant notification sent');
+      } catch (notifError) {
+        console.error('Failed to send tenant notification:', notifError);
+        // Don't fail the whole process if notification fails
+      }
+
       // Reset form and close dialog
       setTenantData({
         firstName: '',
@@ -348,14 +423,24 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
         createDepositAccount: false,
         bankName: 'Instabank'
       });
+      setCreatedLeaseId(null);
       setStep(1);
       onOpenChange(false);
 
-    } catch (error) {
-      console.error('Error creating rental agreement:', error);
+      // If not mock mode, redirect to signing page
+      if (!result.mock && result.landlordSigningUrl) {
+        // Navigate to signature page instead of external URL for better UX
+        window.location.href = `/lease/${createdLeaseId}/signature`;
+      } else if (result.mock) {
+        // In mock mode, go to signature page
+        window.location.href = `/lease/${createdLeaseId}/signature`;
+      }
+
+    } catch (error: any) {
+      console.error('Error sending to signing:', error);
       toast({
-        title: "Feil",
-        description: "Kunne ikke opprette leieavtale. Prøv igjen.",
+        title: "Kunne ikke sende til signering",
+        description: error.message || 'Prøv igjen senere',
         variant: "destructive",
       });
     } finally {
@@ -374,7 +459,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
             Opprett ny leieavtale
           </DialogTitle>
           <DialogDescription>
-            Registrer ny leietaker og opprett leieavtale. Steg {step} av 3.
+            Registrer ny leietaker og opprett leieavtale. Steg {step} av 4.
           </DialogDescription>
         </DialogHeader>
 
@@ -793,7 +878,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
               <CardHeader>
                 <CardTitle>Sammendrag av leieavtale</CardTitle>
                 <CardDescription>
-                  Gjennomgå informasjonen før du oppretter leieavtalen
+                  Gjennomgå informasjonen før du går videre til signering
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -847,6 +932,88 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
           </div>
         )}
 
+        {/* Step 4: Send to Signing */}
+        {step === 4 && createdLeaseId && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Klar for BankID-signering
+                </CardTitle>
+                <CardDescription>
+                  Leieavtalen er opprettet og klar for elektronisk signering
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                        Leieavtale opprettet! 🎉
+                      </h4>
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        Avtalen er lagret i systemet. Du kan nå sende den til BankID-signering.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Hva skjer nå?</h4>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                      <div>
+                        <p className="font-medium">Du signerer først</p>
+                        <p className="text-muted-foreground">Du vil bli sendt til BankID for å signere avtalen</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                      <div>
+                        <p className="font-medium">Leietaker får e-post</p>
+                        <p className="text-muted-foreground">{tenantData.firstName} {tenantData.lastName} får automatisk tilsendt signeringslenke</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                      <div>
+                        <p className="font-medium">Leietaker signerer</p>
+                        <p className="text-muted-foreground">Når begge har signert er avtalen juridisk bindende</p>
+                      </div>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        Om BankID-signering
+                      </p>
+                      <ul className="space-y-1 text-blue-800 dark:text-blue-200">
+                        <li>• Bruk din vanlige BankID (mobil eller kodebrikke)</li>
+                        <li>• Signeringen tar vanligvis under 2 minutter</li>
+                        <li>• Avtalen er juridisk bindende når begge har signert</li>
+                        <li>• Du får e-post når leietaker har signert</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="flex justify-between mt-8">
           <div>
             {step > 1 && (
@@ -866,9 +1033,13 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
               >
                 Neste
               </Button>
-            ) : (
+            ) : step === 3 ? (
               <Button onClick={handleSubmit} disabled={loading}>
                 {loading ? "Oppretter..." : "Opprett leieavtale"}
+              </Button>
+            ) : (
+              <Button onClick={handleSendToSigning} disabled={loading}>
+                {loading ? "Sender..." : "Send til BankID-signering"}
               </Button>
             )}
           </div>

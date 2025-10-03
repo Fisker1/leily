@@ -68,6 +68,7 @@ interface Property {
     status: string;
     start_date: string;
     end_date: string;
+    signature_status?: string;
     tenants: {
       id: string;
       first_name: string;
@@ -250,7 +251,8 @@ const Rental = () => {
               monthly_rent,
               status,
               start_date,
-              end_date
+              end_date,
+              signature_status
             `)
             .eq('property_id', property.id)
             .eq('status', 'active')
@@ -656,6 +658,39 @@ const Rental = () => {
                             >
                               {property.lease_agreements?.[0] ? "Utleid" : "Ledig"}
                             </Badge>
+                            {property.lease_agreements?.[0]?.signature_status && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge 
+                                      variant="outline"
+                                      className={
+                                        property.lease_agreements[0].signature_status === 'fully_signed' 
+                                          ? 'bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700'
+                                          : property.lease_agreements[0].signature_status === 'pending'
+                                          ? 'bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700'
+                                          : property.lease_agreements[0].signature_status === 'partially_signed'
+                                          ? 'bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 border-orange-300 dark:border-orange-700'
+                                          : 'bg-muted'
+                                      }
+                                    >
+                                      {property.lease_agreements[0].signature_status === 'fully_signed' && '✓ Signert'}
+                                      {property.lease_agreements[0].signature_status === 'pending' && '⏳ Venter'}
+                                      {property.lease_agreements[0].signature_status === 'partially_signed' && '½ Delvis'}
+                                      {property.lease_agreements[0].signature_status === 'unsigned' && '✎ Usignert'}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {property.lease_agreements[0].signature_status === 'fully_signed' && 'Leieavtale signert av begge parter'}
+                                      {property.lease_agreements[0].signature_status === 'pending' && 'Venter på BankID-signering'}
+                                      {property.lease_agreements[0].signature_status === 'partially_signed' && 'Signert av en part'}
+                                      {property.lease_agreements[0].signature_status === 'unsigned' && 'Ikke sendt til signering'}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                             {property.lease_agreements?.[0]?.tenants && (
                               <p className="text-xs text-muted-foreground">
                                 {property.lease_agreements[0].tenants.first_name} {property.lease_agreements[0].tenants.last_name}

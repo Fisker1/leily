@@ -66,6 +66,18 @@ async function createSignatureRequest(req: Request) {
 
   console.log(`Creating signature request for lease ${leaseId}`);
 
+  // Check if Signicat is configured
+  const signicatConfigured = !!(
+    Deno.env.get('SIGNICAT_CLIENT_ID') &&
+    Deno.env.get('SIGNICAT_CLIENT_SECRET') &&
+    Deno.env.get('SIGNICAT_ACCOUNT_ID')
+  );
+
+  if (!signicatConfigured) {
+    console.log('⚠️ Signicat not configured - using mock mode');
+    return await createMockSignatureRequest(supabaseClient, user, leaseId);
+  }
+
   // Fetch lease with related data
   const { data: lease, error: leaseError } = await supabaseClient
     .from('lease_agreements')
@@ -415,6 +427,84 @@ async function getSignatureStatus(req: Request, path: string) {
     JSON.stringify({
       success: true,
       signature,
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
+}
+
+async function createMockSignatureRequest(supabaseClient: any, user: any, leaseId: string) {
+  console.log('🧪 Creating MOCK signature request (Signicat not configured)');
+
+  // Fetch lease with related data
+  const { data: lease, error: leaseError } = await supabaseClient
+    .from('lease_agreements')
+    .select(`
+      *,
+      property:properties(*),
+      tenant:tenants(*)
+    `)
+    .eq('id', leaseId)
+    .eq('property_owner_id', user.id)
+    .single();
+
+  if (leaseError || !lease) {
+    throw new Error(`Lease not found: ${leaseError?.message}`);
+  }
+
+  // Create mock document ID
+  const mockDocumentId = `MOCK_${Date.now()}_${leaseId.slice(0, 8)}`;
+  
+  // Create mock signing URLs (these would redirect to actual BankID in production)
+  const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '') || 'mock';
+  const landlordUrl = `${baseUrl}/mock-signing?doc=${mockDocumentId}&signer=landlord`;
+  const tenantUrl = `${baseUrl}/mock-signing?doc=${mockDocumentId}&signer=tenant`;
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30); // 30 days expiry
+
+  // Store in database
+  const { data: signature, error: insertError } = await supabaseClient
+    .from('lease_signatures')
+    .insert({
+      lease_id: leaseId,
+      signicat_document_id: mockDocumentId,
+      signicat_status: 'mock_pending',
+      status: 'pending',
+      landlord_signing_url: landlordUrl,
+      tenant_signing_url: tenantUrl,
+      expires_at: expiresAt.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    throw new Error(`Failed to store signature: ${insertError.message}`);
+  }
+
+  // Update lease status
+  await supabaseClient
+    .from('lease_agreements')
+    .update({
+      signature_status: 'pending',
+      signature_initiated_at: new Date().toISOString(),
+    })
+    .eq('id', leaseId);
+
+  console.log('✅ Mock signature request created successfully');
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mock: true,
+      message: 'Signicat not configured - using mock mode. Add SIGNICAT_* secrets to enable real BankID signing.',
+      signatureId: signature.id,
+      documentId: mockDocumentId,
+      landlordSigningUrl: landlordUrl,
+      tenantSigningUrl: tenantUrl,
+      expiresAt: signature.expires_at,
     }),
     {
       status: 200,
