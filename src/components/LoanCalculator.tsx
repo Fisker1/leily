@@ -22,6 +22,8 @@ export const LoanCalculator = () => {
     equityData,
     scenarios,
     availableEquity,
+    equityFromPropertyGains,
+    propertyEquityDetails,
     saveEquityData,
     saveScenario,
     deleteScenario,
@@ -133,6 +135,7 @@ export const LoanCalculator = () => {
                 <div className="text-2xl font-bold text-foreground">
                   {equityData ? `${formatNumberWithSpaces(equityData.total_equity)} kr` : 'Ikke satt'}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">Manuell innstilling</p>
               </CardContent>
             </Card>
 
@@ -144,8 +147,20 @@ export const LoanCalculator = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">
-                  {formatNumberWithSpaces(availableEquity)} kr
+                  {formatNumberWithSpaces(equityFromPropertyGains)} kr
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Fra eiendomsverdiøkning
+                </p>
+                {propertyEquityDetails.length > 0 && (
+                  <div className="mt-2 pt-2 border-t space-y-1">
+                    {propertyEquityDetails.map((detail) => (
+                      <div key={detail.property_id} className="text-xs text-muted-foreground">
+                        {detail.address}: +{formatNumberWithSpaces(detail.equity_gain)} kr
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
