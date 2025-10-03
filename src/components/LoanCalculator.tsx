@@ -44,8 +44,8 @@ export const LoanCalculator = () => {
   const [propertyAddress, setPropertyAddress] = useState('');
   const [propertyValue, setPropertyValue] = useState('');
   const [equityAllocated, setEquityAllocated] = useState('');
-  const [interestRate, setInterestRate] = useState('4.5');
-  const [loanPeriod, setLoanPeriod] = useState(30);
+  const [interestRate, setInterestRate] = useState(equityData?.default_interest_rate?.toString() || '4.5');
+  const [loanPeriod, setLoanPeriod] = useState(equityData?.default_loan_period_years || 30);
   const [additionalFunding, setAdditionalFunding] = useState('');
   const [fundingSource, setFundingSource] = useState('');
 
@@ -94,10 +94,20 @@ export const LoanCalculator = () => {
     setPropertyAddress('');
     setPropertyValue('');
     setEquityAllocated('');
-    setInterestRate('4.5');
-    setLoanPeriod(30);
+    setInterestRate(equityData?.default_interest_rate?.toString() || '4.5');
+    setLoanPeriod(equityData?.default_loan_period_years || 30);
     setAdditionalFunding('');
     setFundingSource('');
+  };
+
+  // Auto-calculate equity when property value changes
+  const handlePropertyValueChange = (value: string) => {
+    setPropertyValue(value);
+    if (value && equityData?.default_equity_percentage) {
+      const numValue = Number(value);
+      const equityAmount = (numValue * equityData.default_equity_percentage) / 100;
+      setEquityAllocated(Math.round(equityAmount).toString());
+    }
   };
 
   if (!user) {
@@ -415,7 +425,7 @@ export const LoanCalculator = () => {
                     <CurrencyInput
                       id="propertyValue"
                       value={propertyValue}
-                      onChange={(value) => setPropertyValue(value)}
+                      onChange={handlePropertyValueChange}
                       placeholder="5 000 000"
                     />
                   </div>
