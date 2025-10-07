@@ -8,6 +8,7 @@ export interface CalculationHistoryItem {
   calculation_name: string | null;
   finn_code: string | null;
   property_address: string | null;
+  coordinates: number[] | null;
   calculation_data: any;
   results_data: any;
   created_at: string;
@@ -62,6 +63,28 @@ export const useCalculationHistory = () => {
     }
 
     try {
+      // Geocode the address to get coordinates if address is provided
+      let coordinates: number[] | null = null;
+      if (propertyAddress) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(propertyAddress)}&countrycodes=no&limit=1`,
+            {
+              headers: {
+                'User-Agent': 'Leily Property App'
+              }
+            }
+          );
+          const data = await response.json();
+          if (data && data.length > 0) {
+            coordinates = [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+          }
+        } catch (geoError) {
+          console.error('Geocoding error:', geoError);
+          // Continue without coordinates if geocoding fails
+        }
+      }
+
       const { data, error } = await supabase
         .from('calculation_history')
         .insert({
@@ -69,6 +92,7 @@ export const useCalculationHistory = () => {
           calculation_name: calculationName,
           finn_code: finnCode,
           property_address: propertyAddress,
+          coordinates: coordinates,
           calculation_data: calculationData,
           results_data: resultsData,
         })
