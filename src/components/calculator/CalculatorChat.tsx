@@ -190,7 +190,15 @@ Alt fylles automatisk ut i rapporten! 📄`
         console.log('✅ Found municipal fees (from data-testid):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
       }
     } else {
-      console.log('❌ Could not find pricing-municipal-fees in HTML');
+      // Fallback: try without data-testid
+      const fallbackMatch = html.match(/Kommunale\s+avg[^<]*<\/dt>\s*<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr\s*per\s*år/i);
+      if (fallbackMatch) {
+        const yearlyAmount = parseInt(fallbackMatch[1].replace(/&nbsp;|\s/g, ''));
+        result.municipalFees = Math.round(yearlyAmount / 12);
+        console.log('✅ Found municipal fees (fallback):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
+      } else {
+        console.log('❌ Could not find municipal fees in HTML');
+      }
     }
     
     // Extract common costs (Felleskostnader) - use data-testid for reliable extraction
@@ -202,7 +210,14 @@ Alt fylles automatisk ut i rapporten! 📄`
         console.log('✅ Found common costs (from data-testid):', result.commonCosts, 'kr/month');
       }
     } else {
-      console.log('❌ Could not find pricing-common-monthly-cost in HTML');
+      // Fallback: try without data-testid
+      const fallbackMatch = html.match(/Felleskost[^<]*<\/dt>\s*<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr(?!\s*per\s*år)/i);
+      if (fallbackMatch) {
+        result.commonCosts = parseInt(fallbackMatch[1].replace(/&nbsp;|\s/g, ''));
+        console.log('✅ Found common costs (fallback):', result.commonCosts, 'kr/month');
+      } else {
+        console.log('❌ Could not find common costs in HTML');
+      }
     }
     
     // Fallback: Try __NEXT_DATA__ if advertising-initial-state not found
@@ -379,7 +394,19 @@ Alt fylles automatisk ut i rapporten! 📄`
       
     } catch (error) {
       console.error('Shaving/analysis error:', error);
-      toast.error('Kunne ikke prosessere HTML');
+      
+      // More detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Ukjent feil';
+      console.error('Detailed error:', errorMessage);
+      
+      if (errorMessage.includes('too large') || errorMessage.includes('for lang')) {
+        toast.error('HTML for stor. Kopier kun <script id="advertising-initial-state"> seksjonen.');
+      } else if (errorMessage.includes('Insufficient credits')) {
+        toast.error('Du har ikke nok kreditter.');
+      } else {
+        toast.error(`Feil ved prosessering: ${errorMessage}`);
+      }
+      
       setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
     } finally {
       setIsShaving(false);
