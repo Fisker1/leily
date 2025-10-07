@@ -212,17 +212,50 @@ const BankReport = () => {
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           margin: 0 auto 24px;
           position: relative;
-          padding: 20mm 15mm 30mm 15mm;
+          padding: 15mm 12mm 30mm 12mm;
           box-sizing: border-box;
+          overflow: hidden;
         }
         
         .report-page-footer {
           position: absolute;
-          bottom: 12mm;
-          left: 15mm;
-          right: 15mm;
-          padding-top: 8px;
+          bottom: 10mm;
+          left: 12mm;
+          right: 12mm;
+          padding-top: 6px;
           border-top: 1px solid #cbd5e0;
+        }
+        
+        .report-page h3 {
+          font-size: 14px;
+          margin-bottom: 12px;
+        }
+        
+        .report-page h4 {
+          font-size: 11px;
+          margin-bottom: 8px;
+        }
+        
+        .report-page table {
+          width: 100%;
+          table-layout: fixed;
+        }
+        
+        .report-page table td {
+          padding: 4px 0;
+          font-size: 10px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        
+        .report-page table td:first-child {
+          width: 60%;
+        }
+        
+        .report-page table td:last-child {
+          width: 40%;
+          text-align: right;
         }
         
         @media print {
@@ -251,6 +284,7 @@ const BankReport = () => {
             min-height: auto;
             padding: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: visible;
           }
           
           .report-page-footer {
@@ -259,6 +293,10 @@ const BankReport = () => {
             left: auto;
             right: auto;
             margin-top: 20px;
+          }
+          
+          .report-page table td {
+            white-space: normal;
           }
         }
       `}</style>
@@ -465,10 +503,6 @@ const BankReport = () => {
                           <td className="py-1 text-gray-600">Eiendomsverdi:</td>
                           <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.propertyValue || 0)}</td>
                         </tr>
-                      <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Egenkapital:</td>
-                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.equity || 0)}</td>
-                      </tr>
                         <tr>
                           <td className="py-1 text-gray-600">Lånebeløp:</td>
                           <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.loanAmount || 0)}</td>
@@ -478,15 +512,19 @@ const BankReport = () => {
                 </div>
                 
                 <div className="border border-gray-300 p-4">
-                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Lånevilkår og nøkkeltall</h4>
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Låneinformasjon</h4>
                   <table className="w-full text-xs">
                     <tbody>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Egenkapital:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.equity || 0)}</td>
+                      </tr>
                       <tr className="border-b border-gray-200">
                         <td className="py-1 text-gray-600">Rente:</td>
                         <td className="py-1 text-right font-semibold">{formatPercent(displayBasicData.interestRate || 0)}</td>
                       </tr>
                       <tr className="border-b border-gray-200">
-                        <td className="py-1 text-gray-600">Låneperiode:</td>
+                        <td className="py-1 text-gray-600">Nedbetalingstid:</td>
                         <td className="py-1 text-right font-semibold">{displayBasicData.loanPeriod || 0} år</td>
                       </tr>
                       <tr className="border-b border-gray-200">

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText, Scissors } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText, Scissors, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LoanCalculatorDialog } from '@/components/LoanCalculatorDialog';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -54,6 +55,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [htmlInput, setHtmlInput] = useState('');
   const [shavedData, setShavedData] = useState<ShavedData | null>(null);
   const [isShaving, setIsShaving] = useState(false);
+  const [loanCalcOpen, setLoanCalcOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -631,11 +633,22 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             className="hidden"
           />
           <Button
+            onClick={() => setLoanCalcOpen(true)}
+            disabled={isLoading}
+            size="icon"
+            variant="outline"
+            className="h-[60px] w-[60px] flex-shrink-0 rounded"
+            title="Lånekalkulator"
+          >
+            <Calculator className="h-4 w-4" />
+          </Button>
+          <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading || !hasCredits || attachments.length >= 3}
             size="icon"
             variant="outline"
             className="h-[60px] w-[60px] flex-shrink-0 rounded"
+            title="Legg ved fil"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -661,6 +674,22 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
           </Button>
         </div>
       </div>
+      
+      {/* Loan Calculator Dialog */}
+      <LoanCalculatorDialog
+        open={loanCalcOpen}
+        onOpenChange={setLoanCalcOpen}
+        hasCredits={hasCredits}
+        onApply={(data) => {
+          // Apply loan data to calculator
+          onDataUpdate?.('equity', data.equityAmount);
+          onDataUpdate?.('interestRate', data.interestRate);
+          onDataUpdate?.('loanPeriod', data.loanPeriod);
+          onDataUpdate?.('propertyValue', data.propertyPrice);
+          onDataUpdate?.('loanAmount', data.desiredLoanAmount);
+          toast.success('Låneinnstillinger anvendt på rapporten');
+        }}
+      />
     </div>
   );
 };

@@ -520,6 +520,42 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_calculator_settings: {
+        Row: {
+          created_at: string
+          desired_loan_amount: number | null
+          equity_amount: number | null
+          id: string
+          interest_rate: number | null
+          loan_period: number | null
+          property_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          desired_loan_amount?: number | null
+          equity_amount?: number | null
+          id?: string
+          interest_rate?: number | null
+          loan_period?: number | null
+          property_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          desired_loan_amount?: number | null
+          equity_amount?: number | null
+          id?: string
+          interest_rate?: number | null
+          loan_period?: number | null
+          property_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loan_scenarios: {
         Row: {
           additional_funding_amount: number | null
