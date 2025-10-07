@@ -47,63 +47,74 @@ const Dashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
     try {
+      if (!user) {
+        console.log('No user found, skipping dashboard data fetch');
+        return;
+      }
+
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-      // Execute all queries in parallel for maximum speed
-      const [
-        propertiesResult,
-        tenantsResult,
-        activeLeasesResult,
-        upcomingExpirationsResult,
-        recentActivityResult
-      ] = await Promise.all([
-        // Properties count - lightweight HEAD request
-        supabase
-          .from('properties')
-          .select('*', { count: 'exact', head: true }),
-        
-        // Tenants count - lightweight HEAD request instead of fetching all data
-        supabase
-          .from('tenants')
-          .select('*', { count: 'exact', head: true })
-          .eq('property_owner_id', user.id),
-        
-        // Active leases with monthly rent for income calculation
-        supabase
-          .from('lease_agreements')
-          .select('monthly_rent', { count: 'exact' })
-          .eq('status', 'active')
-          .eq('property_owner_id', user.id),
-        
-        // Upcoming expirations
-        supabase
-          .from('lease_agreements')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active')
-          .eq('property_owner_id', user.id)
-          .lt('end_date', thirtyDaysFromNow.toISOString().split('T')[0]),
-        
-        // Recent activity
-        supabase
-          .from('audit_log')
-          .select('id, action, table_name, details, created_at')
-          .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
-          .order('created_at', { ascending: false })
-          .limit(5)
-      ]);
+      console.log('Fetching dashboard data for user:', user.id);
+
+      // Execute queries individually with error handling
+      const propertiesResult = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true });
+      
+      if (propertiesResult.error) {
+        console.error('Properties query failed:', propertiesResult.error);
+      }
+
+      const tenantsResult = await supabase
+        .from('tenants')
+        .select('*', { count: 'exact', head: true })
+        .eq('property_owner_id', user.id);
+      
+      if (tenantsResult.error) {
+        console.error('Tenants query failed:', tenantsResult.error);
+      }
+
+      const activeLeasesResult = await supabase
+        .from('lease_agreements')
+        .select('monthly_rent', { count: 'exact' })
+        .eq('status', 'active')
+        .eq('property_owner_id', user.id);
+      
+      if (activeLeasesResult.error) {
+        console.error('Active leases query failed:', activeLeasesResult.error);
+      }
+
+      const upcomingExpirationsResult = await supabase
+        .from('lease_agreements')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .eq('property_owner_id', user.id)
+        .lt('end_date', thirtyDaysFromNow.toISOString().split('T')[0]);
+      
+      if (upcomingExpirationsResult.error) {
+        console.error('Upcoming expirations query failed:', upcomingExpirationsResult.error);
+      }
+
+      const recentActivityResult = await supabase
+        .from('audit_log')
+        .select('id, action, table_name, details, created_at')
+        .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (recentActivityResult.error) {
+        console.error('Recent activity query failed:', recentActivityResult.error);
+      }
 
       // Calculate monthly income
       const totalMonthlyIncome = activeLeasesResult.data?.reduce(
         (sum, lease) => sum + (parseFloat(lease.monthly_rent?.toString() || '0')), 
         0
       ) || 0;
+
+      console.log('Dashboard data fetched successfully');
 
       // Update stats
       setStats({
@@ -118,7 +129,7 @@ const Dashboard = () => {
       setRecentActivities(recentActivityResult.data || []);
 
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Critical error in fetchDashboardData:', error);
     } finally {
       setLoading(false);
     }
