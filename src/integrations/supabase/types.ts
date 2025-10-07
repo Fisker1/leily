@@ -124,6 +124,68 @@ export type Database = {
         }
         Relationships: []
       }
+      calculator_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          credits_used: number | null
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculator_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "calculator_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculator_chat_sessions: {
+        Row: {
+          calculator_data: Json | null
+          created_at: string
+          id: string
+          session_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculator_data?: Json | null
+          created_at?: string
+          id?: string
+          session_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculator_data?: Json | null
+          created_at?: string
+          id?: string
+          session_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
