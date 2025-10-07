@@ -332,19 +332,21 @@ Alt fylles automatisk ut i rapporten! 📄`
       setIsLoading(true);
 
       // Auto-fill PDF fields directly with parsed data
+      // NOTE: We skip propertyType and ownershipType here because they come in English
+      // from the advertising data. AI will fill these with proper Norwegian values.
       if (result.preview.finnCode) onDataUpdate?.('finnCode', result.preview.finnCode);
       if (result.preview.price) onDataUpdate?.('totalPrice', result.preview.price.toString());
       if (result.preview.address) onDataUpdate?.('address', result.preview.address);
       if (result.preview.primarySize) onDataUpdate?.('livingArea', result.preview.primarySize.toString());
       if (result.preview.bedrooms) onDataUpdate?.('bedrooms', result.preview.bedrooms.toString());
       if (result.preview.rooms) onDataUpdate?.('rooms', result.preview.rooms.toString());
-      if (result.preview.propertyType) onDataUpdate?.('propertyType', result.preview.propertyType);
+      // Skipped: propertyType - will be filled by AI with Norwegian value
       if (result.preview.constructionYear) onDataUpdate?.('buildYear', result.preview.constructionYear.toString());
       if (result.preview.plotArea) onDataUpdate?.('plotArea', result.preview.plotArea.toString());
       if (result.preview.energyRating) onDataUpdate?.('energyRating', result.preview.energyRating);
       if (result.preview.commonCosts) onDataUpdate?.('commonCosts', result.preview.commonCosts.toString());
       if (result.preview.municipalFees) onDataUpdate?.('municipalFees', result.preview.municipalFees.toString());
-      if (result.preview.ownershipType) onDataUpdate?.('ownershipType', result.preview.ownershipType);
+      // Skipped: ownershipType - will be filled by AI with Norwegian value
 
       // Estimate rent automatically in background
       try {
@@ -410,6 +412,15 @@ Alt fylles automatisk ut i rapporten! 📄`
             role: 'assistant', 
             content: aiData.message 
           }]);
+          
+          // Fill out PDF fields from AI-extracted data (including propertyType and ownershipType)
+          if (aiData.extractedData && onDataUpdate) {
+            Object.entries(aiData.extractedData).forEach(([field, value]) => {
+              if (value !== null && value !== undefined) {
+                onDataUpdate(field, value);
+              }
+            });
+          }
         }
       } catch (aiError) {
         console.error('Error generating summary:', aiError);
