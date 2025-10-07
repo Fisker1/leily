@@ -19,6 +19,13 @@ interface CalculatorChatProps {
   hasCredits?: boolean;
 }
 
+interface ProcessingStatus {
+  isProcessing: boolean;
+  stage: 'shaving' | 'analyzing' | 'complete';
+  progress: number;
+  message: string;
+}
+
 export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = false }: CalculatorChatProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -30,6 +37,12 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
+    isProcessing: false,
+    stage: 'shaving',
+    progress: 0,
+    message: ''
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,9 +98,14 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     const userMessage = input.trim();
     const currentAttachments = [...attachments];
     
-    // Show info if large HTML is detected
+    // Show progress if large HTML is detected
     if (userMessage.length > 100000) {
-      toast.info('Stor HTML-fil oppdaget. Ekstraherer kun relevant data automatisk... ⚙️');
+      setProcessingStatus({
+        isProcessing: true,
+        stage: 'shaving',
+        progress: 30,
+        message: 'Ekstraherer relevant data fra HTML...'
+      });
     }
     
     setInput('');
@@ -109,6 +127,18 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     }]);
     setIsLoading(true);
 
+    // Update progress for analyzing stage
+    if (userMessage.length > 100000) {
+      setTimeout(() => {
+        setProcessingStatus(prev => ({
+          ...prev,
+          stage: 'analyzing',
+          progress: 60,
+          message: 'Analyserer eiendomsdata med AI...'
+        }));
+      }, 500);
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('calculator-ai-chat', {
         body: {
@@ -124,9 +154,12 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       if (data.error) {
         if (data.error.includes('Insufficient credits')) {
           toast.error('Du har ikke nok kreditter. Trenger 0.5 kreditter per melding.');
+        } else if (data.error.includes('too large') || data.error.includes('for lang')) {
+          toast.error(data.error);
         } else {
           toast.error(data.error);
         }
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
         return;
       }
 
@@ -134,11 +167,27 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
 
       // Auto-fill fields if AI extracted data
-      if (data.extractedData) {
-        Object.entries(data.extractedData).forEach(([field, value]) => {
-          onDataUpdate?.(field, value);
+      if (data.extractedData && onDataUpdate) {
+        setProcessingStatus({
+          isProcessing: true,
+          stage: 'complete',
+          progress: 90,
+          message: 'Fyller ut rapport...'
         });
-        toast.success('Data automatisk fylt inn fra dokument');
+
+        // Fill out the form with extracted data
+        Object.entries(data.extractedData).forEach(([field, value]) => {
+          if (value !== null && value !== undefined) {
+            onDataUpdate(field, value);
+          }
+        });
+
+        setTimeout(() => {
+          setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 100, message: '' });
+          toast.success('✅ Data automatisk fylt inn i rapporten!');
+        }, 500);
+      } else {
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
       }
 
       if (data.creditsUsed > 0) {
@@ -148,6 +197,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       console.error('Chat error:', error);
       toast.error('Kunne ikke sende melding');
       setMessages(prev => prev.slice(0, -1)); // Remove user message on error
+      setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
     } finally {
       setIsLoading(false);
     }
@@ -163,10 +213,30 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="p-4 border-b border-border/50 bg-card">
-        <h3 className="font-semibold text-lg">AI-assistent</h3>
-        <p className="text-sm text-muted-foreground">
-          {hasCredits ? '0.5 kreditter per melding' : '🔒 Kjøp kreditter for å bruke AI-chat'}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">AI-assistent</h3>
+            <p className="text-sm text-muted-foreground">
+              {hasCredits ? '0.5 kreditter per melding' : '🔒 Kjøp kreditter for å bruke AI-chat'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Progress bar */}
+        {processingStatus.isProcessing && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{processingStatus.message}</span>
+              <span className="font-medium">{processingStatus.progress}%</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-primary h-full transition-all duration-500 ease-out"
+                style={{ width: `${processingStatus.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1 p-4 bg-background" ref={scrollRef}>
