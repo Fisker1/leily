@@ -157,6 +157,31 @@ Alt fylles automatisk ut i rapporten! 📄`
     const finnCodeMatch = html.match(/finnkode[=:]\s*(\d+)/i);
     if (finnCodeMatch) result.finnCode = finnCodeMatch[1];
     
+    // Extract energy rating (Energimerking)
+    const energyRatingMatch = html.match(/<span[^>]*data-testid="energy-label-info"[^>]*>([^<]+)<\/span>/i);
+    if (energyRatingMatch) {
+      result.energyRating = energyRatingMatch[1].trim();
+      console.log('✅ Found energy rating:', result.energyRating);
+    }
+    
+    // Extract municipal fees (Kommunale avgifter) - looking for dd.m-0.font-bold pattern near "Kommunale avg"
+    const municipalFeesPattern = /Kommunale\s+avg[^\d]*?(\d+(?:\s*\d+)*)\s*kr\s*per\s*år/i;
+    const municipalMatch = html.match(municipalFeesPattern);
+    if (municipalMatch) {
+      // Remove spaces and convert to monthly
+      const yearlyAmount = parseInt(municipalMatch[1].replace(/\s/g, ''));
+      result.municipalFees = Math.round(yearlyAmount / 12);
+      console.log('✅ Found municipal fees:', result.municipalFees, 'kr/month');
+    }
+    
+    // Extract common costs (Felleskostnader/Fellesutgifter) - looking for dd.m-0.font-bold pattern
+    const commonCostsPattern = /(?:Felleskost|Fellesutgift)[^\d]*?(\d+(?:\s*\d+)*)\s*kr(?!\s*per\s*år)/i;
+    const commonMatch = html.match(commonCostsPattern);
+    if (commonMatch) {
+      result.commonCosts = parseInt(commonMatch[1].replace(/\s/g, ''));
+      console.log('✅ Found common costs:', result.commonCosts, 'kr/month');
+    }
+    
     // Fallback: Try __NEXT_DATA__ if advertising-initial-state not found
     if (!result.advertising) {
       const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
@@ -181,9 +206,17 @@ Alt fylles automatisk ut i rapporten! 📄`
       preview.plotArea = result.propertyData.plot_area;
       preview.ownershipType = result.propertyData.ownership_type;
       preview.facilities = result.propertyData.facilities;
-      preview.energyRating = result.propertyData.energy_rating;
-      preview.sharedExpenses = result.propertyData.shared_cost || result.propertyData.common_cost;
-      preview.municipalFees = result.propertyData.municipal_fee || result.propertyData.property_tax;
+      preview.energyRating = result.propertyData.energy_rating || result.energyRating;
+      preview.sharedExpenses = result.propertyData.shared_cost || result.propertyData.common_cost || result.commonCosts;
+      preview.municipalFees = result.propertyData.municipal_fee || result.propertyData.property_tax || result.municipalFees;
+      preview.commonCosts = result.propertyData.common_cost || result.commonCosts;
+    } else {
+      // Use fallback values if no propertyData
+      preview.energyRating = result.energyRating;
+      preview.commonCosts = result.commonCosts;
+      preview.municipalFees = result.municipalFees;
+      preview.finnCode = result.finnCode;
+      preview.address = result.address;
     }
     
     const jsonString = JSON.stringify(result, null, 2);
@@ -246,6 +279,9 @@ Alt fylles automatisk ut i rapporten! 📄`
         if (result.preview.propertyType) previewMessage += `• Type: ${result.preview.propertyType}\n`;
         if (result.preview.constructionYear) previewMessage += `• Byggeår: ${result.preview.constructionYear}\n`;
         if (result.preview.plotArea) previewMessage += `• Tomt: ${result.preview.plotArea} m²\n`;
+        if (result.preview.energyRating) previewMessage += `• Energimerking: ${result.preview.energyRating}\n`;
+        if (result.preview.commonCosts) previewMessage += `• Felleskostnader: ${Number(result.preview.commonCosts).toLocaleString('nb-NO')} kr/mnd\n`;
+        if (result.preview.municipalFees) previewMessage += `• Kommunale avgifter: ${Number(result.preview.municipalFees).toLocaleString('nb-NO')} kr/mnd\n`;
       }
       
       toast.success(previewMessage, { duration: 4000 });
