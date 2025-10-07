@@ -81,6 +81,9 @@ const Calculator = () => {
     setFinnCode(data.finnCode);
     setPropertyAddress(data.address);
     
+    // Also update the address in calculator data
+    handleInputChange('address', data.address);
+    
     // Auto-fill calculator fields if not manually overridden
     if (!manualOverride.totalPrice) {
       handleInputChange('totalPrice', data.price.toString());
@@ -142,14 +145,17 @@ const Calculator = () => {
       return;
     }
 
-    // Auto-generate calculation name from propertyAddress or use default
-    const autoCalculationName = propertyAddress || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`;
+    // Get address from calculator data (which is updated by both Finn fetch and manual input)
+    const address = (data as any).address || propertyAddress || '';
+    
+    // Auto-generate calculation name from address or use default
+    const autoCalculationName = address || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`;
 
     // Prepare calculation data
     const calculationData = {
       ...data,
       finnCode: finnCode || null,
-      propertyAddress: propertyAddress || null
+      propertyAddress: address || null
     };
 
     // Prepare results data
@@ -170,7 +176,7 @@ const Calculator = () => {
     await saveCalculation(
       autoCalculationName,
       finnCode || null,
-      propertyAddress || null,
+      address || null,
       calculationData,
       resultsData
     );
