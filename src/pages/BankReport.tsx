@@ -1,7 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/Navigation";
 import { 
   Download, 
@@ -11,7 +8,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,10 +22,7 @@ const BankReport = () => {
   const reportRef = useRef<HTMLDivElement>(null);
   const reportData = location.state || {};
   const { user } = useAuth();
-  
-  // Debug logging to see what data we received
-  console.log('Report Data Received:', reportData);
-  console.log('Basic Data:', reportData.basicData);
+  const [currentPageCount, setCurrentPageCount] = useState(7); // Default page count
   
   const {
     basicData = {},
@@ -40,10 +34,8 @@ const BankReport = () => {
     activatedModules: rawActivatedModules = []
   } = reportData;
 
-  // Ensure activatedModules is always an array
   const activatedModules = Array.isArray(rawActivatedModules) ? rawActivatedModules : [];
 
-  // Add all basic data fields from calculator
   const enrichedBasicData = {
     ...basicData,
     propertyType: reportData.basicData?.propertyType || '',
@@ -57,16 +49,7 @@ const BankReport = () => {
     sharedExpenses: reportData.basicData?.sharedExpenses || 0
   };
 
-  // Use enriched basic data instead of basic data
   const displayBasicData = enrichedBasicData;
-  
-  // Debug logging for expenses
-  console.log('Individual expenses in report:');
-  console.log('Municipal fees:', displayBasicData.municipalFees);
-  console.log('Electricity:', displayBasicData.electricityMonthly);
-  console.log('Insurance:', displayBasicData.insurance);
-  console.log('Shared expenses:', displayBasicData.sharedExpenses);
-  console.log('Total expenses:', displayBasicData.expenses);
 
   const saveReportToDatabase = async (fileName: string, fileSize: number) => {
     if (!user) return;
@@ -114,208 +97,37 @@ const BankReport = () => {
     if (!reportRef.current) return;
 
     try {
-      // Detect if we're on mobile
-      const isMobile = window.innerWidth <= 768;
-      
-      // Hide navigation temporarily
       const nav = document.querySelector('nav');
       const navDisplay = nav?.style.display;
       if (nav) nav.style.display = 'none';
 
-      // Store original styles
       const reportElement = reportRef.current;
-      const originalMaxWidth = reportElement.style.maxWidth;
-      const originalWidth = reportElement.style.width;
-      const originalPadding = reportElement.style.padding;
 
-      // Apply simple PDF-optimized styles
-      const style = document.createElement('style');
-      style.textContent = `
-        .pdf-generation {
-          max-width: 210mm !important;
-          width: 210mm !important;
-          margin: 0 auto !important;
-          padding: 15mm !important;
-          font-size: 12px !important;
-          line-height: 1.4 !important;
-          background: white !important;
-        }
-        
-        .pdf-generation * {
-          box-sizing: border-box !important;
-        }
-        
-        .pdf-generation h1 { 
-          font-size: 18px !important; 
-          margin-bottom: 12px !important;
-          page-break-after: avoid !important;
-        }
-        
-        .pdf-generation h2 { 
-          font-size: 16px !important; 
-          margin-bottom: 10px !important;
-          page-break-after: avoid !important;
-        }
-        
-        .pdf-generation h3 { 
-          font-size: 14px !important; 
-          margin-bottom: 8px !important;
-          page-break-after: avoid !important;
-        }
-        
-        .pdf-generation h4 { 
-          font-size: 12px !important; 
-          margin-bottom: 6px !important;
-        }
-        
-        .pdf-generation .grid {
-          display: block !important;
-        }
-        
-        .pdf-generation .grid > div {
-          width: 100% !important;
-          margin-bottom: 15px !important;
-          display: block !important;
-        }
-        
-        .pdf-generation .grid-cols-2 > div:nth-child(odd) {
-          margin-bottom: 8px !important;
-        }
-        
-        .pdf-generation table {
-          width: 100% !important;
-          font-size: 11px !important;
-          border-collapse: collapse !important;
-          margin-bottom: 10px !important;
-        }
-        
-        .pdf-generation table td {
-          padding: 6px 8px !important;
-          border-bottom: 1px solid #ddd !important;
-          vertical-align: top !important;
-        }
-        
-        .pdf-generation .border {
-          border: 1px solid #333 !important;
-          margin-bottom: 15px !important;
-        }
-        
-        .pdf-generation .p-4 {
-          padding: 12px !important;
-        }
-        
-        .pdf-generation .p-8 {
-          padding: 15px !important;
-        }
-        
-        .pdf-generation .mb-8 { 
-          margin-bottom: 20px !important; 
-        }
-        
-        .pdf-generation .mb-6 { 
-          margin-bottom: 15px !important; 
-        }
-        
-        .pdf-generation .mb-4 { 
-          margin-bottom: 12px !important; 
-        }
-        
-        .pdf-generation .pb-6 { 
-          padding-bottom: 15px !important; 
-        }
-        
-        .pdf-generation .pb-2 { 
-          padding-bottom: 6px !important; 
-        }
-        
-        .pdf-generation .report-section {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          margin-bottom: 20px !important;
-        }
-        
-        .pdf-generation .avoid-break {
-          page-break-inside: avoid !important;
-        }
-        
-        .pdf-generation .page-break-before {
-          page-break-before: always !important;
-        }
-        
-        /* Ensure text is readable */
-        .pdf-generation .text-xs {
-          font-size: 11px !important;
-        }
-        
-        .pdf-generation .text-sm {
-          font-size: 12px !important;
-        }
-        
-        /* Fix spacing for mobile PDF */
-        .pdf-generation .space-y-1 > * + * {
-          margin-top: 4px !important;
-        }
-        
-        /* Better table styling for PDF */
-        .pdf-generation tbody tr:last-child td {
-          border-bottom: 2px solid #333 !important;
-        }
-        
-        .pdf-generation .bg-gray-50 {
-          background-color: #f9f9f9 !important;
-        }
-        
-        /* Improve text contrast */
-        .pdf-generation .text-gray-600 {
-          color: #4a4a4a !important;
-        }
-        
-        .pdf-generation .text-gray-700 {
-          color: #333 !important;
-        }
-        
-        .pdf-generation .text-gray-800 {
-          color: #222 !important;
-        }
-        
-        .pdf-generation .text-gray-900 {
-          color: #111 !important;
-        }
-      `;
-      document.head.appendChild(style);
-
-      // Add PDF class for styling
-      reportElement.classList.add('pdf-generation');
-
-      // Wait for layout to settle
+      // Wait for layout
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Create canvas with better settings for PDF
       const canvas = await html2canvas(reportElement, {
         scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: 794, // A4 width in pixels at 96 DPI
+        width: 794,
         scrollX: 0,
         scrollY: 0,
         windowWidth: 794,
         windowHeight: reportElement.scrollHeight
       });
 
-      // Create PDF with A4 dimensions
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = 297; // A4 height in mm
+      const pageHeight = 297;
 
       const imgData = canvas.toDataURL('image/png', 0.9);
 
       if (imgHeight < pageHeight) {
-        // Single page
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       } else {
-        // Multiple pages
         let heightLeft = imgHeight;
         let position = 0;
 
@@ -330,26 +142,15 @@ const BankReport = () => {
         }
       }
 
-      // Clean up styles
-      reportElement.classList.remove('pdf-generation');
-      reportElement.style.maxWidth = originalMaxWidth;
-      reportElement.style.width = originalWidth;
-      reportElement.style.padding = originalPadding;
-      document.head.removeChild(style);
-
-      // Restore navigation
       if (nav && navDisplay) nav.style.display = navDisplay;
 
-      // Save the PDF
       const reportId = `AB-${Date.now().toString(36).toUpperCase()}`;
       const fileName = `bankrapport-${reportId}.pdf`;
       pdf.save(fileName);
 
-      // Calculate approximate file size
       const pdfOutput = pdf.output('arraybuffer');
       const fileSize = pdfOutput.byteLength;
 
-      // Save report tracking to database
       await saveReportToDatabase(fileName, fileSize);
       
       toast.success('PDF generert og lastet ned!');
@@ -378,13 +179,93 @@ const BankReport = () => {
     return `${value.toFixed(2)}%`;
   };
 
+  const reportId = `AB-${Date.now().toString(36).toUpperCase()}`;
+
+  // Footer component
+  const PageFooter = ({ pageNum }: { pageNum: number }) => (
+    <div className="report-page-footer">
+      <div className="flex justify-between items-center text-xs">
+        <div>
+          <p className="font-semibold">Leily AS - Beslutningsstøtteverktøy</p>
+          <p className="text-gray-500 mt-1">
+            Denne rapporten er konfidensielt og kun til finansieringsformål. 
+            Forhør deg med din lokale bank og rådgiver.
+          </p>
+        </div>
+        <div className="text-right">
+          <p>Referanse: {reportId}</p>
+          <p className="font-semibold">Side {pageNum}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-100">
       <Navigation />
       
+      <style>{`
+        .report-page {
+          width: 210mm;
+          min-height: 297mm;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          margin: 0 auto 24px;
+          position: relative;
+          padding: 20mm 15mm 30mm 15mm;
+          box-sizing: border-box;
+        }
+        
+        .report-page-footer {
+          position: absolute;
+          bottom: 12mm;
+          left: 15mm;
+          right: 15mm;
+          padding-top: 8px;
+          border-top: 1px solid #cbd5e0;
+        }
+        
+        @media print {
+          body {
+            background: white;
+          }
+          
+          .report-page {
+            box-shadow: none;
+            margin: 0;
+            page-break-after: always;
+          }
+          
+          .report-page:last-child {
+            page-break-after: auto;
+          }
+          
+          .no-print {
+            display: none !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .report-page {
+            width: 100%;
+            min-height: auto;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          }
+          
+          .report-page-footer {
+            position: relative;
+            bottom: auto;
+            left: auto;
+            right: auto;
+            margin-top: 20px;
+          }
+        }
+      `}</style>
+
       <div className="container mx-auto px-4 py-8">
         {/* Header Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 no-print">
           <Link to="/" className="flex items-center gap-2 text-primary hover:text-primary/80">
             <ArrowLeft className="h-5 w-5" />
             Tilbake til kalkulator
@@ -401,10 +282,10 @@ const BankReport = () => {
           </div>
         </div>
 
-        {/* Report Container */}
-        <div ref={reportRef} className="w-full max-w-4xl mx-auto bg-white text-black shadow-none overflow-hidden relative print:shadow-none">
-          {/* Report Content */}
-          <div className="relative z-20 p-8">
+        {/* Report Pages */}
+        <div ref={reportRef}>
+          {/* Page 1: Header & Key Info */}
+          <div className="report-page">
             {/* Professional Header */}
             <div className="mb-8 pb-6 border-b-2 border-gray-800">
               <div className="flex justify-between items-start mb-4">
@@ -415,7 +296,7 @@ const BankReport = () => {
                 </div>
                 <div className="text-right text-xs text-gray-700">
                   <p className="font-semibold">Rapport utstedt: {currentDate}</p>
-                  <p>Referanse: AB-{Date.now().toString(36).toUpperCase()}</p>
+                  <p>Referanse: {reportId}</p>
                   <p>Konfidensialitet: Kun til bankformål</p>
                 </div>
               </div>
@@ -429,13 +310,12 @@ const BankReport = () => {
               </div>
             </div>
 
-            {/* Executive Summary */}
-            <section className="mb-8 report-section avoid-break">
+            {/* Key Property Information */}
+            <section className="mb-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                 1. NØKKELINFORMASJON OM EIENDOMMEN
               </h3>
               
-              {/* Property Key Details */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="border border-gray-300 p-4">
                   <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Eiendomsopplysninger</h4>
@@ -557,8 +437,12 @@ const BankReport = () => {
               )}
             </section>
 
-            {/* Financial Summary */}
-            <section className="mb-8 report-section avoid-break">
+            <PageFooter pageNum={1} />
+          </div>
+
+          {/* Page 2: Financial Summary */}
+          <div className="report-page">
+            <section>
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                 2. SAMMENDRAG AV ANALYSE
               </h3>
@@ -704,9 +588,13 @@ const BankReport = () => {
               </div>
             </section>
 
-            {/* Profitability Analysis */}
-            {activatedModules.includes('Lønnsomhetsanalyse') && (
-              <section className="mb-8 report-section page-break-before avoid-break">
+            <PageFooter pageNum={2} />
+          </div>
+
+          {/* Page 3: Profitability Analysis */}
+          {activatedModules.includes('Lønnsomhetsanalyse') && (
+            <div className="report-page">
+              <section>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   3. LØNNSOMHETSANALYSE
                 </h3>
@@ -778,18 +666,22 @@ const BankReport = () => {
                   </p>
                 </div>
               </section>
-            )}
 
-            {/* Advanced Calculations */}
-            {activatedModules.includes('Avanserte beregninger') && (
-              <section className="mb-8 report-section page-break-before avoid-break">
+              <PageFooter pageNum={3} />
+            </div>
+          )}
+
+          {/* Page 4: Advanced Calculations */}
+          {activatedModules.includes('Avanserte beregninger') && (
+            <div className="report-page">
+              <section>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   4. AVANSERTE BEREGNINGER
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
                   <div className="border border-gray-300 p-4">
-                    <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Avkastningsmål</h4>
+                    <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Avkastningsnøkkeltall</h4>
                     <table className="w-full text-xs">
                       <tbody className="space-y-1">
                         <tr className="border-b border-gray-200">
@@ -837,11 +729,15 @@ const BankReport = () => {
                   </p>
                 </div>
               </section>
-            )}
 
-            {/* Market Analysis */}
-            {activatedModules.includes('Markedsanalyse') && (
-              <section className="mb-8 report-section page-break-before avoid-break">
+              <PageFooter pageNum={4} />
+            </div>
+          )}
+
+          {/* Page 5: Market Analysis */}
+          {activatedModules.includes('Markedsanalyse') && (
+            <div className="report-page">
+              <section>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   5. MARKEDSANALYSE
                 </h3>
@@ -895,11 +791,15 @@ const BankReport = () => {
                   </p>
                 </div>
               </section>
-            )}
 
-            {/* Risk Evaluation */}
-            {activatedModules.includes('Risikoevaluering') && (
-              <section className="mb-8 report-section page-break-before avoid-break">
+              <PageFooter pageNum={5} />
+            </div>
+          )}
+
+          {/* Page 6: Risk Evaluation */}
+          {activatedModules.includes('Risikoevaluering') && (
+            <div className="report-page">
+              <section>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   6. RISIKOEVALUERING
                 </h3>
@@ -959,11 +859,15 @@ const BankReport = () => {
                   </p>
                 </div>
               </section>
-            )}
 
-            {/* Yield Analysis */}
-            {activatedModules.includes('Avkastningsanalyse') && (
-              <section className="mb-8 report-section page-break-before avoid-break">
+              <PageFooter pageNum={6} />
+            </div>
+          )}
+
+          {/* Page 7: Yield Analysis */}
+          {activatedModules.includes('Avkastningsanalyse') && (
+            <div className="report-page">
+              <section>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
                   7. AVKASTNINGSANALYSE
                 </h3>
@@ -1018,12 +922,16 @@ const BankReport = () => {
                    </p>
                 </div>
               </section>
-            )}
 
-            {/* Conclusion */}
-            <section className="mb-8 report-section page-break-before avoid-break">
+              <PageFooter pageNum={7} />
+            </div>
+          )}
+
+          {/* Last page: Conclusion */}
+          <div className="report-page">
+            <section>
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                {activatedModules.length + 1}. KONKLUSJON OG ANBEFALINGER
+                KONKLUSJON OG ANBEFALINGER
               </h3>
               
               <div className="border border-gray-400 bg-gray-50 p-4 mb-4">
@@ -1039,7 +947,7 @@ const BankReport = () => {
                  </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="border border-green-400 bg-green-50 p-3">
                   <h5 className="font-bold text-green-800 mb-2 text-xs uppercase">Styrker ved investeringen:</h5>
                    <ul className="text-xs text-gray-800 space-y-1">
@@ -1063,7 +971,7 @@ const BankReport = () => {
                 </div>
               </div>
 
-              <div className="border border-gray-400 bg-white p-4 mt-4">
+              <div className="border border-gray-400 bg-white p-4">
                 <h5 className="font-bold text-gray-800 mb-2 text-xs uppercase">Bankens vurdering:</h5>
                 <p className="text-xs text-gray-700 leading-relaxed">
                   Investeringen {(displayBasicData.monthlyCashFlow || 0) >= 0 && (displayBasicData.propertyValue > 0 ? ((displayBasicData.loanAmount || 0) / displayBasicData.propertyValue) * 100 : 0) < 80 ? 
@@ -1074,30 +982,7 @@ const BankReport = () => {
               </div>
             </section>
 
-            {/* Professional Footer */}
-            <div className="border-t-2 border-gray-800 pt-4 mt-8">
-              <div className="flex justify-between items-end">
-                <div>
-                  <h4 className="font-bold text-gray-900 text-base tracking-wide">LEILY AS</h4>
-                  <p className="text-xs text-gray-600">Beslutningsstøtteverktøy for eiendomsfinansiering</p>
-                  <div className="text-xs text-gray-500 mt-2 space-y-1">
-                    <p>Kontakt: post@aproposbolig.no | Tlf: +47 XX XX XX XX</p>
-                    <p>Organisasjonsnummer: 123 456 789 MVA</p>
-                    <p className="font-medium">
-                      Denne rapporten er utarbeidet som grunnlag for finansieringsvurdering og er konfidensielt.
-                      Forhør deg med din lokale bank og rådgiver når det gjelder finansiering.
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right text-xs text-gray-500">
-                  <div className="border border-gray-300 p-2 bg-gray-50">
-                    <p className="font-semibold">Dokument-ID:</p>
-                    <p>AB-{Date.now().toString(36).toUpperCase()}</p>
-                    <p className="mt-1 text-gray-600">Generert: {currentDate}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PageFooter pageNum={activatedModules.length + 2} />
           </div>
         </div>
       </div>
