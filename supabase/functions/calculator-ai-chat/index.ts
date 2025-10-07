@@ -35,6 +35,18 @@ serve(async (req) => {
     }
 
     const { sessionId, message, calculatorData, attachments } = await req.json();
+    
+    // Check if message contains estimated rent
+    let estimatedRent = null;
+    try {
+      const parsedMessage = JSON.parse(message);
+      if (parsedMessage.estimatedMonthlyRent) {
+        estimatedRent = parsedMessage.estimatedMonthlyRent;
+        console.log('📊 Estimated rent received:', estimatedRent, 'kr/mnd');
+      }
+    } catch (e) {
+      // Not JSON, regular message
+    }
 
     // Check if user is ambassador or admin (unlimited access)
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -316,6 +328,12 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       const toolCall = choice.message.tool_calls[0];
       if (toolCall.function.name === 'extract_property_data') {
         extractedData = JSON.parse(toolCall.function.arguments);
+        
+        // Add estimated rent if we have it
+        if (estimatedRent) {
+          extractedData.monthlyRent = estimatedRent;
+        }
+        
         console.log('Extracted data via tool calling:', extractedData);
         
         // Build friendly response
@@ -335,7 +353,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
         if (extractedData.county) assistantMessage += `🗺️ **Fylke:** ${extractedData.county}\n\n`;
         if (extractedData.commonCosts) assistantMessage += `💵 **Felleskostnader:** ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n\n`;
         if (extractedData.municipalFees) assistantMessage += `🏛️ **Kommunale avgifter:** ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/mnd\n\n`;
-        if (extractedData.monthlyRent) assistantMessage += `💸 **Forventet leieinntekt:** ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n\n`;
+        if (extractedData.monthlyRent) assistantMessage += `💸 **Estimert leieinntekt:** ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n\n`;
         
         if (extractedData.facilities && Array.isArray(extractedData.facilities) && extractedData.facilities.length > 0) {
           assistantMessage += `✨ **Fasiliteter:**\n`;

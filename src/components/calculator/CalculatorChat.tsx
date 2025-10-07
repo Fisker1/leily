@@ -378,6 +378,7 @@ Alt fylles automatisk ut i rapporten! 📄`
       if (result.preview.ownershipType) onDataUpdate?.('ownershipType', result.preview.ownershipType); // Now in Norwegian
 
       // Estimate rent automatically in background
+      let estimatedRent = null;
       try {
         setProcessingStatus(prev => ({
           ...prev,
@@ -401,6 +402,7 @@ Alt fylles automatisk ut i rapporten! 📄`
         });
 
         if (!rentError && rentData?.estimatedRent) {
+          estimatedRent = rentData.estimatedRent;
           // Fill in estimated rent (monthly)
           onDataUpdate?.('monthlyRent', rentData.estimatedRent.toString());
           onDataUpdate?.('isRentAutoEstimated', true);
@@ -418,7 +420,7 @@ Alt fylles automatisk ut i rapporten! 📄`
         // Non-critical error, continue
       }
 
-      // Send to AI to get detailed summary
+      // Send to AI to get detailed summary (including rent estimate)
       setProcessingStatus({
         isProcessing: true,
         stage: 'analyzing',
@@ -427,9 +429,15 @@ Alt fylles automatisk ut i rapporten! 📄`
       });
 
       try {
+        // Add rent estimate to the extracted data for AI summary
+        const dataWithRent = {
+          ...result,
+          estimatedMonthlyRent: estimatedRent
+        };
+        
         const { data: aiData, error: aiError } = await supabase.functions.invoke('calculator-ai-chat', {
           body: {
-            message: result.extracted,
+            message: JSON.stringify(dataWithRent),
             sessionId,
             calculatorData
           }
