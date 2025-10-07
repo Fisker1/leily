@@ -40,7 +40,7 @@ serve(async (req) => {
 
     // Base price per sqm based on property type and location
     // Updated with realistic Norwegian rental market prices (2025)
-    let basePricePerSqm = 180; // Base NOK per sqm for average location
+    let basePricePerSqm = 190; // Base NOK per sqm for average location
 
     // Adjust based on property type
     const propertyTypeMultipliers: Record<string, number> = {
@@ -76,7 +76,7 @@ serve(async (req) => {
       }
       // Stavanger area (4xxx)
       else if (firstDigit === '4' && (postalCode.startsWith('40') || postalCode.startsWith('41'))) {
-        basePricePerSqm *= 1.2; // Reduced Stavanger premium
+        basePricePerSqm *= 1.25; // Increased Stavanger premium
       }
       // Trondheim area (7xxx)
       else if (firstDigit === '7' && postalCode.startsWith('70')) {
@@ -134,11 +134,11 @@ serve(async (req) => {
       
       let buildYearMultiplier = 1.0;
       if (age <= 5) {
-        buildYearMultiplier = 1.12;  // Very new: +12%
+        buildYearMultiplier = 1.15;  // Very new: +15%
       } else if (age <= 10) {
-        buildYearMultiplier = 1.08;  // New: +8%
+        buildYearMultiplier = 1.12;  // New: +12%
       } else if (age <= 20) {
-        buildYearMultiplier = 1.04;  // Modern: +4%
+        buildYearMultiplier = 1.08;  // Modern: +8% (increased from +4%)
       } else if (age <= 40) {
         buildYearMultiplier = 1.0;   // Baseline
       } else if (age <= 60) {
