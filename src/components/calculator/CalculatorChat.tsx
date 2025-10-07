@@ -468,24 +468,24 @@ Alt fylles automatisk ut i rapporten! 📄`
           
           <div className="flex gap-2">
             <Button
+              onClick={() => setShaverDialogOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30"
+              aria-label="HTML Formater"
+              title="Formater"
+            >
+              <Scissors className="h-4 w-4" />
+            </Button>
+            <Button
               onClick={() => setLoanCalcOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
+              className="gap-2 h-9 px-3 bg-secondary/10 hover:bg-secondary/20 text-secondary-foreground border-secondary/20 hover:border-secondary/30"
               aria-label="Lånekalkulator"
               title="Lånekalkulator"
             >
               <Calculator className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={() => setShaverDialogOpen(true)}
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600 h-9 px-3"
-              aria-label="HTML Shaver"
-              title="Formater"
-            >
-              <Scissors className="h-4 w-4" />
             </Button>
           </div>
         </div>
