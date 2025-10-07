@@ -139,6 +139,10 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     if (titleMatch) result.title = titleMatch[1];
     
+    // Extract address from object-address element
+    const addressMatch = html.match(/<span[^>]*data-testid="object-address"[^>]*>(.*?)<\/span>/i);
+    if (addressMatch) result.address = addressMatch[1];
+    
     const finnCodeMatch = html.match(/finnkode[=:]\s*(\d+)/i);
     if (finnCodeMatch) result.finnCode = finnCodeMatch[1];
     
