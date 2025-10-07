@@ -39,13 +39,11 @@ import { formatNumberWithSpaces } from "@/lib/utils";
 
 interface CalculationLibraryProps {
   onLoadCalculation?: (calculation: CalculationHistoryItem) => void;
-  onSaveCurrentCalculation?: () => void;
   currentCalculationData?: any;
 }
 
 const CalculationLibrary = ({ 
   onLoadCalculation, 
-  onSaveCurrentCalculation,
   currentCalculationData 
 }: CalculationLibraryProps) => {
   const { user } = useAuth();
@@ -127,26 +125,6 @@ const CalculationLibrary = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {currentCalculationData && onSaveCurrentCalculation && (
-            <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Aktiv kalkulasjon</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Lagre den nåværende kalkulasjonen til biblioteket
-                  </p>
-                </div>
-                <Button 
-                  onClick={onSaveCurrentCalculation}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Lagre kalkulasjon
-                </Button>
-              </div>
-            </div>
-          )}
 
           {loading ? (
             <div className="text-center py-8">

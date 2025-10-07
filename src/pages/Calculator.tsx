@@ -7,8 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Save, Plus, Wallet } from 'lucide-react';
+import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Plus, Wallet } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
@@ -47,9 +46,7 @@ const Calculator = () => {
   const { equityData } = useLoanCalculator(); // Get default loan settings
 
   // States for save dialog
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [extendedDetailsOpen, setExtendedDetailsOpen] = useState(false);
-  const [calculationName, setCalculationName] = useState('');
   const [finnCode, setFinnCode] = useState('');
   const [propertyAddress, setPropertyAddress] = useState('');
   const [autoFetchedData, setAutoFetchedData] = useState<FinnPropertyData | null>(null);
@@ -145,56 +142,55 @@ const Calculator = () => {
       return;
     }
 
+    // Auto-generate calculation name from propertyAddress or use default
+    const autoCalculationName = propertyAddress || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`;
+
     // Prepare calculation data
     const calculationData = {
-      ...calculatorData,
+      ...data,
       finnCode: finnCode || null,
       propertyAddress: propertyAddress || null
     };
 
     // Prepare results data
     const resultsData = {
-      totalPrice: parseFloat(calculatorData.totalPrice) || 0,
-      monthlyRent: calculatorData.isRental ? parseFloat(calculatorData.expectedAnnualRent) / 12 || 0 : 0,
-      yield: calculatorData.isRental && parseFloat(calculatorData.totalPrice) > 0 
-        ? (parseFloat(calculatorData.expectedAnnualRent) / parseFloat(calculatorData.totalPrice) * 100) 
+      totalPrice: parseFloat(data.totalPrice) || 0,
+      monthlyRent: data.isRental ? parseFloat(data.expectedAnnualRent) / 12 || 0 : 0,
+      yield: data.isRental && parseFloat(data.totalPrice) > 0 
+        ? (parseFloat(data.expectedAnnualRent) / parseFloat(data.totalPrice) * 100) 
         : 0,
-      monthlyCashFlow: calculatorData.isRental 
-        ? parseFloat(calculatorData.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment 
+      monthlyCashFlow: data.isRental 
+        ? parseFloat(data.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment 
         : -totalExpenses - monthlyLoanPayment,
       monthlyLoanPayment,
       totalExpenses,
-      isRental: calculatorData.isRental
+      isRental: data.isRental
     };
 
-    const saved = await saveCalculation(
-      calculationName || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`,
+    await saveCalculation(
+      autoCalculationName,
       finnCode || null,
       propertyAddress || null,
       calculationData,
       resultsData
     );
-
-    if (saved) {
-      setSaveDialogOpen(false);
-      setCalculationName('');
-      setFinnCode('');
-      setPropertyAddress('');
-    }
   };
 
   const handleLoadCalculation = (calculation: any) => {
     // Load the calculation data into the form
-    const data = calculation.calculation_data;
-    Object.keys(data).forEach(key => {
+    const loadedData = calculation.calculation_data;
+    Object.keys(loadedData).forEach(key => {
       if (key === 'finnCode') {
-        setFinnCode(data[key] || '');
+        setFinnCode(loadedData[key] || '');
       } else if (key === 'propertyAddress') {
-        setPropertyAddress(data[key] || '');
+        setPropertyAddress(loadedData[key] || '');
       } else {
-        updateField(key, data[key]);
+        updateField(key, loadedData[key]);
       }
     });
+
+    // Switch to calculator tab automatically
+    setActiveTab('calculator');
 
     toast({
       title: "Kalkulasjon lastet",
@@ -403,7 +399,7 @@ const Calculator = () => {
                     <CalculatorPDFPreview 
                       data={data}
                       onDataChange={(field, value) => updateField(field, value)}
-                      onSave={() => setSaveDialogOpen(true)}
+                      onSave={handleSaveCalculation}
                     />
                   }
                 />
@@ -425,8 +421,7 @@ const Calculator = () => {
           <TabsContent value="library">
             <CalculationLibrary 
               onLoadCalculation={handleLoadCalculation}
-              onSaveCurrentCalculation={() => setSaveDialogOpen(true)}
-              currentCalculationData={canShowResults ? calculatorData : null}
+              currentCalculationData={canShowResults ? data : null}
             />
           </TabsContent>
           
@@ -455,62 +450,6 @@ const Calculator = () => {
           open={extendedDetailsOpen}
           onOpenChange={setExtendedDetailsOpen}
         />
-        
-        {/* Save Calculation Dialog */}
-        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Save className="h-5 w-5" />
-                Lagre kalkulasjon
-              </DialogTitle>
-              <DialogDescription>
-                Lagre kalkulasjonen til biblioteket for senere gjenbruk
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="calculationName">Kalkulasjonsnavn</Label>
-                <Input
-                  id="calculationName"
-                  placeholder="F.eks. 'Leilighet Oslo sentrum'"
-                  value={calculationName}
-                  onChange={(e) => setCalculationName(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="propertyAddress">Adresse (valgfritt)</Label>
-                <Input
-                  id="propertyAddress"
-                  placeholder="F.eks. 'Storgata 1, 0182 Oslo'"
-                  value={propertyAddress}
-                  onChange={(e) => setPropertyAddress(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="finnCode">Finn-kode (valgfritt)</Label>
-                <Input
-                  id="finnCode"
-                  placeholder="F.eks. '12345678'"
-                  value={finnCode}
-                  onChange={(e) => setFinnCode(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-                Avbryt
-              </Button>
-              <Button onClick={handleSaveCalculation}>
-                Lagre kalkulasjon
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </>
   );
