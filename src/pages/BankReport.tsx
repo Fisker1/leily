@@ -4,16 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/Navigation";
 import { 
-  FileText, 
   Download, 
   Printer, 
-  Building2,
-  Calendar,
-  TrendingUp,
-  Shield,
-  BarChart3,
-  DollarSign,
-  CheckCircle,
   ArrowLeft
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -377,8 +369,9 @@ const BankReport = () => {
     return new Intl.NumberFormat('no-NO', {
       style: 'currency',
       currency: 'NOK',
-      minimumFractionDigits: 0
-    }).format(amount);
+      minimumFractionDigits: 0,
+      useGrouping: true
+    }).format(amount).replace(/\u00A0/g, ' ');
   };
 
   const formatPercent = (value: number) => {
