@@ -173,9 +173,9 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
         </Button>
       </div>
 
-      <div className="flex-1 p-8 overflow-auto">
-        {/* Paper Effect Container with Shadow */}
-        <div className={`max-w-4xl mx-auto bg-white shadow-2xl border border-gray-200 rounded animate-fade-in pdf-content ${isPrintMode ? 'print-mode' : ''}`}>
+      <div className="flex-1 p-8 overflow-auto bg-gray-100">
+        {/* Paper Effect Container with Shadow - A4 Format */}
+        <div className={`mx-auto bg-white shadow-2xl animate-fade-in pdf-content ${isPrintMode ? 'print-mode' : ''}`} style={{ width: '210mm', minHeight: '297mm' }}>
           {/* Add print-mode styles */}
           {isPrintMode && (
             <style>{`
@@ -205,6 +205,41 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
               }
             `}</style>
           )}
+          {/* Page Break Indicators - Visual guide for print layout */}
+          <style>{`
+            .pdf-content {
+              position: relative;
+            }
+            .pdf-content::before {
+              content: '';
+              position: absolute;
+              top: 297mm;
+              left: 0;
+              right: 0;
+              height: 2px;
+              background: repeating-linear-gradient(
+                90deg,
+                #94a3b8,
+                #94a3b8 10px,
+                transparent 10px,
+                transparent 20px
+              );
+              z-index: 10;
+              pointer-events: none;
+            }
+            .pdf-content::after {
+              content: 'Side 1 / 2';
+              position: absolute;
+              bottom: 10px;
+              right: 10px;
+              font-size: 10px;
+              color: #94a3b8;
+              background: white;
+              padding: 2px 6px;
+              border-radius: 3px;
+              z-index: 10;
+            }
+          `}</style>
           {/* Header with Gradient */}
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8 rounded-t">
             <div className="text-center space-y-2">
