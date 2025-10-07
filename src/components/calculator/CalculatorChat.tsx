@@ -180,36 +180,29 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log('✅ Found energy rating:', result.energyRating);
     }
     
-    // Extract municipal fees (Kommunale avgifter) - more flexible pattern
-    // Matches: "Kommunale avg" followed by amount and "kr per år"
-    const municipalFeesPattern = /Kommunale\s+avg[^<]*?(\d+(?:\s+\d+)*)\s*kr\s*per\s*år/i;
-    const municipalMatch = html.match(municipalFeesPattern);
-    if (municipalMatch) {
-      // Remove spaces and convert to monthly
-      const yearlyAmount = parseInt(municipalMatch[1].replace(/\s+/g, ''));
-      result.municipalFees = Math.round(yearlyAmount / 12);
-      console.log('✅ Found municipal fees (yearly):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
+    // Extract municipal fees (Kommunale avgifter) - use data-testid for reliable extraction
+    const municipalFeesDiv = html.match(/<div[^>]*data-testid="pricing-municipal-fees"[^>]*>([\s\S]*?)<\/div>/i);
+    if (municipalFeesDiv) {
+      const municipalMatch = municipalFeesDiv[1].match(/<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr\s*per\s*år/i);
+      if (municipalMatch) {
+        const yearlyAmount = parseInt(municipalMatch[1].replace(/&nbsp;|\s/g, ''));
+        result.municipalFees = Math.round(yearlyAmount / 12);
+        console.log('✅ Found municipal fees (from data-testid):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
+      }
     } else {
-      console.log('❌ Could not find municipal fees in HTML');
+      console.log('❌ Could not find pricing-municipal-fees in HTML');
     }
     
-    // Extract common costs (Felleskostnader/Fellesutgifter) - more flexible pattern
-    // Matches: "Felleskost" followed by amount and "kr" (but NOT "per år")
-    const commonCostsPattern = /Felleskost(?:nader)?\/mnd[^<]*?(\d+(?:\s+\d+)*)\s*kr/i;
-    const commonMatch = html.match(commonCostsPattern);
-    if (commonMatch) {
-      result.commonCosts = parseInt(commonMatch[1].replace(/\s+/g, ''));
-      console.log('✅ Found common costs:', result.commonCosts, 'kr/month');
-    } else {
-      // Try alternative pattern without /mnd
-      const altPattern = /Felleskost[^<]*?<dd[^>]*>(\d+(?:\s+\d+)*)\s*kr(?!\s*per)/i;
-      const altMatch = html.match(altPattern);
-      if (altMatch) {
-        result.commonCosts = parseInt(altMatch[1].replace(/\s+/g, ''));
-        console.log('✅ Found common costs (alt pattern):', result.commonCosts, 'kr/month');
-      } else {
-        console.log('❌ Could not find common costs in HTML');
+    // Extract common costs (Felleskostnader) - use data-testid for reliable extraction
+    const commonCostsDiv = html.match(/<div[^>]*data-testid="pricing-common-monthly-cost"[^>]*>([\s\S]*?)<\/div>/i);
+    if (commonCostsDiv) {
+      const commonMatch = commonCostsDiv[1].match(/<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr/i);
+      if (commonMatch) {
+        result.commonCosts = parseInt(commonMatch[1].replace(/&nbsp;|\s/g, ''));
+        console.log('✅ Found common costs (from data-testid):', result.commonCosts, 'kr/month');
       }
+    } else {
+      console.log('❌ Could not find pricing-common-monthly-cost in HTML');
     }
     
     // Fallback: Try __NEXT_DATA__ if advertising-initial-state not found
