@@ -8,6 +8,14 @@ Welcome to the documentation for the Leily property analysis and rental manageme
 
 Use the navigation below to explore public APIs, hooks, contexts, libraries, and components.
 
+## 🚀 New Calculator System (2025)
+
+- **AI-Driven Calculator**: see `features/new-calculator-system.md`
+  - HTML parsing and auto-fill from Finn.no
+  - Integrated AI chat for property analysis
+  - Real-time PDF preview
+  - Loan calculator integration
+
 ## Contents
 
 - APIs

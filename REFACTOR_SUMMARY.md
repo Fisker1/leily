@@ -4,9 +4,17 @@
 
 The Leily project has been completely refactored and cleaned up. The codebase is now production-ready, lightweight, and AI-editor friendly.
 
-## ✅ What Was Completed
+## ✅ What Was Completed (Updated Januar 2025)
 
-### 1. Code Cleanup & Simplification
+### 1. Ny Kalkulator System 🚀
+- **AI-drevet kalkulator**: Automatisk ekstraksjon fra Finn.no HTML
+- **CalculatorChat**: Chat-grensesnitt med HTML shaver, lånekalkulator og AI-assistanse
+- **CalculatorPDFPreview**: Sanntids PDF-forhåndsvisning
+- **ResizableSplitView**: Justerbar split-screen layout
+- **Edge function**: calculator-ai-chat for OpenAI-integrasjon
+- **Database**: Nye tabeller for chat sessions og messages
+
+### 2. Code Cleanup & Simplification
 - **Removed unneeded documentation files**: Deleted confusing and outdated MD files
 - **Simplified environment system**: Consolidated from complex multi-file system to single source of truth
 - **Streamlined configuration**: All environment logic now in `src/lib/env.ts`
@@ -164,6 +172,26 @@ The Leily project is now:
 3. **Test deployment workflow** using staging environment
 4. **Enable production** by setting `VITE_COMING_SOON=false` when ready
 5. **Monitor and maintain** using established processes
+
+## 📊 Januar 2025 Oppdateringer
+
+### Ny Kalkulator System
+- ✅ CalculatorChat implementert med HTML parsing
+- ✅ CalculatorPDFPreview med sanntids-oppdatering
+- ✅ calculator-ai-chat edge function deployed
+- ✅ Database tabeller for chat sessions
+- ✅ Komplett dokumentasjon skrevet
+
+### Code Cleanup
+- ✅ Fjernet ubrukte imports fra Calculator.tsx
+- ✅ Strømlinjeformet component-struktur
+- ✅ Beholdt gamle komponenter for eventuell gjenbruk
+
+### Dokumentasjon
+- ✅ `docs/features/new-calculator-system.md` - Hovedguide
+- ✅ `docs/MIGRATION_TO_NEW_CALCULATOR.md` - Migreringsguide
+- ✅ `docs/CHANGELOG_2025.md` - Alle endringer
+- ✅ Oppdatert `docs/index.md` og `docs/README.md`
 
 ---
 
