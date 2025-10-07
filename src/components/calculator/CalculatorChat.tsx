@@ -481,7 +481,7 @@ Alt fylles automatisk ut i rapporten til høyre! 📄`
               onClick={() => setLoanCalcOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3"
+              className="gap-2 h-9 px-3 bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
               aria-label="Lånekalkulator"
               title="Lånekalkulator"
             >
