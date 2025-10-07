@@ -192,24 +192,30 @@ Svar kun på norsk.`
     let systemPrompt = 'Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. Du hjelper brukere med å analysere og fylle ut rapporter basert på eiendomsinformasjon.\n\n';
     
     if (finnSearchResults) {
-      systemPrompt += '=== EIENDOMSINFORMASJON HENTET FRA FINN.NO (FINNKODE: ' + finnCode + ') ===\n\n';
-      systemPrompt += finnSearchResults + '\n\n';
+      systemPrompt += '⚠️ VIKTIG: Du har IKKE tilgang til internett, og du trenger det IKKE heller!\n\n';
+      systemPrompt += '=== EIENDOMSINFORMASJON ER ALLEREDE HENTET FRA FINN.NO ===\n';
+      systemPrompt += 'Finnkode: ' + finnCode + '\n\n';
+      systemPrompt += 'Følgende informasjon er allerede hentet via websøk:\n';
+      systemPrompt += '---BEGIN DATA---\n';
+      systemPrompt += finnSearchResults + '\n';
+      systemPrompt += '---END DATA---\n\n';
       systemPrompt += '=== DIN OPPGAVE ===\n\n';
-      systemPrompt += 'Analyser informasjonen ovenfor nøye og EKSTRAHER følgende data:\n\n';
+      systemPrompt += 'Analyser dataen ovenfor (mellom BEGIN DATA og END DATA) og EKSTRAHER følgende felt:\n\n';
       systemPrompt += '1. address - Full adresse (gate, postnummer, sted)\n';
       systemPrompt += '2. totalPrice - Totalpris/prisantydning (kun tall uten "kr", f.eks. 5500000)\n';
       systemPrompt += '3. propertyType - Eiendomstype (leilighet/enebolig/rekkehus/osv)\n';
       systemPrompt += '4. livingArea - Primærrom/bruksareal i kvm (kun tall, f.eks. 85)\n';
       systemPrompt += '5. commonCosts - Felleskostnader per måned (kun tall, f.eks. 3500)\n';
       systemPrompt += '6. municipalFees - Kommunale avgifter per år (kun tall, f.eks. 8000)\n\n';
-      systemPrompt += 'VIKTIG INSTRUKS:\n';
-      systemPrompt += '- Du MÅ nå umiddelbart fylle ut rapporten med denne dataen\n';
-      systemPrompt += '- Presenter dataen du har funnet på en vennlig måte til brukeren\n';
-      systemPrompt += '- Avslutt meldingen din med: EXTRACTED_DATA: {"address": "...", "totalPrice": "...", osv}\n';
-      systemPrompt += '- Bruk kun tall i tallfelter (ingen "kr", "kvm", etc)\n';
-      systemPrompt += '- Hvis et felt mangler data, ikke ta det med i EXTRACTED_DATA\n\n';
-      systemPrompt += 'Eksempel:\n';
-      systemPrompt += '"Flott! Jeg har funnet informasjonen om eiendommen. Her er det jeg fant:\n\n';
+      systemPrompt += 'INSTRUKSJONER:\n';
+      systemPrompt += '✅ Dataen er ALLEREDE hentet - du skal bare analysere den\n';
+      systemPrompt += '✅ Presenter funnene dine på en vennlig måte\n';
+      systemPrompt += '✅ Avslutt ALLTID med: EXTRACTED_DATA: {"address": "...", "totalPrice": "...", osv}\n';
+      systemPrompt += '✅ Bruk kun tall i tallfelter (ingen "kr", "kvm", etc)\n';
+      systemPrompt += '❌ IKKE si at du ikke har tilgang til lenker\n';
+      systemPrompt += '❌ IKKE be brukeren om å oppgi informasjonen manuelt\n\n';
+      systemPrompt += 'Eksempel på riktig svar:\n';
+      systemPrompt += '"Flott! Jeg har analysert eiendomsdataen. Her er det jeg fant:\n\n';
       systemPrompt += '📍 Adresse: Eksempelveien 123, 0123 Oslo\n';
       systemPrompt += '💰 Prisantydning: 5 500 000 kr\n';
       systemPrompt += '🏠 Type: Leilighet\n';
@@ -244,8 +250,9 @@ Svar kun på norsk.`
 
     // Add user message with context
     if (finnSearchResults) {
-      // When we have Finn.no results, make it clear to the AI what to do
-      const contextMessage = message + '\n\n[System: Eiendomsinformasjon for finnkode ' + finnCode + ' er hentet via websøk. Du MÅ nå analysere dataen ovenfor og fylle ut rapporten automatisk.]';
+      // When we have Finn.no results, remove the URL from message and make it clear data is already fetched
+      const messageWithoutUrl = message.replace(/https?:\/\/[^\s]+/g, '[Finn.no lenke fjernet - data allerede hentet]');
+      const contextMessage = messageWithoutUrl + '\n\n[VIKTIG SYSTEM-MELDING: Eiendomsinformasjonen for finnkode ' + finnCode + ' er ALLEREDE hentet via websøk og finnes i system-prompten over. Du trenger IKKE å åpne noen lenker. Analyser dataen som allerede er gitt til deg og fyll ut rapporten.]';
       messages.push({ role: 'user', content: contextMessage });
     } else if (attachments && attachments.length > 0) {
       const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
