@@ -209,13 +209,13 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
         </Button>
       </div>
 
-      <div className="flex-1 p-8 overflow-auto bg-gray-100">
+      <div className="flex-1 p-8 overflow-auto bg-gray-100 flex items-start justify-center">
         
-        {/* PDF Pages Container - Adobe-style viewer with fixed A4 dimensions */}
-        <div className="flex flex-col items-center space-y-6">
+        {/* PDF Pages Container - Scales to fit panel width while maintaining A4 ratio */}
+        <div className="w-full max-w-[850px] space-y-6">
           
-          {/* Page 1 - Fixed A4 size (210mm x 297mm at 96 DPI = 794px x 1123px) */}
-          <div className="pdf-page bg-white shadow-xl" style={{ width: '794px', height: '1123px', flexShrink: 0 }}>
+          {/* Page 1 - Scales proportionally with A4 aspect ratio */}
+          <div className="pdf-page bg-white shadow-xl w-full" style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Header with Gradient */}
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8">
@@ -343,8 +343,8 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
             </div>
           </div>
 
-          {/* Page 2 - Fixed A4 size */}
-          <div className="pdf-page bg-white shadow-xl" style={{ width: '794px', height: '1123px', flexShrink: 0 }}>
+          {/* Page 2 - Scales proportionally with A4 aspect ratio */}
+          <div className="pdf-page bg-white shadow-xl w-full" style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Content */}
               <div className="flex-1 px-10 py-8 space-y-6 overflow-hidden">
