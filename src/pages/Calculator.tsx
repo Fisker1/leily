@@ -23,6 +23,7 @@ import { ExtendedDetailsDialog } from '@/components/ExtendedDetailsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useCredits } from '@/hooks/useCredits';
 import { Slider } from '@/components/ui/slider';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +45,7 @@ const Calculator = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { isAdmin } = useUserRole();
   const { isPro } = useSubscription();
+  const { hasCredits, credits } = useCredits();
   const { toast } = useToast();
   const { saveCalculation } = useCalculationHistory();
   const { equityData } = useLoanCalculator(); // Get default loan settings
@@ -100,10 +102,21 @@ const Calculator = () => {
       handleInputChange('sharedExpenses', data.sharedCosts.toString());
     }
     
-    // Auto-fill rental information if available
-    if (data.monthlyRent && !manualOverride.expectedAnnualRent) {
-      handleInputChange('isRental', true);
-      handleInputChange('expectedAnnualRent', (data.monthlyRent * 12).toString());
+    // Auto-fill estimated costs if available
+    if (data.estimates) {
+      if (data.estimates.monthlyRent && !manualOverride.expectedAnnualRent) {
+        handleInputChange('isRental', true);
+        handleInputChange('expectedAnnualRent', (data.estimates.monthlyRent * 12).toString());
+      }
+      if (data.estimates.electricityCost && !manualOverride.electricityMonthly) {
+        handleInputChange('electricityMonthly', data.estimates.electricityCost.toString());
+      }
+      if (data.estimates.insurance && !manualOverride.insurance) {
+        handleInputChange('insurance', data.estimates.insurance.toString());
+      }
+      if (data.estimates.maintenance && !manualOverride.maintenance) {
+        handleInputChange('maintenance', data.estimates.maintenance.toString());
+      }
     }
 
     // Auto-fill loan settings from saved defaults
@@ -121,8 +134,8 @@ const Calculator = () => {
     }
 
     toast({
-      title: "Eiendomsdata importert",
-      description: `Data fra Finn.no er fylt inn i kalkulatoren${data.monthlyRent ? ' (utleiebolig detektert)' : ''}. Du kan fortsatt redigere verdiene.`,
+      title: "✨ Komplett analyse klar!",
+      description: `Eiendomsdata, estimert leiepris, og alle kostnader er automatisk beregnet. Du kan fortsatt redigere verdiene.`,
     });
   };
 
@@ -334,10 +347,18 @@ const Calculator = () => {
         )}
 
         <div className="text-center space-y-4 mb-8">
-          <h1 className="text-4xl font-bold text-foreground flex items-center justify-center gap-3">
-            <CalcIcon className="h-10 w-10 text-primary" />
-            Eiendomskalkulator
-          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <h1 className="text-4xl font-bold text-foreground flex items-center gap-3">
+              <CalcIcon className="h-10 w-10 text-primary" />
+              Eiendomskalkulator
+            </h1>
+            {hasCredits && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Wallet className="h-3 w-3" />
+                {credits} {credits === 1 ? 'kreditt' : 'kreditter'}
+              </Badge>
+            )}
+          </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Analyserer lønnsomheten
           </p>
@@ -398,16 +419,14 @@ const Calculator = () => {
               </div>
             )}
 
-            {/* Finn Property Fetcher - Only visible when Pro features are enabled */}
-            {isPro && showProFeatures && (
-              <div className="max-w-2xl mx-auto">
-                <FinnPropertyFetcher
-                  onPropertyDataReceived={handleFinnPropertyDataReceived}
-                  initialFinnCode={finnCode}
-                  className="mb-6"
-                />
-              </div>
-            )}
+            {/* Finn Property Fetcher - Visible for all users */}
+            <div className="max-w-2xl mx-auto">
+              <FinnPropertyFetcher
+                onPropertyDataReceived={handleFinnPropertyDataReceived}
+                initialFinnCode={finnCode}
+                className="mb-6"
+              />
+            </div>
 
             {/* Loan Calculator - Only visible when Pro features are enabled */}
             {isPro && showProFeatures && (

@@ -98,6 +98,18 @@ export interface FinnPropertyData {
   // Calculated fields
   totalMonthlyCosts?: number; // Sum of all monthly costs
   
+  // Enhanced estimates from backend
+  estimates?: {
+    monthlyRent: number;
+    electricityCost: number;
+    insurance: number;
+    maintenance: number;
+    municipalFees: number;
+    totalMonthlyCosts: number;
+    monthlyCashFlow: number;
+    grossYield: number;
+  };
+  
   // Raw data for future analysis
   rawFacilities?: string[]; // Store all facilities as found in Finn.no for analysis
 }

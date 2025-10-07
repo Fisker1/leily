@@ -716,134 +716,266 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    console.log('🔐 Authenticating user...');
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('❌ No Authorization header');
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Ingen autorisasjon. Logg inn for å bruke denne funksjonen.'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Get the authorization header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    // Verify the user is authenticated and has Pro subscription
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      console.log('❌ Authentication failed:', authError);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Autentisering feilet. Logg inn på nytt.'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Check if user has Pro subscription or is admin/ambassador
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single();
-
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['admin', 'ambassador']);
-
-    const isAdmin = userRoles && userRoles.length > 0;
-    const isPro = profile?.subscription_tier === 'pro';
-
-    if (!isPro && !isAdmin) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Pro subscription or admin/ambassador role required for Finn.no data fetching' 
-        }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    console.log('✅ User authenticated:', user.id);
 
     const { finnCode } = await req.json();
+    console.log('📋 Finn code received:', finnCode);
 
     if (!finnCode) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Finn code is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Finn-kode mangler. Vennligst oppgi en gyldig Finn-kode.'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`Processing request for Finn code: ${finnCode}`);
-
-    // Check cache first
-    const { data: cachedData } = await supabase
+    // STEP 1: Check cache first (6 months TTL) - FREE for all authenticated users
+    console.log('🔍 Checking cache for Finn code:', finnCode);
+    const { data: cachedData, error: cacheError } = await supabaseClient
       .from('finn_property_cache')
       .select('*')
       .eq('finn_code', finnCode)
-      .gte('updated_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()) // 6 hours cache
+      .gte('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (cachedData && !cacheError) {
+      console.log('✅ Cache HIT! Returning cached data - FREE');
+      return new Response(JSON.stringify({
+        success: true,
+        data: cachedData.property_data,
+        cached: true,
+        cachedAt: cachedData.extracted_at,
+        message: 'Data hentet fra cache (gratis)'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('❌ Cache MISS - New fetch required (1 credit)');
+
+    // STEP 2: Check if user has credits
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('credits')
+      .eq('id', user.id)
       .single();
 
-    if (cachedData) {
-      console.log(`Using cached data for Finn code: ${finnCode}`);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          data: cachedData.property_data,
-          cached: true 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!profile || (profile.credits || 0) < 1) {
+      console.log('❌ User has insufficient credits:', profile?.credits || 0);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Ingen kreditter tilgjengelig. Du trenger 1 kreditt for å hente ny eiendom. Kjøp kreditter for å fortsette.',
+        creditsRequired: 1,
+        creditsAvailable: profile?.credits || 0
+      }), {
+        status: 402, // Payment Required
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`Fetching fresh data for Finn code: ${finnCode}`);
+    // STEP 3: Deduct 1 credit using RPC function
+    console.log('💳 Deducting 1 credit from user...');
+    const { data: creditUsed, error: creditError } = await supabaseClient
+      .rpc('use_credits', {
+        credits_to_use: 1,
+        operation_type: 'finn_property_fetch'
+      });
 
-    // Scrape the HTML from Finn.no
-    const html = await scrapeFinnPropertyHTML(finnCode);
-    if (!html) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to fetch property page from Finn.no' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (creditError || !creditUsed) {
+      console.log('❌ Failed to deduct credit:', creditError);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Kunne ikke trekke kreditt. Prøv igjen senere.'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Extract property data using AI
-    const propertyData = await extractFinnDataWithAI(finnCode, html);
-    if (!propertyData) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to extract property data from page' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    console.log('✅ Credit deducted successfully');
+
+    // STEP 4: Scrape the property from Finn.no
+    console.log('🌐 Scraping Finn.no property...');
+    const htmlContent = await scrapeFinnPropertyHTML(finnCode);
+    console.log('✅ HTML content fetched, length:', htmlContent.length);
+
+    console.log('🤖 Extracting property data with AI...');
+    const propertyData = await extractFinnDataWithAI(htmlContent, finnCode);
+    console.log('✅ Property data extracted');
+
+    // STEP 5: Enhance data with market analysis and cost estimations
+    console.log('📊 Enhancing data with market analysis and cost estimates...');
+    
+    // 5a. Get estimated monthly rent from market-analysis
+    let estimatedMonthlyRent = 0;
+    try {
+      console.log('🏠 Calling market-analysis edge function...');
+      const { data: marketData, error: marketError } = await supabaseClient.functions.invoke('market-analysis', {
+        body: {
+          address: propertyData.address,
+          city: propertyData.city,
+          postal_code: propertyData.postalCode,
+          property_type: propertyData.propertyType,
+          size_sqm: propertyData.livingArea
+        }
+      });
+
+      if (marketError) {
+        console.log('⚠️ Market analysis error:', marketError);
+      } else {
+        estimatedMonthlyRent = marketData?.averageRent || 0;
+        console.log('✅ Estimated monthly rent:', estimatedMonthlyRent);
+      }
+    } catch (error) {
+      console.log('⚠️ Market analysis failed:', error);
     }
 
-    // Cache the data
-    console.log(`Caching property data for Finn code: ${finnCode}`);
-    const { error: cacheError } = await supabase
+    // 5b. Get estimated electricity cost
+    let estimatedElectricity = 0;
+    try {
+      console.log('⚡ Calling estimate-electricity edge function...');
+      const { data: electricityData, error: electricityError } = await supabaseClient.functions.invoke('estimate-electricity', {
+        body: {
+          size_sqm: propertyData.livingArea,
+          bedrooms: propertyData.bedrooms,
+          property_type: propertyData.propertyType,
+          location: propertyData.city
+        }
+      });
+
+      if (electricityError) {
+        console.log('⚠️ Electricity estimation error:', electricityError);
+      } else {
+        estimatedElectricity = electricityData?.estimated_monthly_cost || 0;
+        console.log('✅ Estimated electricity:', estimatedElectricity);
+      }
+    } catch (error) {
+      console.log('⚠️ Electricity estimation failed:', error);
+    }
+
+    // 5c. Calculate insurance (0.2% of property value per year)
+    const calculateInsurance = (propertyValue: number, propertyType: string): number => {
+      const baseRate = 0.002; // 0.2% per year
+      const yearlyInsurance = propertyValue * baseRate;
+      
+      const typeMultipliers: { [key: string]: number } = {
+        'Leilighet': 0.8,
+        'Enebolig': 1.2,
+        'Rekkehus': 1.0,
+        'Tomannsbolig': 1.1,
+      };
+      
+      const multiplier = typeMultipliers[propertyType] || 1.0;
+      return Math.round((yearlyInsurance * multiplier) / 12);
+    };
+
+    // 5d. Calculate maintenance (0.7% of property value per year)
+    const calculateMaintenance = (propertyValue: number, propertyType: string): number => {
+      const maintenanceRate = 0.007; // 0.7% per year
+      const yearlyMaintenance = propertyValue * maintenanceRate;
+      
+      const typeMultipliers: { [key: string]: number } = {
+        'Leilighet': 0.5,
+        'Enebolig': 1.2,
+        'Rekkehus': 0.8,
+        'Tomannsbolig': 1.0,
+      };
+      
+      const multiplier = typeMultipliers[propertyType] || 1.0;
+      return Math.round((yearlyMaintenance * multiplier) / 12);
+    };
+
+    const estimatedInsurance = calculateInsurance(propertyData.price, propertyData.propertyType);
+    const estimatedMaintenance = calculateMaintenance(propertyData.price, propertyData.propertyType);
+
+    console.log('💰 Cost estimates calculated:');
+    console.log(`  - Insurance: ${estimatedInsurance} NOK/month`);
+    console.log(`  - Maintenance: ${estimatedMaintenance} NOK/month`);
+
+    // 5e. Calculate total monthly costs and cash flow
+    const totalMonthlyCosts = estimatedElectricity + estimatedInsurance + estimatedMaintenance + (propertyData.municipalFees || 0);
+    const monthlyCashFlow = estimatedMonthlyRent - totalMonthlyCosts;
+    const grossYield = propertyData.price > 0 ? ((estimatedMonthlyRent * 12) / propertyData.price) * 100 : 0;
+
+    // 5f. Create enhanced response with all estimates
+    const enhancedPropertyData = {
+      ...propertyData,
+      estimates: {
+        monthlyRent: estimatedMonthlyRent,
+        electricityCost: estimatedElectricity,
+        insurance: estimatedInsurance,
+        maintenance: estimatedMaintenance,
+        municipalFees: propertyData.municipalFees || 0,
+        totalMonthlyCosts: totalMonthlyCosts,
+        monthlyCashFlow: monthlyCashFlow,
+        grossYield: grossYield
+      }
+    };
+
+    console.log('✅ Enhanced property data created');
+
+    // STEP 6: Cache the result with 6-month expiration
+    console.log('💾 Caching enhanced property data...');
+    const { error: cacheInsertError } = await supabaseClient
       .from('finn_property_cache')
       .upsert({
         finn_code: finnCode,
-        property_data: propertyData,
-        user_id: user.id,
-        updated_at: new Date().toISOString()
+        property_data: enhancedPropertyData,
+        extracted_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString() // 6 months
       });
 
-    if (cacheError) {
-      console.error('Error caching property data:', cacheError);
+    if (cacheInsertError) {
+      console.log('⚠️ Failed to cache data:', cacheInsertError);
+    } else {
+      console.log('✅ Enhanced data cached successfully for 6 months');
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: propertyData,
-        cached: false 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      data: enhancedPropertyData,
+      cached: false,
+      message: '1 kreditt brukt. Data vil være tilgjengelig gratis i 6 måneder.'
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('Error in finn-property-scraper:', error);
