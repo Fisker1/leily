@@ -104,26 +104,33 @@ serve(async (req) => {
 
     console.log('=== Processing message with OpenAI ===');
     
-    // Check if user pasted HTML source code (Ctrl+U from Finn.no)
-    const isHtmlSource = message.includes('<html') || message.includes('<!DOCTYPE') || 
-                         message.includes('<head>') || message.includes('<body>');
+    // Check if user pasted HTML source code or JSON data from Finn.no
+    const isHtmlSource = message.includes('<script id="__NEXT_DATA__"') || 
+                         message.includes('<html') || message.includes('<!DOCTYPE') || 
+                         message.includes('"@type":"Product"') ||
+                         message.includes('"price"') && message.includes('"address"');
     
     // Build system prompt based on content type
     const systemPrompt = isHtmlSource 
-      ? `Du er en ekspert på å ekstrahere eiendomsdata fra HTML kildekode.
+      ? `Du er en ekspert på å ekstrahere eiendomsdata fra HTML/JSON strukturer.
 
-VIKTIG: Brukeren har limt inn HTML kildekode fra en Finn.no annonse. 
-Din jobb er å parse HTML-en og ekstrahere ALL relevant eiendomsinformasjon.
+VIKTIG: Brukeren har limt inn data fra en Finn.no annonse (enten HTML med <script id="__NEXT_DATA__"> eller JSON direkte).
+Din jobb er å parse dataen og ekstrahere ALL relevant eiendomsinformasjon.
+
+Tips for parsing:
+- Hvis det er <script id="__NEXT_DATA__">, hent JSON fra innholdet
+- Se etter "price", "address", "livingArea", "propertyType" etc i JSON strukturen
+- Finn.no bruker ofte nested objekter som "adData", "realestate" etc
 
 Ekstraher følgende felt (bruk null hvis data mangler):
-- address: Full adresse
-- totalPrice: Totalpris (kun tall, uten "kr")
+- address: Full adresse (ofte i "location.address" eller "address")
+- totalPrice: Totalpris (kun tall, uten "kr") (ofte i "price" eller "pricing.totalPrice")
 - propertyType: Type bolig (leilighet, enebolig, etc)
-- livingArea: Primærrom/BRA i kvm (kun tall)
-- commonCosts: Felleskostnader per måned (kun tall)
+- livingArea: Primærrom/BRA i kvm (kun tall) (ofte "livingArea" eller "primaryArea")
+- commonCosts: Felleskostnader per måned (kun tall) (ofte "sharedCost" eller "commonCosts")
 - municipalFees: Kommunale avgifter per år (kun tall)
-- buildYear: Byggeår (kun årstall)
-- bedrooms: Antall soverom (kun tall)
+- buildYear: Byggeår (kun årstall) (ofte "yearBuilt" eller "buildYear")
+- bedrooms: Antall soverom (kun tall) (ofte "bedrooms")
 - monthlyRent: Forventet leieinntekt per måned hvis relevant
 
 BRUK TOOL CALLING for å returnere dataen strukturert.`
@@ -132,16 +139,17 @@ BRUK TOOL CALLING for å returnere dataen strukturert.`
 Din jobb er å hjelpe brukeren fylle ut en eiendomsrapport ved å:
 1. Stille relevante spørsmål
 2. Analysere dokumenter de laster opp
-3. Be om Finn.no HTML kildekode hvis de vil analysere en eiendom
+3. Be om Finn.no data hvis de vil analysere en eiendom
 
 VIKTIG INSTRUKSJON TIL BRUKER:
 Hvis brukeren vil analysere en eiendom fra Finn.no, BE DEM OM Å:
 1. Åpne Finn.no annonsen i nettleseren
-2. Trykk Ctrl+U (Windows) eller Cmd+Option+U (Mac) for å se kildekoden
-3. Kopiere ALT (Ctrl+A, Ctrl+C)
-4. Lime inn her i chatten
+2. Trykk Ctrl+U (Windows) eller Cmd+Option+U (Mac)
+3. Søk etter "<script id="__NEXT_DATA__"" (Ctrl+F)
+4. Kopier KUN denne <script> seksjonen (fra <script til </script>)
+5. Lime inn her
 
-Da kan jeg ekstrahere all data automatisk!
+⚠️ VIKTIG: Ikke kopier hele HTML-siden - bare __NEXT_DATA__ scriptet!
 
 Viktige felt: address, totalPrice, propertyType, livingArea, equity, interestRate, 
 loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly.
@@ -222,6 +230,20 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
       console.error('OpenAI error:', openaiResponse.status, errorText);
+      
+      // Handle rate limit / too large errors specifically
+      if (openaiResponse.status === 429) {
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.message?.includes('too large') || errorJson.error?.message?.includes('Requested')) {
+            throw new Error('Meldingen er for lang. Hvis du limte inn HTML, kopier KUN <script id="__NEXT_DATA__"> seksjonen, ikke hele HTML-filen.');
+          }
+        } catch (e) {
+          // If parsing fails, throw generic rate limit error
+        }
+        throw new Error('For mange tokens i meldingen. Prøv med kortere tekst eller kun relevante deler av HTML-koden.');
+      }
+      
       throw new Error('Failed to get AI response');
     }
 

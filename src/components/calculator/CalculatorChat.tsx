@@ -23,7 +23,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Kopier ALT (Ctrl+A, Ctrl+C)\n4. Lim inn her\n\nDa henter jeg ut all data automatisk! 🚀\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem.'
+      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Søk etter `<script id="__NEXT_DATA__"` (Ctrl+F)\n4. Kopier **KUN** denne `<script>` seksjonen (fra `<script` til `</script>`)\n5. Lim inn her\n\n⚠️ **VIKTIG:** Ikke kopier hele HTML-siden - kun `__NEXT_DATA__` scriptet!\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -83,6 +83,14 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     if ((!input.trim() && attachments.length === 0) || isLoading || !hasCredits) return;
 
     const userMessage = input.trim();
+    
+    // Check message size (rough token estimate: ~4 chars per token)
+    const estimatedTokens = userMessage.length / 4;
+    if (estimatedTokens > 25000) {
+      toast.error('Meldingen er for lang (maks ~100,000 tegn). Hvis du limte HTML, kopier KUN <script id="__NEXT_DATA__"> seksjonen.');
+      return;
+    }
+    
     const currentAttachments = [...attachments];
     setInput('');
     setAttachments([]);
