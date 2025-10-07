@@ -10,12 +10,12 @@ Systemet estimerer automatisk månedlig leiepris basert på data ekstrahert fra 
 - **Trigges**: Når HTML fra Finn.no er parsed
 - **Kjøres i bakgrunnen**: Bruker trenger ikke gjøre noe
 - **Fyller ut**: "Månedlig leieinntekt" i PDF-rapporten
-- **Indikator**: Lysegrå bakgrunn + "(AI-estimert)" label
+- **Indikator**: Lysegrå bakgrunn + "(estimert)" label
 
 ### 2. Manuell Overstyring
 - **Bruker kan**: Klikke og endre estimert verdi
 - **Visuell endring**: Bakgrunn går fra lysegrå til hvit
-- **Indikator fjernes**: "(AI-estimert)" label forsvinner
+- **Indikator fjernes**: "(estimert)" label forsvinner
 - **For banken**: Hvit bakgrunn viser at det er manuelt input
 
 ## Teknisk Implementering
@@ -158,7 +158,7 @@ if (field === 'monthlyRent') {
   Månedlig leieinntekt
   {formData.isRentAutoEstimated && !rentManuallyEdited && (
     <span className="ml-2 text-xs text-gray-500 font-normal">
-      (AI-estimert)
+      (estimert)
     </span>
   )}
 </Label>
@@ -195,14 +195,14 @@ sequenceDiagram
 2. **System**: Parser data (adresse, størrelse, soverom, etc.)
 3. **System**: Kaller `estimate-rent` edge function
 4. **System**: Fyller ut "17 500 kr" i leieinntekt-felt
-5. **Visuell**: Lysegrå bakgrunn + "(AI-estimert)" label
+5. **Visuell**: Lysegrå bakgrunn + "(estimert)" label
 6. **For banken**: Klart at dette er system-estimert verdi
 
 ### Scenario 2: Manuell Override
 1. **Bruker**: Ser estimert pris er for lav
 2. **Bruker**: Klikker på feltet og endrer til "20 000 kr"
 3. **System**: Endrer bakgrunn til hvit
-4. **System**: Fjerner "(AI-estimert)" label
+4. **System**: Fjerner "(estimert)" label
 5. **For banken**: Klart at dette er bruker-spesifisert verdi
 
 ### Scenario 3: Ingen Estimering

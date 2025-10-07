@@ -31,8 +31,8 @@ Hovedgrensesnittet for brukerinteraksjon med tre primære funksjoner:
 **Nye funksjoner (2025):**
 - **Ekstern/Privat Lånegiver**: Checkbox og tekstfelt for å registrere private lånegivere
 - **Covenant-opplasting**: Mulighet til å laste opp PDF-dokumenter (maks 10MB)
-- **Automatisk Leiepris-estimering**: AI-drevet estimering basert på husleie.no-metode
-  - Lysegrå bakgrunn = AI-estimert
+- **Automatisk Leiepris-estimering**: Leily-drevet estimering basert på husleie.no-metode
+  - Lysegrå bakgrunn = Leily-estimert
   - Hvit bakgrunn = Manuelt redigert
   - Kjøres automatisk i bakgrunnen ved HTML parsing
 

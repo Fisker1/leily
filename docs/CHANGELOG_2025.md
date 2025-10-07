@@ -7,9 +7,9 @@
 #### ✨ Automatisk Leiepris-estimering (NY)
 - **Bakgrunnsberegning**: Estimerer automatisk månedlig leiepris basert på Finn.no data
 - **Husleie.no-metode**: Bruker samme beregningsmetode som husleie.no
-- **AI-indikator**: Lysegrå bakgrunn + "(AI-estimert)" label for auto-estimerte verdier
+- **AI-indikator**: Lysegrå bakgrunn + "(estimert)" label for auto-estimerte verdier
 - **Manuell overstyring**: Bruker kan endre verdien → bakgrunn blir hvit
-- **Bankvisualisering**: Tydelig distinksjon mellom AI-estimat og bruker-input
+- **Bankvisualisering**: Tydelig distinksjon mellom Leily-estimat og bruker-input
 - **Edge function**: `estimate-rent` for server-side beregning
 - **Parametere**: Lokasjon, boligtype, størrelse, soverom, fasiliter
 
