@@ -188,68 +188,56 @@ Svar kun på norsk.`
       }
     }
 
+    // Build system prompt based on context
+    let systemPrompt = 'Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. Du hjelper brukere med å analysere og fylle ut rapporter basert på eiendomsinformasjon.\n\n';
+    
+    if (finnSearchResults) {
+      systemPrompt += '=== EIENDOMSINFORMASJON HENTET FRA FINN.NO (FINNKODE: ' + finnCode + ') ===\n\n';
+      systemPrompt += finnSearchResults + '\n\n';
+      systemPrompt += '=== DIN OPPGAVE ===\n\n';
+      systemPrompt += 'Analyser informasjonen ovenfor nøye og EKSTRAHER følgende data:\n\n';
+      systemPrompt += '1. address - Full adresse (gate, postnummer, sted)\n';
+      systemPrompt += '2. totalPrice - Totalpris/prisantydning (kun tall uten "kr", f.eks. 5500000)\n';
+      systemPrompt += '3. propertyType - Eiendomstype (leilighet/enebolig/rekkehus/osv)\n';
+      systemPrompt += '4. livingArea - Primærrom/bruksareal i kvm (kun tall, f.eks. 85)\n';
+      systemPrompt += '5. commonCosts - Felleskostnader per måned (kun tall, f.eks. 3500)\n';
+      systemPrompt += '6. municipalFees - Kommunale avgifter per år (kun tall, f.eks. 8000)\n\n';
+      systemPrompt += 'VIKTIG INSTRUKS:\n';
+      systemPrompt += '- Du MÅ nå umiddelbart fylle ut rapporten med denne dataen\n';
+      systemPrompt += '- Presenter dataen du har funnet på en vennlig måte til brukeren\n';
+      systemPrompt += '- Avslutt meldingen din med: EXTRACTED_DATA: {"address": "...", "totalPrice": "...", osv}\n';
+      systemPrompt += '- Bruk kun tall i tallfelter (ingen "kr", "kvm", etc)\n';
+      systemPrompt += '- Hvis et felt mangler data, ikke ta det med i EXTRACTED_DATA\n\n';
+      systemPrompt += 'Eksempel:\n';
+      systemPrompt += '"Flott! Jeg har funnet informasjonen om eiendommen. Her er det jeg fant:\n\n';
+      systemPrompt += '📍 Adresse: Eksempelveien 123, 0123 Oslo\n';
+      systemPrompt += '💰 Prisantydning: 5 500 000 kr\n';
+      systemPrompt += '🏠 Type: Leilighet\n';
+      systemPrompt += '📐 Primærrom: 85 kvm\n\n';
+      systemPrompt += 'Jeg fyller nå automatisk ut rapporten."\n\n';
+      systemPrompt += 'EXTRACTED_DATA: {"address": "Eksempelveien 123, 0123 Oslo", "totalPrice": "5500000", "propertyType": "leilighet", "livingArea": "85", "commonCosts": "3500", "municipalFees": "8000"}';
+    } else {
+      systemPrompt += 'Du hjelper brukere med å fylle ut boligfinansieringsrapporter.\n\n';
+      systemPrompt += 'Når brukeren laster opp bilder eller dokumenter:\n';
+      systemPrompt += '- Analyser bildene nøye og hent ut relevant informasjon\n';
+      systemPrompt += '- Se etter tall, adresser, beløp, og andre relevante detaljer\n';
+      systemPrompt += '- Presenter funnene tydelig og spør om brukeren vil at du skal fylle inn dataene automatisk\n\n';
+      systemPrompt += 'Viktige felt:\n';
+      systemPrompt += '- Eiendomsinformasjon: address, totalPrice, propertyType, livingArea\n';
+      systemPrompt += '- Låneinformasjon: equity, interestRate, loanPeriod\n';
+      systemPrompt += '- Månedlige kostnader: commonCosts, municipalFees, insurance, electricityMonthly\n';
+      systemPrompt += '- Forventet leieinntekt: monthlyRent\n\n';
+      systemPrompt += 'Vær proaktiv: Still ett spørsmål om gangen.\n\n';
+      systemPrompt += 'VIKTIG: Når du har hentet ut data, avslutt meldingen din med:\n';
+      systemPrompt += 'EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}\n\n';
+      systemPrompt += 'Gyldige felt: address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly, propertyType, livingArea';
+    }
+
     // Build messages for OpenAI
     const messages: any[] = [
       {
         role: 'system',
-        content: `Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. Du hjelper brukere med å analysere og fylle ut rapporter basert på eiendomsinformasjon.
-
-${finnSearchResults ? `
-=== EIENDOMSINFORMASJON HENTET FRA FINN.NO (FINNKODE: ${finnCode}) ===
-
-${finnSearchResults}
-
-=== DIN OPPGAVE ===
-
-Analyser informasjonen ovenfor nøye og EKSTRAHER følgende data:
-
-1. address - Full adresse (gate, postnummer, sted)
-2. totalPrice - Totalpris/prisantydning (kun tall uten "kr", f.eks. 5500000)
-3. propertyType - Eiendomstype (leilighet/enebolig/rekkehus/osv)
-4. livingArea - Primærrom/bruksareal i kvm (kun tall, f.eks. 85)
-5. commonCosts - Felleskostnader per måned (kun tall, f.eks. 3500)
-6. municipalFees - Kommunale avgifter per år (kun tall, f.eks. 8000)
-
-VIKTIG INSTRUKS:
-- Du MÅ nå umiddelbart fylle ut rapporten med denne dataen
-- Presenter dataen du har funnet på en vennlig måte til brukeren
-- Avslutt meldingen din med: EXTRACTED_DATA: {"address": "...", "totalPrice": "...", osv}
-- Bruk kun tall i tallfelter (ingen "kr", "kvm", etc)
-- Hvis et felt mangler data, ikke ta det med i EXTRACTED_DATA
-
-Eksempel på hvordan du skal svare:
-"Flott! Jeg har funnet informasjonen om eiendommen på Finn.no. Her er det jeg fant:
-
-📍 Adresse: Eksempelveien 123, 0123 Oslo
-💰 Prisantydning: 5 500 000 kr
-🏠 Type: Leilighet
-📐 Primærrom: 85 kvm
-💵 Felleskostnader: 3 500 kr/mnd
-🏛️ Kommunale avgifter: 8 000 kr/år
-
-Jeg fyller nå automatisk ut rapporten med denne informasjonen. Hva annet trenger du hjelp med?"
-
-EXTRACTED_DATA: {"address": "Eksempelveien 123, 0123 Oslo", "totalPrice": "5500000", "propertyType": "leilighet", "livingArea": "85", "commonCosts": "3500", "municipalFees": "8000"}
-` : `Du hjelper brukere med å fylle ut boligfinansieringsrapporter.
-
-Når brukeren laster opp bilder eller dokumenter:
-- Analyser bildene nøye og hent ut relevant informasjon
-- Se etter tall, adresser, beløp, og andre relevante detaljer
-- Presenter funnene tydelig og spør om brukeren vil at du skal fylle inn dataene automatisk
-
-Viktige felt:
-- Eiendomsinformasjon: address, totalPrice, propertyType, livingArea
-- Låneinformasjon: equity, interestRate, loanPeriod
-- Månedlige kostnader: commonCosts, municipalFees, insurance, electricityMonthly
-- Forventet leieinntekt: monthlyRent
-
-Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informasjon.
-
-VIKTIG: Når du har hentet ut data, avslutt meldingen din med:
-EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}
-
-Eksempel på gyldige felt:
-- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly, propertyType, livingArea`}
+        content: systemPrompt
       },
       ...(history || []),
     ];
@@ -257,9 +245,7 @@ Eksempel på gyldige felt:
     // Add user message with context
     if (finnSearchResults) {
       // When we have Finn.no results, make it clear to the AI what to do
-      const contextMessage = `${message}
-
-[System: Eiendomsinformasjon for finnkode ${finnCode} er hentet via websøk. Du MÅ nå analysere dataen ovenfor og fylle ut rapporten automatisk.]`;
+      const contextMessage = message + '\n\n[System: Eiendomsinformasjon for finnkode ' + finnCode + ' er hentet via websøk. Du MÅ nå analysere dataen ovenfor og fylle ut rapporten automatisk.]';
       messages.push({ role: 'user', content: contextMessage });
     } else if (attachments && attachments.length > 0) {
       const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
