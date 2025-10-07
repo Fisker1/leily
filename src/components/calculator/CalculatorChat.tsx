@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText, Scissors } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -26,6 +27,12 @@ interface ProcessingStatus {
   message: string;
 }
 
+interface ShavedData {
+  original: string;
+  shaved: string;
+  timestamp: number;
+}
+
 export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = false }: CalculatorChatProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -43,6 +50,10 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     progress: 0,
     message: ''
   });
+  const [shaverDialogOpen, setShaverDialogOpen] = useState(false);
+  const [htmlInput, setHtmlInput] = useState('');
+  const [shavedData, setShavedData] = useState<ShavedData | null>(null);
+  const [isShaving, setIsShaving] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,6 +92,109 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const shaveHtml = (html: string): string => {
+    console.log('Starting HTML shaving, original size:', html.length);
+    
+    // Step 1: Try to extract __NEXT_DATA__ script (Finn.no specific)
+    const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+    if (nextDataMatch) {
+      console.log('Found __NEXT_DATA__ script');
+      return nextDataMatch[1].trim();
+    }
+    
+    // Step 2: Remove common bloat
+    let cleaned = html
+      // Remove all script tags except __NEXT_DATA__
+      .replace(/<script(?![^>]*id="__NEXT_DATA__")[^>]*>[\s\S]*?<\/script>/gi, '')
+      // Remove all style tags
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      // Remove comments
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Remove meta tags
+      .replace(/<meta[^>]*>/gi, '')
+      // Remove link tags
+      .replace(/<link[^>]*>/gi, '')
+      // Remove svg elements (usually icons/graphics)
+      .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '');
+    
+    // Step 3: Try to find JSON structures (likely to contain property data)
+    const jsonMatches = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+    if (jsonMatches && jsonMatches.length > 0) {
+      // Find largest JSON object
+      const largestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
+      console.log('Found JSON structure, size:', largestJson.length);
+      return largestJson;
+    }
+    
+    // Step 4: Last resort - extract only visible text content
+    const textContent = cleaned
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    console.log('Extracted text content, final size:', textContent.length);
+    return textContent.slice(0, 100000); // Keep first 100k chars
+  };
+
+  const handleShaveHtml = async () => {
+    if (!htmlInput.trim()) {
+      toast.error('Lim inn HTML-kode først');
+      return;
+    }
+
+    setIsShaving(true);
+    setProcessingStatus({
+      isProcessing: true,
+      stage: 'shaving',
+      progress: 30,
+      message: 'Fjerner unødvendig HTML...'
+    });
+
+    try {
+      // Simulate processing time for UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const shaved = shaveHtml(htmlInput);
+      const estimatedTokens = shaved.length / 4;
+      
+      setProcessingStatus(prev => ({ ...prev, progress: 70, message: 'Validerer resultat...' }));
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (estimatedTokens > 25000) {
+        toast.error('Kunne ikke redusere nok. Prøv å kopier kun relevante seksjoner.');
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
+        setIsShaving(false);
+        return;
+      }
+      
+      setShavedData({
+        original: htmlInput,
+        shaved,
+        timestamp: Date.now()
+      });
+      
+      setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 100, message: '' });
+      setShaverDialogOpen(false);
+      setHtmlInput('');
+      
+      const reduction = ((1 - shaved.length / htmlInput.length) * 100).toFixed(0);
+      toast.success(`✅ HTML redusert med ${reduction}%! (${htmlInput.length} → ${shaved.length} tegn)`);
+      
+      // Auto-send the shaved data to AI
+      setTimeout(() => {
+        setInput(shaved);
+        toast.info('📤 Klar til å analysere! Trykk Send eller endre meldingen.');
+      }, 500);
+      
+    } catch (error) {
+      console.error('Shaving error:', error);
+      toast.error('Kunne ikke prosessere HTML');
+      setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
+    } finally {
+      setIsShaving(false);
+    }
   };
 
   const convertFileToBase64 = (file: File): Promise<string> => {
@@ -220,6 +334,16 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
               {hasCredits ? '0.5 kreditter per melding' : '🔒 Kjøp kreditter for å bruke AI-chat'}
             </p>
           </div>
+          
+          <Button
+            onClick={() => setShaverDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Scissors className="h-4 w-4" />
+            Shaver HTML
+          </Button>
         </div>
         
         {/* Progress bar */}
@@ -238,6 +362,68 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
           </div>
         )}
       </div>
+
+      {/* HTML Shaver Dialog */}
+      <Dialog open={shaverDialogOpen} onOpenChange={setShaverDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scissors className="h-5 w-5" />
+              HTML Shaver - Finn.no
+            </DialogTitle>
+            <DialogDescription>
+              Lim inn hele HTML-koden fra Finn.no (Ctrl+U → Ctrl+A → Ctrl+C). 
+              Jeg fjerner automatisk unødvendig data og beholder kun eiendomsinformasjonen.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Textarea
+              value={htmlInput}
+              onChange={(e) => setHtmlInput(e.target.value)}
+              placeholder="Lim inn HTML-kode her..."
+              className="min-h-[300px] font-mono text-xs"
+              disabled={isShaving}
+            />
+            
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {htmlInput.length > 0 && `${htmlInput.length.toLocaleString()} tegn`}
+              </p>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setShaverDialogOpen(false);
+                    setHtmlInput('');
+                  }}
+                  variant="outline"
+                  disabled={isShaving}
+                >
+                  Avbryt
+                </Button>
+                <Button
+                  onClick={handleShaveHtml}
+                  disabled={!htmlInput.trim() || isShaving}
+                  className="gap-2"
+                >
+                  {isShaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Prosesserer...
+                    </>
+                  ) : (
+                    <>
+                      <Scissors className="h-4 w-4" />
+                      Prosesser HTML
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ScrollArea className="flex-1 p-4 bg-background" ref={scrollRef}>
         <div className="space-y-4">
