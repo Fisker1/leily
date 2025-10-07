@@ -100,7 +100,8 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     
     targeting.forEach((item: any) => {
       if (item.value && item.value.length > 0) {
-        data[item.key] = item.value[0];
+        // Store all values, not just first one
+        data[item.key] = item.value.length === 1 ? item.value[0] : item.value;
       }
     });
     
@@ -164,8 +165,13 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       preview.price = result.propertyData.price;
       preview.primarySize = result.propertyData.primary_size;
       preview.bedrooms = result.propertyData.bedrooms;
+      preview.rooms = result.propertyData.rooms;
       preview.propertyType = result.propertyData.property_type;
       preview.constructionYear = result.propertyData.construction_year;
+      preview.plotArea = result.propertyData.plot_area;
+      preview.ownershipType = result.propertyData.ownership_type;
+      preview.facilities = result.propertyData.facilities;
+      preview.energyRating = result.propertyData.energy_rating;
     }
     
     const jsonString = JSON.stringify(result, null, 2);
@@ -222,9 +228,12 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
         previewMessage += `📊 Funnet data:\n`;
         previewMessage += `• FINN-kode: ${result.preview.finnCode}\n`;
         if (result.preview.price) previewMessage += `• Pris: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
-        if (result.preview.primarySize) previewMessage += `• Størrelse: ${result.preview.primarySize} m²\n`;
+        if (result.preview.primarySize) previewMessage += `• Primærrom: ${result.preview.primarySize} m²\n`;
         if (result.preview.bedrooms) previewMessage += `• Soverom: ${result.preview.bedrooms}\n`;
+        if (result.preview.rooms) previewMessage += `• Rom: ${result.preview.rooms}\n`;
         if (result.preview.propertyType) previewMessage += `• Type: ${result.preview.propertyType}\n`;
+        if (result.preview.constructionYear) previewMessage += `• Byggeår: ${result.preview.constructionYear}\n`;
+        if (result.preview.plotArea) previewMessage += `• Tomt: ${result.preview.plotArea} m²\n`;
       }
       
       toast.success(previewMessage, { duration: 4000 });

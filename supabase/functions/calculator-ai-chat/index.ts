@@ -110,11 +110,16 @@ serve(async (req) => {
       'price': 'totalPrice',
       'primary_size': 'livingArea',
       'bedrooms': 'bedrooms',
+      'rooms': 'rooms',
       'property_type': 'propertyType',
       'construction_year': 'buildYear',
       'plot_area': 'plotArea',
-      'rooms': 'rooms',
-      'municipality': 'municipality'
+      'ownership_type': 'ownershipType',
+      'municipality': 'municipality',
+      'county': 'county',
+      'energy_rating': 'energyRating',
+      'facilities': 'facilities',
+      'plot_owned': 'plotOwned'
     };
     
     // Check if message contains structured Finn.no data
@@ -129,25 +134,62 @@ serve(async (req) => {
 VIKTIG: Brukeren har sendt strukturert data fra Finn.no med 'advertising-initial-state' eller 'propertyData'.
 
 DATA MAPPING (fra Finn.no til calculator):
-- id → finnCode
-- price → totalPrice (kun tall)
-- primary_size → livingArea (kun tall i m²)
-- bedrooms → bedrooms (kun tall)
-- property_type → propertyType (DETACHED=Enebolig, APARTMENT=Leilighet, osv)
-- construction_year → buildYear (kun årstall)
-- plot_area → plotArea (kun tall i m²)
+- id → finnCode (FINN-kode)
+- price → totalPrice (kun tall, prisantydning)
+- primary_size → livingArea (primærrom/BRA i m², kun tall)
+- bedrooms → bedrooms (antall soverom)
+- rooms → rooms (antall rom totalt)
+- property_type → propertyType (DETACHED=Enebolig, APARTMENT=Leilighet, TOWNHOUSE=Rekkehus, SEMI_DETACHED=Tomannsbolig)
+- construction_year → buildYear (byggeår)
+- plot_area → plotArea (tomteareal i m²)
+- ownership_type → ownershipType (FREEHOLD=Selveier, COOPERATIVE=Borettslag, etc.)
+- facilities → facilities (array av fasiliteter)
+- energy_rating → energyRating (energimerke A-G)
+- county → county (fylke)
+- municipality → municipality (kommune)
 
 SE FØRST ETTER "propertyData" objektet - her ligger all kritisk info ferdig strukturert!
 
 Hvis propertyData ikke finnes, se etter:
 - advertising.config.adServer.gam.targeting array (key/value par)
 - title felt for adresse
+- address felt for full adresse
 
 Ekstraher følgende felt (bruk null hvis data mangler):
-- address: Full adresse
-- totalPrice: Totalpris (kun tall, uten "kr")
-- propertyType: Type bolig 
-- livingArea: BRA i kvm (kun tall)
+- address: Full adresse fra address felt eller title
+- finnCode: FINN-kode
+- totalPrice: Prisantydning (kun tall)
+- livingArea: Primærrom/BRA (kun tall i m²)
+- bedrooms: Antall soverom
+- rooms: Antall rom totalt
+- propertyType: Boligtype (oversett DETACHED til "Enebolig" etc.)
+- buildYear: Byggeår
+- plotArea: Tomteareal (kun tall i m²)
+- ownershipType: Eierform (oversett FREEHOLD til "Selveier" etc.)
+- energyRating: Energimerke
+- facilities: Liste av fasiliteter (array)
+- municipality: Kommune
+- county: Fylke
+
+Returner BARE JSON med disse feltene. Ingen forklarende tekst.
+
+Eksempel:
+{
+  "address": "Gofarnesvegen 3, 4250 Kopervik",
+  "finnCode": "429564742",
+  "totalPrice": 2900000,
+  "livingArea": 126,
+  "bedrooms": 3,
+  "rooms": 4,
+  "propertyType": "Enebolig",
+  "buildYear": 1997,
+  "plotArea": 544,
+  "ownershipType": "Selveier",
+  "energyRating": "C",
+  "facilities": ["Balkong/Terrasse", "Garasje", "Hage"],
+  "municipality": "Karmøy",
+  "county": "Rogaland"
+}`
 - commonCosts: Felleskostnader per måned (kun tall)
 - municipalFees: Kommunale avgifter per år (kun tall)
 - buildYear: Byggeår (kun årstall)
@@ -216,13 +258,25 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
           type: "object",
           properties: {
             address: { type: "string", description: "Full property address" },
-            totalPrice: { type: "number", description: "Total price (number only, no currency)" },
-            propertyType: { type: "string", description: "Property type (apartment, house, etc)" },
-            livingArea: { type: "number", description: "Living area in square meters" },
-            commonCosts: { type: "number", description: "Monthly common costs" },
-            municipalFees: { type: "number", description: "Annual municipal fees" },
-            buildYear: { type: "number", description: "Year built" },
+            finnCode: { type: "string", description: "FINN property code/ID" },
+            totalPrice: { type: "number", description: "Total asking price (number only)" },
+            propertyType: { type: "string", description: "Property type (Enebolig, Leilighet, etc)" },
+            ownershipType: { type: "string", description: "Ownership type (Selveier, Borettslag, etc)" },
+            livingArea: { type: "number", description: "Internal usable area (BRA/primærrom) in m²" },
             bedrooms: { type: "number", description: "Number of bedrooms" },
+            rooms: { type: "number", description: "Total number of rooms" },
+            buildYear: { type: "number", description: "Construction year" },
+            energyRating: { type: "string", description: "Energy rating (A-G)" },
+            plotArea: { type: "number", description: "Plot/land area in m²" },
+            facilities: { 
+              type: "array", 
+              items: { type: "string" },
+              description: "List of facilities/amenities" 
+            },
+            municipality: { type: "string", description: "Municipality name" },
+            county: { type: "string", description: "County name" },
+            commonCosts: { type: "number", description: "Monthly common costs" },
+            municipalFees: { type: "number", description: "Municipal fees per month" },
             monthlyRent: { type: "number", description: "Expected monthly rent income" }
           },
           required: []
@@ -283,14 +337,32 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
         // Build friendly response
         assistantMessage = 'Perfekt! Jeg har hentet ut følgende data:\n\n';
         if (extractedData.address) assistantMessage += `📍 Adresse: ${extractedData.address}\n`;
-        if (extractedData.totalPrice) assistantMessage += `💰 Pris: ${extractedData.totalPrice.toLocaleString('nb-NO')} kr\n`;
-        if (extractedData.propertyType) assistantMessage += `🏠 Type: ${extractedData.propertyType}\n`;
-        if (extractedData.livingArea) assistantMessage += `📐 Størrelse: ${extractedData.livingArea} kvm\n`;
-        if (extractedData.commonCosts) assistantMessage += `💵 Felleskostnader: ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n`;
-        if (extractedData.municipalFees) assistantMessage += `🏛️ Kommunale avgifter: ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/år\n`;
-        if (extractedData.buildYear) assistantMessage += `🏗️ Byggeår: ${extractedData.buildYear}\n`;
+        if (extractedData.finnCode) assistantMessage += `🔢 FINN-kode: ${extractedData.finnCode}\n`;
+        if (extractedData.totalPrice) assistantMessage += `💰 Prisantydning: ${extractedData.totalPrice.toLocaleString('nb-NO')} kr\n`;
+        if (extractedData.propertyType) assistantMessage += `🏠 Boligtype: ${extractedData.propertyType}\n`;
+        if (extractedData.ownershipType) assistantMessage += `📋 Eierform: ${extractedData.ownershipType}\n`;
+        if (extractedData.livingArea) assistantMessage += `📐 Primærrom (BRA): ${extractedData.livingArea} m²\n`;
         if (extractedData.bedrooms) assistantMessage += `🛏️ Soverom: ${extractedData.bedrooms}\n`;
+        if (extractedData.rooms) assistantMessage += `🚪 Antall rom: ${extractedData.rooms}\n`;
+        if (extractedData.buildYear) assistantMessage += `🏗️ Byggeår: ${extractedData.buildYear}\n`;
+        if (extractedData.energyRating) assistantMessage += `⚡ Energimerke: ${extractedData.energyRating}\n`;
+        if (extractedData.plotArea) assistantMessage += `🌳 Tomteareal: ${extractedData.plotArea} m²\n`;
+        if (extractedData.municipality) assistantMessage += `🏛️ Kommune: ${extractedData.municipality}\n`;
+        if (extractedData.county) assistantMessage += `🗺️ Fylke: ${extractedData.county}\n`;
+        if (extractedData.commonCosts) assistantMessage += `💵 Felleskostnader: ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n`;
+        if (extractedData.municipalFees) assistantMessage += `🏛️ Kommunale avgifter: ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/mnd\n`;
         if (extractedData.monthlyRent) assistantMessage += `💸 Forventet leieinntekt: ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n`;
+        
+        if (extractedData.facilities && Array.isArray(extractedData.facilities) && extractedData.facilities.length > 0) {
+          assistantMessage += `\n✨ Fasiliteter:\n`;
+          extractedData.facilities.slice(0, 10).forEach((f: string) => {
+            assistantMessage += `   • ${f}\n`;
+          });
+          if (extractedData.facilities.length > 10) {
+            assistantMessage += `   ... og ${extractedData.facilities.length - 10} flere\n`;
+          }
+        }
+        
         assistantMessage += '\nDataen er nå fylt inn i rapporten! 🎉';
       }
     } else {

@@ -17,7 +17,19 @@ interface CalculatorPDFPreviewProps {
 export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFPreviewProps) => {
   const [formData, setFormData] = useState({
     address: data.address || '',
+    finnCode: data.finnCode || '',
     totalPrice: data.totalPrice || '',
+    propertyType: data.propertyType || '',
+    ownershipType: data.ownershipType || '',
+    livingArea: data.livingArea || '',
+    bedrooms: data.bedrooms || '',
+    rooms: data.rooms || '',
+    buildYear: data.buildYear || '',
+    energyRating: data.energyRating || '',
+    plotArea: data.plotArea || '',
+    municipality: data.municipality || '',
+    county: data.county || '',
+    facilities: data.facilities || [],
     equity: data.equity || '',
     interestRate: data.interestRate || '',
     loanPeriod: data.loanPeriod || '',
@@ -213,25 +225,125 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
                 <Home className="h-5 w-5" />
-                1. Eiendomsinformasjon
+                1. Nøkkelinformasjon
               </h2>
               
-              <div>
-                <Label htmlFor="address" className="text-gray-700 font-semibold">Eiendomsadresse</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
-                  placeholder="Skriv inn adresse..."
-                  className="mt-1 rounded-none"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label className="text-gray-700 font-semibold">Eiendomsadresse</Label>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => handleChange('address', e.target.value)}
+                    placeholder="Skriv inn adresse..."
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                {formData.finnCode && (
+                  <div>
+                    <Label className="text-gray-700 font-semibold">FINN-kode</Label>
+                    <Input value={formData.finnCode} disabled className="mt-1 rounded-none bg-gray-50" />
+                  </div>
+                )}
+                
+                <div className={formData.finnCode ? '' : 'col-span-2'}>
+                  <Label className="text-gray-700 font-semibold">Boligtype</Label>
+                  <Input
+                    value={formData.propertyType}
+                    onChange={(e) => handleChange('propertyType', e.target.value)}
+                    placeholder="Enebolig, Leilighet..."
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Eierform</Label>
+                  <Input
+                    value={formData.ownershipType}
+                    onChange={(e) => handleChange('ownershipType', e.target.value)}
+                    placeholder="Selveier, Borettslag..."
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Primærrom (m²)</Label>
+                  <Input
+                    value={formData.livingArea}
+                    onChange={(e) => handleChange('livingArea', e.target.value)}
+                    placeholder="m²"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Soverom</Label>
+                  <Input
+                    value={formData.bedrooms}
+                    onChange={(e) => handleChange('bedrooms', e.target.value)}
+                    placeholder="Antall"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Rom totalt</Label>
+                  <Input
+                    value={formData.rooms}
+                    onChange={(e) => handleChange('rooms', e.target.value)}
+                    placeholder="Antall"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Byggeår</Label>
+                  <Input
+                    value={formData.buildYear}
+                    onChange={(e) => handleChange('buildYear', e.target.value)}
+                    placeholder="År"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Energimerking</Label>
+                  <Input
+                    value={formData.energyRating}
+                    onChange={(e) => handleChange('energyRating', e.target.value)}
+                    placeholder="A-G"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-gray-700 font-semibold">Tomteareal (m²)</Label>
+                  <Input
+                    value={formData.plotArea}
+                    onChange={(e) => handleChange('plotArea', e.target.value)}
+                    placeholder="m²"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
               </div>
+
+              {formData.facilities && Array.isArray(formData.facilities) && formData.facilities.length > 0 && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-sm">
+                  <Label className="text-gray-700 font-semibold mb-2 block">Fasiliteter</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.facilities.map((facility: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-xs">{facility}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator className="my-4" />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="totalPrice" className="text-gray-700 font-semibold">Totalpris</Label>
+                  <Label className="text-gray-700 font-semibold">Prisantydning</Label>
                   <Input
-                    id="totalPrice"
                     value={formData.totalPrice}
                     onChange={(e) => handleChange('totalPrice', e.target.value)}
                     placeholder="kr"
@@ -239,9 +351,8 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="equity" className="text-gray-700 font-semibold">Egenkapital</Label>
+                  <Label className="text-gray-700 font-semibold">Egenkapital</Label>
                   <Input
-                    id="equity"
                     value={formData.equity}
                     onChange={(e) => handleChange('equity', e.target.value)}
                     placeholder="kr"

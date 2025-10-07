@@ -439,7 +439,135 @@ const BankReport = () => {
             {/* Executive Summary */}
             <section className="mb-8 report-section avoid-break">
               <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                1. SAMMENDRAG AV ANALYSE
+                1. NØKKELINFORMASJON OM EIENDOMMEN
+              </h3>
+              
+              {/* Property Key Details */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Eiendomsopplysninger</h4>
+                  <table className="w-full text-xs">
+                    <tbody className="space-y-1">
+                      {displayBasicData.address && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Adresse:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.address}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.finnCode && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">FINN-kode:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.finnCode}</td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Boligtype:</td>
+                        <td className="py-1 text-right font-semibold">
+                          {displayBasicData.propertyType ? displayBasicData.propertyType.charAt(0).toUpperCase() + displayBasicData.propertyType.slice(1) : 'Ikke spesifisert'}
+                        </td>
+                      </tr>
+                      {displayBasicData.ownershipType && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Eierform:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.ownershipType}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.bedrooms && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Soverom:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.bedrooms}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.rooms && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Antall rom:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.rooms}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.livingArea && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Primærrom (BRA):</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.livingArea} m²</td>
+                        </tr>
+                      )}
+                      {displayBasicData.buildYear && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Byggeår:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.buildYear}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.energyRating && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Energimerking:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.energyRating}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.plotArea && (
+                        <tr>
+                          <td className="py-1 text-gray-600">Tomteareal:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.plotArea} m²</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div className="border border-gray-300 p-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Priser og kostnader</h4>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Prisantydning:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.totalPrice || displayBasicData.propertyValue || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Totalpris:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.propertyValue || 0)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Kommunale avgifter:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.municipalFees || 0)}/mnd</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 text-gray-600">Fellesutgifter:</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(displayBasicData.sharedExpenses || 0)}/mnd</td>
+                      </tr>
+                      {displayBasicData.municipality && (
+                        <tr className="border-b border-gray-200">
+                          <td className="py-1 text-gray-600">Kommune:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.municipality}</td>
+                        </tr>
+                      )}
+                      {displayBasicData.county && (
+                        <tr>
+                          <td className="py-1 text-gray-600">Fylke:</td>
+                          <td className="py-1 text-right font-semibold">{displayBasicData.county}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Facilities */}
+              {displayBasicData.facilities && Array.isArray(displayBasicData.facilities) && displayBasicData.facilities.length > 0 && (
+                <div className="border border-gray-300 p-4 mb-4">
+                  <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Fasiliteter</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {displayBasicData.facilities.map((facility: string, index: number) => (
+                      <span key={index} className="text-xs bg-gray-100 text-gray-800 px-3 py-1 border border-gray-300 rounded">
+                        {facility}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Financial Summary */}
+            <section className="mb-8 report-section avoid-break">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
+                2. SAMMENDRAG AV ANALYSE
               </h3>
               
               <div className="grid grid-cols-1 gap-4 mb-4">
@@ -587,7 +715,7 @@ const BankReport = () => {
             {activatedModules.includes('Lønnsomhetsanalyse') && (
               <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                  2. LØNNSOMHETSANALYSE
+                  3. LØNNSOMHETSANALYSE
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -663,7 +791,7 @@ const BankReport = () => {
             {activatedModules.includes('Avanserte beregninger') && (
               <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                  3. AVANSERTE BEREGNINGER
+                  4. AVANSERTE BEREGNINGER
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -722,7 +850,7 @@ const BankReport = () => {
             {activatedModules.includes('Markedsanalyse') && (
               <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                  4. MARKEDSANALYSE
+                  5. MARKEDSANALYSE
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -780,7 +908,7 @@ const BankReport = () => {
             {activatedModules.includes('Risikoevaluering') && (
               <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                  5. RISIKOEVALUERING
+                  6. RISIKOEVALUERING
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -844,7 +972,7 @@ const BankReport = () => {
             {activatedModules.includes('Avkastningsanalyse') && (
               <section className="mb-8 report-section page-break-before avoid-break">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-300 pb-2">
-                  6. AVKASTNINGSANALYSE
+                  7. AVKASTNINGSANALYSE
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-6 mb-4">
