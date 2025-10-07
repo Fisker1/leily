@@ -223,8 +223,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
             {/* Property Information */}
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
-                <Home className="h-5 w-5" />
+              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
                 1. Nøkkelinformasjon
               </h2>
               
@@ -367,8 +366,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
             {/* Loan Information */}
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
-                <Calculator className="h-5 w-5" />
+              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
                 2. Låneinformasjon
               </h2>
 
@@ -438,8 +436,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
             {/* Income */}
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
-                <PiggyBank className="h-5 w-5" />
+              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
                 3. Inntekter
               </h2>
               
@@ -476,8 +473,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
             {/* Expenses */}
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
-                <Wallet className="h-5 w-5" />
+              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
                 4. Månedlige utgifter
               </h2>
               
@@ -549,8 +545,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
             {/* Final Summary */}
             {formData.totalPrice && formData.equity && (
               <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
                   5. Økonomisk analyse
                 </h2>
                 
