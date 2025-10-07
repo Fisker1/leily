@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { LoanCalculatorDialog } from '@/components/LoanCalculatorDialog';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -38,7 +39,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Kopier ALT (Ctrl+A, Ctrl+C)\n4. Lim inn her\n\n✨ Jeg ekstraherer automatisk kun den relevante dataen!\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem.'
+      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Kopier ALT (Ctrl+A, Ctrl+C)\n4. Trykk på **HTML**-knappen oppe til høyre\n5. Lim inn HTML-koden i dialogboksen\n\n✨ Jeg ekstraherer automatisk kun den relevante dataen fra HTML-koden!\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem, eller stille meg spørsmål.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -449,8 +450,8 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="p-4 border-b border-border/50 bg-card">
-        <div className="flex items-center justify-between">
+      <div className="p-4 border-b border-border/50 bg-card h-[73px]">
+        <div className="flex items-center justify-between h-full">
           <div>
             <h3 className="font-semibold text-lg">AI-assistent</h3>
             <p className="text-sm text-muted-foreground">
@@ -458,16 +459,28 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             </p>
           </div>
           
-          <Button
-            onClick={() => setShaverDialogOpen(true)}
-            variant="outline"
-            size="sm"
-            className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600"
-            aria-label="HTML Shaver"
-          >
-            <Scissors className="h-4 w-4" />
-            HTML
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setLoanCalcOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9"
+              aria-label="Lånekalkulator"
+            >
+              <Calculator className="h-4 w-4" />
+              Lånekalkulator
+            </Button>
+            <Button
+              onClick={() => setShaverDialogOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600 h-9"
+              aria-label="HTML Shaver"
+            >
+              <Scissors className="h-4 w-4" />
+              HTML
+            </Button>
+          </div>
         </div>
         
         {/* Progress bar */}

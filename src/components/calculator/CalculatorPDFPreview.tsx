@@ -150,12 +150,12 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
-      <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between">
+      <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between h-[73px]">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           <span className="font-semibold text-lg">Boligfinansieringsrapport</span>
         </div>
-        <Button onClick={handleDownload} size="sm" className="gap-2 rounded">
+        <Button onClick={handleDownload} size="sm" className="gap-2 rounded h-9">
           <Download className="h-4 w-4" />
           Last ned PDF
         </Button>
@@ -341,20 +341,11 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
               <Separator className="my-4" />
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="col-span-2">
                   <Label className="text-gray-700 font-semibold">Prisantydning</Label>
                   <Input
                     value={formData.totalPrice}
                     onChange={(e) => handleChange('totalPrice', e.target.value)}
-                    placeholder="kr"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label className="text-gray-700 font-semibold">Egenkapital</Label>
-                  <Input
-                    value={formData.equity}
-                    onChange={(e) => handleChange('equity', e.target.value)}
                     placeholder="kr"
                     className="mt-1 rounded-none"
                   />
@@ -382,6 +373,16 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="equity" className="text-gray-700 font-semibold">Egenkapital</Label>
+                  <Input
+                    id="equity"
+                    value={formData.equity}
+                    onChange={(e) => handleChange('equity', e.target.value)}
+                    placeholder="kr"
+                    className="mt-1 rounded-none"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="interestRate" className="text-gray-700 font-semibold">Rente (%)</Label>
                   <Input

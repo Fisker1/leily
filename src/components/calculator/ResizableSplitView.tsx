@@ -58,9 +58,10 @@ export const ResizableSplitView = ({
       <div
         onMouseDown={() => setIsDragging(true)}
         className={`
-          w-1 bg-border hover:bg-primary/50 cursor-col-resize 
-          transition-colors duration-200 relative group
-          ${isDragging ? 'bg-primary' : ''}
+          w-2 bg-gradient-to-b from-transparent via-border/30 to-transparent 
+          hover:via-primary/30 cursor-col-resize transition-colors duration-200 
+          relative group rounded-full mx-1
+          ${isDragging ? 'via-primary' : ''}
         `}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 

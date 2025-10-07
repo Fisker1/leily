@@ -215,9 +215,9 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           
           // Pricing information - store all available pricing data
           price: parseInt(getTargetValue('price')) || 0,
-          totalPrice: undefined, // Will be extracted from HTML if available
-          additionalCosts: undefined,
-          propertyValue: undefined,
+          totalPrice: parseInt(getTargetValue('total_price')) || undefined,
+          additionalCosts: parseInt(getTargetValue('additional_costs')) || undefined,
+          propertyValue: parseInt(getTargetValue('property_value')) || undefined,
           
           // Property classification
           propertyType: mapPropertyType(getTargetValue('property_type') || ''),
@@ -240,12 +240,12 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
           description: `Eiendom i ${getTargetValue('local_area_name') || 'Norge'}`,
           images: images,
           
-          // Monthly costs - will be extracted from HTML parsing
-          municipalFees: undefined,
-          sharedCosts: undefined,
-          sharedEquity: undefined,
-          monthlyRent: undefined,
-          loanCostsFrom: undefined,
+          // Monthly costs - extract from structured data
+          municipalFees: parseInt(getTargetValue('municipal_fee')) || parseInt(getTargetValue('property_tax')) || undefined,
+          sharedCosts: parseInt(getTargetValue('shared_cost')) || parseInt(getTargetValue('common_cost')) || undefined,
+          sharedEquity: parseInt(getTargetValue('shared_equity')) || parseInt(getTargetValue('collective_debt')) || undefined,
+          monthlyRent: parseInt(getTargetValue('rent')) || undefined,
+          loanCostsFrom: parseInt(getTargetValue('loan_costs')) || undefined,
           
           // Property features - comprehensive facility parsing
           parkingSpaces: facilities.some((f: string) => f.includes('Garasje') || f.includes('P-plass')) ? 1 : undefined,
