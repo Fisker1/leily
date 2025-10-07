@@ -299,6 +299,33 @@ export type Database = {
         }
         Relationships: []
       }
+      external_lender_settings: {
+        Row: {
+          created_at: string
+          external_lender_name: string | null
+          has_external_lender: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_lender_name?: string | null
+          has_external_lender?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_lender_name?: string | null
+          has_external_lender?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       finn_property_cache: {
         Row: {
           created_at: string
