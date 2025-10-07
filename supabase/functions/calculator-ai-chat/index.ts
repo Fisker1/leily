@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -103,159 +102,51 @@ serve(async (req) => {
         credits_used: 0
       });
 
-    // Check if message contains Finn.no URL or code
-    let finnCode = null;
-    let extractedData = null; // Declare once and reuse throughout
+    console.log('=== Processing message with OpenAI ===');
     
-    console.log('=== Starting Finn.no detection ===');
+    // Check if user pasted HTML source code (Ctrl+U from Finn.no)
+    const isHtmlSource = message.includes('<html') || message.includes('<!DOCTYPE') || 
+                         message.includes('<head>') || message.includes('<body>');
     
-    // Match various Finn.no URL formats
-    const finnUrlMatch = message.match(/finn\.no\/(?:realestate\/homes\/)?ad\.html\?finnkode=(\d+)/i) ||
-                         message.match(/finn\.no\/.*?(\d{8,9})/);
-    const finnCodeMatch = !finnUrlMatch ? message.match(/\b(\d{8,9})\b/) : null;
-    
-    if (finnUrlMatch || finnCodeMatch) {
-      finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
-      console.log('Finnkode detected:', finnCode);
-      
-      // Check cache first
-      const { data: cachedData } = await supabase
-        .from('finn_property_cache')
-        .select('property_data, extracted_at')
-        .eq('finn_code', finnCode)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-      
-      if (cachedData) {
-        console.log('Using cached data from:', cachedData.extracted_at);
-        extractedData = cachedData.property_data;
-      } else {
-        console.log('Fetching fresh data from Perplexity...');
-        
-        try {
-          // Use Perplexity to extract structured data directly
-          const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + PERPLEXITY_API_KEY,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'sonar',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'Du er en eiendomsdata-ekstraktor. Søk opp Finn.no annonsen og returner BARE et JSON-objekt med følgende felt (bruk null hvis data mangler): {"address": "full adresse", "totalPrice": tall uten kr, "propertyType": "type", "livingArea": tall i kvm, "commonCosts": tall per måned, "municipalFees": tall per år, "buildYear": år, "bedrooms": antall}. VIKTIG: Returner KUN JSON, ingen annen tekst.'
-                },
-                {
-                  role: 'user',
-                  content: 'Finn.no finnkode ' + finnCode
-                }
-              ],
-              temperature: 0.1,
-              max_tokens: 500,
-              search_domain_filter: ['finn.no']
-            }),
-          });
+    // Build system prompt based on content type
+    const systemPrompt = isHtmlSource 
+      ? `Du er en ekspert på å ekstrahere eiendomsdata fra HTML kildekode.
 
-          if (perplexityResponse.ok) {
-            const perplexityData = await perplexityResponse.json();
-            const content = perplexityData.choices[0].message.content;
-            console.log('Perplexity raw response:', content);
-            
-            // Try to extract JSON from response
-            const jsonMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
-            if (jsonMatch) {
-              extractedData = JSON.parse(jsonMatch[0]);
-              console.log('Extracted data:', extractedData);
-              
-              // Cache the result
-              await serviceSupabase
-                .from('finn_property_cache')
-                .upsert({
-                  finn_code: finnCode,
-                  property_data: extractedData,
-                  extracted_at: new Date().toISOString(),
-                  expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-                }, { onConflict: 'finn_code' });
-              
-              console.log('Data cached successfully');
-            } else {
-              console.error('Could not extract JSON from Perplexity response');
-            }
-          } else {
-            const errorText = await perplexityResponse.text();
-            console.error('Perplexity error:', perplexityResponse.status, errorText);
-          }
-        } catch (error) {
-          console.error('Error in Perplexity call:', error);
-        }
-      }
-    }
+VIKTIG: Brukeren har limt inn HTML kildekode fra en Finn.no annonse. 
+Din jobb er å parse HTML-en og ekstrahere ALL relevant eiendomsinformasjon.
 
-    // If we have extracted Finn.no data, return it directly without using OpenAI
-    if (extractedData) {
-      console.log('Returning extracted Finn.no data directly');
-      
-      // Build friendly response message
-      let responseMessage = 'Perfekt! Jeg har hentet informasjonen fra Finn.no:\n\n';
-      if (extractedData.address) responseMessage += '📍 Adresse: ' + extractedData.address + '\n';
-      if (extractedData.totalPrice) responseMessage += '💰 Pris: ' + extractedData.totalPrice.toLocaleString('nb-NO') + ' kr\n';
-      if (extractedData.propertyType) responseMessage += '🏠 Type: ' + extractedData.propertyType + '\n';
-      if (extractedData.livingArea) responseMessage += '📐 Størrelse: ' + extractedData.livingArea + ' kvm\n';
-      if (extractedData.commonCosts) responseMessage += '💵 Felleskostnader: ' + extractedData.commonCosts.toLocaleString('nb-NO') + ' kr/mnd\n';
-      if (extractedData.municipalFees) responseMessage += '🏛️ Kommunale avgifter: ' + extractedData.municipalFees.toLocaleString('nb-NO') + ' kr/år\n';
-      responseMessage += '\nJeg fyller nå ut rapporten automatisk med denne informasjonen!';
-      
-      // Save messages
-      await supabase
-        .from('calculator_chat_messages')
-        .insert([
-          {
-            session_id: currentSessionId,
-            role: 'user',
-            content: message,
-            credits_used: 0
-          },
-          {
-            session_id: currentSessionId,
-            role: 'assistant',
-            content: responseMessage,
-            credits_used: isAmbassador || profile?.is_test_user ? 0 : 0.5
-          }
-        ]);
-      
-      // Deduct credits
-      if (!isAmbassador && !profile?.is_test_user) {
-        await serviceSupabase.rpc('use_credits', {
-          credits_to_use: 0.5,
-          operation_type: 'calculator_chat'
-        });
-      }
-      
-      return new Response(
-        JSON.stringify({
-          message: responseMessage,
-          sessionId: currentSessionId,
-          creditsUsed: isAmbassador || profile?.is_test_user ? 0 : 0.5,
-          extractedData
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+Ekstraher følgende felt (bruk null hvis data mangler):
+- address: Full adresse
+- totalPrice: Totalpris (kun tall, uten "kr")
+- propertyType: Type bolig (leilighet, enebolig, etc)
+- livingArea: Primærrom/BRA i kvm (kun tall)
+- commonCosts: Felleskostnader per måned (kun tall)
+- municipalFees: Kommunale avgifter per år (kun tall)
+- buildYear: Byggeår (kun årstall)
+- bedrooms: Antall soverom (kun tall)
+- monthlyRent: Forventet leieinntekt per måned hvis relevant
 
-    // For non-Finn.no messages, use OpenAI as before
-    console.log('=== Using OpenAI for regular chat ===');
-    
-    // Reuse chat history already fetched earlier
-    
-    // Build simple system prompt for regular chat
-    const systemPrompt = 'Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. ' +
-      'Du hjelper brukere med å fylle ut rapporter ved å stille spørsmål og analysere dokumenter de laster opp.\n\n' +
-      'Viktige felt: address, totalPrice, propertyType, livingArea, equity, interestRate, loanPeriod, ' +
-      'monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly.\n\n' +
-      'Når du har hentet ut data, avslutt med:\n' +
-      'EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}';
+BRUK TOOL CALLING for å returnere dataen strukturert.`
+      : `Du er en hjelpsom AI-assistent for boligfinansieringsrapporter.
+
+Din jobb er å hjelpe brukeren fylle ut en eiendomsrapport ved å:
+1. Stille relevante spørsmål
+2. Analysere dokumenter de laster opp
+3. Be om Finn.no HTML kildekode hvis de vil analysere en eiendom
+
+VIKTIG INSTRUKSJON TIL BRUKER:
+Hvis brukeren vil analysere en eiendom fra Finn.no, BE DEM OM Å:
+1. Åpne Finn.no annonsen i nettleseren
+2. Trykk Ctrl+U (Windows) eller Cmd+Option+U (Mac) for å se kildekoden
+3. Kopiere ALT (Ctrl+A, Ctrl+C)
+4. Lime inn her i chatten
+
+Da kan jeg ekstrahere all data automatisk!
+
+Viktige felt: address, totalPrice, propertyType, livingArea, equity, interestRate, 
+loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly.
+
+BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
 
     // Build messages for OpenAI
     const messages: any[] = [
@@ -287,7 +178,31 @@ serve(async (req) => {
       messages.push({ role: 'user', content: message });
     }
 
-    // Call OpenAI with improved model
+    // Define tool for structured data extraction
+    const tools = [{
+      type: "function",
+      function: {
+        name: "extract_property_data",
+        description: "Extract structured property data from user input or HTML source",
+        parameters: {
+          type: "object",
+          properties: {
+            address: { type: "string", description: "Full property address" },
+            totalPrice: { type: "number", description: "Total price (number only, no currency)" },
+            propertyType: { type: "string", description: "Property type (apartment, house, etc)" },
+            livingArea: { type: "number", description: "Living area in square meters" },
+            commonCosts: { type: "number", description: "Monthly common costs" },
+            municipalFees: { type: "number", description: "Annual municipal fees" },
+            buildYear: { type: "number", description: "Year built" },
+            bedrooms: { type: "number", description: "Number of bedrooms" },
+            monthlyRent: { type: "number", description: "Expected monthly rent income" }
+          },
+          required: []
+        }
+      }
+    }];
+
+    // Call OpenAI with tool calling
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -297,8 +212,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o',
         messages,
-        temperature: 0.3,
-        max_tokens: 800
+        tools,
+        tool_choice: isHtmlSource ? { type: "function", function: { name: "extract_property_data" } } : "auto",
+        temperature: 0.2,
+        max_tokens: 1500
       }),
     });
 
@@ -309,20 +226,37 @@ serve(async (req) => {
     }
 
     const data = await openaiResponse.json();
-    const assistantMessage = data.choices[0].message.content;
+    const choice = data.choices[0];
+    
+    let assistantMessage = '';
+    let extractedData = null;
 
-    // Extract structured data if present (reuse extractedData variable from above)
-    const extractedMatch = assistantMessage.match(/EXTRACTED_DATA:\s*(\{[^}]+\})/);
-    if (extractedMatch) {
-      try {
-        extractedData = JSON.parse(extractedMatch[1]);
-      } catch (e) {
-        console.error('Failed to parse extracted data:', e);
+    // Check if AI used tool calling
+    if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+      const toolCall = choice.message.tool_calls[0];
+      if (toolCall.function.name === 'extract_property_data') {
+        extractedData = JSON.parse(toolCall.function.arguments);
+        console.log('Extracted data via tool calling:', extractedData);
+        
+        // Build friendly response
+        assistantMessage = 'Perfekt! Jeg har hentet ut følgende data:\n\n';
+        if (extractedData.address) assistantMessage += `📍 Adresse: ${extractedData.address}\n`;
+        if (extractedData.totalPrice) assistantMessage += `💰 Pris: ${extractedData.totalPrice.toLocaleString('nb-NO')} kr\n`;
+        if (extractedData.propertyType) assistantMessage += `🏠 Type: ${extractedData.propertyType}\n`;
+        if (extractedData.livingArea) assistantMessage += `📐 Størrelse: ${extractedData.livingArea} kvm\n`;
+        if (extractedData.commonCosts) assistantMessage += `💵 Felleskostnader: ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n`;
+        if (extractedData.municipalFees) assistantMessage += `🏛️ Kommunale avgifter: ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/år\n`;
+        if (extractedData.buildYear) assistantMessage += `🏗️ Byggeår: ${extractedData.buildYear}\n`;
+        if (extractedData.bedrooms) assistantMessage += `🛏️ Soverom: ${extractedData.bedrooms}\n`;
+        if (extractedData.monthlyRent) assistantMessage += `💸 Forventet leieinntekt: ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n`;
+        assistantMessage += '\nDataen er nå fylt inn i rapporten! 🎉';
       }
+    } else {
+      // Regular text response
+      assistantMessage = choice.message.content || 'Beklager, jeg kunne ikke generere et svar.';
     }
 
-    // Remove the EXTRACTED_DATA tag from the message
-    const cleanMessage = assistantMessage.replace(/EXTRACTED_DATA:\s*\{[^}]+\}/, '').trim();
+    const cleanMessage = assistantMessage.trim();
 
     // Deduct credits for non-ambassadors
     const creditsUsed = 0.5;

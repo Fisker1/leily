@@ -23,7 +23,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hei! Jeg er her for å hjelpe deg med å fylle ut boligfinansieringsrapporten. La oss starte! Har du en Finn.no kode for eiendommen du vil analysere?\n\nDu kan også laste opp dokumenter som forsikringsbevis, bankdokumenter eller skjermbilder, så vil jeg hjelpe deg med å hente ut relevant informasjon.'
+      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Kopier ALT (Ctrl+A, Ctrl+C)\n4. Lim inn her\n\nDa henter jeg ut all data automatisk! 🚀\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem.'
     }
   ]);
   const [input, setInput] = useState('');
