@@ -403,6 +403,7 @@ const Calculator = () => {
                     <CalculatorPDFPreview 
                       data={data}
                       onDataChange={(field, value) => updateField(field, value)}
+                      onSave={() => setSaveDialogOpen(true)}
                     />
                   }
                 />
@@ -454,6 +455,62 @@ const Calculator = () => {
           open={extendedDetailsOpen}
           onOpenChange={setExtendedDetailsOpen}
         />
+        
+        {/* Save Calculation Dialog */}
+        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Save className="h-5 w-5" />
+                Lagre kalkulasjon
+              </DialogTitle>
+              <DialogDescription>
+                Lagre kalkulasjonen til biblioteket for senere gjenbruk
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="calculationName">Kalkulasjonsnavn</Label>
+                <Input
+                  id="calculationName"
+                  placeholder="F.eks. 'Leilighet Oslo sentrum'"
+                  value={calculationName}
+                  onChange={(e) => setCalculationName(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="propertyAddress">Adresse (valgfritt)</Label>
+                <Input
+                  id="propertyAddress"
+                  placeholder="F.eks. 'Storgata 1, 0182 Oslo'"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="finnCode">Finn-kode (valgfritt)</Label>
+                <Input
+                  id="finnCode"
+                  placeholder="F.eks. '12345678'"
+                  value={finnCode}
+                  onChange={(e) => setFinnCode(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                Avbryt
+              </Button>
+              <Button onClick={handleSaveCalculation}>
+                Lagre kalkulasjon
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

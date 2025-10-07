@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet, Upload, File } from 'lucide-react';
+import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet, Upload, File, Save } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatNumberWithSpaces } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -13,9 +13,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface CalculatorPDFPreviewProps {
   data?: Record<string, any>;
   onDataChange?: (field: string, value: any) => void;
+  onSave?: () => void;
 }
 
-export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFPreviewProps) => {
+export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: CalculatorPDFPreviewProps) => {
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [formData, setFormData] = useState({
     address: data.address || '',
@@ -254,10 +255,17 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
           <FileText className="h-5 w-5" />
           <span className="font-semibold text-lg">Boligfinansieringsrapport</span>
         </div>
-        <Button onClick={handleDownload} size="sm" className="gap-2 rounded h-9">
-          <Download className="h-4 w-4" />
-          Last ned PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          {onSave && (
+            <Button onClick={onSave} size="sm" variant="outline" className="gap-2 rounded h-9">
+              <Save className="h-4 w-4" />
+            </Button>
+          )}
+          <Button onClick={handleDownload} size="sm" className="gap-2 rounded h-9">
+            <Download className="h-4 w-4" />
+            Last ned PDF
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 p-8 overflow-auto bg-gray-100 flex items-start justify-center">
