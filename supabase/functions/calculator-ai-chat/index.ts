@@ -105,18 +105,33 @@ serve(async (req) => {
 
     // Check if message contains Finn.no URL or code
     let finnSearchResults = null;
+    let finnCode = null;
+    
     // Match various Finn.no URL formats
     const finnUrlMatch = message.match(/finn\.no\/(?:realestate\/homes\/)?ad\.html\?finnkode=(\d+)/i) ||
                          message.match(/finn\.no\/.*?(\d{8,9})/);
     const finnCodeMatch = !finnUrlMatch ? message.match(/\b(\d{8,9})\b/) : null;
     
     if (finnUrlMatch || finnCodeMatch) {
-      const finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
+      finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
       console.log(`Detected Finn.no code: ${finnCode}, searching web for property data...`);
       
       try {
-        // Use Perplexity API to search for property information
-        const searchQuery = `Finn.no finnkode ${finnCode} eiendom adresse pris størrelse felleskostnader kommunale avgifter`;
+        // Improved Perplexity query with specific instructions
+        const searchQuery = `Hent detaljert informasjon om eiendomsannonsen på Finn.no med finnkode ${finnCode}. 
+        
+Jeg trenger følgende informasjon presentert i en strukturert liste:
+- Fullstendig adresse (gate, postnummer, poststed)
+- Totalpris / Prisantydning (i kr)
+- Eiendomstype (leilighet, enebolig, rekkehus, osv.)
+- Primærrom / Bruksareal (i kvm)
+- Felleskostnader per måned (i kr)
+- Kommunale avgifter per år (i kr)
+- Tomteareal (hvis relevant, i kvm)
+- Byggeår
+- Antall soverom
+
+Vennligst søk opp denne finnkoden på Finn.no og gi meg faktisk informasjon fra annonsen.`;
         
         const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
           method: 'POST',
@@ -129,27 +144,44 @@ serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: 'Du er en assistent som henter eiendomsinformasjon fra Finn.no. Ekstraher følgende detaljer hvis tilgjengelig: adresse, pris, eiendomstype, bruksareal (primærrom), felleskostnader, kommunale avgifter. Svar på norsk i klartekst format.'
+                content: `Du er en nøyaktig eiendomsdata-ekstraktor. Din oppgave er å søke opp spesifikke Finn.no annonser og hente ut nøyaktig informasjon.
+
+VIKTIG: Du må aktivt søke på nettet etter den spesifikke finnkoden og finne den faktiske annonsen.
+
+Strukturer svaret ditt som en punktliste med disse feltene (bruk "Ikke oppgitt" hvis informasjon mangler):
+- Adresse: [fullstendig adresse]
+- Totalpris: [beløp i kr]
+- Eiendomstype: [type]
+- Primærrom: [størrelse i kvm]
+- Felleskostnader: [beløp per måned]
+- Kommunale avgifter: [beløp per år]
+- Tomteareal: [størrelse eller "Ikke relevant"]
+- Byggeår: [år]
+- Soverom: [antall]
+
+Svar kun på norsk.`
               },
               {
                 role: 'user',
                 content: searchQuery
               }
             ],
-            temperature: 0.2,
-            max_tokens: 1000,
+            temperature: 0.1,
+            max_tokens: 1500,
             return_images: false,
             return_related_questions: false,
-            search_recency_filter: 'month'
+            search_recency_filter: 'month',
+            search_domain_filter: ['finn.no']
           }),
         });
 
         if (perplexityResponse.ok) {
           const perplexityData = await perplexityResponse.json();
           finnSearchResults = perplexityData.choices[0].message.content;
-          console.log('Successfully retrieved Finn.no search results');
+          console.log('Perplexity search results:', finnSearchResults);
         } else {
-          console.error('Perplexity API error:', perplexityResponse.status);
+          const errorText = await perplexityResponse.text();
+          console.error('Perplexity API error:', perplexityResponse.status, errorText);
         }
       } catch (error) {
         console.error('Error searching for Finn.no data:', error);
@@ -160,53 +192,75 @@ serve(async (req) => {
     const messages: any[] = [
       {
         role: 'system',
-        content: `Du er en hjelpsom AI-assistent for eiendomskalkulator. Du hjelper brukere med å fylle ut boligfinansieringsrapporter ved å stille relevante spørsmål og fylle inn data proaktivt.
+        content: `Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. Du hjelper brukere med å analysere og fylle ut rapporter basert på eiendomsinformasjon.
 
 ${finnSearchResults ? `
-EIENDOMSINFORMASJON FRA WEBSØK:
+=== EIENDOMSINFORMASJON HENTET FRA FINN.NO (FINNKODE: ${finnCode}) ===
+
 ${finnSearchResults}
 
-Analyser denne informasjonen nøye og ekstraher følgende data hvis tilgjengelig:
-- Adresse
-- Pris (totalPrice)
-- Eiendomstype (propertyType)
-- Bruksareal/primærrom (livingArea)
-- Felleskostnader (commonCosts)
-- Kommunale avgifter (municipalFees)
+=== DIN OPPGAVE ===
 
-Du MÅ nå fylle ut rapporten med denne dataen automatisk og informere brukeren om hva du har fylt inn.
-Foreslå også estimert leiepris basert på beliggenhet og størrelse.
-` : 'VIKTIG: Når brukeren oppgir en Finn.no link eller kode, be dem om å oppgi nødvendig informasjon manuelt siden automatisk henting kan være utfordrende.'}
+Analyser informasjonen ovenfor nøye og EKSTRAHER følgende data:
+
+1. address - Full adresse (gate, postnummer, sted)
+2. totalPrice - Totalpris/prisantydning (kun tall uten "kr", f.eks. 5500000)
+3. propertyType - Eiendomstype (leilighet/enebolig/rekkehus/osv)
+4. livingArea - Primærrom/bruksareal i kvm (kun tall, f.eks. 85)
+5. commonCosts - Felleskostnader per måned (kun tall, f.eks. 3500)
+6. municipalFees - Kommunale avgifter per år (kun tall, f.eks. 8000)
+
+VIKTIG INSTRUKS:
+- Du MÅ nå umiddelbart fylle ut rapporten med denne dataen
+- Presenter dataen du har funnet på en vennlig måte til brukeren
+- Avslutt meldingen din med: EXTRACTED_DATA: {"address": "...", "totalPrice": "...", osv}
+- Bruk kun tall i tallfelter (ingen "kr", "kvm", etc)
+- Hvis et felt mangler data, ikke ta det med i EXTRACTED_DATA
+
+Eksempel på hvordan du skal svare:
+"Flott! Jeg har funnet informasjonen om eiendommen på Finn.no. Her er det jeg fant:
+
+📍 Adresse: Eksempelveien 123, 0123 Oslo
+💰 Prisantydning: 5 500 000 kr
+🏠 Type: Leilighet
+📐 Primærrom: 85 kvm
+💵 Felleskostnader: 3 500 kr/mnd
+🏛️ Kommunale avgifter: 8 000 kr/år
+
+Jeg fyller nå automatisk ut rapporten med denne informasjonen. Hva annet trenger du hjelp med?"
+
+EXTRACTED_DATA: {"address": "Eksempelveien 123, 0123 Oslo", "totalPrice": "5500000", "propertyType": "leilighet", "livingArea": "85", "commonCosts": "3500", "municipalFees": "8000"}
+` : `Du hjelper brukere med å fylle ut boligfinansieringsrapporter.
 
 Når brukeren laster opp bilder eller dokumenter:
 - Analyser bildene nøye og hent ut relevant informasjon
 - Se etter tall, adresser, beløp, og andre relevante detaljer
-- For forsikringsdokumenter: Hent ut forsikringsbeløp
-- For bankdokumenter: Hent ut saldo, lånebeløp, renter
-- For skjermbilder av eiendomsannonser: Hent ut pris, adresse, størrelse
 - Presenter funnene tydelig og spør om brukeren vil at du skal fylle inn dataene automatisk
 
-Viktige felt som må fylles ut:
+Viktige felt:
 - Eiendomsinformasjon: address, totalPrice, propertyType, livingArea
-- Låneinformasasjon: equity, interestRate, loanPeriod
+- Låneinformasjon: equity, interestRate, loanPeriod
 - Månedlige kostnader: commonCosts, municipalFees, insurance, electricityMonthly
 - Forventet leieinntekt: monthlyRent
 
 Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informasjon.
 
-VIKTIG: Når du har hentet ut data fra dokumenter eller Finn.no, avslutt meldingen din med en JSON-struktur på følgende format (på egen linje):
+VIKTIG: Når du har hentet ut data, avslutt meldingen din med:
 EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}
 
 Eksempel på gyldige felt:
-- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly, propertyType, livingArea`
+- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly, propertyType, livingArea`}
       },
       ...(history || []),
     ];
 
-    // Add user message with attachments or Finn search results context
+    // Add user message with context
     if (finnSearchResults) {
-      const finnMessage = message + `\n\n[System: Eiendomsinformasjon hentet via websøk]`;
-      messages.push({ role: 'user', content: finnMessage });
+      // When we have Finn.no results, make it clear to the AI what to do
+      const contextMessage = `${message}
+
+[System: Eiendomsinformasjon for finnkode ${finnCode} er hentet via websøk. Du MÅ nå analysere dataen ovenfor og fylle ut rapporten automatisk.]`;
+      messages.push({ role: 'user', content: contextMessage });
     } else if (attachments && attachments.length > 0) {
       const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
       
@@ -224,7 +278,7 @@ Eksempel på gyldige felt:
       messages.push({ role: 'user', content: message });
     }
 
-    // Call OpenAI
+    // Call OpenAI with improved model
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -232,10 +286,10 @@ Eksempel på gyldige felt:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages,
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.3,
+        max_tokens: 800
       }),
     });
 
