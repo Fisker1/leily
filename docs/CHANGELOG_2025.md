@@ -1,5 +1,51 @@
 # Leily Changelog 2025
 
+## Oktober 2025
+
+### Forbedringer av kalkulasjonslagring og leierkart (7. oktober 2025)
+
+#### Nye funksjoner
+- **Rask lagring fra kalkulator**: Lagt til disk-ikon ved siden av "Last ned PDF" for å lagre kalkulasjoner direkte
+- **Automatisk navngiving**: Kalkulasjoner navngis automatisk basert på eiendomsadresse (fallback til dato hvis ingen adresse)
+- **Automatisk geocoding**: Adresser geocodes automatisk ved lagring slik at kalkulasjoner vises på leiekartet
+- **Sømløs navigering**: Når du laster inn en kalkulasjon fra biblioteket, navigeres du automatisk til kalkulatoren med alle data lastet
+
+#### Forbedringer
+- Fjernet lagringsdialog for raskere arbeidsflyt
+- Kalkulasjoner vises nå som oransje markører på leiekartet (hvis de har en gyldig norsk adresse)
+- Adresse-felt i kalkulatoren synkroniseres nå korrekt med Finn-henting og manuell inntasting
+- Finn-kode fylles automatisk ut hvis tilgjengelig
+- Navigasjonsalternativer justert for bedre visuell balanse
+
+#### Tekniske endringer
+- Oppdatert `useCalculationHistory` hook med geocoding via OpenStreetMap Nominatim API
+- Lagt til `coordinates` felt i `CalculationHistoryItem` interface
+- Lagt til `address` felt i `CalculatorData` interface for bedre type-sikkerhet
+- Forbedret dataflyt mellom kalkulator og lagringssystem
+- Automatisk koordinat-lagring for bedre kartvisning
+- Rate limiting på geocoding API-kall (1 sekund mellom requests)
+
+#### Bugfixes
+- Fikset TypeScript error ved bruk av `address` field i calculator data
+- Fikset synkronisering av adresse mellom PDF-forhåndsvisning og lagringssystem
+- Fikset automatisk tab-bytte ved lasting av kalkulasjoner
+
+### AI-drevet leiepris- og kostnadsestimering (oppdatert)
+
+#### Leieestimator
+- Estimert leiepris vises nå som "(estimert)" i stedet for "(AI-estimert)" eller "(Leily-estimert)"
+- Samme terminologi brukes konsekvent i hele applikasjonen
+
+#### Fremtidige forbedringer (planlagt)
+- Automatisk estimering av forsikringskostnader basert på boligdata
+- Automatisk estimering av strømkostnader basert på boligstørrelse og beliggenhet
+- Gjenbruk av samme datakilde og infrastruktur som leieestimatoren
+- Se `docs/future-features.md` for full dokumentasjon
+
+---
+
+# Leily Changelog 2025
+
 ## Januar 2025 - Ny Kalkulator System 🚀
 
 ### Hoved-features

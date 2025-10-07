@@ -146,7 +146,7 @@ const Calculator = () => {
     }
 
     // Get address from calculator data (which is updated by both Finn fetch and manual input)
-    const address = (data as any).address || propertyAddress || '';
+    const address = data.address || propertyAddress || '';
     
     // Auto-generate calculation name from address or use default
     const autoCalculationName = address || `Kalkulasjon ${new Date().toLocaleDateString('no-NO')}`;

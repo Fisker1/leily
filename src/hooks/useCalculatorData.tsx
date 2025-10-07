@@ -12,6 +12,9 @@ interface CalculatorData {
   loanAmount: string;
   loanPeriod: string;
   
+  // Property details
+  address: string;
+  
   // Expenses
   municipalFees: string;
   electricityMonthly: string;
@@ -48,6 +51,8 @@ const initialData: CalculatorData = {
   interestRate: "",
   loanAmount: "",
   loanPeriod: "",
+  
+  address: "",
   
   municipalFees: "",
   electricityMonthly: "",
