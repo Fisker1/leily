@@ -42,7 +42,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       content: `Hei! 👋 Jeg hjelper deg med boligfinansieringsrapporten.
 
 **Kom i gang:**
-1. **📋 Formater** - Lim inn HTML-kode fra Finn.no
+1. **📋 Formater** - Lim inn kode fra Finn.no
 2. **🧮 Lånekalkulator** - Sett opp låneinformasjon
 3. **💬 Chat** - Still spørsmål eller last opp dokumenter
 
@@ -471,8 +471,8 @@ Alt fylles automatisk ut i rapporten! 📄`
               onClick={() => setShaverDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/30"
-              aria-label="HTML Formater"
+              className="gap-2 h-9 px-3 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:border-orange-300"
+              aria-label="Formater"
               title="Formater"
             >
               <Scissors className="h-4 w-4" />
@@ -481,7 +481,7 @@ Alt fylles automatisk ut i rapporten! 📄`
               onClick={() => setLoanCalcOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 bg-secondary/10 hover:bg-secondary/20 text-secondary-foreground border-secondary/20 hover:border-secondary/30"
+              className="gap-2 h-9 px-3 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:border-orange-300"
               aria-label="Lånekalkulator"
               title="Lånekalkulator"
             >
@@ -517,12 +517,12 @@ Alt fylles automatisk ut i rapporten! 📄`
             </DialogTitle>
             <DialogDescription>
               <div className="space-y-3 text-sm">
-                <p className="font-semibold">Slik henter du HTML-kode fra Finn.no:</p>
+                <p className="font-semibold">Slik henter du koden fra Finn.no:</p>
                 <ol className="list-decimal list-inside space-y-2 ml-2">
                   <li>Åpne eiendomsannonsen på Finn.no</li>
                   <li>Trykk <strong>Ctrl+U</strong> (Windows) eller <strong>Cmd+Option+U</strong> (Mac)</li>
                   <li>Kopier ALT (Ctrl+A, Ctrl+C)</li>
-                  <li>Lim inn HTML-koden nedenfor</li>
+                  <li>Lim inn koden nedenfor</li>
                 </ol>
                 <p className="text-muted-foreground mt-3">
                   ✨ Jeg ekstraherer automatisk kun den relevante eiendomsinformasjonen!
