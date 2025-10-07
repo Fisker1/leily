@@ -104,11 +104,46 @@ serve(async (req) => {
 
     console.log('=== Processing message with OpenAI ===');
     
+    // Smart HTML shaver: Extract only relevant data to reduce tokens
+    let processedMessage = message;
+    const estimatedTokens = message.length / 4; // Rough estimate: 4 chars per token
+    
+    if (estimatedTokens > 25000) {
+      console.log('Message too large, attempting to shave down...');
+      
+      // Try to extract __NEXT_DATA__ script tag
+      const nextDataMatch = message.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+      if (nextDataMatch) {
+        console.log('Found __NEXT_DATA__ script, extracting JSON...');
+        processedMessage = nextDataMatch[1];
+        console.log('Reduced from', message.length, 'to', processedMessage.length, 'characters');
+      } else {
+        // Try to find any JSON structure in the HTML
+        const jsonMatches = message.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+        if (jsonMatches && jsonMatches.length > 0) {
+          // Find the largest JSON object (likely to contain property data)
+          const largestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
+          processedMessage = largestJson;
+          console.log('Extracted largest JSON object, reduced to', processedMessage.length, 'characters');
+        } else {
+          // Last resort: Extract visible text content
+          const textContent = message
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          processedMessage = textContent.slice(0, 100000); // Keep first 100k chars
+          console.log('Extracted text content, reduced to', processedMessage.length, 'characters');
+        }
+      }
+    }
+    
     // Check if user pasted HTML source code or JSON data from Finn.no
-    const isHtmlSource = message.includes('<script id="__NEXT_DATA__"') || 
-                         message.includes('<html') || message.includes('<!DOCTYPE') || 
-                         message.includes('"@type":"Product"') ||
-                         message.includes('"price"') && message.includes('"address"');
+    const isHtmlSource = processedMessage.includes('"@type":"Product"') ||
+                         processedMessage.includes('"price"') && processedMessage.includes('"address"') ||
+                         processedMessage.includes('finn.no') ||
+                         (processedMessage.startsWith('{') && processedMessage.includes('"price"'));
     
     // Build system prompt based on content type
     const systemPrompt = isHtmlSource 
@@ -144,12 +179,11 @@ Din jobb er å hjelpe brukeren fylle ut en eiendomsrapport ved å:
 VIKTIG INSTRUKSJON TIL BRUKER:
 Hvis brukeren vil analysere en eiendom fra Finn.no, BE DEM OM Å:
 1. Åpne Finn.no annonsen i nettleseren
-2. Trykk Ctrl+U (Windows) eller Cmd+Option+U (Mac)
-3. Søk etter "<script id="__NEXT_DATA__"" (Ctrl+F)
-4. Kopier KUN denne <script> seksjonen (fra <script til </script>)
-5. Lime inn her
+2. Trykke Ctrl+U (Windows) eller Cmd+Option+U (Mac)
+3. Kopiere ALT (Ctrl+A, Ctrl+C)
+4. Lime inn her i chatten
 
-⚠️ VIKTIG: Ikke kopier hele HTML-siden - bare __NEXT_DATA__ scriptet!
+Jeg ekstraherer automatisk kun den relevante dataen!
 
 Viktige felt: address, totalPrice, propertyType, livingArea, equity, interestRate, 
 loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly.
@@ -165,11 +199,12 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       ...(history || []),
     ];
     
+    // Use processed message instead of original
     // Add user message with attachments if present
     if (attachments && attachments.length > 0) {
       const content: any[] = [{ 
         type: 'text', 
-        text: message || 'Jeg har lastet opp dokumenter. Kan du analysere dem?' 
+        text: processedMessage || 'Jeg har lastet opp dokumenter. Kan du analysere dem?' 
       }];
       
       for (const att of attachments) {
@@ -183,7 +218,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       
       messages.push({ role: 'user', content });
     } else {
-      messages.push({ role: 'user', content: message });
+      messages.push({ role: 'user', content: processedMessage });
     }
 
     // Define tool for structured data extraction
