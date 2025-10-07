@@ -396,6 +396,61 @@ Alt fylles automatisk ut i rapporten! 📄`
       
       toast.success('✅ Data automatisk fylt inn i rapporten!');
       
+      // Generate AI summary of extracted data
+      try {
+        setIsLoading(true);
+        
+        // Create a summary of what was found
+        const summaryData: any = {
+          finnCode: result.preview.finnCode,
+          address: result.preview.address,
+          price: result.preview.price,
+          propertyType: result.preview.propertyType,
+          livingArea: result.preview.primarySize,
+          bedrooms: result.preview.bedrooms,
+          rooms: result.preview.rooms,
+          buildYear: result.preview.constructionYear,
+          energyRating: result.preview.energyRating,
+          commonCosts: result.preview.commonCosts,
+          municipalFees: result.preview.municipalFees,
+          ownershipType: result.preview.ownershipType
+        };
+        
+        const summaryPrompt = `Jeg har akkurat ekstrahert følgende data fra en FINN.no-annonse:\n\n${JSON.stringify(summaryData, null, 2)}\n\nGi en kort, vennlig oppsummering av eiendommen som ble funnet. Hold det konsist og naturlig.`;
+        
+        const { data: aiData, error: aiError } = await supabase.functions.invoke('calculator-ai-chat', {
+          body: {
+            sessionId: sessionId,
+            message: summaryPrompt,
+            calculatorData: calculatorData
+          }
+        });
+        
+        if (!aiError && aiData?.reply) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: aiData.reply
+          }]);
+        } else {
+          // Fallback to simple summary if AI fails
+          let fallbackSummary = '✅ **Eiendomsdata hentet fra FINN.no**\n\n';
+          if (result.preview.address) fallbackSummary += `📍 **Adresse**: ${result.preview.address}\n`;
+          if (result.preview.price) fallbackSummary += `💰 **Pris**: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
+          if (result.preview.propertyType) fallbackSummary += `🏠 **Type**: ${result.preview.propertyType}\n`;
+          if (result.preview.primarySize) fallbackSummary += `📐 **Primærrom**: ${result.preview.primarySize} m²\n`;
+          if (result.preview.bedrooms) fallbackSummary += `🛏️ **Soverom**: ${result.preview.bedrooms}\n`;
+          fallbackSummary += '\nAlle feltene er nå fylt ut i rapporten! 📄';
+          
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: fallbackSummary
+          }]);
+        }
+      } catch (aiError) {
+        console.error('Error generating AI summary:', aiError);
+        // Silent fail - data is already filled in
+      }
+      
     } catch (error) {
       console.error('Shaving/analysis error:', error);
       toast.error('Kunne ikke prosessere HTML');
