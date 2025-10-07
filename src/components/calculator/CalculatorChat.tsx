@@ -263,6 +263,13 @@ Alt fylles automatisk ut i rapporten! 📄`
       preview.sharedExpenses = result.propertyData.shared_cost || result.propertyData.common_cost || result.commonCosts;
       preview.municipalFees = result.propertyData.municipal_fee || result.propertyData.property_tax || result.municipalFees;
       preview.commonCosts = result.propertyData.common_cost || result.commonCosts;
+      
+      console.log('📋 Preview data created:', {
+        propertyType: preview.propertyType,
+        ownershipType: preview.ownershipType,
+        finnCode: preview.finnCode,
+        price: preview.price
+      });
     } else {
       // Use fallback values if no propertyData
       preview.energyRating = result.energyRating;
@@ -270,6 +277,7 @@ Alt fylles automatisk ut i rapporten! 📄`
       preview.municipalFees = result.municipalFees;
       preview.finnCode = result.finnCode;
       preview.address = result.address;
+      console.log('⚠️ No propertyData found, using fallback values');
     }
     
     const jsonString = JSON.stringify(result, null, 2);
