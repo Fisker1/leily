@@ -453,6 +453,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             aria-label="HTML Shaver"
           >
             <Scissors className="h-4 w-4" />
+            HTML
           </Button>
         </div>
         
