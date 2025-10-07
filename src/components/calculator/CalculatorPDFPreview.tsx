@@ -80,9 +80,60 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     ? (monthlyLoanPayment * parseFloat(formData.loanPeriod) * 12) - loanAmount
     : 0;
 
-  const handleDownload = () => {
-    // Placeholder for PDF generation
-    console.log('Generating PDF with data:', formData);
+  const handleDownload = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Get the PDF content element
+      const pdfElement = document.querySelector('.max-w-4xl.mx-auto.bg-white') as HTMLElement;
+      
+      if (!pdfElement) {
+        console.error('PDF element not found');
+        return;
+      }
+      
+      // Create canvas from the HTML element
+      const canvas = await html2canvas(pdfElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      // Add image to PDF, split into pages if needed
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= 297; // A4 height in mm
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= 297;
+      }
+      
+      // Download the PDF
+      const fileName = formData.address 
+        ? `Boligfinansieringsrapport-${formData.address.replace(/[^a-z0-9]/gi, '_')}.pdf`
+        : 'Boligfinansieringsrapport.pdf';
+      
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   };
 
   return (
@@ -172,7 +223,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)}
                   placeholder="Skriv inn adresse..."
-                  className="mt-1"
+                  className="mt-1 rounded-none"
                 />
               </div>
 
@@ -184,7 +235,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.totalPrice}
                     onChange={(e) => handleChange('totalPrice', e.target.value)}
                     placeholder="kr"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -194,7 +245,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.equity}
                     onChange={(e) => handleChange('equity', e.target.value)}
                     placeholder="kr"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
               </div>
@@ -227,7 +278,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.interestRate}
                     onChange={(e) => handleChange('interestRate', e.target.value)}
                     placeholder="%"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -237,7 +288,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.loanPeriod}
                     onChange={(e) => handleChange('loanPeriod', e.target.value)}
                     placeholder="år"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
               </div>
@@ -287,7 +338,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   value={formData.monthlyRent}
                   onChange={(e) => handleChange('monthlyRent', e.target.value)}
                   placeholder="kr/mnd"
-                  className="mt-1"
+                  className="mt-1 rounded-none"
                 />
               </div>
 
@@ -326,7 +377,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.commonCosts}
                     onChange={(e) => handleChange('commonCosts', e.target.value)}
                     placeholder="kr/mnd"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -336,7 +387,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.municipalFees}
                     onChange={(e) => handleChange('municipalFees', e.target.value)}
                     placeholder="kr/mnd"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -346,7 +397,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.insurance}
                     onChange={(e) => handleChange('insurance', e.target.value)}
                     placeholder="kr/mnd"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -356,7 +407,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.electricityMonthly}
                     onChange={(e) => handleChange('electricityMonthly', e.target.value)}
                     placeholder="kr/mnd"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
                 <div>
@@ -366,7 +417,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     value={formData.sharedExpenses}
                     onChange={(e) => handleChange('sharedExpenses', e.target.value)}
                     placeholder="kr/mnd"
-                    className="mt-1"
+                    className="mt-1 rounded-none"
                   />
                 </div>
               </div>
