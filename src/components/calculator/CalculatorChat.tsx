@@ -186,6 +186,11 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       return;
     }
 
+    if (!hasCredits) {
+      toast.error('Du må ha kreditter for å bruke HTML shaveren');
+      return;
+    }
+
     setIsShaving(true);
     setProcessingStatus({
       isProcessing: true,
@@ -199,7 +204,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       
       const result = shaveHtml(htmlInput);
       
-      setProcessingStatus(prev => ({ ...prev, progress: 70, message: 'Validerer data...' }));
+      setProcessingStatus(prev => ({ ...prev, progress: 50, message: 'Validerer data...' }));
       await new Promise(resolve => setTimeout(resolve, 300));
       
       if (result.tokens > 25000) {
@@ -209,48 +214,96 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
         return;
       }
       
-      setShavedData({
-        original: htmlInput,
-        shaved: result.extracted,
-        timestamp: Date.now()
-      });
+      // Show preview of found data
+      const reduction = ((1 - result.extracted.length / htmlInput.length) * 100).toFixed(0);
+      let previewMessage = `✅ HTML prosessert (${reduction}% reduksjon)\n\n`;
       
-      setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 100, message: '' });
+      if (result.preview.finnCode) {
+        previewMessage += `📊 Funnet data:\n`;
+        previewMessage += `• FINN-kode: ${result.preview.finnCode}\n`;
+        if (result.preview.price) previewMessage += `• Pris: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
+        if (result.preview.primarySize) previewMessage += `• Størrelse: ${result.preview.primarySize} m²\n`;
+        if (result.preview.bedrooms) previewMessage += `• Soverom: ${result.preview.bedrooms}\n`;
+        if (result.preview.propertyType) previewMessage += `• Type: ${result.preview.propertyType}\n`;
+      }
+      
+      toast.success(previewMessage, { duration: 4000 });
+      
+      // Close dialog and reset
       setShaverDialogOpen(false);
       setHtmlInput('');
       
-      // Show preview of found data
-      const reduction = ((1 - result.extracted.length / htmlInput.length) * 100).toFixed(0);
-      let message = `✅ HTML prosessert (${reduction}% reduksjon)\n\n`;
+      // Send directly to AI without showing in chat
+      setProcessingStatus({
+        isProcessing: true,
+        stage: 'analyzing',
+        progress: 70,
+        message: 'Analyserer eiendomsdata med AI...'
+      });
       
-      if (result.preview.finnCode) {
-        message += `📊 Funnet data:\n`;
-        message += `• FINN-kode: ${result.preview.finnCode}\n`;
-        if (result.preview.price) message += `• Pris: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
-        if (result.preview.primarySize) message += `• Størrelse: ${result.preview.primarySize} m²\n`;
-        if (result.preview.bedrooms) message += `• Soverom: ${result.preview.bedrooms}\n`;
-        if (result.preview.propertyType) message += `• Type: ${result.preview.propertyType}\n`;
-        message += `\n📏 ${result.tokens.toLocaleString()} tokens`;
+      setIsLoading(true);
+
+      const { data, error } = await supabase.functions.invoke('calculator-ai-chat', {
+        body: {
+          message: result.extracted,
+          sessionId,
+          calculatorData,
+          attachments: []
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        if (data.error.includes('Insufficient credits')) {
+          toast.error('Du har ikke nok kreditter. Trenger 0.5 kreditter per analyse.');
+        } else {
+          toast.error(data.error);
+        }
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
+        setIsLoading(false);
+        return;
+      }
+
+      setSessionId(data.sessionId);
+      
+      // Only show the AI response in chat
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+
+      // Auto-fill fields if AI extracted data
+      if (data.extractedData && onDataUpdate) {
+        setProcessingStatus({
+          isProcessing: true,
+          stage: 'complete',
+          progress: 90,
+          message: 'Fyller ut rapport...'
+        });
+
+        Object.entries(data.extractedData).forEach(([field, value]) => {
+          if (value !== null && value !== undefined) {
+            onDataUpdate(field, value);
+          }
+        });
+
+        setTimeout(() => {
+          setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 100, message: '' });
+          toast.success('✅ Data automatisk fylt inn i rapporten!');
+        }, 500);
       } else {
-        message += `⚠️ Fant ikke advertising-initial-state\n`;
-        message += `Bruker fallback-strategi\n`;
-        message += `📏 ${result.tokens.toLocaleString()} tokens`;
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
+      }
+
+      if (data.creditsUsed > 0) {
+        toast.success(`Analyse fullført (${data.creditsUsed} kreditter brukt)`);
       }
       
-      toast.success(message, { duration: 6000 });
-      
-      // Auto-send the shaved data to AI
-      setTimeout(() => {
-        setInput(result.extracted);
-        toast.info('📤 Klar til analyse! Trykk Send.');
-      }, 500);
-      
     } catch (error) {
-      console.error('Shaving error:', error);
+      console.error('Shaving/analysis error:', error);
       toast.error('Kunne ikke prosessere HTML');
       setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
     } finally {
       setIsShaving(false);
+      setIsLoading(false);
     }
   };
 
@@ -396,7 +449,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             onClick={() => setShaverDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600"
           >
             <Scissors className="h-4 w-4" />
             Shaver HTML
