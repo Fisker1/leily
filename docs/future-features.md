@@ -337,3 +337,121 @@ CREATE TABLE property_value_history (
   updated_at timestamp with time zone DEFAULT now()
 );
 ```
+
+## Byggeplanlegger kreditt-system
+
+### Oversikt
+Et kredittbasert betalingssystem for byggeplanleggeren som gjør det mulig for brukere å jobbe både raskt og over lengre tid med fleksible kostnader.
+
+### Kredittstruktur
+
+#### Betalingsmodell
+- **1 credit per 3 minutt** aktiv tid i byggeplanleggeren
+- **Maks 10 credits per session** (30 minutters aktiv bruk)
+- **Maks 30 credits per dag** (tilsvarer 1,5 timer aktiv bruk)
+
+#### Tidtakerregler
+- Tidtaker starter når brukeren åpner byggeplanleggeren
+- Tidtaker stopper når brukeren forlater byggeplanleggeren eller er inaktiv
+- Ved inaktivitet i **1 minutt** vises en dialogboks som forklarer systemet
+- Daglig reset: Byggeplanleggeren lukkes automatisk etter 24 timer
+
+#### Session- og prosjektregler
+- Hver session har et maks på 10 credits (30 minutter aktiv bruk)
+- Hvis brukeren når 30 credits på én dag, kan de fortsette uten ytterligere kostnader
+- Åpning av nytt prosjekt = ny tidtaker starter
+- En bruker kan jobbe med ett prosjekt hele dagen for maks 30 credits
+
+### Bruksscenarier
+
+#### Scenario 1: Rask bruker
+- Bruker jobber effektivt i 15 minutter = 5 credits
+- Ferdig for dagen
+
+#### Scenario 2: Langsom/grundig bruker
+- Bruker jobber i 1,5 timer (90 minutter) = 30 credits
+- Når maks for dagen
+- Kan fortsette å jobbe uten ekstra kostnader
+- Kan jobbe så lenge de vil med samme prosjekt
+
+#### Scenario 3: Flere prosjekter
+- Prosjekt 1: 45 minutter = 15 credits
+- Prosjekt 2 (nytt): 45 minutter = 15 credits
+- Totalt: 30 credits (maks nådd)
+- Videre arbeid på begge prosjekter: gratis resten av dagen
+
+### Inaktivitetsdialog
+
+#### Innhold i dialogboks (vises etter 1 minutts inaktivitet)
+```
+⏱️ Byggeplanlegger - Kredittbruk
+
+Du bruker kreditter mens byggeplanleggeren er åpen:
+• 1 credit per 3 minutter aktiv tid
+• Maks 10 credits per session
+• Maks 30 credits per dag
+
+Etter 30 credits kan du fortsette gratis resten av dagen!
+
+Hver 24. time resettes planleggeren.
+Nytt prosjekt = ny tidtaker.
+
+[Fortsett] [Lukk planlegger]
+```
+
+### Tekniske komponenter
+
+#### Frontend
+- Tidtaker-komponent for å spore aktiv tid
+- Inaktivitets-detektor (1 minutt)
+- Dialogboks for kredittforklaring
+- Visuell indikator for forbrukte credits i session/dag
+- 24-timers automatisk lukking
+
+#### Backend
+- Kreditt-trekk logikk per 3 minutt
+- Session tracking (maks 10 credits)
+- Daglig reset-funksjonalitet
+- Prosjekt-basert tidtaker
+- Database logging av kredittbruk
+
+#### Database-skjema
+```sql
+CREATE TABLE building_planner_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id),
+  project_id uuid REFERENCES building_projects(id),
+  session_start timestamp with time zone DEFAULT now(),
+  session_end timestamp with time zone,
+  active_minutes integer DEFAULT 0,
+  credits_used integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE building_planner_daily_usage (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id),
+  usage_date date DEFAULT current_date,
+  total_credits_used integer DEFAULT 0,
+  total_active_minutes integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  UNIQUE(user_id, usage_date)
+);
+```
+
+### UI/UX komponenter
+- Tidtaker display i planlegger-grensesnittet
+- Kreditt-indikator (f.eks. "5/10 credits brukt i denne sessionen")
+- Daglig kreditt-indikator (f.eks. "15/30 credits brukt i dag")
+- Inaktivitets-dialogboks med forklaring
+- Notifikasjon når maks daglig forbruk (30 credits) er nådd
+- Automatisk logout-varsel (5 minutter før 24-timers grense)
+
+### Filosofi
+- Belønner effektiv bruk
+- Tillater langsom, grundig arbeid
+- Forutsigbar maksimalkostnad per dag (30 credits)
+- Fleksibilitet mellom hastighet og grundighet
+- Ikke straffende for de som trenger tid
