@@ -134,55 +134,31 @@ serve(async (req) => {
     
     // Build system prompt based on content type
     const systemPrompt = isHtmlSource 
-      ? `Du er en ekspert på å ekstrahere eiendomsdata fra Finn.no strukturer.
+      ? `Du er en ekspert på å ekstrahere eiendomsdata fra Finn.no HTML-kode.
 
-VIKTIG: Brukeren har sendt strukturert data fra Finn.no med 'advertising-initial-state' eller 'propertyData'.
+VIKTIG: All informasjon står allerede i PLAINTEXT på norsk i HTML-koden. Du trenger IKKE oversette noe.
 
-DATA MAPPING (fra Finn.no til calculator):
-- id → finnCode (FINN-kode)
-- price → totalPrice (kun tall, prisantydning)
-- primary_size → livingArea (primærrom/BRA i m², kun tall)
-- bedrooms → bedrooms (antall soverom)
-- rooms → rooms (antall rom totalt)
-- property_type → propertyType (DETACHED=Enebolig, APARTMENT=Leilighet, TOWNHOUSE=Rekkehus, SEMI_DETACHED=Tomannsbolig)
-- construction_year → buildYear (byggeår)
-- plot_area → plotArea (tomteareal i m²)
-- ownership_type → ownershipType (FREEHOLD=Selveier, COOPERATIVE=Borettslag, etc.)
-- facilities → facilities (array av fasiliteter)
-- energy_rating → energyRating (energimerke A-G)
-- county → county (fylke)
-- municipality → municipality (kommune)
-- shared_cost / common_cost → commonCosts (felleskostnader/fellesutgifter per måned, kun tall)
-- municipal_fee / property_tax → municipalFees (kommunale avgifter per måned, kun tall)
-- collective_debt → collectiveDebt (fellesgjeld, kun tall)
+SE ETTER DISSE FELTENE I HTML (de står på norsk):
+- Adresse (header eller "Beliggenhet")
+- FINN-kode (i URL eller metadata)
+- Prisantydning (tall i kroner)
+- Primærrom/BRA (tall + m²)
+- Soverom (antall)
+- Rom (antall totalt)
+- Boligtype (f.eks. "Enebolig", "Leilighet", "Rekkehus" - står på norsk!)
+- Eierform (f.eks. "Selveier", "Borettslag", "Aksjeleilighet" - står på norsk!)
+- Byggeår (årstall)
+- Tomteareal (tall + m²)
+- Energimerke (A-G)
+- Fasiliteter (liste)
+- Kommune (navn)
+- Fylke (navn)
+- Felleskostnader/Fellesutgifter (tall per måned)
+- Kommunale avgifter (tall per måned)
 
-SE FØRST ETTER "propertyData" objektet - her ligger all kritisk info ferdig strukturert!
+EKSTRAHER verdiene NØYAKTIG som de står i HTML-koden. Ikke oversett eller konverter noe.
 
-Hvis propertyData ikke finnes, se etter:
-- advertising.config.adServer.gam.targeting array (key/value par)
-- title felt for adresse
-- address felt for full adresse
-
-Ekstraher følgende felt (bruk null hvis data mangler):
-- address: Full adresse fra address felt eller title
-- finnCode: FINN-kode
-- totalPrice: Prisantydning (kun tall)
-- livingArea: Primærrom/BRA (kun tall i m²)
-- bedrooms: Antall soverom
-- rooms: Antall rom totalt
-- propertyType: Boligtype (oversett DETACHED til "Enebolig" etc.)
-- buildYear: Byggeår
-- plotArea: Tomteareal (kun tall i m²)
-- ownershipType: Eierform (oversett FREEHOLD til "Selveier" etc.)
-- energyRating: Energimerke
-- facilities: Liste av fasiliteter (array)
-- municipality: Kommune
-- county: Fylke
-- commonCosts: Felleskostnader/fellesutgifter per måned (kun tall, fra shared_cost eller common_cost)
-- municipalFees: Kommunale avgifter per måned (kun tall, fra municipal_fee eller property_tax)
-- monthlyRent: Forventet leieinntekt per måned hvis relevant
-
-Returner BARE JSON med disse feltene. Ingen forklarende tekst.
+Returner BARE JSON med disse feltene:
 
 Eksempel:
 {
