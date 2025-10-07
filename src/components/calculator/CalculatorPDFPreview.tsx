@@ -232,47 +232,6 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
               {/* Content */}
               <div className="flex-1 px-10 py-6 space-y-6 overflow-hidden">
-                {/* Executive Summary */}
-                {formData.totalPrice && formData.equity && (
-                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-sm">
-                    <h2 className="text-lg font-bold text-gray-900 mb-3">
-                      Oppsummering
-                    </h2>
-                    
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">Totalpris</p>
-                        <p className="text-xl font-bold text-gray-900">{formatNumberWithSpaces(Math.round(parseFloat(formData.totalPrice)))} kr</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">Egenkapital</p>
-                        <p className="text-xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(parseFloat(formData.equity)))} kr</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">Lånebeløp</p>
-                        <p className="text-xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
-                      </div>
-                    </div>
-
-                    <Separator className="my-3" />
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">Netto kontantstrøm (mnd)</p>
-                        <p className={`text-xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
-                        </p>
-                      </div>
-                      {grossYield > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-gray-600">Bruttoavkastning</p>
-                          <p className="text-xl font-bold text-primary">{grossYield.toFixed(2)}%</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Property Information */}
                 <div className="space-y-3">
                   <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
@@ -426,20 +385,30 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   </div>
 
                   {loanAmount > 0 && (
-                    <div className="space-y-2">
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-sm">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <p className="text-xs text-gray-600 mb-1">Lånebeløp</p>
-                            <p className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
-                          </div>
-                          {monthlyLoanPayment > 0 && (
-                            <div>
-                              <p className="text-xs text-gray-600 mb-1">Månedlig avdrag</p>
-                              <p className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</p>
-                            </div>
-                          )}
+                    <div className="mt-3 p-3 border-2 border-gray-300 bg-white">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Lånebeløp</p>
+                          <p className="text-base font-bold text-gray-900">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
                         </div>
+                        {monthlyLoanPayment > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Månedlig avdrag</p>
+                            <p className="text-base font-bold text-gray-900">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</p>
+                          </div>
+                        )}
+                        {loanToValue > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Belåningsgrad (LTV)</p>
+                            <p className="text-base font-bold text-gray-900">{loanToValue.toFixed(1)}%</p>
+                          </div>
+                        )}
+                        {totalInterestPaid > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Total rente over {formData.loanPeriod} år</p>
+                            <p className="text-base font-bold text-gray-900">{formatNumberWithSpaces(Math.round(totalInterestPaid))} kr</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -464,16 +433,16 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   </div>
 
                   {annualRent > 0 && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-sm text-sm">
+                    <div className="mt-3 p-3 border-2 border-gray-300 bg-white text-sm">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <p className="text-xs text-gray-600 mb-1">Årlig leieinntekt</p>
-                          <p className="text-lg font-bold text-green-700">{formatNumberWithSpaces(Math.round(annualRent))} kr</p>
+                          <p className="text-base font-bold text-gray-900">{formatNumberWithSpaces(Math.round(annualRent))} kr</p>
                         </div>
                         {grossYield > 0 && (
                           <div>
                             <p className="text-xs text-gray-600 mb-1">Bruttoavkastning</p>
-                            <p className="text-lg font-bold text-green-700">{grossYield.toFixed(2)}%</p>
+                            <p className="text-base font-bold text-gray-900">{grossYield.toFixed(2)}%</p>
                           </div>
                         )}
                       </div>
@@ -540,38 +509,74 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
                 <Separator />
 
-                {/* Final Summary */}
+                {/* Financial Analysis */}
                 {formData.totalPrice && formData.equity && (
-                  <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-sm">
-                    <h2 className="text-lg font-bold text-gray-900 mb-3">
+                  <div className="space-y-3">
+                    <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
                       5. Økonomisk analyse
                     </h2>
                     
-                    <div className="space-y-3 text-sm">
-                      <div>
-                        <h3 className="font-semibold text-gray-700 mb-2 text-sm">Månedlig oversikt</h3>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between items-center py-1">
-                            <span className="text-gray-600">Leieinntekt:</span>
-                            <span className="font-semibold text-green-700">+{formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent) || 0))} kr</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1">
-                            <span className="text-gray-600">Lånekostnad:</span>
-                            <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1">
-                            <span className="text-gray-600">Driftskostnader:</span>
-                            <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between items-center py-2 bg-white px-2 rounded">
-                            <span className="font-bold text-gray-900">Netto kontantstrøm:</span>
-                            <span className={`text-lg font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                              {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr/mnd
-                            </span>
-                          </div>
-                        </div>
+                    <div className="border-2 border-gray-300 bg-white">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b-2 border-gray-300">
+                            <th className="text-left px-4 py-2 text-gray-700 font-semibold bg-gray-50">Post</th>
+                            <th className="text-right px-4 py-2 text-gray-700 font-semibold bg-gray-50">Beløp per måned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.monthlyRent && parseFloat(formData.monthlyRent) > 0 && (
+                            <tr className="border-b border-gray-200">
+                              <td className="px-4 py-2 text-gray-600">Leieinntekt</td>
+                              <td className="px-4 py-2 text-right font-semibold text-gray-900">
+                                {formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent)))} kr
+                              </td>
+                            </tr>
+                          )}
+                          {monthlyLoanPayment > 0 && (
+                            <tr className="border-b border-gray-200">
+                              <td className="px-4 py-2 text-gray-600">Lånekostnad (renter + avdrag)</td>
+                              <td className="px-4 py-2 text-right font-semibold text-gray-900">
+                                -{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr
+                              </td>
+                            </tr>
+                          )}
+                          {totalMonthlyExpenses > 0 && (
+                            <tr className="border-b border-gray-200">
+                              <td className="px-4 py-2 text-gray-600">Driftskostnader (totalt)</td>
+                              <td className="px-4 py-2 text-right font-semibold text-gray-900">
+                                -{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr
+                              </td>
+                            </tr>
+                          )}
+                          <tr className="border-t-2 border-gray-400 bg-gray-50">
+                            <td className="px-4 py-3 font-bold text-gray-900">Netto kontantstrøm</td>
+                            <td className="px-4 py-3 text-right font-bold text-gray-900 text-base">
+                              {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Additional metrics */}
+                    <div className="grid grid-cols-3 gap-3 text-sm mt-3">
+                      <div className="border-2 border-gray-300 bg-white p-3">
+                        <p className="text-xs text-gray-600 mb-1">Årlig kontantstrøm</p>
+                        <p className="text-base font-bold text-gray-900">{formatNumberWithSpaces(Math.round(annualCashFlow))} kr</p>
                       </div>
+                      {grossYield > 0 && (
+                        <div className="border-2 border-gray-300 bg-white p-3">
+                          <p className="text-xs text-gray-600 mb-1">Bruttoavkastning</p>
+                          <p className="text-base font-bold text-gray-900">{grossYield.toFixed(2)}%</p>
+                        </div>
+                      )}
+                      {netYield > 0 && (
+                        <div className="border-2 border-gray-300 bg-white p-3">
+                          <p className="text-xs text-gray-600 mb-1">Nettoavkastning</p>
+                          <p className="text-base font-bold text-gray-900">{netYield.toFixed(2)}%</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
