@@ -58,6 +58,37 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     onDataChange?.(field, value);
   };
 
+  // Helper component to render input or text based on print mode
+  const PrintableInput = ({ value, onChange, placeholder, label, id }: { 
+    value: string; 
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; 
+    placeholder?: string;
+    label?: string;
+    id?: string;
+  }) => {
+    if (isPrintMode && value) {
+      return (
+        <div className="mt-1 py-2 text-sm font-medium text-gray-900">
+          {value}
+        </div>
+      );
+    }
+    
+    if (isPrintMode && !value) {
+      return null; // Don't show empty fields in print mode
+    }
+    
+    return (
+      <Input
+        id={id}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="mt-1 rounded-none h-8"
+      />
+    );
+  };
+
   // Calculate totals
   const loanAmount = formData.totalPrice && formData.equity 
     ? parseFloat(formData.totalPrice) - parseFloat(formData.equity)
@@ -178,41 +209,12 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       </div>
 
       <div className="flex-1 p-8 overflow-auto bg-gray-100">
-        {/* Add print-mode styles */}
-        {isPrintMode && (
-          <style>{`
-            .print-mode input {
-              border: none !important;
-              background: transparent !important;
-              padding: 8px 0 !important;
-              color: #111827 !important;
-              font-weight: 500 !important;
-              cursor: default !important;
-            }
-            .print-mode input::placeholder {
-              opacity: 0 !important;
-            }
-            .print-mode input:disabled {
-              opacity: 1 !important;
-              color: #111827 !important;
-            }
-            .print-mode input:placeholder-shown {
-              display: none !important;
-            }
-            .print-mode label:has(+ input:placeholder-shown) {
-              display: none !important;
-            }
-            .print-mode > div:has(> input:placeholder-shown) {
-              display: none !important;
-            }
-          `}</style>
-        )}
         
         {/* PDF Pages Container - Adobe-style viewer */}
         <div className="max-w-[850px] mx-auto space-y-6">
           
           {/* Page 1 */}
-          <div className={`pdf-page bg-white shadow-xl ${isPrintMode ? 'print-mode' : ''}`} style={{ aspectRatio: '210/297' }}>
+          <div className="pdf-page bg-white shadow-xl" style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Header with Gradient */}
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8">
@@ -279,108 +281,98 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="col-span-2">
                       <Label className="text-gray-700 font-semibold text-xs">Eiendomsadresse</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.address}
                         onChange={(e) => handleChange('address', e.target.value)}
                         placeholder="Skriv inn adresse..."
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     {formData.finnCode && (
                       <div>
                         <Label className="text-gray-700 font-semibold text-xs">FINN-kode</Label>
-                        <Input value={formData.finnCode} disabled className="mt-1 rounded-none bg-gray-50 h-8" />
+                        <PrintableInput value={formData.finnCode} placeholder="" />
                       </div>
                     )}
                     
                     <div className={formData.finnCode ? '' : 'col-span-2'}>
                       <Label className="text-gray-700 font-semibold text-xs">Boligtype</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.propertyType}
                         onChange={(e) => handleChange('propertyType', e.target.value)}
                         placeholder="Enebolig, Leilighet..."
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Eierform</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.ownershipType}
                         onChange={(e) => handleChange('ownershipType', e.target.value)}
                         placeholder="Selveier, Borettslag..."
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Primærrom (m²)</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.livingArea}
                         onChange={(e) => handleChange('livingArea', e.target.value)}
                         placeholder="m²"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Soverom</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.bedrooms}
                         onChange={(e) => handleChange('bedrooms', e.target.value)}
                         placeholder="Antall"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Rom totalt</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.rooms}
                         onChange={(e) => handleChange('rooms', e.target.value)}
                         placeholder="Antall"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Byggeår</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.buildYear}
                         onChange={(e) => handleChange('buildYear', e.target.value)}
                         placeholder="År"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Energimerking</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.energyRating}
                         onChange={(e) => handleChange('energyRating', e.target.value)}
                         placeholder="A-G"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     
                     <div>
                       <Label className="text-gray-700 font-semibold text-xs">Tomteareal (m²)</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.plotArea}
                         onChange={(e) => handleChange('plotArea', e.target.value)}
                         placeholder="m²"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
 
                     <div className="col-span-2">
                       <Label className="text-gray-700 font-semibold text-xs">Prisantydning</Label>
-                      <Input
+                      <PrintableInput
                         value={formData.totalPrice}
                         onChange={(e) => handleChange('totalPrice', e.target.value)}
                         placeholder="kr"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                   </div>
@@ -392,7 +384,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
           </div>
 
           {/* Page 2 */}
-          <div className={`pdf-page bg-white shadow-xl ${isPrintMode ? 'print-mode' : ''}`} style={{ aspectRatio: '210/297' }}>
+          <div className="pdf-page bg-white shadow-xl" style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Content */}
               <div className="flex-1 px-10 py-8 space-y-6 overflow-hidden">
@@ -405,32 +397,29 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <Label htmlFor="equity" className="text-gray-700 font-semibold text-xs">Egenkapital</Label>
-                      <Input
+                      <PrintableInput
                         id="equity"
                         value={formData.equity}
                         onChange={(e) => handleChange('equity', e.target.value)}
                         placeholder="kr"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="interestRate" className="text-gray-700 font-semibold text-xs">Rente (%)</Label>
-                      <Input
+                      <PrintableInput
                         id="interestRate"
                         value={formData.interestRate}
                         onChange={(e) => handleChange('interestRate', e.target.value)}
                         placeholder="%"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="loanPeriod" className="text-gray-700 font-semibold text-xs">Nedbetalingstid (år)</Label>
-                      <Input
+                      <PrintableInput
                         id="loanPeriod"
                         value={formData.loanPeriod}
                         onChange={(e) => handleChange('loanPeriod', e.target.value)}
                         placeholder="år"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                   </div>
@@ -465,12 +454,11 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   
                   <div>
                     <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold text-xs">Månedlig leieinntekt</Label>
-                    <Input
+                    <PrintableInput
                       id="monthlyRent"
                       value={formData.monthlyRent}
                       onChange={(e) => handleChange('monthlyRent', e.target.value)}
                       placeholder="kr/mnd"
-                      className="mt-1 rounded-none h-8"
                     />
                   </div>
 
@@ -503,52 +491,47 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <Label htmlFor="commonCosts" className="text-gray-700 font-semibold text-xs">Felleskostnader</Label>
-                      <Input
+                      <PrintableInput
                         id="commonCosts"
                         value={formData.commonCosts}
                         onChange={(e) => handleChange('commonCosts', e.target.value)}
                         placeholder="kr/mnd"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="municipalFees" className="text-gray-700 font-semibold text-xs">Kommunale avgifter</Label>
-                      <Input
+                      <PrintableInput
                         id="municipalFees"
                         value={formData.municipalFees}
                         onChange={(e) => handleChange('municipalFees', e.target.value)}
                         placeholder="kr/mnd"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="insurance" className="text-gray-700 font-semibold text-xs">Forsikring</Label>
-                      <Input
+                      <PrintableInput
                         id="insurance"
                         value={formData.insurance}
                         onChange={(e) => handleChange('insurance', e.target.value)}
                         placeholder="kr/mnd"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="electricityMonthly" className="text-gray-700 font-semibold text-xs">Strøm</Label>
-                      <Input
+                      <PrintableInput
                         id="electricityMonthly"
                         value={formData.electricityMonthly}
                         onChange={(e) => handleChange('electricityMonthly', e.target.value)}
                         placeholder="kr/mnd"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                     <div>
                       <Label htmlFor="sharedExpenses" className="text-gray-700 font-semibold text-xs">Andre utgifter</Label>
-                      <Input
+                      <PrintableInput
                         id="sharedExpenses"
                         value={formData.sharedExpenses}
                         onChange={(e) => handleChange('sharedExpenses', e.target.value)}
                         placeholder="kr/mnd"
-                        className="mt-1 rounded-none h-8"
                       />
                     </div>
                   </div>
