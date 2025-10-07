@@ -2,10 +2,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Download, FileText, Calculator } from 'lucide-react';
+import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatNumberWithSpaces } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CalculatorPDFPreviewProps {
   data?: Record<string, any>;
@@ -59,6 +61,24 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     (parseFloat(formData.sharedExpenses) || 0);
 
   const monthlyCashFlow = (parseFloat(formData.monthlyRent) || 0) - totalMonthlyExpenses - monthlyLoanPayment;
+  
+  const annualRent = (parseFloat(formData.monthlyRent) || 0) * 12;
+  const grossYield = formData.totalPrice && annualRent > 0
+    ? (annualRent / parseFloat(formData.totalPrice)) * 100
+    : 0;
+  
+  const annualCashFlow = monthlyCashFlow * 12;
+  const netYield = formData.totalPrice && annualCashFlow > 0
+    ? (annualCashFlow / parseFloat(formData.totalPrice)) * 100
+    : 0;
+  
+  const loanToValue = formData.totalPrice && loanAmount > 0
+    ? (loanAmount / parseFloat(formData.totalPrice)) * 100
+    : 0;
+
+  const totalInterestPaid = monthlyLoanPayment > 0 && formData.loanPeriod
+    ? (monthlyLoanPayment * parseFloat(formData.loanPeriod) * 12) - loanAmount
+    : 0;
 
   const handleDownload = () => {
     // Placeholder for PDF generation
@@ -66,35 +86,87 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
   };
 
   return (
-    <Card className="flex flex-col h-full">
-      <div className="p-4 border-b flex items-center justify-between">
+    <div className="flex flex-col h-full bg-muted/30">
+      <div className="p-4 border-b bg-background flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           <h3 className="font-semibold">Boligfinansieringsrapport</h3>
         </div>
-        <Button onClick={handleDownload} size="sm">
-          <Download className="h-4 w-4 mr-2" />
+        <Button onClick={handleDownload} size="sm" className="gap-2">
+          <Download className="h-4 w-4" />
           Last ned PDF
         </Button>
       </div>
 
-      <div className="flex-1 p-6 overflow-auto">
-        <div className="max-w-2xl mx-auto space-y-6 bg-white p-8 rounded-lg shadow-sm">
-          <div className="text-center border-b pb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Boligfinansieringsrapport</h1>
-            <p className="text-sm text-gray-500 mt-2">Generert av Leily</p>
+      <div className="flex-1 p-8 overflow-auto">
+        {/* Paper Effect Container with Shadow */}
+        <div className="max-w-4xl mx-auto bg-white shadow-2xl border-2 border-gray-200 animate-fade-in">
+          {/* Header with Gradient */}
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-4 border-primary/30 px-10 py-8">
+            <div className="text-center space-y-2">
+              <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Boligfinansieringsrapport</h1>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                <FileText className="h-4 w-4" />
+                <span>Generert av Leily</span>
+                <span>•</span>
+                <span>{new Date().toLocaleDateString('no-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-6">
+          {/* Content */}
+          <div className="px-10 py-8 space-y-8">
+            {/* Executive Summary */}
+            {formData.totalPrice && formData.equity && (
+              <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <TrendingUp className="h-6 w-6" />
+                  Oppsummering
+                </h2>
+                
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">Totalpris</p>
+                    <p className="text-2xl font-bold text-gray-900">{formatNumberWithSpaces(Math.round(parseFloat(formData.totalPrice)))} kr</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">Egenkapital</p>
+                    <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(parseFloat(formData.equity)))} kr</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">Lånebeløp</p>
+                    <p className="text-2xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">Netto kontantstrøm (mnd)</p>
+                    <p className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
+                    </p>
+                  </div>
+                  {grossYield > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">Bruttoavkastning</p>
+                      <p className="text-2xl font-bold text-primary">{grossYield.toFixed(2)}%</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Property Information */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Eiendomsinformasjon
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
+                <Home className="h-5 w-5" />
+                1. Eiendomsinformasjon
               </h2>
               
               <div>
-                <Label htmlFor="address" className="text-gray-700">Eiendomsadresse</Label>
+                <Label htmlFor="address" className="text-gray-700 font-semibold">Eiendomsadresse</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -106,7 +178,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="totalPrice" className="text-gray-700">Totalpris</Label>
+                  <Label htmlFor="totalPrice" className="text-gray-700 font-semibold">Totalpris</Label>
                   <Input
                     id="totalPrice"
                     value={formData.totalPrice}
@@ -116,7 +188,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="equity" className="text-gray-700">Egenkapital</Label>
+                  <Label htmlFor="equity" className="text-gray-700 font-semibold">Egenkapital</Label>
                   <Input
                     id="equity"
                     value={formData.equity}
@@ -126,20 +198,30 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
               </div>
+
+              {loanToValue > 0 && (
+                <Alert className={loanToValue > 85 ? 'border-orange-500 bg-orange-50' : 'border-green-500 bg-green-50'}>
+                  {loanToValue > 85 ? <AlertCircle className="h-4 w-4 text-orange-700" /> : <CheckCircle className="h-4 w-4 text-green-700" />}
+                  <AlertDescription className={loanToValue > 85 ? 'text-orange-800' : 'text-green-800'}>
+                    Belåningsgrad: {loanToValue.toFixed(1)}%
+                    {loanToValue > 85 ? ' (Høy - kan kreve ekstra sikkerhet)' : ' (God - innenfor normalt krav)'}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
-            <Separator />
+            <Separator className="my-6" />
 
             {/* Loan Information */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
                 <Calculator className="h-5 w-5" />
-                Låneinformasjon
+                2. Låneinformasjon
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="interestRate" className="text-gray-700">Rente (%)</Label>
+                  <Label htmlFor="interestRate" className="text-gray-700 font-semibold">Rente (%)</Label>
                   <Input
                     id="interestRate"
                     value={formData.interestRate}
@@ -149,7 +231,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="loanPeriod" className="text-gray-700">Nedbetalingstid (år)</Label>
+                  <Label htmlFor="loanPeriod" className="text-gray-700 font-semibold">Nedbetalingstid (år)</Label>
                   <Input
                     id="loanPeriod"
                     value={formData.loanPeriod}
@@ -161,29 +243,45 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
               </div>
 
               {loanAmount > 0 && (
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Lånebeløp:</span>
-                    <span className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(loanAmount)} kr</span>
-                  </div>
-                  {monthlyLoanPayment > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Månedlig avdrag:</span>
-                      <span className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Lånebeløp</p>
+                        <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
+                      </div>
+                      {monthlyLoanPayment > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Månedlig avdrag</p>
+                          <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</p>
+                        </div>
+                      )}
                     </div>
+                  </div>
+
+                  {totalInterestPaid > 0 && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Total rentekostnad over {formData.loanPeriod} år:</strong> {formatNumberWithSpaces(Math.round(totalInterestPaid))} kr
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
               )}
             </div>
 
-            <Separator />
+            <Separator className="my-6" />
 
-            {/* Monthly Income */}
+            {/* Income */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Månedlig inntekt</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
+                <PiggyBank className="h-5 w-5" />
+                3. Inntekter
+              </h2>
               
               <div>
-                <Label htmlFor="monthlyRent" className="text-gray-700">Leieinntekt</Label>
+                <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold">Månedlig leieinntekt</Label>
                 <Input
                   id="monthlyRent"
                   value={formData.monthlyRent}
@@ -192,17 +290,37 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   className="mt-1"
                 />
               </div>
+
+              {annualRent > 0 && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Årlig leieinntekt</p>
+                      <p className="text-xl font-bold text-green-700">{formatNumberWithSpaces(Math.round(annualRent))} kr</p>
+                    </div>
+                    {grossYield > 0 && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Bruttoavkastning</p>
+                        <p className="text-xl font-bold text-green-700">{grossYield.toFixed(2)}%</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <Separator />
+            <Separator className="my-6" />
 
-            {/* Monthly Expenses */}
+            {/* Expenses */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Månedlige kostnader</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 pb-2 border-b-2 border-gray-200">
+                <Wallet className="h-5 w-5" />
+                4. Månedlige utgifter
+              </h2>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="commonCosts" className="text-gray-700">Felleskostnader</Label>
+                  <Label htmlFor="commonCosts" className="text-gray-700 font-semibold">Felleskostnader</Label>
                   <Input
                     id="commonCosts"
                     value={formData.commonCosts}
@@ -212,7 +330,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="municipalFees" className="text-gray-700">Kommunale avgifter</Label>
+                  <Label htmlFor="municipalFees" className="text-gray-700 font-semibold">Kommunale avgifter</Label>
                   <Input
                     id="municipalFees"
                     value={formData.municipalFees}
@@ -222,7 +340,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="insurance" className="text-gray-700">Forsikring</Label>
+                  <Label htmlFor="insurance" className="text-gray-700 font-semibold">Forsikring</Label>
                   <Input
                     id="insurance"
                     value={formData.insurance}
@@ -232,7 +350,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="electricityMonthly" className="text-gray-700">Strøm</Label>
+                  <Label htmlFor="electricityMonthly" className="text-gray-700 font-semibold">Strøm</Label>
                   <Input
                     id="electricityMonthly"
                     value={formData.electricityMonthly}
@@ -242,7 +360,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   />
                 </div>
                 <div>
-                  <Label htmlFor="sharedExpenses" className="text-gray-700">Andre utgifter</Label>
+                  <Label htmlFor="sharedExpenses" className="text-gray-700 font-semibold">Andre utgifter</Label>
                   <Input
                     id="sharedExpenses"
                     value={formData.sharedExpenses}
@@ -254,54 +372,99 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
               </div>
 
               {totalMonthlyExpenses > 0 && (
-                <div className="p-3 bg-orange-50 rounded-lg">
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Totale utgifter:</span>
-                    <span className="text-lg font-bold text-orange-700">{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr/mnd</span>
+                    <span className="text-sm font-medium text-gray-700">Totale månedlige utgifter:</span>
+                    <span className="text-2xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <Separator />
+            <Separator className="my-6" />
 
-            {/* Summary */}
+            {/* Final Summary */}
             {formData.totalPrice && formData.equity && (
-              <div className="space-y-3 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                <h2 className="text-lg font-semibold text-gray-900">Sammendrag</h2>
+              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  5. Økonomisk analyse
+                </h2>
                 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Månedlig inntekt:</span>
-                    <span className="font-semibold text-green-700">
-                      +{formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent) || 0))} kr
-                    </span>
+                <div className="space-y-4">
+                  {/* Monthly */}
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-3">Månedlig oversikt</h3>
+                    <div className="space-y-2 pl-4">
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">Leieinntekt:</span>
+                        <span className="font-semibold text-green-700">+{formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent) || 0))} kr</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">Lånekostnad:</span>
+                        <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">Driftskostnader:</span>
+                        <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between items-center py-2 bg-white px-3 rounded">
+                        <span className="font-bold text-gray-900">Netto kontantstrøm:</span>
+                        <span className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr/mnd
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Månedlig lånekostnad:</span>
-                    <span className="font-semibold text-red-700">
-                      -{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr
-                    </span>
+
+                  {/* Yearly */}
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-3">Årlig oversikt</h3>
+                    <div className="space-y-2 pl-4">
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm text-gray-600">Årlig kontantstrøm:</span>
+                        <span className={`font-semibold ${annualCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {annualCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(annualCashFlow))} kr
+                        </span>
+                      </div>
+                      {netYield > 0 && (
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-sm text-gray-600">Nettoavkastning:</span>
+                          <span className="font-semibold text-primary">{netYield.toFixed(2)}%</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Månedlige utgifter:</span>
-                    <span className="font-semibold text-red-700">
-                      -{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr
-                    </span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="font-semibold text-gray-900">Netto kontantstrøm:</span>
-                    <span className={`text-xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr/mnd
-                    </span>
+
+                  {/* Key Metrics */}
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-3">Nøkkeltall</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white p-3 rounded border border-gray-200">
+                        <p className="text-xs text-gray-600 mb-1">Belåningsgrad (LTV)</p>
+                        <p className="text-lg font-bold text-gray-900">{loanToValue.toFixed(1)}%</p>
+                      </div>
+                      {grossYield > 0 && (
+                        <div className="bg-white p-3 rounded border border-gray-200">
+                          <p className="text-xs text-gray-600 mb-1">Bruttoavkastning</p>
+                          <p className="text-lg font-bold text-primary">{grossYield.toFixed(2)}%</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Footer */}
+          <div className="px-10 py-6 bg-gray-50 border-t-2 border-gray-200 text-center text-sm text-gray-600">
+            <p>Dette dokumentet er generert automatisk av Leily og er ment som et verktøy for finansiell planlegging.</p>
+            <p className="mt-1">For offisiell vurdering, vennligst kontakt din bankrådgiver.</p>
+          </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

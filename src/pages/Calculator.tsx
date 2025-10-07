@@ -34,6 +34,7 @@ import { ElectricityEstimator } from '@/components/ElectricityEstimator';
 import { useLoanCalculator } from '@/hooks/useLoanCalculator';
 import { CalculatorChat } from '@/components/calculator/CalculatorChat';
 import { CalculatorPDFPreview } from '@/components/calculator/CalculatorPDFPreview';
+import { ResizableSplitView } from '@/components/calculator/ResizableSplitView';
 
 const Calculator = () => {
   const {
@@ -395,15 +396,22 @@ const Calculator = () => {
           
           <TabsContent value="calculator" className="mt-6">
             {user ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
-                <CalculatorChat 
-                  calculatorData={data}
-                  onDataUpdate={(field, value) => updateField(field, value)}
-                  hasCredits={isPro || isAdmin || hasCredits}
-                />
-                <CalculatorPDFPreview 
-                  data={data}
-                  onDataChange={(field, value) => updateField(field, value)}
+              <div className="h-[calc(100vh-12rem)]">
+                <ResizableSplitView
+                  defaultLeftWidth={40}
+                  left={
+                    <CalculatorChat 
+                      calculatorData={data}
+                      onDataUpdate={(field, value) => updateField(field, value)}
+                      hasCredits={isPro || isAdmin || hasCredits}
+                    />
+                  }
+                  right={
+                    <CalculatorPDFPreview 
+                      data={data}
+                      onDataChange={(field, value) => updateField(field, value)}
+                    />
+                  }
                 />
               </div>
             ) : (
