@@ -311,8 +311,7 @@ serve(async (req) => {
     const data = await openaiResponse.json();
     const assistantMessage = data.choices[0].message.content;
 
-    // Extract structured data if present
-    let extractedData = null;
+    // Extract structured data if present (reuse extractedData variable from above)
     const extractedMatch = assistantMessage.match(/EXTRACTED_DATA:\s*(\{[^}]+\})/);
     if (extractedMatch) {
       try {
