@@ -34,7 +34,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { sessionId, message, calculatorData } = await req.json();
+    const { sessionId, message, calculatorData, attachments } = await req.json();
 
     // Check if user is ambassador or admin (unlimited access)
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -103,12 +103,20 @@ serve(async (req) => {
       });
 
     // Build messages for OpenAI
-    const messages = [
+    const messages: any[] = [
       {
         role: 'system',
         content: `Du er en hjelpsom AI-assistent for eiendomskalkulator. Du hjelper brukere med å fylle ut boligfinansieringsrapporter ved å stille relevante spørsmål og fylle inn data proaktivt.
 
 Når brukeren gir en Finn.no kode, kan du be dem om å hente eiendomsdata først.
+
+Når brukeren laster opp bilder eller dokumenter:
+- Analyser bildene nøye og hent ut relevant informasjon
+- Se etter tall, adresser, beløp, og andre relevante detaljer
+- For forsikringsdokumenter: Hent ut forsikringsbeløp
+- For bankdokumenter: Hent ut saldo, lånebeløp, renter
+- For skjermbilder av eiendomsannonser: Hent ut pris, adresse, størrelse
+- Presenter funnene tydelig og spør om brukeren vil at du skal fylle inn dataene automatisk
 
 Viktige felt som må fylles ut:
 - Eiendomsinformasjon: Adresse, pris, størrelse, type
@@ -116,11 +124,34 @@ Viktige felt som må fylles ut:
 - Månedlige kostnader: Felleskostnader, kommunale avgifter, forsikring
 - Forventet leieinntekt
 
-Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informasjon. Hvis brukeren laster opp dokumenter eller skjermbilder, analyser dem og hent ut relevant informasjon.`
+Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informasjon.
+
+VIKTIG: Når du har hentet ut data fra dokumenter, avslutt meldingen din med en JSON-struktur på følgende format (på egen linje):
+EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}
+
+Eksempel på gyldige felt:
+- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance`
       },
       ...(history || []),
-      { role: 'user', content: message }
     ];
+
+    // Add user message with attachments
+    if (attachments && attachments.length > 0) {
+      const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
+      
+      for (const att of attachments) {
+        if (att.type.startsWith('image/')) {
+          content.push({
+            type: 'image_url',
+            image_url: { url: att.url }
+          });
+        }
+      }
+      
+      messages.push({ role: 'user', content });
+    } else {
+      messages.push({ role: 'user', content: message });
+    }
 
     // Call OpenAI
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -146,6 +177,20 @@ Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informas
     const data = await openaiResponse.json();
     const assistantMessage = data.choices[0].message.content;
 
+    // Extract structured data if present
+    let extractedData = null;
+    const extractedMatch = assistantMessage.match(/EXTRACTED_DATA:\s*(\{[^}]+\})/);
+    if (extractedMatch) {
+      try {
+        extractedData = JSON.parse(extractedMatch[1]);
+      } catch (e) {
+        console.error('Failed to parse extracted data:', e);
+      }
+    }
+
+    // Remove the EXTRACTED_DATA tag from the message
+    const cleanMessage = assistantMessage.replace(/EXTRACTED_DATA:\s*\{[^}]+\}/, '').trim();
+
     // Deduct credits for non-ambassadors
     const creditsUsed = 0.5;
     if (!isAmbassador && !profile?.is_test_user) {
@@ -165,15 +210,16 @@ Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informas
       .insert({
         session_id: currentSessionId,
         role: 'assistant',
-        content: assistantMessage,
+        content: cleanMessage,
         credits_used: isAmbassador || profile?.is_test_user ? 0 : creditsUsed
       });
 
     return new Response(
       JSON.stringify({
-        message: assistantMessage,
+        message: cleanMessage,
         sessionId: currentSessionId,
-        creditsUsed: isAmbassador || profile?.is_test_user ? 0 : creditsUsed
+        creditsUsed: isAmbassador || profile?.is_test_user ? 0 : creditsUsed,
+        extractedData
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

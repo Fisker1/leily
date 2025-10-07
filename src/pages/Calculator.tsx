@@ -394,11 +394,12 @@ const Calculator = () => {
           </TabsList>
           
           <TabsContent value="calculator" className="mt-6">
-            {(isPro || isAdmin) ? (
+            {user ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
                 <CalculatorChat 
                   calculatorData={data}
                   onDataUpdate={(field, value) => updateField(field, value)}
+                  hasCredits={isPro || isAdmin || hasCredits}
                 />
                 <CalculatorPDFPreview 
                   data={data}
@@ -408,12 +409,12 @@ const Calculator = () => {
             ) : (
               <Card className="p-8 text-center">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">AI-assistert kalkulator</h3>
+                <h3 className="text-xl font-semibold mb-2">Logg inn for å bruke kalkulatoren</h3>
                 <p className="text-muted-foreground mb-4">
-                  Oppgrader til Pro eller kjøp kreditter for å bruke AI-assistenten som hjelper deg med å fylle ut boligfinansieringsrapporten.
+                  Du må være innlogget for å bruke AI-assistert kalkulator og fylle ut boligfinansieringsrapporten.
                 </p>
-                <Button onClick={() => navigate('/credits-purchase')}>
-                  Kjøp kreditter
+                <Button onClick={() => navigate('/auth')}>
+                  Logg inn
                 </Button>
               </Card>
             )}

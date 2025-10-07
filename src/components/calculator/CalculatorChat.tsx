@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,24 +10,28 @@ import { toast } from 'sonner';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  attachments?: { name: string; type: string; url: string }[];
 }
 
 interface CalculatorChatProps {
   calculatorData?: Record<string, any>;
   onDataUpdate?: (field: string, value: any) => void;
+  hasCredits?: boolean;
 }
 
-export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatProps) => {
+export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = false }: CalculatorChatProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hei! Jeg er her for å hjelpe deg med å fylle ut boligfinansieringsrapporten. La oss starte! Har du en Finn.no kode for eiendommen du vil analysere?'
+      content: 'Hei! Jeg er her for å hjelpe deg med å fylle ut boligfinansieringsrapporten. La oss starte! Har du en Finn.no kode for eiendommen du vil analysere?\n\nDu kan også laste opp dokumenter som forsikringsbevis, bankdokumenter eller skjermbilder, så vil jeg hjelpe deg med å hente ut relevant informasjon.'
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -36,12 +40,67 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
     }
   }, [messages]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf';
+      const isUnder10MB = file.size < 10 * 1024 * 1024;
+      
+      if (!isImage && !isPdf) {
+        toast.error(`${file.name}: Kun bilder og PDF er støttet`);
+        return false;
+      }
+      if (!isUnder10MB) {
+        toast.error(`${file.name}: Filen er for stor (maks 10MB)`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (attachments.length + validFiles.length > 3) {
+      toast.error('Du kan maksimalt laste opp 3 filer om gangen');
+      return;
+    }
+    
+    setAttachments(prev => [...prev, ...validFiles]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && attachments.length === 0) || isLoading || !hasCredits) return;
 
     const userMessage = input.trim();
+    const currentAttachments = [...attachments];
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setAttachments([]);
+    
+    // Convert attachments to base64 for display
+    const attachmentData = await Promise.all(
+      currentAttachments.map(async (file) => ({
+        name: file.name,
+        type: file.type,
+        url: await convertFileToBase64(file)
+      }))
+    );
+    
+    setMessages(prev => [...prev, { 
+      role: 'user', 
+      content: userMessage || '📎 Sendt dokument(er)',
+      attachments: attachmentData
+    }]);
     setIsLoading(true);
 
     try {
@@ -49,7 +108,8 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
         body: {
           message: userMessage,
           sessionId,
-          calculatorData
+          calculatorData,
+          attachments: attachmentData
         }
       });
 
@@ -66,6 +126,14 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
 
       setSessionId(data.sessionId);
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+
+      // Auto-fill fields if AI extracted data
+      if (data.extractedData) {
+        Object.entries(data.extractedData).forEach(([field, value]) => {
+          onDataUpdate?.(field, value);
+        });
+        toast.success('Data automatisk fylt inn fra dokument');
+      }
 
       if (data.creditsUsed > 0) {
         toast.success(`Melding sendt (${data.creditsUsed} kreditter brukt)`);
@@ -91,7 +159,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
       <div className="p-4 border-b">
         <h3 className="font-semibold">AI-assistent</h3>
         <p className="text-sm text-muted-foreground">
-          0.5 kreditter per melding
+          {hasCredits ? '0.5 kreditter per melding' : '🔒 Kjøp kreditter for å bruke AI-chat'}
         </p>
       </div>
 
@@ -110,6 +178,25 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {msg.attachments.map((att, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs opacity-80">
+                        {att.type.startsWith('image/') ? (
+                          <>
+                            <ImageIcon className="h-3 w-3" />
+                            <img src={att.url} alt={att.name} className="max-w-full rounded mt-1" />
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-3 w-3" />
+                            <span>{att.name}</span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -124,20 +211,65 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate }: CalculatorChatP
       </ScrollArea>
 
       <div className="p-4 border-t">
+        {!hasCredits && (
+          <div className="mb-3 p-3 bg-muted rounded-lg text-center">
+            <p className="text-sm font-medium mb-2">Kjøp kreditter for å bruke AI-chat</p>
+            <Button 
+              size="sm" 
+              onClick={() => window.location.href = '/credits-purchase'}
+              className="w-full"
+            >
+              Kjøp kreditter
+            </Button>
+          </div>
+        )}
+        
+        {/* Attachments preview */}
+        {attachments.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {attachments.map((file, idx) => (
+              <div key={idx} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm">
+                {file.type.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                <span className="max-w-[100px] truncate">{file.name}</span>
+                <button onClick={() => removeAttachment(idx)} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
         <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*,application/pdf"
+            multiple
+            className="hidden"
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || !hasCredits || attachments.length >= 3}
+            size="icon"
+            variant="outline"
+            className="h-[60px] w-[60px] flex-shrink-0"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Skriv en melding..."
+            placeholder={hasCredits ? "Skriv en melding..." : "Du må kjøpe kreditter for å bruke chatten"}
             className="min-h-[60px] max-h-[120px]"
-            disabled={isLoading}
+            disabled={isLoading || !hasCredits}
           />
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={(!input.trim() && attachments.length === 0) || isLoading || !hasCredits}
             size="icon"
-            className="h-[60px] w-[60px]"
+            className="h-[60px] w-[60px] flex-shrink-0"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
