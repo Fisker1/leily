@@ -392,6 +392,14 @@ Alt fylles automatisk ut i rapporten! 📄`
           propertyType: result.preview.propertyType,
           bedrooms: result.preview.bedrooms,
           primarySize: result.preview.primarySize,
+          energyRating: result.preview.energyRating, // New
+          buildYear: result.preview.constructionYear, // New
+          balcony: result.preview.facilities?.some((f: string) => 
+            f.toLowerCase().includes('balkong') || f.toLowerCase().includes('terrasse')
+          ),
+          elevator: result.preview.facilities?.some((f: string) => 
+            f.toLowerCase().includes('heis')
+          ),
           furnished: false, // Default
           parking: result.preview.facilities?.some((f: string) => f.toLowerCase().includes('parkering')),
           utilities: false // Default

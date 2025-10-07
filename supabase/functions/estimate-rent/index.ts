@@ -21,6 +21,11 @@ serve(async (req) => {
       furnished = false,
       parking = false,
       utilities = false, // strøm og vann inkludert
+      energyRating, // A-G energy rating
+      buildYear, // Construction year
+      balcony = false, // Has balcony/terrace
+      elevator = false, // Has elevator (for apartments)
+      floor, // Floor number (for apartments)
     } = await req.json();
 
     console.log('Estimating rent for:', { 
@@ -28,7 +33,9 @@ serve(async (req) => {
       municipality, 
       propertyType, 
       bedrooms, 
-      primarySize 
+      primarySize,
+      energyRating,
+      buildYear
     });
 
     // Base price per sqm based on property type and location
@@ -103,6 +110,69 @@ serve(async (req) => {
 
     // Calculate base rent
     let estimatedRent = Math.round(basePricePerSqm * (primarySize || 50));
+
+    // Energy rating adjustment (better rating = premium)
+    if (energyRating) {
+      const energyPremiums: Record<string, number> = {
+        'A': 1.08,      // +8% for best rating
+        'B': 1.05,      // +5%
+        'C': 1.02,      // +2%
+        'D': 1.0,       // Baseline
+        'E': 0.98,      // -2%
+        'F': 0.95,      // -5%
+        'G': 0.92       // -8% for worst rating
+      };
+      const energyMultiplier = energyPremiums[energyRating.toUpperCase()] || 1.0;
+      estimatedRent = Math.round(estimatedRent * energyMultiplier);
+      console.log(`⚡ Energy rating ${energyRating}: ${energyMultiplier}x multiplier`);
+    }
+
+    // Build year adjustment (newer = premium, renovated = premium)
+    if (buildYear) {
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - buildYear;
+      
+      let buildYearMultiplier = 1.0;
+      if (age <= 5) {
+        buildYearMultiplier = 1.12;  // Very new: +12%
+      } else if (age <= 10) {
+        buildYearMultiplier = 1.08;  // New: +8%
+      } else if (age <= 20) {
+        buildYearMultiplier = 1.04;  // Modern: +4%
+      } else if (age <= 40) {
+        buildYearMultiplier = 1.0;   // Baseline
+      } else if (age <= 60) {
+        buildYearMultiplier = 0.97;  // Older: -3%
+      } else {
+        buildYearMultiplier = 0.94;  // Very old: -6%
+      }
+      
+      estimatedRent = Math.round(estimatedRent * buildYearMultiplier);
+      console.log(`🏗️ Build year ${buildYear} (age: ${age}): ${buildYearMultiplier}x multiplier`);
+    }
+
+    // Balcony/Terrace premium
+    if (balcony) {
+      estimatedRent += 1000; // +1000 kr for balcony/terrace
+      console.log('🌿 Balcony/terrace: +1000 kr');
+    }
+
+    // Elevator premium (for apartments)
+    if (elevator && propertyType?.toLowerCase().includes('leilighet')) {
+      estimatedRent += 500; // +500 kr for elevator
+      console.log('🏢 Elevator: +500 kr');
+    }
+
+    // Floor premium (higher floors = premium for apartments)
+    if (floor && propertyType?.toLowerCase().includes('leilighet')) {
+      if (floor >= 4) {
+        estimatedRent += 1000; // Top floors premium
+        console.log('🔝 High floor (4+): +1000 kr');
+      } else if (floor === 1) {
+        estimatedRent -= 500; // Ground floor discount
+        console.log('🔽 Ground floor: -500 kr');
+      }
+    }
 
     // Add-ons
     if (furnished) estimatedRent += Math.round(estimatedRent * 0.15); // +15% for furnished
