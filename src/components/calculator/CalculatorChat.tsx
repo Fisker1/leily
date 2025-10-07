@@ -182,41 +182,27 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log('✅ Found energy rating:', result.energyRating);
     }
     
-    // Extract municipal fees (Kommunale avgifter)
-    // Handles both regular spaces and &nbsp; entities
-    // Format: "14&nbsp;682 kr per år" or "14 682 kr per år"
-    const municipalFeesPattern = /Kommunale\s+avg[^>]*>([^<]*?(\d+(?:[\s&nbsp;]+\d+)*)\s*kr\s*per\s*år)/i;
+    // Extract municipal fees (Kommunale avgifter) using data-testid
+    // Format in HTML: <div data-testid="pricing-municipal-fees">...<dd>7 735 kr per år</dd></div>
+    const municipalFeesPattern = /data-testid="pricing-municipal-fees"[^>]*>.*?<dd[^>]*>([\d\s&nbsp;]+)\s*kr\s*per\s*år/is;
     const municipalMatch = html.match(municipalFeesPattern);
     if (municipalMatch) {
-      // Extract just the number part and remove all spaces and &nbsp; entities
-      const numberPart = municipalMatch[2];
-      const yearlyAmount = parseInt(numberPart.replace(/[\s&nbsp;]+/g, ''));
+      const yearlyAmount = parseInt(municipalMatch[1].replace(/[\s&nbsp;]+/g, ''));
       result.municipalFees = Math.round(yearlyAmount / 12);
       console.log('✅ Found municipal fees (yearly):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
     } else {
       console.log('❌ Could not find municipal fees in HTML');
     }
     
-    // Extract common costs (Felleskostnader per måned)
-    // Handles both regular spaces and &nbsp; entities
-    // Format: "9&nbsp;833 kr" or "9 833 kr" following "Felleskost/mnd"
-    const commonCostsPattern = /Felleskost\/mnd[^>]*>([^<]*?(\d+(?:[\s&nbsp;]+\d+)*)\s*kr)/i;
+    // Extract common costs (Felleskostnader) using data-testid
+    // Format in HTML: <div data-testid="pricing-common-monthly-cost">...<dd>9 833 kr</dd></div>
+    const commonCostsPattern = /data-testid="pricing-common-monthly-cost"[^>]*>.*?<dd[^>]*>([\d\s&nbsp;]+)\s*kr/is;
     const commonMatch = html.match(commonCostsPattern);
     if (commonMatch) {
-      // Extract just the number part and remove all spaces and &nbsp; entities
-      const numberPart = commonMatch[2];
-      result.commonCosts = parseInt(numberPart.replace(/[\s&nbsp;]+/g, ''));
+      result.commonCosts = parseInt(commonMatch[1].replace(/[\s&nbsp;]+/g, ''));
       console.log('✅ Found common costs:', result.commonCosts, 'kr/month');
     } else {
-      // Try alternative pattern if first one fails
-      const altPattern = /Felleskost[^<]*?<dd[^>]*>(\d+(?:[\s&nbsp;]+\d+)*)\s*kr/i;
-      const altMatch = html.match(altPattern);
-      if (altMatch) {
-        result.commonCosts = parseInt(altMatch[1].replace(/[\s&nbsp;]+/g, ''));
-        console.log('✅ Found common costs (alt pattern):', result.commonCosts, 'kr/month');
-      } else {
-        console.log('❌ Could not find common costs in HTML');
-      }
+      console.log('❌ Could not find common costs in HTML');
     }
     
     // Fallback: Try __NEXT_DATA__ if advertising-initial-state not found
