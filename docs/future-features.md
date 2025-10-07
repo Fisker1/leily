@@ -127,31 +127,154 @@ En lånekalkulator som hjelper brukeren med å holde oversikt over egenkapital, 
 - Auto-fill funksjonalitet for kalkulator-siden
 - Validerings-logikk for kapitaloverskridelse
 
-## Utgiftsestimering
+## Automatisk estimering av forsikring og strøm
 
 ### Oversikt
-Automatisk estimering av utgifter som ikke er oppgitt i Finn-annonsen, basert på boligens karakteristikker.
+Utvide automatisk estimering til å inkludere forsikring og strømkostnader, på samme måte som vi gjør for leiepris. Målet er å gi brukerne komplette og nøyaktige estimater for alle driftskostnader uten at de må manuelt søke opp eller beregne disse.
 
 ### Eksisterende data fra Finn
 - Fellesutgifter (allerede tilgjengelig)
 - Kommunale avgifter (allerede tilgjengelig)
 
 ### Nye estimater som skal beregnes
-- Strømkostnader
-- Andre driftsutgifter
 
-### Estimeringsparametere
+#### 1. Strømkostnader
+**Basert på samme datakilde som leieprisestimator:**
+- Boligens størrelse (kvm)
+- Antall rom/soverom
+- Boligtype (leilighet, enebolig, rekkehus, etc.)
+- Geografisk beliggenhet (postnummer/kommune)
+- Byggeår (påvirker isolasjon og energieffektivitet)
+- Energimerking (hvis tilgjengelig)
+
+**Ytterligere faktorer:**
+- Regionale strømpriser (prisområder NO1-NO5)
+- Sesongvariasjoner (høyere forbruk vinterstid)
+- Historiske forbruksdata basert på boligtype og størrelse
+- Standard forbruksprofiler per boligtype
+
+**Beregningsmetode:**
+- Estimert årlig strømforbruk (kWh) basert på størrelse og type
+- Multiplikasjon med gjennomsnittlig kWh-pris i området
+- Divisjon på 12 for månedlig kostnad
+- Inkluderer nettleie, avgifter og strømpris
+
+#### 2. Forsikring
+**Basert på samme datakilde som leieprisestimator:**
+- Boligens størrelse (kvm)
+- Boligtype (leilighet, enebolig, rekkehus, etc.)
+- Geografisk beliggenhet (postnummer/kommune)
+- Byggeår
+- Boligverdi (totalpris)
+
+**Ytterligere faktorer:**
+- Risikofaktorer i området (f.eks. flomfare, innbruddsstatistikk)
+- Standard innboforsikring vs. utleieforsikring
+- Egenandeler og dekningsnivå
+
+**Beregningsmetode:**
+- Grunnpremie basert på boligtype og størrelse
+- Justering for geografisk beliggenhet og risikofaktorer
+- Skalering basert på boligverdi
+- Standard dekningsnivå (kan tilpasses av bruker)
+
+### Integrasjon med eksisterende system
+
+#### Delt infrastruktur med leieestimator
+- Samme edge function kan håndtere alle tre estimater (leie, strøm, forsikring)
+- Samme datahenting fra Finn-API
+- Samme geografiske data (postnummer, kommune, koordinater)
+- Samme AI-modell kan brukes for å analysere og beregne
+
+#### Edge Function struktur
+```typescript
+// Eksempel på utvidet edge function
+const estimates = {
+  monthlyRent: calculateRent(propertyData),
+  electricityCost: calculateElectricity(propertyData),
+  insurance: calculateInsurance(propertyData)
+};
+```
+
+### Estimeringsparametere (felles for alle tre)
 Kalkulatoren skal basere estimatene på:
 - Boligens størrelse (kvm)
-- Antall soverom
+- Antall soverom/rom
+- Boligtype
 - Fasiliteter (balkong, garasje, etc.)
-- Geografisk beliggenhet (påvirker strømpriser)
+- Geografisk beliggenhet (påvirker strømpriser, forsikringspremier, leiepris)
+- Byggeår
+- Energimerking (hvis tilgjengelig)
+- Boligverdi
 
 ### Tekniske komponenter
-- Estimeringsalgoritme for strøm basert på boligstørrelse
-- Database med regionale strømpriser
-- Utgiftsprofiler basert på boligtype og størrelse
-- Integrasjon med eksisterende kalkulator
+
+#### Backend (Edge Functions)
+- Utvide `estimate-rent` edge function til å også returnere strøm og forsikring
+  - ELLER opprette separate funksjoner: `estimate-electricity`, `estimate-insurance`
+- Integrasjon med strømpris-API (f.eks. Nordpool, SSB)
+- Database med forsikringspremier per område og boligtype
+- Caching av estimeringer for bedre ytelse
+
+#### Frontend (PDF/Kalkulator)
+- Automatisk utfylling av strøm og forsikring ved Finn-henting
+- Visuell indikator for estimerte verdier (lik som for leiepris)
+- Mulighet for manuell overstyring av estimerte verdier
+- Tracking av hvilke felt som er estimert vs. manuelt justert
+
+#### Datakilder som kan brukes
+- **Strøm**: 
+  - SSB (Statistisk Sentralbyrå) for forbruksstatistikk
+  - Nordpool for strømpriser per prisområde
+  - NVE (Norges Vassdrags- og Energidirektorat) for energistatistikk
+- **Forsikring**: 
+  - Gjennomsnittspremier fra større forsikringsselskaper
+  - Historiske data basert på boligtype og beliggenhet
+  - Risikokart fra DSB (Direktoratet for samfunnssikkerhet og beredskap)
+
+### UI/UX implementering
+
+#### Visuell presentasjon
+- Samme design som for leieestimering: "(estimert)" tekst
+- Tooltips som forklarer hvordan estimatet er beregnet
+- Mulighet for å se detaljert utregning
+- Knapp for å godta eller justere estimat
+
+#### Brukerfeedback
+- Notifikasjon når alle tre estimater er hentet automatisk
+- Sammenligning med gjennomsnitt i området
+- Forslag til forbedringer (f.eks. energisparende tiltak)
+
+### Database-skjema
+Kan bruke eksisterende `finn_property_cache` tabell og utvide `estimates` objektet:
+
+```sql
+-- Eksisterende struktur (ingen endringer nødvendig)
+CREATE TABLE finn_property_cache (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  finn_code text UNIQUE NOT NULL,
+  property_data jsonb NOT NULL,
+  extracted_at timestamp with time zone DEFAULT now(),
+  expires_at timestamp with time zone DEFAULT (now() + interval '7 days'),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+-- property_data.estimates vil inneholde:
+-- {
+--   monthlyRent: number,
+--   electricityCost: number,
+--   insurance: number,
+--   maintenance: number
+-- }
+```
+
+### Fremtidige forbedringer
+- Maskinlæring for å forbedre nøyaktigheten basert på faktiske data
+- Sesongbaserte justeringer for strøm (vinter/sommer)
+- Personaliserte estimater basert på brukerens historikk
+- Integrasjon med faktiske forsikringsselskaper for sanntids-tilbud
+- API-integrasjoner med strømleverandører for nøyaktige priser
 
 ## Forbedring av prisestimator (boligverdi)
 
