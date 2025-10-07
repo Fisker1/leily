@@ -39,7 +39,24 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.\n\n**Slik analyserer du en eiendom fra Finn.no:**\n1. Åpne annonsen på Finn.no\n2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)\n3. Kopier ALT (Ctrl+A, Ctrl+C)\n4. Trykk på **HTML**-knappen oppe til høyre\n5. Lim inn HTML-koden i dialogboksen\n\n✨ Jeg ekstraherer automatisk kun den relevante dataen fra HTML-koden!\n\nDu kan også laste opp dokumenter (bilder/PDF) så analyserer jeg dem, eller stille meg spørsmål.'
+      content: `Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.
+
+**Slik analyserer du en eiendom fra Finn.no:**
+
+1. Åpne annonsen på Finn.no
+2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)
+3. Kopier ALT (Ctrl+A, Ctrl+C)
+4. Trykk på grønne **HTML**-knappen oppe til høyre
+5. Lim inn HTML-koden i dialogboksen
+
+✨ Jeg ekstraherer automatisk kun den relevante dataen fra HTML-koden!
+
+**Andre funksjoner:**
+• **📎 Vedlegg**: Last opp bilder eller PDF-dokumenter for analyse
+• **🧮 Lånekalkulator**: Klikk på kalkulator-ikonet for å sette opp låneinformasjon
+• **💬 Spørsmål**: Stille meg spørsmål om eiendomsfinansiering
+
+Alt fylles automatisk ut i rapporten til høyre! 📄`
     }
   ]);
   const [input, setInput] = useState('');
