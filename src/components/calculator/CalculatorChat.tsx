@@ -197,19 +197,22 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log('❌ Could not find municipal fees in HTML');
     }
     
-    // Extract common costs (Felleskostnader/Fellesutgifter) - more flexible pattern
-    // Matches: "Felleskost" followed by amount and "kr" (but NOT "per år")
-    const commonCostsPattern = /Felleskost(?:nader)?\/mnd[^<]*?(\d+(?:\s+\d+)*)\s*kr/i;
+    // Extract common costs (Felleskostnader per måned)
+    // Handles both regular spaces and &nbsp; entities
+    // Format: "9&nbsp;833 kr" or "9 833 kr" following "Felleskost/mnd"
+    const commonCostsPattern = /Felleskost\/mnd[^>]*>([^<]*?(\d+(?:[\s&nbsp;]+\d+)*)\s*kr)/i;
     const commonMatch = html.match(commonCostsPattern);
     if (commonMatch) {
-      result.commonCosts = parseInt(commonMatch[1].replace(/\s+/g, ''));
+      // Extract just the number part and remove all spaces and &nbsp; entities
+      const numberPart = commonMatch[2];
+      result.commonCosts = parseInt(numberPart.replace(/[\s&nbsp;]+/g, ''));
       console.log('✅ Found common costs:', result.commonCosts, 'kr/month');
     } else {
-      // Try alternative pattern without /mnd
-      const altPattern = /Felleskost[^<]*?<dd[^>]*>(\d+(?:\s+\d+)*)\s*kr(?!\s*per)/i;
+      // Try alternative pattern if first one fails
+      const altPattern = /Felleskost[^<]*?<dd[^>]*>(\d+(?:[\s&nbsp;]+\d+)*)\s*kr/i;
       const altMatch = html.match(altPattern);
       if (altMatch) {
-        result.commonCosts = parseInt(altMatch[1].replace(/\s+/g, ''));
+        result.commonCosts = parseInt(altMatch[1].replace(/[\s&nbsp;]+/g, ''));
         console.log('✅ Found common costs (alt pattern):', result.commonCosts, 'kr/month');
       } else {
         console.log('❌ Could not find common costs in HTML');
