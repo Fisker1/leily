@@ -182,13 +182,15 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log('✅ Found energy rating:', result.energyRating);
     }
     
-    // Extract municipal fees (Kommunale avgifter) - more flexible pattern
-    // Matches: "Kommunale avg" followed by amount and "kr per år"
-    const municipalFeesPattern = /Kommunale\s+avg[^<]*?(\d+(?:\s+\d+)*)\s*kr\s*per\s*år/i;
+    // Extract municipal fees (Kommunale avgifter)
+    // Handles both regular spaces and &nbsp; entities
+    // Format: "14&nbsp;682 kr per år" or "14 682 kr per år"
+    const municipalFeesPattern = /Kommunale\s+avg[^>]*>([^<]*?(\d+(?:[\s&nbsp;]+\d+)*)\s*kr\s*per\s*år)/i;
     const municipalMatch = html.match(municipalFeesPattern);
     if (municipalMatch) {
-      // Remove spaces and convert to monthly
-      const yearlyAmount = parseInt(municipalMatch[1].replace(/\s+/g, ''));
+      // Extract just the number part and remove all spaces and &nbsp; entities
+      const numberPart = municipalMatch[2];
+      const yearlyAmount = parseInt(numberPart.replace(/[\s&nbsp;]+/g, ''));
       result.municipalFees = Math.round(yearlyAmount / 12);
       console.log('✅ Found municipal fees (yearly):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
     } else {
