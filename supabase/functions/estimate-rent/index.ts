@@ -40,7 +40,7 @@ serve(async (req) => {
 
     // Base price per sqm based on property type and location
     // Updated with realistic Norwegian rental market prices (2025)
-    let basePricePerSqm = 220; // Base NOK per sqm for average location
+    let basePricePerSqm = 180; // Base NOK per sqm for average location
 
     // Adjust based on property type
     const propertyTypeMultipliers: Record<string, number> = {
@@ -68,27 +68,27 @@ serve(async (req) => {
       const firstDigit = postalCode.charAt(0);
       // Oslo and Akershus (0xxx, 1xxx, 2xxx, 3xxx)
       if (['0', '1', '2', '3'].includes(firstDigit)) {
-        basePricePerSqm *= 1.5; // Oslo region premium
+        basePricePerSqm *= 1.45; // Oslo region premium
       }
       // Bergen area (5xxx)
       else if (firstDigit === '5' && (postalCode.startsWith('50') || postalCode.startsWith('51'))) {
-        basePricePerSqm *= 1.35;
+        basePricePerSqm *= 1.3;
       }
       // Stavanger area (4xxx)
       else if (firstDigit === '4' && (postalCode.startsWith('40') || postalCode.startsWith('41'))) {
-        basePricePerSqm *= 1.3;
+        basePricePerSqm *= 1.2; // Reduced Stavanger premium
       }
       // Trondheim area (7xxx)
       else if (firstDigit === '7' && postalCode.startsWith('70')) {
-        basePricePerSqm *= 1.25;
+        basePricePerSqm *= 1.2;
       }
       // Kristiansand (4xxx)
       else if (postalCode.startsWith('46') || postalCode.startsWith('47')) {
-        basePricePerSqm *= 1.2;
+        basePricePerSqm *= 1.15;
       }
       // Other cities
       else {
-        basePricePerSqm *= 1.15; // Moderate premium
+        basePricePerSqm *= 1.1; // Moderate premium
       }
     }
 
@@ -104,7 +104,7 @@ serve(async (req) => {
 
     // Bedroom premium - more bedrooms = more value
     if (bedrooms && primarySize) {
-      const bedroomBonus = Math.max(0, bedrooms - 1) * 1500; // 1500 kr per extra bedroom
+      const bedroomBonus = Math.max(0, bedrooms - 1) * 1200; // 1200 kr per extra bedroom
       basePricePerSqm += bedroomBonus / primarySize;
     }
 
@@ -118,9 +118,9 @@ serve(async (req) => {
         'B': 1.05,      // +5%
         'C': 1.02,      // +2%
         'D': 1.0,       // Baseline
-        'E': 0.98,      // -2%
-        'F': 0.95,      // -5%
-        'G': 0.92       // -8% for worst rating
+        'E': 0.96,      // -4% for E (increased penalty)
+        'F': 0.92,      // -8%
+        'G': 0.88       // -12% for worst rating
       };
       const energyMultiplier = energyPremiums[energyRating.toUpperCase()] || 1.0;
       estimatedRent = Math.round(estimatedRent * energyMultiplier);
@@ -142,9 +142,9 @@ serve(async (req) => {
       } else if (age <= 40) {
         buildYearMultiplier = 1.0;   // Baseline
       } else if (age <= 60) {
-        buildYearMultiplier = 0.97;  // Older: -3%
+        buildYearMultiplier = 0.94;  // Older: -6%
       } else {
-        buildYearMultiplier = 0.94;  // Very old: -6%
+        buildYearMultiplier = 0.86;  // Very old (60+ years): -14%
       }
       
       estimatedRent = Math.round(estimatedRent * buildYearMultiplier);
@@ -153,8 +153,8 @@ serve(async (req) => {
 
     // Balcony/Terrace premium
     if (balcony) {
-      estimatedRent += 1000; // +1000 kr for balcony/terrace
-      console.log('🌿 Balcony/terrace: +1000 kr');
+      estimatedRent += 800; // +800 kr for balcony/terrace
+      console.log('🌿 Balcony/terrace: +800 kr');
     }
 
     // Elevator premium (for apartments)
@@ -166,18 +166,18 @@ serve(async (req) => {
     // Floor premium (higher floors = premium for apartments)
     if (floor && propertyType?.toLowerCase().includes('leilighet')) {
       if (floor >= 4) {
-        estimatedRent += 1000; // Top floors premium
-        console.log('🔝 High floor (4+): +1000 kr');
+        estimatedRent += 800; // Top floors premium
+        console.log('🔝 High floor (4+): +800 kr');
       } else if (floor === 1) {
-        estimatedRent -= 500; // Ground floor discount
-        console.log('🔽 Ground floor: -500 kr');
+        estimatedRent -= 400; // Ground floor discount
+        console.log('🔽 Ground floor: -400 kr');
       }
     }
 
     // Add-ons
     if (furnished) estimatedRent += Math.round(estimatedRent * 0.15); // +15% for furnished
-    if (parking) estimatedRent += 1800; // Parking premium
-    if (utilities) estimatedRent += 1500; // Utilities premium
+    if (parking) estimatedRent += 1500; // Parking premium
+    if (utilities) estimatedRent += 1200; // Utilities premium
 
     // Round to nearest 500 for cleaner numbers
     estimatedRent = Math.round(estimatedRent / 500) * 500;
