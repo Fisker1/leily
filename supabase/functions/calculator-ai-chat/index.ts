@@ -152,7 +152,7 @@ DATA MAPPING (fra Finn.no til calculator):
 - energy_rating → energyRating (energimerke A-G)
 - county → county (fylke)
 - municipality → municipality (kommune)
-- shared_cost / common_cost → sharedExpenses (felleskostnader/fellesutgifter per måned, kun tall)
+- shared_cost / common_cost → commonCosts (felleskostnader/fellesutgifter per måned, kun tall)
 - municipal_fee / property_tax → municipalFees (kommunale avgifter per måned, kun tall)
 - collective_debt → collectiveDebt (fellesgjeld, kun tall)
 
@@ -178,7 +178,7 @@ Ekstraher følgende felt (bruk null hvis data mangler):
 - facilities: Liste av fasiliteter (array)
 - municipality: Kommune
 - county: Fylke
-- sharedExpenses: Felleskostnader/fellesutgifter per måned (kun tall, fra shared_cost eller common_cost)
+- commonCosts: Felleskostnader/fellesutgifter per måned (kun tall, fra shared_cost eller common_cost)
 - municipalFees: Kommunale avgifter per måned (kun tall, fra municipal_fee eller property_tax)
 - monthlyRent: Forventet leieinntekt per måned hvis relevant
 
@@ -200,7 +200,7 @@ Eksempel:
   "facilities": ["Balkong/Terrasse", "Garasje", "Hage"],
   "municipality": "Karmøy",
   "county": "Rogaland",
-  "sharedExpenses": 3500,
+  "commonCosts": 3500,
   "municipalFees": 2100
 }
 
@@ -283,7 +283,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
             },
             municipality: { type: "string", description: "Municipality name" },
             county: { type: "string", description: "County name" },
-            sharedExpenses: { type: "number", description: "Monthly shared costs/common costs (fellesutgifter)" },
+            commonCosts: { type: "number", description: "Monthly common costs / felleskostnader (shared building costs)" },
             municipalFees: { type: "number", description: "Monthly municipal fees (kommunale avgifter)" },
             monthlyRent: { type: "number", description: "Expected monthly rent income" }
           },

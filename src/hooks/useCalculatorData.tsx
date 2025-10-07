@@ -17,6 +17,7 @@ interface CalculatorData {
   electricityMonthly: string;
   insurance: string;
   sharedExpenses: string;
+  commonCosts: string;
   
   // Renovation
   isRenovation: boolean;
@@ -43,6 +44,7 @@ const initialData: CalculatorData = {
   electricityMonthly: "",
   insurance: "",
   sharedExpenses: "",
+  commonCosts: "",
   
   isRenovation: false,
   renovationCost: "200000",

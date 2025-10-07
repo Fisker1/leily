@@ -81,10 +81,11 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     return (
       <Input
         id={id}
-        value={value}
+        value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
         className="mt-1 rounded-none h-8"
+        readOnly={!onChange}
       />
     );
   };
