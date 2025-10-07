@@ -174,6 +174,8 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       preview.ownershipType = result.propertyData.ownership_type;
       preview.facilities = result.propertyData.facilities;
       preview.energyRating = result.propertyData.energy_rating;
+      preview.sharedExpenses = result.propertyData.shared_cost || result.propertyData.common_cost;
+      preview.municipalFees = result.propertyData.municipal_fee || result.propertyData.property_tax;
     }
     
     const jsonString = JSON.stringify(result, null, 2);

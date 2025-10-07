@@ -119,7 +119,12 @@ serve(async (req) => {
       'county': 'county',
       'energy_rating': 'energyRating',
       'facilities': 'facilities',
-      'plot_owned': 'plotOwned'
+      'plot_owned': 'plotOwned',
+      'shared_cost': 'sharedExpenses',
+      'common_cost': 'commonCosts',
+      'collective_debt': 'collectiveDebt',
+      'municipal_fee': 'municipalFees',
+      'property_tax': 'municipalFees'
     };
     
     // Check if message contains structured Finn.no data
@@ -147,6 +152,9 @@ DATA MAPPING (fra Finn.no til calculator):
 - energy_rating → energyRating (energimerke A-G)
 - county → county (fylke)
 - municipality → municipality (kommune)
+- shared_cost / common_cost → sharedExpenses (felleskostnader/fellesutgifter per måned, kun tall)
+- municipal_fee / property_tax → municipalFees (kommunale avgifter per måned, kun tall)
+- collective_debt → collectiveDebt (fellesgjeld, kun tall)
 
 SE FØRST ETTER "propertyData" objektet - her ligger all kritisk info ferdig strukturert!
 
@@ -170,6 +178,9 @@ Ekstraher følgende felt (bruk null hvis data mangler):
 - facilities: Liste av fasiliteter (array)
 - municipality: Kommune
 - county: Fylke
+- sharedExpenses: Felleskostnader/fellesutgifter per måned (kun tall, fra shared_cost eller common_cost)
+- municipalFees: Kommunale avgifter per måned (kun tall, fra municipal_fee eller property_tax)
+- monthlyRent: Forventet leieinntekt per måned hvis relevant
 
 Returner BARE JSON med disse feltene. Ingen forklarende tekst.
 
@@ -188,13 +199,10 @@ Eksempel:
   "energyRating": "C",
   "facilities": ["Balkong/Terrasse", "Garasje", "Hage"],
   "municipality": "Karmøy",
-  "county": "Rogaland"
-}`
-- commonCosts: Felleskostnader per måned (kun tall)
-- municipalFees: Kommunale avgifter per år (kun tall)
-- buildYear: Byggeår (kun årstall)
-- bedrooms: Antall soverom (kun tall)
-- monthlyRent: Forventet leieinntekt per måned hvis relevant
+  "county": "Rogaland",
+  "sharedExpenses": 3500,
+  "municipalFees": 2100
+}
 
 BRUK TOOL CALLING for å returnere dataen strukturert.`
       : `Du er en hjelpsom AI-assistent for boligfinansieringsrapporter.
@@ -214,7 +222,7 @@ Hvis brukeren vil analysere en eiendom fra Finn.no, BE DEM OM Å:
 Jeg ekstraherer automatisk kun den relevante dataen!
 
 Viktige felt: address, totalPrice, propertyType, livingArea, equity, interestRate, 
-loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly.
+loanPeriod, monthlyRent, sharedExpenses, municipalFees, insurance, electricityMonthly.
 
 BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
 
@@ -275,8 +283,8 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
             },
             municipality: { type: "string", description: "Municipality name" },
             county: { type: "string", description: "County name" },
-            commonCosts: { type: "number", description: "Monthly common costs" },
-            municipalFees: { type: "number", description: "Municipal fees per month" },
+            sharedExpenses: { type: "number", description: "Monthly shared costs/common costs (fellesutgifter)" },
+            municipalFees: { type: "number", description: "Monthly municipal fees (kommunale avgifter)" },
             monthlyRent: { type: "number", description: "Expected monthly rent income" }
           },
           required: []
