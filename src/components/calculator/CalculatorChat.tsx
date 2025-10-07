@@ -464,21 +464,21 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
               onClick={() => setLoanCalcOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9"
+              className="gap-2 h-9 px-3"
               aria-label="Lånekalkulator"
+              title="Lånekalkulator"
             >
               <Calculator className="h-4 w-4" />
-              Lånekalkulator
             </Button>
             <Button
               onClick={() => setShaverDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600 h-9"
+              className="gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 h-9 px-3"
               aria-label="HTML Shaver"
+              title="HTML Shaver"
             >
               <Scissors className="h-4 w-4" />
-              HTML
             </Button>
           </div>
         </div>
@@ -576,7 +576,13 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
                     : 'bg-muted rounded-lg'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-1">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                )}
                 {msg.attachments && msg.attachments.length > 0 && (
                   <div className="mt-2 space-y-2">
                     {msg.attachments.map((att, i) => (
@@ -647,16 +653,6 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             multiple
             className="hidden"
           />
-          <Button
-            onClick={() => setLoanCalcOpen(true)}
-            disabled={isLoading}
-            size="icon"
-            variant="outline"
-            className="h-[60px] w-[60px] flex-shrink-0 rounded"
-            title="Lånekalkulator"
-          >
-            <Calculator className="h-4 w-4" />
-          </Button>
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading || !hasCredits || attachments.length >= 3}
