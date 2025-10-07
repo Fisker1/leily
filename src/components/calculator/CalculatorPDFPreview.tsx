@@ -540,7 +540,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                     <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold text-xs">
                       Månedlig leieinntekt
                       {formData.isRentAutoEstimated && !rentManuallyEdited && (
-                        <span className="ml-2 text-xs text-gray-500 font-normal">(AI-estimert)</span>
+                        <span className="ml-2 text-xs text-gray-500 font-normal">(estimert)</span>
                       )}
                     </Label>
                     <PrintableInput
