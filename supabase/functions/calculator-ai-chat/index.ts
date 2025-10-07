@@ -141,7 +141,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-3.1-sonar-large-128k-online',
+              model: 'sonar',
               messages: [
                 {
                   role: 'system',
@@ -247,12 +247,7 @@ serve(async (req) => {
     // For non-Finn.no messages, use OpenAI as before
     console.log('=== Using OpenAI for regular chat ===');
     
-    // Get chat history
-    const { data: history } = await supabase
-      .from('calculator_chat_messages')
-      .select('role, content')
-      .eq('session_id', currentSessionId)
-      .order('created_at', { ascending: true });
+    // Reuse chat history already fetched earlier
     
     // Build simple system prompt for regular chat
     const systemPrompt = 'Du er en hjelpsom AI-assistent for boligfinansieringsrapporter. ' +
