@@ -15,6 +15,7 @@ interface CalculatorPDFPreviewProps {
 }
 
 export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFPreviewProps) => {
+  const [isPrintMode, setIsPrintMode] = useState(false);
   const [formData, setFormData] = useState({
     address: data.address || '',
     finnCode: data.finnCode || '',
@@ -94,14 +95,21 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
   const handleDownload = async () => {
     try {
+      // Enable print mode
+      setIsPrintMode(true);
+      
+      // Wait for re-render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { jsPDF } = await import('jspdf');
       const html2canvas = (await import('html2canvas')).default;
       
       // Get the PDF content element
-      const pdfElement = document.querySelector('.max-w-4xl.mx-auto.bg-white') as HTMLElement;
+      const pdfElement = document.querySelector('.pdf-content') as HTMLElement;
       
       if (!pdfElement) {
         console.error('PDF element not found');
+        setIsPrintMode(false);
         return;
       }
       
@@ -112,6 +120,9 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
         logging: false,
         backgroundColor: '#ffffff'
       });
+      
+      // Disable print mode
+      setIsPrintMode(false);
       
       // Create PDF
       const imgData = canvas.toDataURL('image/png');
@@ -145,6 +156,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       pdf.save(fileName);
     } catch (error) {
       console.error('Error generating PDF:', error);
+      setIsPrintMode(false);
     }
   };
 
@@ -163,7 +175,36 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
       <div className="flex-1 p-8 overflow-auto">
         {/* Paper Effect Container with Shadow */}
-        <div className="max-w-4xl mx-auto bg-white shadow-2xl border border-gray-200 rounded animate-fade-in">
+        <div className={`max-w-4xl mx-auto bg-white shadow-2xl border border-gray-200 rounded animate-fade-in pdf-content ${isPrintMode ? 'print-mode' : ''}`}>
+          {/* Add print-mode styles */}
+          {isPrintMode && (
+            <style>{`
+              .print-mode input {
+                border: none !important;
+                background: transparent !important;
+                padding: 8px 0 !important;
+                color: #111827 !important;
+                font-weight: 500 !important;
+                cursor: default !important;
+              }
+              .print-mode input::placeholder {
+                opacity: 0 !important;
+              }
+              .print-mode input:disabled {
+                opacity: 1 !important;
+                color: #111827 !important;
+              }
+              .print-mode input:placeholder-shown {
+                display: none !important;
+              }
+              .print-mode label:has(+ input:placeholder-shown) {
+                display: none !important;
+              }
+              .print-mode > div:has(> input:placeholder-shown) {
+                display: none !important;
+              }
+            `}</style>
+          )}
           {/* Header with Gradient */}
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8 rounded-t">
             <div className="text-center space-y-2">
