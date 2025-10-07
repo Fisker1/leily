@@ -133,6 +133,36 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log(`  - ${key}: ${data[key]}`);
     });
     
+    // Translate property type from English to Norwegian
+    const propertyTypeMap: Record<string, string> = {
+      'FLAT': 'Leilighet',
+      'APARTMENT': 'Leilighet',
+      'DETACHED': 'Enebolig',
+      'SEMI_DETACHED': 'Tomannsbolig',
+      'TERRACED': 'Rekkehus',
+      'FARM': 'Gård',
+      'COTTAGE': 'Hytte'
+    };
+    
+    // Translate ownership type from English to Norwegian
+    const ownershipTypeMap: Record<string, string> = {
+      'FREEHOLD': 'Selveier',
+      'CONDOMINIUM': 'Eierseksjon',
+      'COOPERATIVE': 'Borettslag',
+      'SHARE': 'Aksjeleilighet'
+    };
+    
+    // Apply translations
+    if (data.property_type && propertyTypeMap[data.property_type]) {
+      data.property_type = propertyTypeMap[data.property_type];
+      console.log('✅ Translated property_type to:', data.property_type);
+    }
+    
+    if (data.ownership_type && ownershipTypeMap[data.ownership_type]) {
+      data.ownership_type = ownershipTypeMap[data.ownership_type];
+      console.log('✅ Translated ownership_type to:', data.ownership_type);
+    }
+    
     return data;
   };
 
@@ -323,21 +353,20 @@ Alt fylles automatisk ut i rapporten! 📄`
       setIsLoading(true);
 
       // Auto-fill PDF fields directly with parsed data
-      // NOTE: We skip propertyType and ownershipType here because they come in English
-      // from the advertising data. AI will fill these with proper Norwegian values.
+      // Property type and ownership type are now translated to Norwegian
       if (result.preview.finnCode) onDataUpdate?.('finnCode', result.preview.finnCode);
       if (result.preview.price) onDataUpdate?.('totalPrice', result.preview.price.toString());
       if (result.preview.address) onDataUpdate?.('address', result.preview.address);
       if (result.preview.primarySize) onDataUpdate?.('livingArea', result.preview.primarySize.toString());
       if (result.preview.bedrooms) onDataUpdate?.('bedrooms', result.preview.bedrooms.toString());
       if (result.preview.rooms) onDataUpdate?.('rooms', result.preview.rooms.toString());
-      // Skipped: propertyType - will be filled by AI with Norwegian value
+      if (result.preview.propertyType) onDataUpdate?.('propertyType', result.preview.propertyType); // Now in Norwegian
       if (result.preview.constructionYear) onDataUpdate?.('buildYear', result.preview.constructionYear.toString());
       if (result.preview.plotArea) onDataUpdate?.('plotArea', result.preview.plotArea.toString());
       if (result.preview.energyRating) onDataUpdate?.('energyRating', result.preview.energyRating);
       if (result.preview.commonCosts) onDataUpdate?.('commonCosts', result.preview.commonCosts.toString());
       if (result.preview.municipalFees) onDataUpdate?.('municipalFees', result.preview.municipalFees.toString());
-      // Skipped: ownershipType - will be filled by AI with Norwegian value
+      if (result.preview.ownershipType) onDataUpdate?.('ownershipType', result.preview.ownershipType); // Now in Norwegian
 
       // Estimate rent automatically in background
       try {
