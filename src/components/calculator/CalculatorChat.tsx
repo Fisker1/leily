@@ -149,7 +149,8 @@ Alt fylles automatisk ut i rapporten! 📄`
       'FREEHOLD': 'Selveier',
       'CONDOMINIUM': 'Eierseksjon',
       'COOPERATIVE': 'Borettslag',
-      'SHARE': 'Aksjeleilighet'
+      'SHARE': 'Aksjeleilighet',
+      'PART_OWNERSHIP': 'Andelsleilighet'
     };
     
     // Apply translations
