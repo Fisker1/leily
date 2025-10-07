@@ -2,14 +2,21 @@
 
 ## Oversikt
 
-Denne funksjonen lar brukere registrere eksterne eller private lånegivere i boligfinansieringsrapporten, samt laste opp covenant-dokumenter som vedlegg.
+Denne funksjonen lar brukere registrere eksterne eller private lånegivere i boligfinansieringsrapporten, samt laste opp covenant-dokumenter som vedlegg. Innstillingene kan lagres og gjenbrukes i alle rapporter.
+
+## Lagrede Innstillinger
+
+Brukere kan nå lagre sine privatlån-innstillinger via:
+- **Wallet-knapp** over chatten (blå knapp ved siden av Lånekalkulator)
+- Innstillingene lagres i databasen og fylles automatisk ut i alle fremtidige rapporter
+- Kan oppdateres når som helst via samme knapp
 
 ## Funksjonalitet
 
-### 1. Checkbox for Ekstern Lånegiver
-- **Plassering**: Under "Låneinformasjon" (seksjon 2.1)
-- **Funksjon**: Aktiverer/deaktiverer felter for ekstern lånegiver
-- **Label**: "Jeg har en ekstern eller privat lånegiver"
+### 1. Visning i Rapport
+- **Plassering**: Som en sub-seksjon under "Låneinformasjon" (seksjon 2)
+- **Visning**: Kun synlig når "hasExternalLender" er true
+- **Styling**: Mindre og mer kompakt enn hovedseksjoner, med venstre border
 
 ### 2. Navn på Lånegiver
 - **Type**: Tekstfelt
@@ -26,6 +33,23 @@ Denne funksjonen lar brukere registrere eksterne eller private lånegivere i bol
 
 ## Teknisk Implementering
 
+### Database Schema
+
+**Tabell**: `external_lender_settings`
+
+```sql
+CREATE TABLE external_lender_settings (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id),
+  has_external_lender BOOLEAN NOT NULL DEFAULT false,
+  external_lender_name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE
+);
+```
+
+**RLS Policies**: Brukere kan kun se og redigere sine egne innstillinger.
+
 ### Data Struktur
 
 ```typescript
@@ -36,17 +60,37 @@ interface CalculatorData {
   covenantFile: File | null;
   covenantFileUrl: string;
 }
+
+interface ExternalLenderSettings {
+  hasExternalLender: boolean;
+  externalLenderName: string;
+}
 ```
 
 ### Komponenter
 
+#### ExternalLenderDialog
+- Dialog for å konfigurere lagrede innstillinger
+- Checkbox for å aktivere/deaktivere ekstern lånegiver
+- Tekstfelt for navn på lånegiver
+- Lagrer innstillinger i databasen
+
 #### CalculatorPDFPreview
-- Håndterer UI for checkbox, tekstfelt og fil-opplasting
-- Validerer fil-type og størrelse
-- Viser/skjuler felt basert på checkbox-status
+- Viser ekstern lånegiver som en sub-seksjon under låneinformasjon
+- Kun synlig når hasExternalLender er true
+- Kompakt design med venstre border
+- Fil-opplasting for covenant-dokumenter
+
+#### CalculatorChat
+- Wallet-knapp (blå) for å åpne ExternalLenderDialog
+- Anvender lagrede innstillinger til rapporten
+
+#### useExternalLenderSettings Hook
+- Laster og lagrer innstillinger fra/til databasen
+- Håndterer state for ekstern lånegiver
 
 #### useCalculatorData Hook
-- Lagrer state for ekstern lånegiver
+- Lagrer state for ekstern lånegiver i rapporten
 - Håndterer data-oppdateringer
 
 ## Bruksscenarioer
