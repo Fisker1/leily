@@ -105,7 +105,7 @@ serve(async (req) => {
 
     // Check if message contains Finn.no URL or code
     let finnCode = null;
-    let extractedData = null;
+    let extractedData = null; // Declare once and reuse throughout
     
     console.log('=== Starting Finn.no detection ===');
     
