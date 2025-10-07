@@ -344,34 +344,35 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
         
         // Build friendly response
         assistantMessage = 'Perfekt! Jeg har hentet ut følgende data:\n\n';
-        if (extractedData.address) assistantMessage += `📍 Adresse: ${extractedData.address}\n`;
-        if (extractedData.finnCode) assistantMessage += `🔢 FINN-kode: ${extractedData.finnCode}\n`;
-        if (extractedData.totalPrice) assistantMessage += `💰 Prisantydning: ${extractedData.totalPrice.toLocaleString('nb-NO')} kr\n`;
-        if (extractedData.propertyType) assistantMessage += `🏠 Boligtype: ${extractedData.propertyType}\n`;
-        if (extractedData.ownershipType) assistantMessage += `📋 Eierform: ${extractedData.ownershipType}\n`;
-        if (extractedData.livingArea) assistantMessage += `📐 Primærrom (BRA): ${extractedData.livingArea} m²\n`;
-        if (extractedData.bedrooms) assistantMessage += `🛏️ Soverom: ${extractedData.bedrooms}\n`;
-        if (extractedData.rooms) assistantMessage += `🚪 Antall rom: ${extractedData.rooms}\n`;
-        if (extractedData.buildYear) assistantMessage += `🏗️ Byggeår: ${extractedData.buildYear}\n`;
-        if (extractedData.energyRating) assistantMessage += `⚡ Energimerke: ${extractedData.energyRating}\n`;
-        if (extractedData.plotArea) assistantMessage += `🌳 Tomteareal: ${extractedData.plotArea} m²\n`;
-        if (extractedData.municipality) assistantMessage += `🏛️ Kommune: ${extractedData.municipality}\n`;
-        if (extractedData.county) assistantMessage += `🗺️ Fylke: ${extractedData.county}\n`;
-        if (extractedData.commonCosts) assistantMessage += `💵 Felleskostnader: ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n`;
-        if (extractedData.municipalFees) assistantMessage += `🏛️ Kommunale avgifter: ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/mnd\n`;
-        if (extractedData.monthlyRent) assistantMessage += `💸 Forventet leieinntekt: ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n`;
+        if (extractedData.address) assistantMessage += `📍 **Adresse:** ${extractedData.address}\n\n`;
+        if (extractedData.finnCode) assistantMessage += `🔢 **FINN-kode:** ${extractedData.finnCode} 🔥\n\n`;
+        if (extractedData.totalPrice) assistantMessage += `💰 **Prisantydning:** ${extractedData.totalPrice.toLocaleString('nb-NO')} kr 💰\n\n`;
+        if (extractedData.propertyType) assistantMessage += `🏠 **Boligtype:** ${extractedData.propertyType}\n\n`;
+        if (extractedData.ownershipType) assistantMessage += `📋 **Eierform:** ${extractedData.ownershipType}\n\n`;
+        if (extractedData.livingArea) assistantMessage += `📐 **Primærrom (BRA):** ${extractedData.livingArea} m² 📏\n\n`;
+        if (extractedData.bedrooms) assistantMessage += `🛏️ **Soverom:** ${extractedData.bedrooms} 🟧\n\n`;
+        if (extractedData.rooms) assistantMessage += `🚪 **Antall rom:** ${extractedData.rooms} 🪟\n\n`;
+        if (extractedData.buildYear) assistantMessage += `🏗️ **Byggeår:** ${extractedData.buildYear} 🌲\n\n`;
+        if (extractedData.energyRating) assistantMessage += `⚡ **Energimerke:** ${extractedData.energyRating}\n\n`;
+        if (extractedData.plotArea) assistantMessage += `🌳 **Tomteareal:** ${extractedData.plotArea} m²\n\n`;
+        if (extractedData.municipality) assistantMessage += `🏛️ **Kommune:** ${extractedData.municipality} 🏢\n\n`;
+        if (extractedData.county) assistantMessage += `🗺️ **Fylke:** ${extractedData.county}\n\n`;
+        if (extractedData.commonCosts) assistantMessage += `💵 **Felleskostnader:** ${extractedData.commonCosts.toLocaleString('nb-NO')} kr/mnd\n\n`;
+        if (extractedData.municipalFees) assistantMessage += `🏛️ **Kommunale avgifter:** ${extractedData.municipalFees.toLocaleString('nb-NO')} kr/mnd\n\n`;
+        if (extractedData.monthlyRent) assistantMessage += `💸 **Forventet leieinntekt:** ${extractedData.monthlyRent.toLocaleString('nb-NO')} kr/mnd\n\n`;
         
         if (extractedData.facilities && Array.isArray(extractedData.facilities) && extractedData.facilities.length > 0) {
-          assistantMessage += `\n✨ Fasiliteter:\n`;
+          assistantMessage += `✨ **Fasiliteter:**\n`;
           extractedData.facilities.slice(0, 10).forEach((f: string) => {
-            assistantMessage += `   • ${f}\n`;
+            assistantMessage += `• ${f}\n`;
           });
           if (extractedData.facilities.length > 10) {
-            assistantMessage += `   ... og ${extractedData.facilities.length - 10} flere\n`;
+            assistantMessage += `• ... og ${extractedData.facilities.length - 10} flere\n`;
           }
+          assistantMessage += `\n`;
         }
         
-        assistantMessage += '\nDataen er nå fylt inn i rapporten! 🎉';
+        assistantMessage += 'Dataen er nå fylt inn i rapporten! 🎉';
       }
     } else {
       // Regular text response
