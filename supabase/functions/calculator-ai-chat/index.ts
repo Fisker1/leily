@@ -104,68 +104,54 @@ serve(async (req) => {
 
     console.log('=== Processing message with OpenAI ===');
     
-    // Smart HTML shaver: Extract only relevant data to reduce tokens
-    let processedMessage = message;
-    const estimatedTokens = message.length / 4; // Rough estimate: 4 chars per token
+    // Field mapping from Finn.no to calculator
+    const finnToCalculatorMapping: Record<string, string> = {
+      'id': 'finnCode',
+      'price': 'totalPrice',
+      'primary_size': 'livingArea',
+      'bedrooms': 'bedrooms',
+      'property_type': 'propertyType',
+      'construction_year': 'buildYear',
+      'plot_area': 'plotArea',
+      'rooms': 'rooms',
+      'municipality': 'municipality'
+    };
     
-    if (estimatedTokens > 25000) {
-      console.log('Message too large, attempting to shave down...');
-      
-      // Try to extract __NEXT_DATA__ script tag
-      const nextDataMatch = message.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
-      if (nextDataMatch) {
-        console.log('Found __NEXT_DATA__ script, extracting JSON...');
-        processedMessage = nextDataMatch[1];
-        console.log('Reduced from', message.length, 'to', processedMessage.length, 'characters');
-      } else {
-        // Try to find any JSON structure in the HTML
-        const jsonMatches = message.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
-        if (jsonMatches && jsonMatches.length > 0) {
-          // Find the largest JSON object (likely to contain property data)
-          const largestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
-          processedMessage = largestJson;
-          console.log('Extracted largest JSON object, reduced to', processedMessage.length, 'characters');
-        } else {
-          // Last resort: Extract visible text content
-          const textContent = message
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-          processedMessage = textContent.slice(0, 100000); // Keep first 100k chars
-          console.log('Extracted text content, reduced to', processedMessage.length, 'characters');
-        }
-      }
-    }
-    
-    // Check if user pasted HTML source code or JSON data from Finn.no
-    const isHtmlSource = processedMessage.includes('"@type":"Product"') ||
-                         processedMessage.includes('"price"') && processedMessage.includes('"address"') ||
-                         processedMessage.includes('finn.no') ||
-                         (processedMessage.startsWith('{') && processedMessage.includes('"price"'));
+    // Check if message contains structured Finn.no data
+    const isHtmlSource = message.includes('advertising') || 
+                         message.includes('propertyData') ||
+                         message.includes('"id":') && message.includes('"price":');
     
     // Build system prompt based on content type
     const systemPrompt = isHtmlSource 
-      ? `Du er en ekspert på å ekstrahere eiendomsdata fra HTML/JSON strukturer.
+      ? `Du er en ekspert på å ekstrahere eiendomsdata fra Finn.no strukturer.
 
-VIKTIG: Brukeren har limt inn data fra en Finn.no annonse (enten HTML med <script id="__NEXT_DATA__"> eller JSON direkte).
-Din jobb er å parse dataen og ekstrahere ALL relevant eiendomsinformasjon.
+VIKTIG: Brukeren har sendt strukturert data fra Finn.no med 'advertising-initial-state' eller 'propertyData'.
 
-Tips for parsing:
-- Hvis det er <script id="__NEXT_DATA__">, hent JSON fra innholdet
-- Se etter "price", "address", "livingArea", "propertyType" etc i JSON strukturen
-- Finn.no bruker ofte nested objekter som "adData", "realestate" etc
+DATA MAPPING (fra Finn.no til calculator):
+- id → finnCode
+- price → totalPrice (kun tall)
+- primary_size → livingArea (kun tall i m²)
+- bedrooms → bedrooms (kun tall)
+- property_type → propertyType (DETACHED=Enebolig, APARTMENT=Leilighet, osv)
+- construction_year → buildYear (kun årstall)
+- plot_area → plotArea (kun tall i m²)
+
+SE FØRST ETTER "propertyData" objektet - her ligger all kritisk info ferdig strukturert!
+
+Hvis propertyData ikke finnes, se etter:
+- advertising.config.adServer.gam.targeting array (key/value par)
+- title felt for adresse
 
 Ekstraher følgende felt (bruk null hvis data mangler):
-- address: Full adresse (ofte i "location.address" eller "address")
-- totalPrice: Totalpris (kun tall, uten "kr") (ofte i "price" eller "pricing.totalPrice")
-- propertyType: Type bolig (leilighet, enebolig, etc)
-- livingArea: Primærrom/BRA i kvm (kun tall) (ofte "livingArea" eller "primaryArea")
-- commonCosts: Felleskostnader per måned (kun tall) (ofte "sharedCost" eller "commonCosts")
+- address: Full adresse
+- totalPrice: Totalpris (kun tall, uten "kr")
+- propertyType: Type bolig 
+- livingArea: BRA i kvm (kun tall)
+- commonCosts: Felleskostnader per måned (kun tall)
 - municipalFees: Kommunale avgifter per år (kun tall)
-- buildYear: Byggeår (kun årstall) (ofte "yearBuilt" eller "buildYear")
-- bedrooms: Antall soverom (kun tall) (ofte "bedrooms")
+- buildYear: Byggeår (kun årstall)
+- bedrooms: Antall soverom (kun tall)
 - monthlyRent: Forventet leieinntekt per måned hvis relevant
 
 BRUK TOOL CALLING for å returnere dataen strukturert.`
@@ -199,12 +185,11 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       ...(history || []),
     ];
     
-    // Use processed message instead of original
     // Add user message with attachments if present
     if (attachments && attachments.length > 0) {
       const content: any[] = [{ 
         type: 'text', 
-        text: processedMessage || 'Jeg har lastet opp dokumenter. Kan du analysere dem?' 
+        text: message || 'Jeg har lastet opp dokumenter. Kan du analysere dem?' 
       }];
       
       for (const att of attachments) {
@@ -218,7 +203,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       
       messages.push({ role: 'user', content });
     } else {
-      messages.push({ role: 'user', content: processedMessage });
+      messages.push({ role: 'user', content: message });
     }
 
     // Define tool for structured data extraction

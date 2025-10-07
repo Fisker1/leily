@@ -94,48 +94,86 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const shaveHtml = (html: string): string => {
+  const extractPropertyDataFromAdvertising = (adData: any) => {
+    const targeting = adData?.config?.adServer?.gam?.targeting || [];
+    const data: any = {};
+    
+    targeting.forEach((item: any) => {
+      if (item.value && item.value.length > 0) {
+        data[item.key] = item.value[0];
+      }
+    });
+    
+    return data;
+  };
+
+  const shaveHtml = (html: string): { extracted: string; preview: any; tokens: number } => {
     console.log('Starting HTML shaving, original size:', html.length);
+    const result: any = {};
     
-    // Step 1: Try to extract __NEXT_DATA__ script (Finn.no specific)
-    const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
-    if (nextDataMatch) {
-      console.log('Found __NEXT_DATA__ script');
-      return nextDataMatch[1].trim();
+    // PRIORITET 1: advertising-initial-state (VIKTIGST!)
+    const advertisingMatch = html.match(/<script[^>]*id="advertising-initial-state"[^>]*type="application\/json"[^>]*>([\s\S]*?)<\/script>/i);
+    if (advertisingMatch) {
+      try {
+        const adData = JSON.parse(advertisingMatch[1]);
+        result.advertising = adData;
+        result.propertyData = extractPropertyDataFromAdvertising(adData);
+        console.log('✅ Found advertising-initial-state with property data');
+      } catch (e) {
+        console.error('Failed to parse advertising-initial-state:', e);
+      }
     }
     
-    // Step 2: Remove common bloat
-    let cleaned = html
-      // Remove all script tags except __NEXT_DATA__
-      .replace(/<script(?![^>]*id="__NEXT_DATA__")[^>]*>[\s\S]*?<\/script>/gi, '')
-      // Remove all style tags
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      // Remove comments
-      .replace(/<!--[\s\S]*?-->/g, '')
-      // Remove meta tags
-      .replace(/<meta[^>]*>/gi, '')
-      // Remove link tags
-      .replace(/<link[^>]*>/gi, '')
-      // Remove svg elements (usually icons/graphics)
-      .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '');
-    
-    // Step 3: Try to find JSON structures (likely to contain property data)
-    const jsonMatches = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
-    if (jsonMatches && jsonMatches.length > 0) {
-      // Find largest JSON object
-      const largestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
-      console.log('Found JSON structure, size:', largestJson.length);
-      return largestJson;
+    // PRIORITET 2: company-profile-data (meglerinformasjon)
+    const companyMatch = html.match(/<script[^>]*data-company-profile-data[^>]*type="application\/json"[^>]*>([\s\S]*?)<\/script>/i);
+    if (companyMatch) {
+      try {
+        result.company = JSON.parse(companyMatch[1]);
+        console.log('✅ Found company-profile-data');
+      } catch (e) {
+        console.error('Failed to parse company-profile-data:', e);
+      }
     }
     
-    // Step 4: Last resort - extract only visible text content
-    const textContent = cleaned
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    // PRIORITET 3: Synlig data (fallback)
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    if (titleMatch) result.title = titleMatch[1];
     
-    console.log('Extracted text content, final size:', textContent.length);
-    return textContent.slice(0, 100000); // Keep first 100k chars
+    const finnCodeMatch = html.match(/finnkode[=:]\s*(\d+)/i);
+    if (finnCodeMatch) result.finnCode = finnCodeMatch[1];
+    
+    // Fallback: Try __NEXT_DATA__ if advertising-initial-state not found
+    if (!result.advertising) {
+      const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+      if (nextDataMatch) {
+        try {
+          result.nextData = JSON.parse(nextDataMatch[1]);
+          console.log('✅ Found __NEXT_DATA__ as fallback');
+        } catch (e) {}
+      }
+    }
+    
+    // Create preview for user
+    const preview: any = {};
+    if (result.propertyData) {
+      preview.finnCode = result.propertyData.id;
+      preview.price = result.propertyData.price;
+      preview.primarySize = result.propertyData.primary_size;
+      preview.bedrooms = result.propertyData.bedrooms;
+      preview.propertyType = result.propertyData.property_type;
+      preview.constructionYear = result.propertyData.construction_year;
+    }
+    
+    const jsonString = JSON.stringify(result, null, 2);
+    const estimatedTokens = Math.ceil(jsonString.length / 4);
+    
+    console.log('Shaving complete. Tokens:', estimatedTokens);
+    
+    return {
+      extracted: jsonString,
+      preview,
+      tokens: estimatedTokens
+    };
   };
 
   const handleShaveHtml = async () => {
@@ -149,21 +187,19 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       isProcessing: true,
       stage: 'shaving',
       progress: 30,
-      message: 'Fjerner unødvendig HTML...'
+      message: 'Analyserer HTML...'
     });
 
     try {
-      // Simulate processing time for UX
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 400));
       
-      const shaved = shaveHtml(htmlInput);
-      const estimatedTokens = shaved.length / 4;
+      const result = shaveHtml(htmlInput);
       
-      setProcessingStatus(prev => ({ ...prev, progress: 70, message: 'Validerer resultat...' }));
+      setProcessingStatus(prev => ({ ...prev, progress: 70, message: 'Validerer data...' }));
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      if (estimatedTokens > 25000) {
-        toast.error('Kunne ikke redusere nok. Prøv å kopier kun relevante seksjoner.');
+      if (result.tokens > 25000) {
+        toast.error('Data for stor (>25k tokens). Prøv å kopier kun HTML-kildekoden.');
         setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
         setIsShaving(false);
         return;
@@ -171,7 +207,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       
       setShavedData({
         original: htmlInput,
-        shaved,
+        shaved: result.extracted,
         timestamp: Date.now()
       });
       
@@ -179,13 +215,30 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
       setShaverDialogOpen(false);
       setHtmlInput('');
       
-      const reduction = ((1 - shaved.length / htmlInput.length) * 100).toFixed(0);
-      toast.success(`✅ HTML redusert med ${reduction}%! (${htmlInput.length} → ${shaved.length} tegn)`);
+      // Show preview of found data
+      const reduction = ((1 - result.extracted.length / htmlInput.length) * 100).toFixed(0);
+      let message = `✅ HTML prosessert (${reduction}% reduksjon)\n\n`;
+      
+      if (result.preview.finnCode) {
+        message += `📊 Funnet data:\n`;
+        message += `• FINN-kode: ${result.preview.finnCode}\n`;
+        if (result.preview.price) message += `• Pris: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
+        if (result.preview.primarySize) message += `• Størrelse: ${result.preview.primarySize} m²\n`;
+        if (result.preview.bedrooms) message += `• Soverom: ${result.preview.bedrooms}\n`;
+        if (result.preview.propertyType) message += `• Type: ${result.preview.propertyType}\n`;
+        message += `\n📏 ${result.tokens.toLocaleString()} tokens`;
+      } else {
+        message += `⚠️ Fant ikke advertising-initial-state\n`;
+        message += `Bruker fallback-strategi\n`;
+        message += `📏 ${result.tokens.toLocaleString()} tokens`;
+      }
+      
+      toast.success(message, { duration: 6000 });
       
       // Auto-send the shaved data to AI
       setTimeout(() => {
-        setInput(shaved);
-        toast.info('📤 Klar til å analysere! Trykk Send eller endre meldingen.');
+        setInput(result.extracted);
+        toast.info('📤 Klar til analyse! Trykk Send.');
       }, 500);
       
     } catch (error) {
