@@ -320,69 +320,79 @@ Alt fylles automatisk ut i rapporten! 📄`
       setShaverDialogOpen(false);
       setHtmlInput('');
       
-      // Send directly to AI without showing in chat
       setProcessingStatus({
         isProcessing: true,
         stage: 'analyzing',
         progress: 70,
-        message: 'Analyserer eiendomsdata med AI...'
+        message: 'Fyller ut PDF-rapport automatisk...'
       });
       
       setIsLoading(true);
 
-      const { data, error } = await supabase.functions.invoke('calculator-ai-chat', {
-        body: {
-          message: result.extracted,
-          sessionId,
-          calculatorData,
-          attachments: []
-        }
-      });
+      // Auto-fill PDF fields directly with parsed data
+      if (result.preview.finnCode) onDataUpdate?.('finnCode', result.preview.finnCode);
+      if (result.preview.price) onDataUpdate?.('totalPrice', result.preview.price.toString());
+      if (result.preview.address) onDataUpdate?.('address', result.preview.address);
+      if (result.preview.primarySize) onDataUpdate?.('livingArea', result.preview.primarySize.toString());
+      if (result.preview.bedrooms) onDataUpdate?.('bedrooms', result.preview.bedrooms.toString());
+      if (result.preview.rooms) onDataUpdate?.('rooms', result.preview.rooms.toString());
+      if (result.preview.propertyType) onDataUpdate?.('propertyType', result.preview.propertyType);
+      if (result.preview.constructionYear) onDataUpdate?.('buildYear', result.preview.constructionYear.toString());
+      if (result.preview.plotArea) onDataUpdate?.('plotArea', result.preview.plotArea.toString());
+      if (result.preview.energyRating) onDataUpdate?.('energyRating', result.preview.energyRating);
+      if (result.preview.commonCosts) onDataUpdate?.('commonCosts', result.preview.commonCosts.toString());
+      if (result.preview.municipalFees) onDataUpdate?.('municipalFees', result.preview.municipalFees.toString());
+      if (result.preview.ownershipType) onDataUpdate?.('ownershipType', result.preview.ownershipType);
 
-      if (error) throw error;
+      // Estimate rent automatically in background
+      try {
+        setProcessingStatus(prev => ({
+          ...prev,
+          progress: 80,
+          message: 'Estimerer leiepris...'
+        }));
 
-      if (data.error) {
-        if (data.error.includes('Insufficient credits')) {
-          toast.error('Du har ikke nok kreditter. Trenger 0.5 kreditter per analyse.');
+        const rentEstimateData = {
+          postalCode: result.preview.postalCode,
+          municipality: result.preview.municipality,
+          propertyType: result.preview.propertyType,
+          bedrooms: result.preview.bedrooms,
+          primarySize: result.preview.primarySize,
+          furnished: false, // Default
+          parking: result.preview.facilities?.some((f: string) => f.toLowerCase().includes('parkering')),
+          utilities: false // Default
+        };
+
+        const { data: rentData, error: rentError } = await supabase.functions.invoke('estimate-rent', {
+          body: rentEstimateData
+        });
+
+        if (!rentError && rentData?.estimatedRent) {
+          // Fill in estimated rent (monthly)
+          onDataUpdate?.('monthlyRent', rentData.estimatedRent.toString());
+          onDataUpdate?.('isRentAutoEstimated', true);
+          
+          toast.success(`✅ Estimert månedlig leie: ${rentData.estimatedRent.toLocaleString('nb-NO')} kr`, {
+            duration: 5000
+          });
+          
+          console.log('🏠 Rent estimation:', rentData);
         } else {
-          toast.error(data.error);
+          console.log('Could not estimate rent:', rentError);
         }
-        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
-        setIsLoading(false);
-        return;
+      } catch (rentEstError) {
+        console.error('Error estimating rent:', rentEstError);
+        // Non-critical error, continue
       }
 
-      setSessionId(data.sessionId);
+      setProcessingStatus({
+        isProcessing: false,
+        stage: 'complete',
+        progress: 100,
+        message: 'Ferdig! ✅'
+      });
       
-      // Only show the AI response in chat
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-
-      // Auto-fill fields if AI extracted data
-      if (data.extractedData && onDataUpdate) {
-        setProcessingStatus({
-          isProcessing: true,
-          stage: 'complete',
-          progress: 90,
-          message: 'Fyller ut rapport...'
-        });
-
-        Object.entries(data.extractedData).forEach(([field, value]) => {
-          if (value !== null && value !== undefined) {
-            onDataUpdate(field, value);
-          }
-        });
-
-        setTimeout(() => {
-          setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 100, message: '' });
-          toast.success('✅ Data automatisk fylt inn i rapporten!');
-        }, 500);
-      } else {
-        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
-      }
-
-      if (data.creditsUsed > 0) {
-        toast.success(`Analyse fullført (${data.creditsUsed} kreditter brukt)`);
-      }
+      toast.success('✅ Data automatisk fylt inn i rapporten!');
       
     } catch (error) {
       console.error('Shaving/analysis error:', error);

@@ -43,10 +43,12 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     sharedExpenses: data.sharedExpenses || '',
     hasExternalLender: data.hasExternalLender || false,
     externalLenderName: data.externalLenderName || '',
-    covenantFileUrl: data.covenantFileUrl || ''
+    covenantFileUrl: data.covenantFileUrl || '',
+    isRentAutoEstimated: data.isRentAutoEstimated || false
   });
   
   const [covenantFile, setCovenantFile] = useState<File | null>(null);
+  const [rentManuallyEdited, setRentManuallyEdited] = useState(false);
 
   // Update form when data prop changes (from AI)
   useEffect(() => {
@@ -62,6 +64,12 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     onDataChange?.(field, value);
+    
+    // Track if rent is manually edited
+    if (field === 'monthlyRent' && typeof value === 'string') {
+      setRentManuallyEdited(true);
+      onDataChange?.('isRentAutoEstimated', false);
+    }
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,12 +97,20 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
   };
 
   // Helper component to render input or text based on print mode
-  const PrintableInput = ({ value, onChange, placeholder, label, id }: { 
+  const PrintableInput = ({ 
+    value, 
+    onChange, 
+    placeholder, 
+    label, 
+    id,
+    isAutoEstimated = false 
+  }: { 
     value: string; 
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; 
     placeholder?: string;
     label?: string;
     id?: string;
+    isAutoEstimated?: boolean;
   }) => {
     if (isPrintMode && value) {
       return (
@@ -108,13 +124,18 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       return null; // Don't show empty fields in print mode
     }
     
+    // Special styling for auto-estimated rent (light gray background)
+    const inputClassName = isAutoEstimated && !rentManuallyEdited
+      ? "mt-1 rounded-none h-8 bg-gray-100 border-gray-300"
+      : "mt-1 rounded-none h-8";
+    
     return (
       <Input
         id={id}
         value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
-        className="mt-1 rounded-none h-8"
+        className={inputClassName}
         readOnly={!onChange}
       />
     );
@@ -453,12 +474,18 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   </h2>
                   
                   <div>
-                    <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold text-xs">Månedlig leieinntekt</Label>
+                    <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold text-xs">
+                      Månedlig leieinntekt
+                      {formData.isRentAutoEstimated && !rentManuallyEdited && (
+                        <span className="ml-2 text-xs text-gray-500 font-normal">(AI-estimert)</span>
+                      )}
+                    </Label>
                     <PrintableInput
                       id="monthlyRent"
                       value={formData.monthlyRent}
                       onChange={(e) => handleChange('monthlyRent', e.target.value)}
                       placeholder="kr/mnd"
+                      isAutoEstimated={formData.isRentAutoEstimated && !rentManuallyEdited}
                     />
                   </div>
 

@@ -4,6 +4,15 @@
 
 ### Hoved-features
 
+#### ✨ Automatisk Leiepris-estimering (NY)
+- **Bakgrunnsberegning**: Estimerer automatisk månedlig leiepris basert på Finn.no data
+- **Husleie.no-metode**: Bruker samme beregningsmetode som husleie.no
+- **AI-indikator**: Lysegrå bakgrunn + "(AI-estimert)" label for auto-estimerte verdier
+- **Manuell overstyring**: Bruker kan endre verdien → bakgrunn blir hvit
+- **Bankvisualisering**: Tydelig distinksjon mellom AI-estimat og bruker-input
+- **Edge function**: `estimate-rent` for server-side beregning
+- **Parametere**: Lokasjon, boligtype, størrelse, soverom, fasiliter
+
 #### ✨ Ekstern/Privat Lånegiver (NY)
 - **Checkbox for eksterne lånegivere**: Enkelt å markere om man har privat finansiering
 - **Navn på lånegiver**: Tekstfelt for å spesifisere hvem lånegiveren er
@@ -69,6 +78,7 @@
 - `docs/features/new-calculator-system.md` - Komplett guide
 - `docs/MIGRATION_TO_NEW_CALCULATOR.md` - Migreringsguide
 - `docs/CHANGELOG_2025.md` - Denne filen
+- `docs/features/auto-rent-estimation.md` - **NY**: Automatisk leiepris-estimering
 
 #### Oppdaterte Dokumenter
 - `docs/index.md` - Inkluderer ny kalkulator
@@ -131,6 +141,7 @@ Se [MIGRATION_TO_NEW_CALCULATOR.md](MIGRATION_TO_NEW_CALCULATOR.md) for detaljer
 - [ ] Support for Hybel.no og Tise
 - [ ] Batch-prosessering av flere eiendommer
 - [ ] PDF templates/branding
+- [ ] Integrasjon med husleie.no API for bedre leiepris-estimering
 
 #### Q2 2025
 - [ ] AI-genererte markedsanalyser

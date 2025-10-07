@@ -30,6 +30,9 @@ interface CalculatorData {
   covenantFile: File | null;
   covenantFileUrl: string;
   
+  // Rent estimation tracking
+  isRentAutoEstimated: boolean;
+  
   // Module activation tracking
   activatedModules: Set<string>;
   moduleInputs: { [key: string]: { [field: string]: boolean } };
@@ -60,6 +63,8 @@ const initialData: CalculatorData = {
   externalLenderName: "",
   covenantFile: null,
   covenantFileUrl: "",
+  
+  isRentAutoEstimated: false,
   
   activatedModules: new Set(),
   moduleInputs: {}

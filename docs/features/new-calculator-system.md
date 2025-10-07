@@ -31,6 +31,10 @@ Hovedgrensesnittet for brukerinteraksjon med tre primære funksjoner:
 **Nye funksjoner (2025):**
 - **Ekstern/Privat Lånegiver**: Checkbox og tekstfelt for å registrere private lånegivere
 - **Covenant-opplasting**: Mulighet til å laste opp PDF-dokumenter (maks 10MB)
+- **Automatisk Leiepris-estimering**: AI-drevet estimering basert på husleie.no-metode
+  - Lysegrå bakgrunn = AI-estimert
+  - Hvit bakgrunn = Manuelt redigert
+  - Kjøres automatisk i bakgrunnen ved HTML parsing
 
 #### 2. **CalculatorPDFPreview** (`src/components/calculator/CalculatorPDFPreview.tsx`)
 Viser sanntidsforhåndsvisning av boligfinansieringsrapporten:
@@ -105,9 +109,11 @@ Ekstraherte data fylles direkte inn i `CalculatorPDFPreview`:
 1. **Start**: Bruker åpner kalkulatoren
 2. **Hent Data**: Klikk "📋 Formater" og lim inn Finn.no HTML
 3. **Automatisk**: System ekstraherer og fyller ut felter
-4. **Lån Setup**: Klikk "🧮 Lånekalkulator" for å sette lånedetaljer
-5. **Ekstern Lånegiver** (Valgfritt): Huk av og last opp covenant hvis relevant
-6. **Ferdig**: PDF-rapporten er klar til eksport
+4. **Auto-estimering**: System estimerer leiepris basert på boligdata (lysegrå bakgrunn)
+5. **Lån Setup**: Klikk "🧮 Lånekalkulator" for å sette lånedetaljer
+6. **Juster leiepris** (Valgfritt): Endre estimert leiepris → bakgrunn blir hvit
+7. **Ekstern Lånegiver** (Valgfritt): Huk av og last opp covenant hvis relevant
+8. **Ferdig**: PDF-rapporten er klar til eksport
 
 ### AI Chat (Valgfritt)
 - Still spørsmål om rapporten
@@ -212,5 +218,6 @@ Lagrer individuelle meldinger:
 
 - [useCalculatorData Hook](../hooks/useCalculatorData.md)
 - [Loan Calculator](./loan-calculator.md)
+- [Automatisk Leiepris-estimering](./auto-rent-estimation.md)
 - [Ekstern/Privat Lånegiver](./external-lender.md)
 - [Supabase Edge Functions](../apis/supabase-functions.md)
