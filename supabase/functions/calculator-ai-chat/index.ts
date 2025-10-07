@@ -114,10 +114,12 @@ serve(async (req) => {
       console.log(`Detected Finn.no code: ${finnCode}, fetching property data...`);
       
       try {
-        // Call finn-property-scraper using supabase.functions.invoke
-        const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const { data: finnData, error: finnError } = await serviceSupabase.functions.invoke('finn-property-scraper', {
-          body: { finnCode }
+        // Call finn-property-scraper with user's auth header
+        const { data: finnData, error: finnError } = await supabase.functions.invoke('finn-property-scraper', {
+          body: { finnCode },
+          headers: {
+            Authorization: authHeader
+          }
         });
         
         if (!finnError && finnData?.success && finnData?.data) {
