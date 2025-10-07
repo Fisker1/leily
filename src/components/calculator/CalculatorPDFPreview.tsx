@@ -190,7 +190,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
   const PageFooter = ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => (
     <div className="mt-auto px-10 py-4 bg-gray-50 border-t-2 border-gray-200">
       <div className="flex justify-between items-center text-xs text-gray-600">
-        <p>Dette dokumentet er generert automatisk av Leily og er ment som et verktøy for finansiell planlegging.</p>
+        <p>Dette er kun et verktøy. Oppsøk bankrådgiver for godkjenning av lån.</p>
         <p className="font-semibold">Side {pageNumber} / {totalPages}</p>
       </div>
     </div>
@@ -211,11 +211,11 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
       <div className="flex-1 p-8 overflow-auto bg-gray-100">
         
-        {/* PDF Pages Container - Adobe-style viewer */}
-        <div className="max-w-[850px] mx-auto space-y-6">
+        {/* PDF Pages Container - Adobe-style viewer with fixed A4 dimensions */}
+        <div className="flex flex-col items-center space-y-6">
           
-          {/* Page 1 */}
-          <div className="pdf-page bg-white shadow-xl" style={{ aspectRatio: '210/297' }}>
+          {/* Page 1 - Fixed A4 size (210mm x 297mm at 96 DPI = 794px x 1123px) */}
+          <div className="pdf-page bg-white shadow-xl" style={{ width: '794px', height: '1123px', flexShrink: 0 }}>
             <div className="h-full flex flex-col">
               {/* Header with Gradient */}
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8">
@@ -343,8 +343,8 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
             </div>
           </div>
 
-          {/* Page 2 */}
-          <div className="pdf-page bg-white shadow-xl" style={{ aspectRatio: '210/297' }}>
+          {/* Page 2 - Fixed A4 size */}
+          <div className="pdf-page bg-white shadow-xl" style={{ width: '794px', height: '1123px', flexShrink: 0 }}>
             <div className="h-full flex flex-col">
               {/* Content */}
               <div className="flex-1 px-10 py-8 space-y-6 overflow-hidden">
