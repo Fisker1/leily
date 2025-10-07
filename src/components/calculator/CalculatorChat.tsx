@@ -39,24 +39,14 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hei! 👋 Jeg hjelper deg med å fylle ut boligfinansieringsrapporten.
+      content: `Hei! 👋 Jeg hjelper deg med boligfinansieringsrapporten.
 
-**Slik analyserer du en eiendom fra Finn.no:**
+**Kom i gang:**
+1. **📋 Formater** - Lim inn HTML-kode fra Finn.no
+2. **🧮 Lånekalkulator** - Sett opp låneinformasjon
+3. **💬 Chat** - Still spørsmål eller last opp dokumenter
 
-1. Åpne annonsen på Finn.no
-2. Trykk **Ctrl+U** (Windows) eller **Cmd+Option+U** (Mac)
-3. Kopier ALT (Ctrl+A, Ctrl+C)
-4. Trykk på grønne **HTML**-knappen oppe til høyre
-5. Lim inn HTML-koden i dialogboksen
-
-✨ Jeg ekstraherer automatisk kun den relevante dataen fra HTML-koden!
-
-**Andre funksjoner:**
-• **📎 Vedlegg**: Last opp bilder eller PDF-dokumenter for analyse
-• **🧮 Lånekalkulator**: Klikk på kalkulator-ikonet for å sette opp låneinformasjon
-• **💬 Spørsmål**: Stille meg spørsmål om eiendomsfinansiering
-
-Alt fylles automatisk ut i rapporten til høyre! 📄`
+Alt fylles automatisk ut i rapporten! 📄`
     }
   ]);
   const [input, setInput] = useState('');
@@ -523,11 +513,21 @@ Alt fylles automatisk ut i rapporten til høyre! 📄`
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Scissors className="h-5 w-5" />
-              HTML Shaver - Finn.no
+              HTML Formater - Finn.no
             </DialogTitle>
             <DialogDescription>
-              Lim inn hele HTML-koden fra Finn.no (Ctrl+U → Ctrl+A → Ctrl+C). 
-              Jeg fjerner automatisk unødvendig data og beholder kun eiendomsinformasjonen.
+              <div className="space-y-3 text-sm">
+                <p className="font-semibold">Slik henter du HTML-kode fra Finn.no:</p>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li>Åpne eiendomsannonsen på Finn.no</li>
+                  <li>Trykk <strong>Ctrl+U</strong> (Windows) eller <strong>Cmd+Option+U</strong> (Mac)</li>
+                  <li>Kopier ALT (Ctrl+A, Ctrl+C)</li>
+                  <li>Lim inn HTML-koden nedenfor</li>
+                </ol>
+                <p className="text-muted-foreground mt-3">
+                  ✨ Jeg ekstraherer automatisk kun den relevante eiendomsinformasjonen!
+                </p>
+              </div>
             </DialogDescription>
           </DialogHeader>
           
