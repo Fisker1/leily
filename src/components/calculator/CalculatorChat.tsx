@@ -491,9 +491,9 @@ Alt fylles automatisk ut i rapporten til høyre! 📄`
               onClick={() => setShaverDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 h-9 px-3"
+              className="gap-2 bg-orange-500 hover:bg-orange-600 text-white border-orange-500 hover:border-orange-600 h-9 px-3"
               aria-label="HTML Shaver"
-              title="HTML Shaver"
+              title="Formater"
             >
               <Scissors className="h-4 w-4" />
             </Button>
