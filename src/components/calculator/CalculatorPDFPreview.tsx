@@ -2,12 +2,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet } from 'lucide-react';
+import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet, Upload, File } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatNumberWithSpaces } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface CalculatorPDFPreviewProps {
   data?: Record<string, any>;
@@ -39,8 +40,13 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     municipalFees: data.municipalFees || '',
     insurance: data.insurance || '',
     electricityMonthly: data.electricityMonthly || '',
-    sharedExpenses: data.sharedExpenses || ''
+    sharedExpenses: data.sharedExpenses || '',
+    hasExternalLender: data.hasExternalLender || false,
+    externalLenderName: data.externalLenderName || '',
+    covenantFileUrl: data.covenantFileUrl || ''
   });
+  
+  const [covenantFile, setCovenantFile] = useState<File | null>(null);
 
   // Update form when data prop changes (from AI)
   useEffect(() => {
@@ -53,9 +59,33 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
     }));
   }, [data]);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     onDataChange?.(field, value);
+  };
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type (PDF only)
+      if (file.type !== 'application/pdf') {
+        alert('Kun PDF-filer er tillatt');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Filen er for stor (maks 10MB)');
+        return;
+      }
+      
+      setCovenantFile(file);
+      
+      // Create a URL for the file
+      const fileUrl = URL.createObjectURL(file);
+      handleChange('covenantFileUrl', fileUrl);
+      onDataChange?.('covenantFile', file);
+    }
   };
 
   // Helper component to render input or text based on print mode
@@ -446,6 +476,90 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+                
+                {/* External/Private Lender Section */}
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
+                    2.1 Ekstern/Privat Lånegiver
+                  </h2>
+                  
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Checkbox
+                      id="hasExternalLender"
+                      checked={formData.hasExternalLender}
+                      onCheckedChange={(checked) => handleChange('hasExternalLender', checked as boolean)}
+                    />
+                    <Label 
+                      htmlFor="hasExternalLender" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Jeg har en ekstern eller privat lånegiver
+                    </Label>
+                  </div>
+                  
+                  {formData.hasExternalLender && (
+                    <div className="space-y-3 pl-6 border-l-2 border-primary/30">
+                      <div>
+                        <Label htmlFor="externalLenderName" className="text-gray-700 font-semibold text-xs">
+                          Navn på lånegiver
+                        </Label>
+                        <PrintableInput
+                          id="externalLenderName"
+                          value={formData.externalLenderName}
+                          onChange={(e) => handleChange('externalLenderName', e.target.value)}
+                          placeholder="F.eks. Familie, Venner, Privat investor..."
+                        />
+                      </div>
+                      
+                      {!isPrintMode && (
+                        <div>
+                          <Label className="text-gray-700 font-semibold text-xs mb-2 block">
+                            Last opp Covenant (valgfritt)
+                          </Label>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('covenant-upload')?.click()}
+                              className="flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Last opp PDF
+                            </Button>
+                            <input
+                              id="covenant-upload"
+                              type="file"
+                              accept=".pdf"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                            {(covenantFile || formData.covenantFileUrl) && (
+                              <div className="flex items-center gap-2 text-sm text-green-600">
+                                <File className="h-4 w-4" />
+                                <span>{covenantFile?.name || 'Covenant lastet opp'}</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maks 10MB, kun PDF-format
+                          </p>
+                        </div>
+                      )}
+                      
+                      {isPrintMode && (covenantFile || formData.covenantFileUrl) && (
+                        <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded">
+                          <File className="h-4 w-4 text-gray-600" />
+                          <span className="text-sm font-medium">
+                            Covenant vedlagt: {covenantFile?.name || 'covenant.pdf'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

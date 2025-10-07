@@ -24,6 +24,12 @@ interface CalculatorData {
   renovationCost: string;
   postRenovationValue: string;
   
+  // External/Private Lender
+  hasExternalLender: boolean;
+  externalLenderName: string;
+  covenantFile: File | null;
+  covenantFileUrl: string;
+  
   // Module activation tracking
   activatedModules: Set<string>;
   moduleInputs: { [key: string]: { [field: string]: boolean } };
@@ -49,6 +55,11 @@ const initialData: CalculatorData = {
   isRenovation: false,
   renovationCost: "200000",
   postRenovationValue: "2800000",
+  
+  hasExternalLender: false,
+  externalLenderName: "",
+  covenantFile: null,
+  covenantFileUrl: "",
   
   activatedModules: new Set(),
   moduleInputs: {}

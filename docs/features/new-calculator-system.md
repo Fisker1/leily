@@ -28,6 +28,10 @@ Hovedgrensesnittet for brukerinteraksjon med tre primære funksjoner:
 - Eiendomstype
 - Rominfo
 
+**Nye funksjoner (2025):**
+- **Ekstern/Privat Lånegiver**: Checkbox og tekstfelt for å registrere private lånegivere
+- **Covenant-opplasting**: Mulighet til å laste opp PDF-dokumenter (maks 10MB)
+
 #### 2. **CalculatorPDFPreview** (`src/components/calculator/CalculatorPDFPreview.tsx`)
 Viser sanntidsforhåndsvisning av boligfinansieringsrapporten:
 
@@ -102,7 +106,8 @@ Ekstraherte data fylles direkte inn i `CalculatorPDFPreview`:
 2. **Hent Data**: Klikk "📋 Formater" og lim inn Finn.no HTML
 3. **Automatisk**: System ekstraherer og fyller ut felter
 4. **Lån Setup**: Klikk "🧮 Lånekalkulator" for å sette lånedetaljer
-5. **Ferdig**: PDF-rapporten er klar til eksport
+5. **Ekstern Lånegiver** (Valgfritt): Huk av og last opp covenant hvis relevant
+6. **Ferdig**: PDF-rapporten er klar til eksport
 
 ### AI Chat (Valgfritt)
 - Still spørsmål om rapporten
@@ -166,6 +171,7 @@ Lagrer individuelle meldinger:
 - [ ] Historikk av kalkulasjoner
 - [ ] Eksport til flere formater
 - [ ] Deling av rapporter
+- [ ] Lagring av covenant-dokumenter i Supabase Storage
 
 ### Under Vurdering
 - [ ] Offline-modus for HTML parsing
@@ -206,4 +212,5 @@ Lagrer individuelle meldinger:
 
 - [useCalculatorData Hook](../hooks/useCalculatorData.md)
 - [Loan Calculator](./loan-calculator.md)
+- [Ekstern/Privat Lånegiver](./external-lender.md)
 - [Supabase Edge Functions](../apis/supabase-functions.md)

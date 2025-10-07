@@ -4,6 +4,13 @@
 
 ### Hoved-features
 
+#### ✨ Ekstern/Privat Lånegiver (NY)
+- **Checkbox for eksterne lånegivere**: Enkelt å markere om man har privat finansiering
+- **Navn på lånegiver**: Tekstfelt for å spesifisere hvem lånegiveren er
+- **Covenant-opplasting**: Last opp PDF-dokumenter (maks 10MB)
+- **Validering**: Automatisk filtype og størrelsessjekk
+- **PDF-integrering**: Vises profesjonelt i eksportert rapport
+
 #### ✨ AI-Drevet Eiendomskalkulator
 - **CalculatorChat**: Nytt chat-grensesnitt med tre hovedfunksjoner:
   - 📋 HTML Shaver: Parser Finn.no HTML automatisk
@@ -66,6 +73,7 @@
 #### Oppdaterte Dokumenter
 - `docs/index.md` - Inkluderer ny kalkulator
 - `docs/README.md` - Refererer til ny dokumentasjon
+- `docs/features/external-lender.md` - **NY**: Dokumentasjon for eksterne lånegivere
 
 ### Prestasjons-forbedringer
 

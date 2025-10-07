@@ -4,6 +4,7 @@ Start here to explore public APIs, hooks, contexts, libraries, and components.
 
 ## 🆕 Ny Kalkulator System (2025)
 - **[Ny Kalkulator System](features/new-calculator-system.md)** - Komplett arkitektur og bruksguide
+- **[Ekstern/Privat Lånegiver](features/external-lender.md)** - Håndtering av eksterne lånegivere og covenant-opplasting
 - **[Migreringsguide](MIGRATION_TO_NEW_CALCULATOR.md)** - Hva som endret seg og hvorfor
 - **[Changelog 2025](CHANGELOG_2025.md)** - Alle endringer og forbedringer
 
