@@ -40,7 +40,7 @@ serve(async (req) => {
 
     // Base price per sqm based on property type and location
     // Updated with realistic Norwegian rental market prices (2025)
-    let basePricePerSqm = 200; // Base NOK per sqm for average location
+    let basePricePerSqm = 220; // Base NOK per sqm for average location
 
     // Adjust based on property type
     const propertyTypeMultipliers: Record<string, number> = {
@@ -104,7 +104,7 @@ serve(async (req) => {
 
     // Bedroom premium - more bedrooms = more value
     if (bedrooms && primarySize) {
-      const bedroomBonus = Math.max(0, bedrooms - 1) * 1200; // 1200 kr per extra bedroom
+      const bedroomBonus = Math.max(0, bedrooms - 1) * 1500; // 1500 kr per extra bedroom
       basePricePerSqm += bedroomBonus / primarySize;
     }
 
@@ -153,31 +153,31 @@ serve(async (req) => {
 
     // Balcony/Terrace premium
     if (balcony) {
-      estimatedRent += 800; // +800 kr for balcony/terrace
-      console.log('🌿 Balcony/terrace: +800 kr');
+      estimatedRent += 1000; // +1000 kr for balcony/terrace
+      console.log('🌿 Balcony/terrace: +1000 kr');
     }
 
     // Elevator premium (for apartments)
     if (elevator && propertyType?.toLowerCase().includes('leilighet')) {
-      estimatedRent += 400; // +400 kr for elevator
-      console.log('🏢 Elevator: +400 kr');
+      estimatedRent += 500; // +500 kr for elevator
+      console.log('🏢 Elevator: +500 kr');
     }
 
     // Floor premium (higher floors = premium for apartments)
     if (floor && propertyType?.toLowerCase().includes('leilighet')) {
       if (floor >= 4) {
-        estimatedRent += 800; // Top floors premium
-        console.log('🔝 High floor (4+): +800 kr');
+        estimatedRent += 1000; // Top floors premium
+        console.log('🔝 High floor (4+): +1000 kr');
       } else if (floor === 1) {
-        estimatedRent -= 400; // Ground floor discount
-        console.log('🔽 Ground floor: -400 kr');
+        estimatedRent -= 500; // Ground floor discount
+        console.log('🔽 Ground floor: -500 kr');
       }
     }
 
     // Add-ons
     if (furnished) estimatedRent += Math.round(estimatedRent * 0.15); // +15% for furnished
-    if (parking) estimatedRent += 1500; // Parking premium
-    if (utilities) estimatedRent += 1200; // Utilities premium
+    if (parking) estimatedRent += 1800; // Parking premium
+    if (utilities) estimatedRent += 1500; // Utilities premium
 
     // Round to nearest 500 for cleaner numbers
     estimatedRent = Math.round(estimatedRent / 500) * 500;
