@@ -396,60 +396,30 @@ Alt fylles automatisk ut i rapporten! 📄`
       
       toast.success('✅ Data automatisk fylt inn i rapporten!');
       
-      // Generate AI summary of extracted data
-      try {
-        setIsLoading(true);
-        
-        // Create a summary of what was found
-        const summaryData: any = {
-          finnCode: result.preview.finnCode,
-          address: result.preview.address,
-          price: result.preview.price,
-          propertyType: result.preview.propertyType,
-          livingArea: result.preview.primarySize,
-          bedrooms: result.preview.bedrooms,
-          rooms: result.preview.rooms,
-          buildYear: result.preview.constructionYear,
-          energyRating: result.preview.energyRating,
-          commonCosts: result.preview.commonCosts,
-          municipalFees: result.preview.municipalFees,
-          ownershipType: result.preview.ownershipType
-        };
-        
-        const summaryPrompt = `Jeg har akkurat ekstrahert følgende data fra en FINN.no-annonse:\n\n${JSON.stringify(summaryData, null, 2)}\n\nGi en kort, vennlig oppsummering av eiendommen som ble funnet. Hold det konsist og naturlig.`;
-        
-        const { data: aiData, error: aiError } = await supabase.functions.invoke('calculator-ai-chat', {
-          body: {
-            sessionId: sessionId,
-            message: summaryPrompt,
-            calculatorData: calculatorData
-          }
-        });
-        
-        if (!aiError && aiData?.reply) {
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: aiData.reply
-          }]);
-        } else {
-          // Fallback to simple summary if AI fails
-          let fallbackSummary = '✅ **Eiendomsdata hentet fra FINN.no**\n\n';
-          if (result.preview.address) fallbackSummary += `📍 **Adresse**: ${result.preview.address}\n`;
-          if (result.preview.price) fallbackSummary += `💰 **Pris**: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
-          if (result.preview.propertyType) fallbackSummary += `🏠 **Type**: ${result.preview.propertyType}\n`;
-          if (result.preview.primarySize) fallbackSummary += `📐 **Primærrom**: ${result.preview.primarySize} m²\n`;
-          if (result.preview.bedrooms) fallbackSummary += `🛏️ **Soverom**: ${result.preview.bedrooms}\n`;
-          fallbackSummary += '\nAlle feltene er nå fylt ut i rapporten! 📄';
-          
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: fallbackSummary
-          }]);
-        }
-      } catch (aiError) {
-        console.error('Error generating AI summary:', aiError);
-        // Silent fail - data is already filled in
-      }
+      // Generate detailed summary of extracted data
+      let summary = '✅ **Eiendomsdata hentet fra FINN.no**\n\n';
+      if (result.preview.address) summary += `📍 **Adresse**: ${result.preview.address}\n`;
+      if (result.preview.finnCode) summary += `🔢 **FINN-kode**: ${result.preview.finnCode}\n`;
+      if (result.preview.price) summary += `💰 **Pris**: ${Number(result.preview.price).toLocaleString('nb-NO')} kr\n`;
+      if (result.preview.propertyType) summary += `🏠 **Type**: ${result.preview.propertyType}\n`;
+      if (result.preview.ownershipType) summary += `📋 **Eierform**: ${result.preview.ownershipType}\n`;
+      if (result.preview.primarySize) summary += `📐 **Primærrom**: ${result.preview.primarySize} m²\n`;
+      if (result.preview.bedrooms) summary += `🛏️ **Soverom**: ${result.preview.bedrooms}\n`;
+      if (result.preview.rooms) summary += `🚪 **Rom**: ${result.preview.rooms}\n`;
+      if (result.preview.constructionYear) summary += `🏗️ **Byggeår**: ${result.preview.constructionYear}\n`;
+      if (result.preview.plotArea) summary += `🌳 **Tomteareal**: ${result.preview.plotArea} m²\n`;
+      if (result.preview.energyRating) summary += `⚡ **Energimerke**: ${result.preview.energyRating}\n`;
+      if (result.preview.municipality) summary += `🏛️ **Kommune**: ${result.preview.municipality}\n`;
+      if (result.preview.county) summary += `🗺️ **Fylke**: ${result.preview.county}\n`;
+      if (result.preview.commonCosts) summary += `💵 **Felleskostnader**: ${Number(result.preview.commonCosts).toLocaleString('nb-NO')} kr/mnd\n`;
+      if (result.preview.municipalFees) summary += `🏛️ **Kommunale avgifter**: ${Number(result.preview.municipalFees).toLocaleString('nb-NO')} kr/mnd\n`;
+      
+      summary += '\n**Alle feltene er nå fylt ut i rapporten!** 📄';
+      
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: summary
+      }]);
       
     } catch (error) {
       console.error('Shaving/analysis error:', error);
