@@ -87,12 +87,12 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
-      <div className="p-4 border-b bg-background flex items-center justify-between">
+      <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          <h3 className="font-semibold">Boligfinansieringsrapport</h3>
+          <span className="font-semibold text-lg">Boligfinansieringsrapport</span>
         </div>
-        <Button onClick={handleDownload} size="sm" className="gap-2">
+        <Button onClick={handleDownload} size="sm" className="gap-2 rounded">
           <Download className="h-4 w-4" />
           Last ned PDF
         </Button>
@@ -100,11 +100,11 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
 
       <div className="flex-1 p-8 overflow-auto">
         {/* Paper Effect Container with Shadow */}
-        <div className="max-w-4xl mx-auto bg-white shadow-2xl border-2 border-gray-200 animate-fade-in">
+        <div className="max-w-4xl mx-auto bg-white shadow-2xl border border-gray-200 rounded animate-fade-in">
           {/* Header with Gradient */}
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-4 border-primary/30 px-10 py-8">
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8 rounded-t">
             <div className="text-center space-y-2">
-              <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Boligfinansieringsrapport</h1>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Boligfinansieringsrapport</h1>
               <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                 <FileText className="h-4 w-4" />
                 <span>Generert av Leily</span>

@@ -155,15 +155,15 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
   };
 
   return (
-    <Card className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h3 className="font-semibold">AI-assistent</h3>
+    <div className="flex flex-col h-full bg-background">
+      <div className="p-4 border-b border-border/50 bg-card">
+        <h3 className="font-semibold text-lg">AI-assistent</h3>
         <p className="text-sm text-muted-foreground">
           {hasCredits ? '0.5 kreditter per melding' : '🔒 Kjøp kreditter for å bruke AI-chat'}
         </p>
       </div>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 p-4 bg-background" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((msg, idx) => (
             <div
@@ -171,10 +171,10 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={`max-w-[80%] p-3 ${
                   msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-primary text-primary-foreground rounded-lg'
+                    : 'bg-muted rounded-lg'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -210,9 +210,9 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-border/50 bg-card">
         {!hasCredits && (
-          <div className="mb-3 p-3 bg-muted rounded-lg text-center">
+          <div className="mb-3 p-3 bg-muted rounded text-center">
             <p className="text-sm font-medium mb-2">Kjøp kreditter for å bruke AI-chat</p>
             <Button 
               size="sm" 
@@ -228,7 +228,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
         {attachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {attachments.map((file, idx) => (
-              <div key={idx} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm">
+              <div key={idx} className="flex items-center gap-2 bg-muted rounded px-3 py-2 text-sm">
                 {file.type.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                 <span className="max-w-[100px] truncate">{file.name}</span>
                 <button onClick={() => removeAttachment(idx)} className="hover:text-destructive">
@@ -253,7 +253,7 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             disabled={isLoading || !hasCredits || attachments.length >= 3}
             size="icon"
             variant="outline"
-            className="h-[60px] w-[60px] flex-shrink-0"
+            className="h-[60px] w-[60px] flex-shrink-0 rounded"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -262,14 +262,14 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={hasCredits ? "Skriv en melding..." : "Du må kjøpe kreditter for å bruke chatten"}
-            className="min-h-[60px] max-h-[120px]"
+            className="min-h-[60px] max-h-[120px] rounded"
             disabled={isLoading || !hasCredits}
           />
           <Button
             onClick={handleSend}
             disabled={(!input.trim() && attachments.length === 0) || isLoading || !hasCredits}
             size="icon"
-            className="h-[60px] w-[60px] flex-shrink-0"
+            className="h-[60px] w-[60px] flex-shrink-0 rounded"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -279,6 +279,6 @@ export const CalculatorChat = ({ calculatorData, onDataUpdate, hasCredits = fals
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

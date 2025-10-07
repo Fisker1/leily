@@ -102,13 +102,54 @@ serve(async (req) => {
         credits_used: 0
       });
 
+    // Check if message contains Finn.no URL or code
+    let finnPropertyData = null;
+    const finnUrlMatch = message.match(/finn\.no\/realestate\/homes\/ad\.html\?finnkode=(\d+)/);
+    const finnCodeMatch = message.match(/\b(\d{8,9})\b/);
+    
+    if (finnUrlMatch || finnCodeMatch) {
+      const finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
+      console.log(`Detected Finn.no code: ${finnCode}, fetching property data...`);
+      
+      try {
+        const finnResponse = await fetch(`${SUPABASE_URL}/functions/v1/finn-property-scraper`, {
+          method: 'POST',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ finnCode })
+        });
+        
+        if (finnResponse.ok) {
+          const finnData = await finnResponse.json();
+          finnPropertyData = finnData.data;
+          console.log('Successfully fetched Finn.no data:', finnPropertyData?.address);
+        }
+      } catch (error) {
+        console.error('Error fetching Finn.no data:', error);
+      }
+    }
+
     // Build messages for OpenAI
     const messages: any[] = [
       {
         role: 'system',
         content: `Du er en hjelpsom AI-assistent for eiendomskalkulator. Du hjelper brukere med å fylle ut boligfinansieringsrapporter ved å stille relevante spørsmål og fylle inn data proaktivt.
 
-Når brukeren gir en Finn.no kode, kan du be dem om å hente eiendomsdata først.
+VIKTIG: Når du oppdager en Finn.no link eller kode i brukerens melding:
+${finnPropertyData ? `
+EIENDOMSDATA ER AUTOMATISK HENTET:
+- Adresse: ${finnPropertyData.address}
+- Pris: ${finnPropertyData.price} kr
+- Type: ${finnPropertyData.propertyType}
+- Størrelse: ${finnPropertyData.livingArea} kvm
+- Felleskostnader: ${finnPropertyData.sharedCosts || 'Ikke oppgitt'} kr/mnd
+- Kommunale avgifter: ${finnPropertyData.municipalFees || 'Ikke oppgitt'} kr/mnd
+
+Du MÅ nå fylle ut rapporten med denne dataen automatisk og informere brukeren om hva du har fylt inn.
+Foreslå også estimert leiepris basert på beliggenhet og størrelse.
+` : 'Jeg har ikke klart å hente eiendomsdata automatisk. Spør brukeren om å oppgi nødvendig informasjon manuelt.'}
 
 Når brukeren laster opp bilder eller dokumenter:
 - Analyser bildene nøye og hent ut relevant informasjon
@@ -119,24 +160,27 @@ Når brukeren laster opp bilder eller dokumenter:
 - Presenter funnene tydelig og spør om brukeren vil at du skal fylle inn dataene automatisk
 
 Viktige felt som må fylles ut:
-- Eiendomsinformasjon: Adresse, pris, størrelse, type
-- Låneinformasasjon: Egenkapital, rente, nedbetalingstid
-- Månedlige kostnader: Felleskostnader, kommunale avgifter, forsikring
-- Forventet leieinntekt
+- Eiendomsinformasjon: address, totalPrice, propertyType, livingArea
+- Låneinformasasjon: equity, interestRate, loanPeriod
+- Månedlige kostnader: commonCosts, municipalFees, insurance, electricityMonthly
+- Forventet leieinntekt: monthlyRent
 
 Vær proaktiv: Still ett spørsmål om gangen for å få all nødvendig informasjon.
 
-VIKTIG: Når du har hentet ut data fra dokumenter, avslutt meldingen din med en JSON-struktur på følgende format (på egen linje):
+VIKTIG: Når du har hentet ut data fra dokumenter eller Finn.no, avslutt meldingen din med en JSON-struktur på følgende format (på egen linje):
 EXTRACTED_DATA: {"field1": "value1", "field2": "value2"}
 
 Eksempel på gyldige felt:
-- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance`
+- address, totalPrice, equity, interestRate, loanPeriod, monthlyRent, commonCosts, municipalFees, insurance, electricityMonthly, propertyType, livingArea`
       },
       ...(history || []),
     ];
 
-    // Add user message with attachments
-    if (attachments && attachments.length > 0) {
+    // Add user message with attachments or Finn data context
+    if (finnPropertyData) {
+      const finnMessage = message + `\n\n[System: Eiendomsdata automatisk hentet fra Finn.no]`;
+      messages.push({ role: 'user', content: finnMessage });
+    } else if (attachments && attachments.length > 0) {
       const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
       
       for (const att of attachments) {
@@ -186,6 +230,29 @@ Eksempel på gyldige felt:
       } catch (e) {
         console.error('Failed to parse extracted data:', e);
       }
+    }
+    
+    // If we fetched Finn data, add it to extracted data
+    if (finnPropertyData && !extractedData) {
+      extractedData = {
+        address: finnPropertyData.address,
+        totalPrice: finnPropertyData.price?.toString(),
+        propertyType: finnPropertyData.propertyType,
+        livingArea: finnPropertyData.livingArea?.toString(),
+        commonCosts: finnPropertyData.sharedCosts?.toString(),
+        municipalFees: finnPropertyData.municipalFees?.toString(),
+      };
+    } else if (finnPropertyData && extractedData) {
+      // Merge Finn data with extracted data
+      extractedData = {
+        address: extractedData.address || finnPropertyData.address,
+        totalPrice: extractedData.totalPrice || finnPropertyData.price?.toString(),
+        propertyType: extractedData.propertyType || finnPropertyData.propertyType,
+        livingArea: extractedData.livingArea || finnPropertyData.livingArea?.toString(),
+        commonCosts: extractedData.commonCosts || finnPropertyData.sharedCosts?.toString(),
+        municipalFees: extractedData.municipalFees || finnPropertyData.municipalFees?.toString(),
+        ...extractedData
+      };
     }
 
     // Remove the EXTRACTED_DATA tag from the message
