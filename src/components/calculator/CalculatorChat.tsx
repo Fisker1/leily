@@ -471,7 +471,7 @@ Alt fylles automatisk ut i rapporten! 📄`
               onClick={() => setShaverDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:border-orange-300"
+              className="gap-2 h-9 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200 hover:border-emerald-300"
               aria-label="Formater"
               title="Formater"
             >
@@ -481,7 +481,7 @@ Alt fylles automatisk ut i rapporten! 📄`
               onClick={() => setLoanCalcOpen(true)}
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:border-orange-300"
+              className="gap-2 h-9 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200 hover:border-emerald-300"
               aria-label="Lånekalkulator"
               title="Lånekalkulator"
             >
