@@ -419,13 +419,75 @@ const Calculator = () => {
               </div>
             )}
 
-            {/* Finn Property Fetcher - Visible for all users */}
-            <div className="max-w-2xl mx-auto">
-              <FinnPropertyFetcher
-                onPropertyDataReceived={handleFinnPropertyDataReceived}
-                initialFinnCode={finnCode}
-                className="mb-6"
-              />
+            {/* Finn Property Fetcher + Loan Calculator - Side by side */}
+            <div className="max-w-6xl mx-auto mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <FinnPropertyFetcher
+                  onPropertyDataReceived={handleFinnPropertyDataReceived}
+                  initialFinnCode={finnCode}
+                />
+                
+                {/* Quick Loan Calculator */}
+                {user && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <CalcIcon className="w-5 h-5" />
+                        Låneberegning
+                      </CardTitle>
+                      <CardDescription>
+                        Fyll inn dine lånedetaljer for automatisk beregning
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="quick-equity">Egenkapital</Label>
+                        <CurrencyInput
+                          id="quick-equity"
+                          value={calculatorData.equity}
+                          onChange={(value) => handleInputChange('equity', value)}
+                          placeholder="1 000 000"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="quick-interest">Rente (%)</Label>
+                        <Input
+                          id="quick-interest"
+                          type="number"
+                          step="0.1"
+                          value={calculatorData.interestRate}
+                          onChange={(e) => handleInputChange('interestRate', e.target.value)}
+                          placeholder="4.5"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="quick-period">Nedbetalingstid (år)</Label>
+                        <Input
+                          id="quick-period"
+                          type="number"
+                          value={calculatorData.loanPeriod}
+                          onChange={(e) => handleInputChange('loanPeriod', e.target.value)}
+                          placeholder="30"
+                        />
+                      </div>
+                      
+                      {canAccessLoanCalculator && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setShowProFeatures(!showProFeatures)}
+                        >
+                          <Wallet className="w-4 h-4 mr-2" />
+                          Avansert lånekalkulator
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
 
             {/* Loan Calculator - Only visible when Pro features are enabled */}

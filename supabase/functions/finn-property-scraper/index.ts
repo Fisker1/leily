@@ -729,6 +729,13 @@ serve(async (req) => {
       });
     }
 
+    // Use service role for server-side operations (credits, RLS bypass)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Use anon key with user token for user-specific operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -789,46 +796,53 @@ serve(async (req) => {
 
     console.log('❌ Cache MISS - New fetch required (1 credit)');
 
-    // STEP 2: Check if user has credits
-    const { data: profile } = await supabaseClient
+    // STEP 2: Check if user has credits (using admin client for reliable check)
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('credits')
+      .select('credits, is_test_user')
       .eq('id', user.id)
       .single();
 
-    if (!profile || (profile.credits || 0) < 1) {
-      console.log('❌ User has insufficient credits:', profile?.credits || 0);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Ingen kreditter tilgjengelig. Du trenger 1 kreditt for å hente ny eiendom. Kjøp kreditter for å fortsette.',
-        creditsRequired: 1,
-        creditsAvailable: profile?.credits || 0
-      }), {
-        status: 402, // Payment Required
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    console.log('👤 User profile:', { credits: profile?.credits, is_test_user: profile?.is_test_user });
+
+    // Skip credit check for test users
+    if (!profile?.is_test_user) {
+      if (!profile || (profile.credits || 0) < 1) {
+        console.log('❌ User has insufficient credits:', profile?.credits || 0);
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Ingen kreditter tilgjengelig. Du trenger 1 kreditt for å hente ny eiendom. Kjøp kreditter for å fortsette.',
+          creditsRequired: 1,
+          creditsAvailable: profile?.credits || 0
+        }), {
+          status: 402, // Payment Required
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // STEP 3: Deduct 1 credit using admin client for RPC function
+      console.log('💳 Deducting 1 credit from user...');
+      const { data: creditUsed, error: creditError } = await supabaseAdmin
+        .rpc('use_credits', {
+          credits_to_use: 1,
+          operation_type: 'finn_property_fetch'
+        });
+
+      if (creditError || !creditUsed) {
+        console.log('❌ Failed to deduct credit:', creditError);
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Kunne ikke trekke kreditt. Prøv igjen senere.'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log('✅ Credit deducted successfully');
+    } else {
+      console.log('🎓 Test user - skipping credit deduction');
     }
-
-    // STEP 3: Deduct 1 credit using RPC function
-    console.log('💳 Deducting 1 credit from user...');
-    const { data: creditUsed, error: creditError } = await supabaseClient
-      .rpc('use_credits', {
-        credits_to_use: 1,
-        operation_type: 'finn_property_fetch'
-      });
-
-    if (creditError || !creditUsed) {
-      console.log('❌ Failed to deduct credit:', creditError);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Kunne ikke trekke kreditt. Prøv igjen senere.'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    console.log('✅ Credit deducted successfully');
 
     // STEP 4: Scrape the property from Finn.no
     console.log('🌐 Scraping Finn.no property...');
