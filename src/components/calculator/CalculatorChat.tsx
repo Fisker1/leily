@@ -328,45 +328,8 @@ Alt fylles automatisk ut i rapporten! 📄`
       setShaverDialogOpen(false);
       setHtmlInput('');
       
-      // Send directly to AI without showing in chat
-      setProcessingStatus({
-        isProcessing: true,
-        stage: 'analyzing',
-        progress: 70,
-        message: 'Analyserer eiendomsdata med AI...'
-      });
-      
-      setIsLoading(true);
-
-      const { data, error } = await supabase.functions.invoke('calculator-ai-chat', {
-        body: {
-          message: result.extracted,
-          sessionId,
-          calculatorData,
-          attachments: []
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        if (data.error.includes('Insufficient credits')) {
-          toast.error('Du har ikke nok kreditter. Trenger 0.5 kreditter per analyse.');
-        } else {
-          toast.error(data.error);
-        }
-        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
-        setIsLoading(false);
-        return;
-      }
-
-      setSessionId(data.sessionId);
-      
-      // Only show the AI response in chat
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-
-      // Auto-fill fields if AI extracted data
-      if (data.extractedData && onDataUpdate) {
+      // Send extracted data directly to form WITHOUT going through AI
+      if (result.preview && onDataUpdate) {
         setProcessingStatus({
           isProcessing: true,
           stage: 'complete',
@@ -374,7 +337,28 @@ Alt fylles automatisk ut i rapporten! 📄`
           message: 'Fyller ut rapport...'
         });
 
-        Object.entries(data.extractedData).forEach(([field, value]) => {
+        // Map the extracted data to form fields
+        const dataToFill: Record<string, any> = {
+          address: result.preview.address,
+          finnCode: result.preview.finnCode,
+          totalPrice: result.preview.price,
+          livingArea: result.preview.primarySize,
+          bedrooms: result.preview.bedrooms,
+          rooms: result.preview.rooms,
+          propertyType: result.preview.propertyType,
+          buildYear: result.preview.constructionYear,
+          plotArea: result.preview.plotArea,
+          ownershipType: result.preview.ownershipType,
+          energyRating: result.preview.energyRating,
+          municipality: result.preview.municipality,
+          county: result.preview.county,
+          commonCosts: result.preview.commonCosts,
+          municipalFees: result.preview.municipalFees,
+          facilities: result.preview.facilities
+        };
+
+        // Fill out the form with extracted data
+        Object.entries(dataToFill).forEach(([field, value]) => {
           if (value !== null && value !== undefined) {
             onDataUpdate(field, value);
           }
@@ -386,10 +370,6 @@ Alt fylles automatisk ut i rapporten! 📄`
         }, 500);
       } else {
         setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
-      }
-
-      if (data.creditsUsed > 0) {
-        toast.success(`Analyse fullført (${data.creditsUsed} kreditter brukt)`);
       }
       
     } catch (error) {
