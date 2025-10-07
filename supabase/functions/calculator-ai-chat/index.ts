@@ -34,16 +34,19 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { sessionId, message, calculatorData, attachments } = await req.json();
+    const { sessionId, message, calculatorData, attachments, estimatedMonthlyRent } = await req.json();
     
-    // Check if message contains estimated rent
-    let estimatedRent = null;
+    // Get estimated rent from request body
+    const estimatedRent = estimatedMonthlyRent;
+    if (estimatedRent) {
+      console.log('📊 Estimated rent received:', estimatedRent, 'kr/mnd');
+    }
+    
+    // Parse message if it's JSON
+    let actualMessage = message;
     try {
       const parsedMessage = JSON.parse(message);
-      if (parsedMessage.estimatedMonthlyRent) {
-        estimatedRent = parsedMessage.estimatedMonthlyRent;
-        console.log('📊 Estimated rent received:', estimatedRent, 'kr/mnd');
-      }
+      actualMessage = message; // Keep the JSON string for processing
     } catch (e) {
       // Not JSON, regular message
     }
@@ -241,7 +244,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       
       messages.push({ role: 'user', content });
     } else {
-      messages.push({ role: 'user', content: message });
+      messages.push({ role: 'user', content: actualMessage });
     }
 
     // Define tool for structured data extraction

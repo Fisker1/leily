@@ -437,17 +437,12 @@ Alt fylles automatisk ut i rapporten! 📄`
       });
 
       try {
-        // Add rent estimate to the extracted data for AI summary
-        const dataWithRent = {
-          ...result,
-          estimatedMonthlyRent: estimatedRent
-        };
-        
         const { data: aiData, error: aiError } = await supabase.functions.invoke('calculator-ai-chat', {
           body: {
-            message: JSON.stringify(dataWithRent),
+            message: JSON.stringify(result),
             sessionId,
-            calculatorData
+            calculatorData,
+            estimatedMonthlyRent: estimatedRent
           }
         });
 
