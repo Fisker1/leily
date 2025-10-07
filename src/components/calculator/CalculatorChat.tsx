@@ -180,41 +180,33 @@ Alt fylles automatisk ut i rapporten! 📄`
       console.log('✅ Found energy rating:', result.energyRating);
     }
     
-    // Extract municipal fees (Kommunale avgifter) - use data-testid for reliable extraction
-    const municipalFeesDiv = html.match(/<div[^>]*data-testid="pricing-municipal-fees"[^>]*>([\s\S]*?)<\/div>/i);
-    if (municipalFeesDiv) {
-      const municipalMatch = municipalFeesDiv[1].match(/<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr\s*per\s*år/i);
-      if (municipalMatch) {
-        const yearlyAmount = parseInt(municipalMatch[1].replace(/&nbsp;|\s/g, ''));
-        result.municipalFees = Math.round(yearlyAmount / 12);
-        console.log('✅ Found municipal fees (from data-testid):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
-      }
+    // Extract municipal fees (Kommunale avgifter) - more flexible pattern
+    // Matches: "Kommunale avg" followed by amount and "kr per år"
+    const municipalFeesPattern = /Kommunale\s+avg[^<]*?(\d+(?:\s+\d+)*)\s*kr\s*per\s*år/i;
+    const municipalMatch = html.match(municipalFeesPattern);
+    if (municipalMatch) {
+      // Remove spaces and convert to monthly
+      const yearlyAmount = parseInt(municipalMatch[1].replace(/\s+/g, ''));
+      result.municipalFees = Math.round(yearlyAmount / 12);
+      console.log('✅ Found municipal fees (yearly):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
     } else {
-      // Fallback: try without data-testid
-      const fallbackMatch = html.match(/Kommunale\s+avg[^<]*<\/dt>\s*<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr\s*per\s*år/i);
-      if (fallbackMatch) {
-        const yearlyAmount = parseInt(fallbackMatch[1].replace(/&nbsp;|\s/g, ''));
-        result.municipalFees = Math.round(yearlyAmount / 12);
-        console.log('✅ Found municipal fees (fallback):', yearlyAmount, '-> monthly:', result.municipalFees, 'kr/month');
-      } else {
-        console.log('❌ Could not find municipal fees in HTML');
-      }
+      console.log('❌ Could not find municipal fees in HTML');
     }
     
-    // Extract common costs (Felleskostnader) - use data-testid for reliable extraction
-    const commonCostsDiv = html.match(/<div[^>]*data-testid="pricing-common-monthly-cost"[^>]*>([\s\S]*?)<\/div>/i);
-    if (commonCostsDiv) {
-      const commonMatch = commonCostsDiv[1].match(/<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr/i);
-      if (commonMatch) {
-        result.commonCosts = parseInt(commonMatch[1].replace(/&nbsp;|\s/g, ''));
-        console.log('✅ Found common costs (from data-testid):', result.commonCosts, 'kr/month');
-      }
+    // Extract common costs (Felleskostnader/Fellesutgifter) - more flexible pattern
+    // Matches: "Felleskost" followed by amount and "kr" (but NOT "per år")
+    const commonCostsPattern = /Felleskost(?:nader)?\/mnd[^<]*?(\d+(?:\s+\d+)*)\s*kr/i;
+    const commonMatch = html.match(commonCostsPattern);
+    if (commonMatch) {
+      result.commonCosts = parseInt(commonMatch[1].replace(/\s+/g, ''));
+      console.log('✅ Found common costs:', result.commonCosts, 'kr/month');
     } else {
-      // Fallback: try without data-testid
-      const fallbackMatch = html.match(/Felleskost[^<]*<\/dt>\s*<dd[^>]*class="m-0 font-bold"[^>]*>(\d+(?:&nbsp;|\s)*\d*)\s*kr(?!\s*per\s*år)/i);
-      if (fallbackMatch) {
-        result.commonCosts = parseInt(fallbackMatch[1].replace(/&nbsp;|\s/g, ''));
-        console.log('✅ Found common costs (fallback):', result.commonCosts, 'kr/month');
+      // Try alternative pattern without /mnd
+      const altPattern = /Felleskost[^<]*?<dd[^>]*>(\d+(?:\s+\d+)*)\s*kr(?!\s*per)/i;
+      const altMatch = html.match(altPattern);
+      if (altMatch) {
+        result.commonCosts = parseInt(altMatch[1].replace(/\s+/g, ''));
+        console.log('✅ Found common costs (alt pattern):', result.commonCosts, 'kr/month');
       } else {
         console.log('❌ Could not find common costs in HTML');
       }
@@ -328,8 +320,45 @@ Alt fylles automatisk ut i rapporten! 📄`
       setShaverDialogOpen(false);
       setHtmlInput('');
       
-      // Send extracted data directly to form WITHOUT going through AI
-      if (result.preview && onDataUpdate) {
+      // Send directly to AI without showing in chat
+      setProcessingStatus({
+        isProcessing: true,
+        stage: 'analyzing',
+        progress: 70,
+        message: 'Analyserer eiendomsdata med AI...'
+      });
+      
+      setIsLoading(true);
+
+      const { data, error } = await supabase.functions.invoke('calculator-ai-chat', {
+        body: {
+          message: result.extracted,
+          sessionId,
+          calculatorData,
+          attachments: []
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        if (data.error.includes('Insufficient credits')) {
+          toast.error('Du har ikke nok kreditter. Trenger 0.5 kreditter per analyse.');
+        } else {
+          toast.error(data.error);
+        }
+        setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
+        setIsLoading(false);
+        return;
+      }
+
+      setSessionId(data.sessionId);
+      
+      // Only show the AI response in chat
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+
+      // Auto-fill fields if AI extracted data
+      if (data.extractedData && onDataUpdate) {
         setProcessingStatus({
           isProcessing: true,
           stage: 'complete',
@@ -337,28 +366,7 @@ Alt fylles automatisk ut i rapporten! 📄`
           message: 'Fyller ut rapport...'
         });
 
-        // Map the extracted data to form fields
-        const dataToFill: Record<string, any> = {
-          address: result.preview.address,
-          finnCode: result.preview.finnCode,
-          totalPrice: result.preview.price,
-          livingArea: result.preview.primarySize,
-          bedrooms: result.preview.bedrooms,
-          rooms: result.preview.rooms,
-          propertyType: result.preview.propertyType,
-          buildYear: result.preview.constructionYear,
-          plotArea: result.preview.plotArea,
-          ownershipType: result.preview.ownershipType,
-          energyRating: result.preview.energyRating,
-          municipality: result.preview.municipality,
-          county: result.preview.county,
-          commonCosts: result.preview.commonCosts,
-          municipalFees: result.preview.municipalFees,
-          facilities: result.preview.facilities
-        };
-
-        // Fill out the form with extracted data
-        Object.entries(dataToFill).forEach(([field, value]) => {
+        Object.entries(data.extractedData).forEach(([field, value]) => {
           if (value !== null && value !== undefined) {
             onDataUpdate(field, value);
           }
@@ -371,22 +379,14 @@ Alt fylles automatisk ut i rapporten! 📄`
       } else {
         setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
       }
+
+      if (data.creditsUsed > 0) {
+        toast.success(`Analyse fullført (${data.creditsUsed} kreditter brukt)`);
+      }
       
     } catch (error) {
       console.error('Shaving/analysis error:', error);
-      
-      // More detailed error message
-      const errorMessage = error instanceof Error ? error.message : 'Ukjent feil';
-      console.error('Detailed error:', errorMessage);
-      
-      if (errorMessage.includes('too large') || errorMessage.includes('for lang')) {
-        toast.error('HTML for stor. Kopier kun <script id="advertising-initial-state"> seksjonen.');
-      } else if (errorMessage.includes('Insufficient credits')) {
-        toast.error('Du har ikke nok kreditter.');
-      } else {
-        toast.error(`Feil ved prosessering: ${errorMessage}`);
-      }
-      
+      toast.error('Kunne ikke prosessere HTML');
       setProcessingStatus({ isProcessing: false, stage: 'complete', progress: 0, message: '' });
     } finally {
       setIsShaving(false);
