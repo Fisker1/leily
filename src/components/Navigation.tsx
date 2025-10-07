@@ -42,15 +42,15 @@ const Navigation = () => {
           {/* Center Navigation - Only visible on desktop */}
           <div className="hidden md:flex flex-1 justify-center">
             <div className="flex items-center space-x-8">
-              <Link to="/calculator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-4">
+              <Link to="/calculator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-3">
                 <Calculator className="h-4 w-4" />
                 Eiendomskalkulator
               </Link>
-              <Link to="/utleie" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-4">
+              <Link to="/utleie" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-3">
                 <Briefcase className="h-4 w-4" />
                 Utleie
               </Link>
-              <Link to="/portfolio" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-4">
+              <Link to="/portfolio" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 mt-3">
                 <PieChart className="h-4 w-4" />
                 Portefølje
               </Link>
