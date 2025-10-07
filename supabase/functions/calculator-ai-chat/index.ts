@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -103,7 +104,7 @@ serve(async (req) => {
       });
 
     // Check if message contains Finn.no URL or code
-    let finnPropertyData = null;
+    let finnSearchResults = null;
     // Match various Finn.no URL formats
     const finnUrlMatch = message.match(/finn\.no\/(?:realestate\/homes\/)?ad\.html\?finnkode=(\d+)/i) ||
                          message.match(/finn\.no\/.*?(\d{8,9})/);
@@ -111,29 +112,47 @@ serve(async (req) => {
     
     if (finnUrlMatch || finnCodeMatch) {
       const finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
-      console.log(`Detected Finn.no code: ${finnCode}, fetching property data...`);
+      console.log(`Detected Finn.no code: ${finnCode}, searching web for property data...`);
       
       try {
-        // Call finn-property-scraper with user's auth header
-        const { data: finnData, error: finnError } = await supabase.functions.invoke('finn-property-scraper', {
-          body: { finnCode },
-          headers: {
-            Authorization: authHeader
-          }
-        });
+        // Use Perplexity API to search for property information
+        const searchQuery = `Finn.no finnkode ${finnCode} eiendom adresse pris størrelse felleskostnader kommunale avgifter`;
         
-        if (!finnError && finnData?.success && finnData?.data) {
-          finnPropertyData = finnData.data;
-          console.log('Successfully fetched Finn.no data:', {
-            address: finnPropertyData.address,
-            price: finnPropertyData.price,
-            type: finnPropertyData.propertyType
-          });
+        const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-sonar-large-128k-online',
+            messages: [
+              {
+                role: 'system',
+                content: 'Du er en assistent som henter eiendomsinformasjon fra Finn.no. Ekstraher følgende detaljer hvis tilgjengelig: adresse, pris, eiendomstype, bruksareal (primærrom), felleskostnader, kommunale avgifter. Svar på norsk i klartekst format.'
+              },
+              {
+                role: 'user',
+                content: searchQuery
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 1000,
+            return_images: false,
+            return_related_questions: false,
+            search_recency_filter: 'month'
+          }),
+        });
+
+        if (perplexityResponse.ok) {
+          const perplexityData = await perplexityResponse.json();
+          finnSearchResults = perplexityData.choices[0].message.content;
+          console.log('Successfully retrieved Finn.no search results');
         } else {
-          console.error('Failed to fetch Finn.no data:', finnError || 'No data returned');
+          console.error('Perplexity API error:', perplexityResponse.status);
         }
       } catch (error) {
-        console.error('Error fetching Finn.no data:', error);
+        console.error('Error searching for Finn.no data:', error);
       }
     }
 
@@ -143,19 +162,21 @@ serve(async (req) => {
         role: 'system',
         content: `Du er en hjelpsom AI-assistent for eiendomskalkulator. Du hjelper brukere med å fylle ut boligfinansieringsrapporter ved å stille relevante spørsmål og fylle inn data proaktivt.
 
-VIKTIG: Når du oppdager en Finn.no link eller kode i brukerens melding:
-${finnPropertyData ? `
-EIENDOMSDATA ER AUTOMATISK HENTET:
-- Adresse: ${finnPropertyData.address}
-- Pris: ${finnPropertyData.price} kr
-- Type: ${finnPropertyData.propertyType}
-- Størrelse: ${finnPropertyData.livingArea} kvm
-- Felleskostnader: ${finnPropertyData.sharedCosts || 'Ikke oppgitt'} kr/mnd
-- Kommunale avgifter: ${finnPropertyData.municipalFees || 'Ikke oppgitt'} kr/mnd
+${finnSearchResults ? `
+EIENDOMSINFORMASJON FRA WEBSØK:
+${finnSearchResults}
+
+Analyser denne informasjonen nøye og ekstraher følgende data hvis tilgjengelig:
+- Adresse
+- Pris (totalPrice)
+- Eiendomstype (propertyType)
+- Bruksareal/primærrom (livingArea)
+- Felleskostnader (commonCosts)
+- Kommunale avgifter (municipalFees)
 
 Du MÅ nå fylle ut rapporten med denne dataen automatisk og informere brukeren om hva du har fylt inn.
 Foreslå også estimert leiepris basert på beliggenhet og størrelse.
-` : 'Jeg har ikke klart å hente eiendomsdata automatisk. Spør brukeren om å oppgi nødvendig informasjon manuelt.'}
+` : 'VIKTIG: Når brukeren oppgir en Finn.no link eller kode, be dem om å oppgi nødvendig informasjon manuelt siden automatisk henting kan være utfordrende.'}
 
 Når brukeren laster opp bilder eller dokumenter:
 - Analyser bildene nøye og hent ut relevant informasjon
@@ -182,9 +203,9 @@ Eksempel på gyldige felt:
       ...(history || []),
     ];
 
-    // Add user message with attachments or Finn data context
-    if (finnPropertyData) {
-      const finnMessage = message + `\n\n[System: Eiendomsdata automatisk hentet fra Finn.no]`;
+    // Add user message with attachments or Finn search results context
+    if (finnSearchResults) {
+      const finnMessage = message + `\n\n[System: Eiendomsinformasjon hentet via websøk]`;
       messages.push({ role: 'user', content: finnMessage });
     } else if (attachments && attachments.length > 0) {
       const content: any[] = [{ type: 'text', text: message || 'Jeg har lastet opp noen dokumenter. Kan du hjelpe meg med å hente ut relevant informasjon?' }];
@@ -236,29 +257,6 @@ Eksempel på gyldige felt:
       } catch (e) {
         console.error('Failed to parse extracted data:', e);
       }
-    }
-    
-    // If we fetched Finn data, add it to extracted data
-    if (finnPropertyData && !extractedData) {
-      extractedData = {
-        address: finnPropertyData.address,
-        totalPrice: finnPropertyData.price?.toString(),
-        propertyType: finnPropertyData.propertyType,
-        livingArea: finnPropertyData.livingArea?.toString(),
-        commonCosts: finnPropertyData.sharedCosts?.toString(),
-        municipalFees: finnPropertyData.municipalFees?.toString(),
-      };
-    } else if (finnPropertyData && extractedData) {
-      // Merge Finn data with extracted data
-      extractedData = {
-        address: extractedData.address || finnPropertyData.address,
-        totalPrice: extractedData.totalPrice || finnPropertyData.price?.toString(),
-        propertyType: extractedData.propertyType || finnPropertyData.propertyType,
-        livingArea: extractedData.livingArea || finnPropertyData.livingArea?.toString(),
-        commonCosts: extractedData.commonCosts || finnPropertyData.sharedCosts?.toString(),
-        municipalFees: extractedData.municipalFees || finnPropertyData.municipalFees?.toString(),
-        ...extractedData
-      };
     }
 
     // Remove the EXTRACTED_DATA tag from the message
