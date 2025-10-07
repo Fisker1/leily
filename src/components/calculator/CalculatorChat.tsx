@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText, Scissors, Calculator } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image as ImageIcon, FileText, Scissors, Calculator, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { LoanCalculatorDialog } from '@/components/LoanCalculatorDialog';
+import { ExternalLenderDialog } from '@/components/ExternalLenderDialog';
 import ReactMarkdown from 'react-markdown';
 
 interface Message {
@@ -64,6 +65,7 @@ Alt fylles automatisk ut i rapporten! 📄`
   const [shavedData, setShavedData] = useState<ShavedData | null>(null);
   const [isShaving, setIsShaving] = useState(false);
   const [loanCalcOpen, setLoanCalcOpen] = useState(false);
+  const [externalLenderOpen, setExternalLenderOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -563,6 +565,16 @@ Alt fylles automatisk ut i rapporten! 📄`
             >
               <Calculator className="h-4 w-4" />
             </Button>
+            <Button
+              onClick={() => setExternalLenderOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9 px-3 bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 hover:border-blue-300"
+              aria-label="Privatlån"
+              title="Privatlån"
+            >
+              <Wallet className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         
@@ -792,6 +804,19 @@ Alt fylles automatisk ut i rapporten! 📄`
           onDataUpdate?.('propertyValue', data.propertyPrice);
           onDataUpdate?.('loanAmount', data.desiredLoanAmount);
           toast.success('Låneinnstillinger anvendt på rapporten');
+        }}
+      />
+      
+      {/* External Lender Dialog */}
+      <ExternalLenderDialog
+        open={externalLenderOpen}
+        onOpenChange={setExternalLenderOpen}
+        hasCredits={hasCredits}
+        onApply={(data) => {
+          // Apply external lender data to calculator
+          onDataUpdate?.('hasExternalLender', data.hasExternalLender);
+          onDataUpdate?.('externalLenderName', data.externalLenderName);
+          toast.success('Privatlån-innstillinger anvendt på rapporten');
         }}
       />
     </div>

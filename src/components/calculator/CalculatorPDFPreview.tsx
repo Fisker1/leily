@@ -463,6 +463,69 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                       </div>
                     </div>
                   )}
+                  
+                  {/* External/Private Lender Sub-section */}
+                  {formData.hasExternalLender && (
+                    <div className="mt-4 pl-4 border-l-2 border-primary/30 space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-700">
+                        Ekstern/Privat Lånegiver
+                      </h3>
+                      
+                      <div>
+                        <Label className="text-gray-600 text-xs">Navn på lånegiver</Label>
+                        <PrintableInput
+                          value={formData.externalLenderName}
+                          onChange={(e) => handleChange('externalLenderName', e.target.value)}
+                          placeholder="F.eks. Familie, Venner..."
+                        />
+                      </div>
+                      
+                      {!isPrintMode && (
+                        <div>
+                          <Label className="text-gray-600 text-xs mb-2 block">
+                            Covenant (valgfritt)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('covenant-upload')?.click()}
+                              className="flex items-center gap-2 h-8 text-xs"
+                            >
+                              <Upload className="h-3 w-3" />
+                              Last opp PDF
+                            </Button>
+                            <input
+                              id="covenant-upload"
+                              type="file"
+                              accept=".pdf"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                            {(covenantFile || formData.covenantFileUrl) && (
+                              <div className="flex items-center gap-1 text-xs text-green-600">
+                                <File className="h-3 w-3" />
+                                <span>{covenantFile?.name || 'Lastet opp'}</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Maks 10MB, kun PDF
+                          </p>
+                        </div>
+                      )}
+                      
+                      {isPrintMode && (covenantFile || formData.covenantFileUrl) && (
+                        <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+                          <File className="h-3 w-3 text-gray-600" />
+                          <span className="font-medium">
+                            Covenant: {covenantFile?.name || 'covenant.pdf'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -507,91 +570,6 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
                   )}
                 </div>
 
-                <Separator />
-                
-                {/* External/Private Lender Section */}
-                <div className="space-y-3">
-                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
-                    2.1 Ekstern/Privat Lånegiver
-                  </h2>
-                  
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Checkbox
-                      id="hasExternalLender"
-                      checked={formData.hasExternalLender}
-                      onCheckedChange={(checked) => handleChange('hasExternalLender', checked as boolean)}
-                    />
-                    <Label 
-                      htmlFor="hasExternalLender" 
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      Jeg har en ekstern eller privat lånegiver
-                    </Label>
-                  </div>
-                  
-                  {formData.hasExternalLender && (
-                    <div className="space-y-3 pl-6 border-l-2 border-primary/30">
-                      <div>
-                        <Label htmlFor="externalLenderName" className="text-gray-700 font-semibold text-xs">
-                          Navn på lånegiver
-                        </Label>
-                        <PrintableInput
-                          id="externalLenderName"
-                          value={formData.externalLenderName}
-                          onChange={(e) => handleChange('externalLenderName', e.target.value)}
-                          placeholder="F.eks. Familie, Venner, Privat investor..."
-                        />
-                      </div>
-                      
-                      {!isPrintMode && (
-                        <div>
-                          <Label className="text-gray-700 font-semibold text-xs mb-2 block">
-                            Last opp Covenant (valgfritt)
-                          </Label>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => document.getElementById('covenant-upload')?.click()}
-                              className="flex items-center gap-2"
-                            >
-                              <Upload className="h-4 w-4" />
-                              Last opp PDF
-                            </Button>
-                            <input
-                              id="covenant-upload"
-                              type="file"
-                              accept=".pdf"
-                              onChange={handleFileUpload}
-                              className="hidden"
-                            />
-                            {(covenantFile || formData.covenantFileUrl) && (
-                              <div className="flex items-center gap-2 text-sm text-green-600">
-                                <File className="h-4 w-4" />
-                                <span>{covenantFile?.name || 'Covenant lastet opp'}</span>
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Maks 10MB, kun PDF-format
-                          </p>
-                        </div>
-                      )}
-                      
-                      {isPrintMode && (covenantFile || formData.covenantFileUrl) && (
-                        <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded">
-                          <File className="h-4 w-4 text-gray-600" />
-                          <span className="text-sm font-medium">
-                            Covenant vedlagt: {covenantFile?.name || 'covenant.pdf'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
 
                 {/* Expenses */}
                 <div className="space-y-3">
