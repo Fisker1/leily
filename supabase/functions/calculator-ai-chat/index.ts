@@ -104,27 +104,31 @@ serve(async (req) => {
 
     // Check if message contains Finn.no URL or code
     let finnPropertyData = null;
-    const finnUrlMatch = message.match(/finn\.no\/realestate\/homes\/ad\.html\?finnkode=(\d+)/);
-    const finnCodeMatch = message.match(/\b(\d{8,9})\b/);
+    // Match various Finn.no URL formats
+    const finnUrlMatch = message.match(/finn\.no\/(?:realestate\/homes\/)?ad\.html\?finnkode=(\d+)/i) ||
+                         message.match(/finn\.no\/.*?(\d{8,9})/);
+    const finnCodeMatch = !finnUrlMatch ? message.match(/\b(\d{8,9})\b/) : null;
     
     if (finnUrlMatch || finnCodeMatch) {
       const finnCode = finnUrlMatch?.[1] || finnCodeMatch?.[1];
       console.log(`Detected Finn.no code: ${finnCode}, fetching property data...`);
       
       try {
-        const finnResponse = await fetch(`${SUPABASE_URL}/functions/v1/finn-property-scraper`, {
-          method: 'POST',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ finnCode })
+        // Call finn-property-scraper using supabase.functions.invoke
+        const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: finnData, error: finnError } = await serviceSupabase.functions.invoke('finn-property-scraper', {
+          body: { finnCode }
         });
         
-        if (finnResponse.ok) {
-          const finnData = await finnResponse.json();
+        if (!finnError && finnData?.success && finnData?.data) {
           finnPropertyData = finnData.data;
-          console.log('Successfully fetched Finn.no data:', finnPropertyData?.address);
+          console.log('Successfully fetched Finn.no data:', {
+            address: finnPropertyData.address,
+            price: finnPropertyData.price,
+            type: finnPropertyData.propertyType
+          });
+        } else {
+          console.error('Failed to fetch Finn.no data:', finnError || 'No data returned');
         }
       } catch (error) {
         console.error('Error fetching Finn.no data:', error);
