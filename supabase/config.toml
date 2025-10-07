@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.estimate-electricity]
 verify_jwt = true
+
+[functions.calculator-ai-chat]
+verify_jwt = true
