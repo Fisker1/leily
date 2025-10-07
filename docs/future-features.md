@@ -455,3 +455,245 @@ CREATE TABLE building_planner_daily_usage (
 - Forutsigbar maksimalkostnad per dag (30 credits)
 - Fleksibilitet mellom hastighet og grundighet
 - Ikke straffende for de som trenger tid
+
+## Eiendomsdata-system (Property Data Network)
+
+### Oversikt
+Et omfattende system for å samle, lagre og bruke eiendomsdata fra alle brukernes beregninger, utleie og eierskap. Målet er å bygge en stor database med reelle eiendomsdata som kontinuerlig forbedrer nøyaktigheten på alle estimater og beregninger.
+
+### Grunnleggende konsept: Unike eiendoms-ID (US-objekter)
+
+#### Adresse som unik identifikator
+- Hver leilighet/eiendom knyttes til en **unik ID** basert på adresse + husnummer
+- Samme eiendom vil alltid få samme ID i systemet
+- Leilighet nummer/etasje inkluderes når relevant
+- Eksempel: "Storgata 15, 0123 Oslo, Leilighet 301" = én unik ID
+
+#### Persistens på tvers av brukere
+- Når flere brukere regner på samme eiendom, lagres all data under samme ID
+- Data akkumuleres og forbedres over tid
+- Anonymisert historikk for hver eiendom
+
+### Datakilder og bruksområder
+
+#### Hvor data samles inn
+1. **Husleiekalkulator** - når brukere estimerer eller registrerer faktisk leiepris
+2. **Strømestimator** - når brukere registrerer strømforbruk og kostnader
+3. **Forsikringskalkulator** - når brukere legger inn forsikringspremier
+4. **Eiendomspriskalkulator** - når brukere registrerer kjøpspriser eller verdivurderinger
+5. **Portefølje** - når brukere eier og forvalter eiendommer
+6. **Utleie** - når brukere leier ut eiendommer
+
+#### Hva som lagres per eiendom
+- **Adresse og lokasjon**: Fullstendig adresse, koordinater, postnummer, kommune
+- **Fysiske egenskaper**: Størrelse (kvm), antall rom, byggeår, boligtype, etasje
+- **Økonomiske data**: 
+  - Historiske salgspriser med dato
+  - Faktiske leiepriser (anonymisert)
+  - Strømkostnader per måned/år
+  - Forsikringspremier
+  - Felleskostnader
+  - Kommunale avgifter
+- **Tidsstempel**: Når data ble registrert
+- **Datakilde**: Om data er estimert eller faktisk
+- **Anonymisering**: Ingen personopplysninger lagres
+
+### Hvordan data forbedrer beregninger
+
+#### Maskinlæring basert på reelle data
+- Jo flere beregninger som gjøres på en eiendom, desto mer nøyaktige estimater
+- Lokale trender og prisutviklinger fanges opp automatisk
+- Sesongvariasjoner i strømforbruk dokumenteres
+- Faktiske forsikringspremier vs. estimater
+
+#### Nabolagsinformasjon
+- Hvis vi ikke har data på en spesifikk adresse, bruker vi data fra nabolaget
+- Radius-basert søk: 100m, 500m, 1km, samme postnummer
+- Vekting basert på likhet (størrelse, byggeår, type)
+
+#### Bedre estimater over tid
+- **Husleie**: "10 andre brukere har beregnet/registrert leie for denne adressen. Gjennomsnitt: 15.000 kr/mnd"
+- **Strøm**: "Basert på 5 registrerte strømkostnader i denne bygningen, estimerer vi 1.200 kr/mnd"
+- **Forsikring**: "3 andre eiendommer i samme gate har premie på ca. 3.500 kr/år"
+- **Pris**: "Siste 3 salgene i denne oppgangen var 4.2M, 4.5M, 4.8M"
+
+### Personvernhensyn
+
+#### Anonymisering
+- Ingen navn, kontaktinformasjon eller personidentifiserbare opplysninger lagres
+- Kun aggregerte data deles mellom brukere
+- Minimum antall datapunkter (f.eks. 3) før data vises til andre
+
+#### Brukersamtykke
+- Brukere samtykker til å dele anonymiserte data
+- Opt-out mulighet hvis bruker ikke vil bidra
+- Transparent om hvordan data brukes
+
+#### GDPR-compliance
+- Data lagres i EU (Supabase EU region)
+- Rett til sletting av egen data
+- Ingen videresalg av data
+- Kun brukt internt for å forbedre tjenesten
+
+### Teknisk implementering
+
+#### Database-skjema
+```sql
+-- Hovedtabell for unike eiendommer
+CREATE TABLE property_master_data (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  address text NOT NULL,
+  street_number text NOT NULL,
+  apartment_number text,
+  postal_code text NOT NULL,
+  city text NOT NULL,
+  municipality text NOT NULL,
+  coordinates point,
+  
+  -- Fysiske egenskaper
+  size_sqm integer,
+  bedrooms integer,
+  property_type text,
+  build_year integer,
+  floor integer,
+  
+  -- Metadata
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  data_points_count integer DEFAULT 0,
+  
+  -- Unik constraint på adresse
+  UNIQUE(address, street_number, apartment_number)
+);
+
+-- Historiske data per eiendom
+CREATE TABLE property_data_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid REFERENCES property_master_data(id),
+  
+  -- Økonomisk data
+  sale_price numeric,
+  monthly_rent numeric,
+  monthly_electricity_cost numeric,
+  annual_insurance_premium numeric,
+  common_costs numeric,
+  municipal_fees numeric,
+  
+  -- Metadata
+  data_type text NOT NULL, -- 'sale', 'rent', 'electricity', 'insurance'
+  data_source text NOT NULL, -- 'user_input', 'calculator_estimate', 'actual'
+  recorded_date date NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  
+  -- Anonymisering: Ingen user_id lagres
+  contributed_by_user_count integer DEFAULT 1
+);
+
+-- Aggregerte statistikker per eiendom (for rask henting)
+CREATE TABLE property_statistics (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid REFERENCES property_master_data(id) UNIQUE,
+  
+  -- Gjennomsnitt
+  avg_rent numeric,
+  avg_electricity numeric,
+  avg_insurance numeric,
+  avg_sale_price numeric,
+  
+  -- Min/Max
+  min_rent numeric,
+  max_rent numeric,
+  
+  -- Antall datapunkter
+  rent_data_points integer DEFAULT 0,
+  electricity_data_points integer DEFAULT 0,
+  insurance_data_points integer DEFAULT 0,
+  sale_data_points integer DEFAULT 0,
+  
+  -- Sist oppdatert
+  last_updated timestamp with time zone DEFAULT now()
+);
+
+-- Indekser for rask søking
+CREATE INDEX idx_property_master_location ON property_master_data USING GIST(coordinates);
+CREATE INDEX idx_property_master_postal ON property_master_data(postal_code);
+CREATE INDEX idx_property_history_type ON property_data_history(data_type, recorded_date);
+```
+
+#### API Endpoints (Edge Functions)
+
+**1. `property-lookup`** - Finn eller opprett eiendom basert på adresse
+```typescript
+// Input: adresse, husnummer, leilighetsnummer
+// Output: property_id + eksisterende data om eiendommen
+```
+
+**2. `property-data-contribute`** - Bidra med data til en eiendom
+```typescript
+// Input: property_id, data_type, value, source
+// Lagrer anonymisert data i property_data_history
+// Oppdaterer property_statistics
+```
+
+**3. `property-insights`** - Hent innsikt om en eiendom
+```typescript
+// Input: property_id eller adresse
+// Output: Statistikk, gjennomsnitt, antall datapunkter
+```
+
+**4. `neighborhood-insights`** - Hent data fra nabolaget
+```typescript
+// Input: koordinater, radius
+// Output: Aggregert data fra nærliggende eiendommer
+```
+
+#### Frontend integrasjon
+- Automatisk oppslag når bruker legger inn adresse
+- Vise eksisterende data: "5 andre har beregnet denne eiendommen"
+- Visuell indikator for datakvalitet (f.eks. ⭐⭐⭐⭐⭐ basert på antall datapunkter)
+- Tooltip med detaljer: "Basert på 8 beregninger siste 6 måneder"
+
+### Forretningsverdi
+
+#### For brukerne
+- Stadig bedre og mer nøyaktige estimater
+- Trygghet i at data er basert på reelle tall
+- Markedsinnsikt fra faktiske transaksjoner
+- Tidsbesparelse ved pre-filled data
+
+#### For plattformen
+- Konkurransefortrinn: Unike eiendomsdata som ingen andre har
+- Nettverkseffekt: Jo flere brukere, desto bedre tjenesten blir
+- Verdifull data for fremtidige funksjoner og produkter
+- Potensial for B2B-salg av aggregerte markedsdata
+
+### Fremtidige utvidelser
+
+#### Fase 1: Grunnleggende innsamling
+- Implementer property_master_data og enkelt data-oppslag
+- Samle data fra kalkulatorer og portefølje
+- Anonymisert lagring
+
+#### Fase 2: Estimatforbedring
+- Bruk innsamlet data til å forbedre alle estimater
+- Implementer nabolags-søk
+- Vis datakvalitet til brukere
+
+#### Fase 3: Avansert analyse
+- Trendanalyse over tid
+- Prisutvikling per område
+- Sesongvariasjon for strøm
+- Prediktiv modell for fremtidige priser
+
+#### Fase 4: Markedsinnsikt
+- Offentlig tilgjengelige markedsrapporter (aggregert)
+- "Hvilken leilighet er best investering?" verktøy
+- Området-sammenligninger
+- Investeringsanbefalinger basert på data
+
+### Filosofi
+- **Crowdsourcing av data**: Brukerne bidrar, alle får nytte
+- **Transparens**: Alltid synlig hvor data kommer fra
+- **Personvern først**: Streng anonymisering og GDPR-compliance
+- **Datakvalitet**: Jo mer data, desto bedre estimater
+- **Nettverkseffekt**: Plattformen blir bedre for alle når flere bruker den
