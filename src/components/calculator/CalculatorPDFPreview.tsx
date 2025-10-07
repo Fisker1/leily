@@ -104,49 +104,43 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       const { jsPDF } = await import('jspdf');
       const html2canvas = (await import('html2canvas')).default;
       
-      // Get the PDF content element
-      const pdfElement = document.querySelector('.pdf-content') as HTMLElement;
+      // Get all PDF pages
+      const pages = document.querySelectorAll('.pdf-page');
       
-      if (!pdfElement) {
-        console.error('PDF element not found');
+      if (!pages.length) {
+        console.error('PDF pages not found');
         setIsPrintMode(false);
         return;
       }
-      
-      // Create canvas from the HTML element
-      const canvas = await html2canvas(pdfElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-      
-      // Disable print mode
-      setIsPrintMode(false);
-      
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
-      
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      // Add image to PDF, split into pages if needed
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 297; // A4 height in mm
-      
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= 297;
+
+      // Capture each page
+      for (let i = 0; i < pages.length; i++) {
+        const canvas = await html2canvas(pages[i] as HTMLElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       }
+      
+      // Disable print mode
+      setIsPrintMode(false);
       
       // Download the PDF
       const fileName = formData.address 
@@ -159,6 +153,16 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       setIsPrintMode(false);
     }
   };
+
+  // Footer component
+  const PageFooter = ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => (
+    <div className="mt-auto px-10 py-4 bg-gray-50 border-t-2 border-gray-200">
+      <div className="flex justify-between items-center text-xs text-gray-600">
+        <p>Dette dokumentet er generert automatisk av Leily og er ment som et verktøy for finansiell planlegging.</p>
+        <p className="font-semibold">Side {pageNumber} / {totalPages}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
@@ -174,529 +178,425 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange }: CalculatorPDFP
       </div>
 
       <div className="flex-1 p-8 overflow-auto bg-gray-100">
-        {/* Paper Effect Container with Shadow - A4 Format */}
-        <div className={`mx-auto bg-white shadow-2xl animate-fade-in pdf-content ${isPrintMode ? 'print-mode' : ''}`} style={{ width: '210mm', minHeight: '297mm' }}>
-          {/* Add print-mode styles */}
-          {isPrintMode && (
-            <style>{`
-              .print-mode input {
-                border: none !important;
-                background: transparent !important;
-                padding: 8px 0 !important;
-                color: #111827 !important;
-                font-weight: 500 !important;
-                cursor: default !important;
-              }
-              .print-mode input::placeholder {
-                opacity: 0 !important;
-              }
-              .print-mode input:disabled {
-                opacity: 1 !important;
-                color: #111827 !important;
-              }
-              .print-mode input:placeholder-shown {
-                display: none !important;
-              }
-              .print-mode label:has(+ input:placeholder-shown) {
-                display: none !important;
-              }
-              .print-mode > div:has(> input:placeholder-shown) {
-                display: none !important;
-              }
-            `}</style>
-          )}
-          {/* Page Break Indicators - Visual guide for print layout */}
+        {/* Add print-mode styles */}
+        {isPrintMode && (
           <style>{`
-            .pdf-content {
-              position: relative;
+            .print-mode input {
+              border: none !important;
+              background: transparent !important;
+              padding: 8px 0 !important;
+              color: #111827 !important;
+              font-weight: 500 !important;
+              cursor: default !important;
             }
-            .pdf-content::before {
-              content: '';
-              position: absolute;
-              top: 297mm;
-              left: 0;
-              right: 0;
-              height: 2px;
-              background: repeating-linear-gradient(
-                90deg,
-                #94a3b8,
-                #94a3b8 10px,
-                transparent 10px,
-                transparent 20px
-              );
-              z-index: 10;
-              pointer-events: none;
+            .print-mode input::placeholder {
+              opacity: 0 !important;
             }
-            .pdf-content::after {
-              content: 'Side 1 / 2';
-              position: absolute;
-              bottom: 10px;
-              right: 10px;
-              font-size: 10px;
-              color: #94a3b8;
-              background: white;
-              padding: 2px 6px;
-              border-radius: 3px;
-              z-index: 10;
+            .print-mode input:disabled {
+              opacity: 1 !important;
+              color: #111827 !important;
+            }
+            .print-mode input:placeholder-shown {
+              display: none !important;
+            }
+            .print-mode label:has(+ input:placeholder-shown) {
+              display: none !important;
+            }
+            .print-mode > div:has(> input:placeholder-shown) {
+              display: none !important;
             }
           `}</style>
-          {/* Header with Gradient */}
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8 rounded-t">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Boligfinansieringsrapport</h1>
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                <FileText className="h-4 w-4" />
-                <span>Generert av Leily</span>
-                <span>•</span>
-                <span>{new Date().toLocaleDateString('no-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="px-10 py-8 space-y-8">
-            {/* Executive Summary */}
-            {formData.totalPrice && formData.equity && (
-              <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-sm">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <TrendingUp className="h-6 w-6" />
-                  Oppsummering
-                </h2>
-                
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">Totalpris</p>
-                    <p className="text-2xl font-bold text-gray-900">{formatNumberWithSpaces(Math.round(parseFloat(formData.totalPrice)))} kr</p>
+        )}
+        
+        {/* PDF Pages Container - Adobe-style viewer */}
+        <div className="max-w-[850px] mx-auto space-y-6">
+          
+          {/* Page 1 */}
+          <div className={`pdf-page bg-white shadow-xl ${isPrintMode ? 'print-mode' : ''}`} style={{ aspectRatio: '210/297' }}>
+            <div className="h-full flex flex-col">
+              {/* Header with Gradient */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8">
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Boligfinansieringsrapport</h1>
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                    <FileText className="h-4 w-4" />
+                    <span>Generert av Leily</span>
+                    <span>•</span>
+                    <span>{new Date().toLocaleDateString('no-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">Egenkapital</p>
-                    <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(parseFloat(formData.equity)))} kr</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">Lånebeløp</p>
-                    <p className="text-2xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">Netto kontantstrøm (mnd)</p>
-                    <p className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
-                    </p>
-                  </div>
-                  {grossYield > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-600">Bruttoavkastning</p>
-                      <p className="text-2xl font-bold text-primary">{grossYield.toFixed(2)}%</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Property Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
-                1. Nøkkelinformasjon
-              </h2>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label className="text-gray-700 font-semibold">Eiendomsadresse</Label>
-                  <Input
-                    value={formData.address}
-                    onChange={(e) => handleChange('address', e.target.value)}
-                    placeholder="Skriv inn adresse..."
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                {formData.finnCode && (
-                  <div>
-                    <Label className="text-gray-700 font-semibold">FINN-kode</Label>
-                    <Input value={formData.finnCode} disabled className="mt-1 rounded-none bg-gray-50" />
-                  </div>
-                )}
-                
-                <div className={formData.finnCode ? '' : 'col-span-2'}>
-                  <Label className="text-gray-700 font-semibold">Boligtype</Label>
-                  <Input
-                    value={formData.propertyType}
-                    onChange={(e) => handleChange('propertyType', e.target.value)}
-                    placeholder="Enebolig, Leilighet..."
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Eierform</Label>
-                  <Input
-                    value={formData.ownershipType}
-                    onChange={(e) => handleChange('ownershipType', e.target.value)}
-                    placeholder="Selveier, Borettslag..."
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Primærrom (m²)</Label>
-                  <Input
-                    value={formData.livingArea}
-                    onChange={(e) => handleChange('livingArea', e.target.value)}
-                    placeholder="m²"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Soverom</Label>
-                  <Input
-                    value={formData.bedrooms}
-                    onChange={(e) => handleChange('bedrooms', e.target.value)}
-                    placeholder="Antall"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Rom totalt</Label>
-                  <Input
-                    value={formData.rooms}
-                    onChange={(e) => handleChange('rooms', e.target.value)}
-                    placeholder="Antall"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Byggeår</Label>
-                  <Input
-                    value={formData.buildYear}
-                    onChange={(e) => handleChange('buildYear', e.target.value)}
-                    placeholder="År"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Energimerking</Label>
-                  <Input
-                    value={formData.energyRating}
-                    onChange={(e) => handleChange('energyRating', e.target.value)}
-                    placeholder="A-G"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-700 font-semibold">Tomteareal (m²)</Label>
-                  <Input
-                    value={formData.plotArea}
-                    onChange={(e) => handleChange('plotArea', e.target.value)}
-                    placeholder="m²"
-                    className="mt-1 rounded-none"
-                  />
                 </div>
               </div>
 
-              {formData.facilities && Array.isArray(formData.facilities) && formData.facilities.length > 0 && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-sm">
-                  <Label className="text-gray-700 font-semibold mb-2 block">Fasiliteter</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.facilities.map((facility: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-xs">{facility}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Separator className="my-4" />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label className="text-gray-700 font-semibold">Prisantydning</Label>
-                  <Input
-                    value={formData.totalPrice}
-                    onChange={(e) => handleChange('totalPrice', e.target.value)}
-                    placeholder="kr"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-              </div>
-
-              {loanToValue > 0 && (
-                <Alert className={loanToValue > 85 ? 'border-orange-500 bg-orange-50' : 'border-green-500 bg-green-50'}>
-                  {loanToValue > 85 ? <AlertCircle className="h-4 w-4 text-orange-700" /> : <CheckCircle className="h-4 w-4 text-green-700" />}
-                  <AlertDescription className={loanToValue > 85 ? 'text-orange-800' : 'text-green-800'}>
-                    Belåningsgrad: {loanToValue.toFixed(1)}%
-                    {loanToValue > 85 ? ' (Høy - kan kreve ekstra sikkerhet)' : ' (God - innenfor normalt krav)'}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-
-            <Separator className="my-6" />
-
-            {/* Loan Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
-                2. Låneinformasjon
-              </h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="equity" className="text-gray-700 font-semibold">Egenkapital</Label>
-                  <Input
-                    id="equity"
-                    value={formData.equity}
-                    onChange={(e) => handleChange('equity', e.target.value)}
-                    placeholder="kr"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="interestRate" className="text-gray-700 font-semibold">Rente (%)</Label>
-                  <Input
-                    id="interestRate"
-                    value={formData.interestRate}
-                    onChange={(e) => handleChange('interestRate', e.target.value)}
-                    placeholder="%"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="loanPeriod" className="text-gray-700 font-semibold">Nedbetalingstid (år)</Label>
-                  <Input
-                    id="loanPeriod"
-                    value={formData.loanPeriod}
-                    onChange={(e) => handleChange('loanPeriod', e.target.value)}
-                    placeholder="år"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-              </div>
-
-              {loanAmount > 0 && (
-                <div className="space-y-3">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Lånebeløp</p>
-                        <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
+              {/* Content */}
+              <div className="flex-1 px-10 py-6 space-y-6 overflow-hidden">
+                {/* Executive Summary */}
+                {formData.totalPrice && formData.equity && (
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-sm">
+                    <h2 className="text-lg font-bold text-gray-900 mb-3">
+                      Oppsummering
+                    </h2>
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-600">Totalpris</p>
+                        <p className="text-xl font-bold text-gray-900">{formatNumberWithSpaces(Math.round(parseFloat(formData.totalPrice)))} kr</p>
                       </div>
-                      {monthlyLoanPayment > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Månedlig avdrag</p>
-                          <p className="text-2xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {totalInterestPaid > 0 && (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Total rentekostnad over {formData.loanPeriod} år:</strong> {formatNumberWithSpaces(Math.round(totalInterestPaid))} kr
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <Separator className="my-6" />
-
-            {/* Income */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
-                3. Inntekter
-              </h2>
-              
-              <div>
-                <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold">Månedlig leieinntekt</Label>
-                <Input
-                  id="monthlyRent"
-                  value={formData.monthlyRent}
-                  onChange={(e) => handleChange('monthlyRent', e.target.value)}
-                  placeholder="kr/mnd"
-                  className="mt-1 rounded-none"
-                />
-              </div>
-
-              {annualRent > 0 && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Årlig leieinntekt</p>
-                      <p className="text-xl font-bold text-green-700">{formatNumberWithSpaces(Math.round(annualRent))} kr</p>
-                    </div>
-                    {grossYield > 0 && (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Bruttoavkastning</p>
-                        <p className="text-xl font-bold text-green-700">{grossYield.toFixed(2)}%</p>
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-600">Egenkapital</p>
+                        <p className="text-xl font-bold text-blue-700">{formatNumberWithSpaces(Math.round(parseFloat(formData.equity)))} kr</p>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Separator className="my-6" />
-
-            {/* Expenses */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
-                4. Månedlige utgifter
-              </h2>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="commonCosts" className="text-gray-700 font-semibold">Felleskostnader</Label>
-                  <Input
-                    id="commonCosts"
-                    value={formData.commonCosts}
-                    onChange={(e) => handleChange('commonCosts', e.target.value)}
-                    placeholder="kr/mnd"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="municipalFees" className="text-gray-700 font-semibold">Kommunale avgifter</Label>
-                  <Input
-                    id="municipalFees"
-                    value={formData.municipalFees}
-                    onChange={(e) => handleChange('municipalFees', e.target.value)}
-                    placeholder="kr/mnd"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="insurance" className="text-gray-700 font-semibold">Forsikring</Label>
-                  <Input
-                    id="insurance"
-                    value={formData.insurance}
-                    onChange={(e) => handleChange('insurance', e.target.value)}
-                    placeholder="kr/mnd"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="electricityMonthly" className="text-gray-700 font-semibold">Strøm</Label>
-                  <Input
-                    id="electricityMonthly"
-                    value={formData.electricityMonthly}
-                    onChange={(e) => handleChange('electricityMonthly', e.target.value)}
-                    placeholder="kr/mnd"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="sharedExpenses" className="text-gray-700 font-semibold">Andre utgifter</Label>
-                  <Input
-                    id="sharedExpenses"
-                    value={formData.sharedExpenses}
-                    onChange={(e) => handleChange('sharedExpenses', e.target.value)}
-                    placeholder="kr/mnd"
-                    className="mt-1 rounded-none"
-                  />
-                </div>
-              </div>
-
-              {totalMonthlyExpenses > 0 && (
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">Totale månedlige utgifter:</span>
-                    <span className="text-2xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Separator className="my-6" />
-
-            {/* Final Summary */}
-            {formData.totalPrice && formData.equity && (
-              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  5. Økonomisk analyse
-                </h2>
-                
-                <div className="space-y-4">
-                  {/* Monthly */}
-                  <div>
-                    <h3 className="font-semibold text-gray-700 mb-3">Månedlig oversikt</h3>
-                    <div className="space-y-2 pl-4">
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-600">Leieinntekt:</span>
-                        <span className="font-semibold text-green-700">+{formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent) || 0))} kr</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-600">Lånekostnad:</span>
-                        <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-600">Driftskostnader:</span>
-                        <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between items-center py-2 bg-white px-3 rounded">
-                        <span className="font-bold text-gray-900">Netto kontantstrøm:</span>
-                        <span className={`text-2xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr/mnd
-                        </span>
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-600">Lånebeløp</p>
+                        <p className="text-xl font-bold text-orange-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Yearly */}
-                  <div>
-                    <h3 className="font-semibold text-gray-700 mb-3">Årlig oversikt</h3>
-                    <div className="space-y-2 pl-4">
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-600">Årlig kontantstrøm:</span>
-                        <span className={`font-semibold ${annualCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {annualCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(annualCashFlow))} kr
-                        </span>
-                      </div>
-                      {netYield > 0 && (
-                        <div className="flex justify-between items-center py-1">
-                          <span className="text-sm text-gray-600">Nettoavkastning:</span>
-                          <span className="font-semibold text-primary">{netYield.toFixed(2)}%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    <Separator className="my-3" />
 
-                  {/* Key Metrics */}
-                  <div>
-                    <h3 className="font-semibold text-gray-700 mb-3">Nøkkeltall</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white p-3 rounded border border-gray-200">
-                        <p className="text-xs text-gray-600 mb-1">Belåningsgrad (LTV)</p>
-                        <p className="text-lg font-bold text-gray-900">{loanToValue.toFixed(1)}%</p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-600">Netto kontantstrøm (mnd)</p>
+                        <p className={`text-xl font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
+                        </p>
                       </div>
                       {grossYield > 0 && (
-                        <div className="bg-white p-3 rounded border border-gray-200">
-                          <p className="text-xs text-gray-600 mb-1">Bruttoavkastning</p>
-                          <p className="text-lg font-bold text-primary">{grossYield.toFixed(2)}%</p>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-600">Bruttoavkastning</p>
+                          <p className="text-xl font-bold text-primary">{grossYield.toFixed(2)}%</p>
                         </div>
                       )}
                     </div>
                   </div>
+                )}
+
+                {/* Property Information */}
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
+                    1. Nøkkelinformasjon
+                  </h2>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="col-span-2">
+                      <Label className="text-gray-700 font-semibold text-xs">Eiendomsadresse</Label>
+                      <Input
+                        value={formData.address}
+                        onChange={(e) => handleChange('address', e.target.value)}
+                        placeholder="Skriv inn adresse..."
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    {formData.finnCode && (
+                      <div>
+                        <Label className="text-gray-700 font-semibold text-xs">FINN-kode</Label>
+                        <Input value={formData.finnCode} disabled className="mt-1 rounded-none bg-gray-50 h-8" />
+                      </div>
+                    )}
+                    
+                    <div className={formData.finnCode ? '' : 'col-span-2'}>
+                      <Label className="text-gray-700 font-semibold text-xs">Boligtype</Label>
+                      <Input
+                        value={formData.propertyType}
+                        onChange={(e) => handleChange('propertyType', e.target.value)}
+                        placeholder="Enebolig, Leilighet..."
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Eierform</Label>
+                      <Input
+                        value={formData.ownershipType}
+                        onChange={(e) => handleChange('ownershipType', e.target.value)}
+                        placeholder="Selveier, Borettslag..."
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Primærrom (m²)</Label>
+                      <Input
+                        value={formData.livingArea}
+                        onChange={(e) => handleChange('livingArea', e.target.value)}
+                        placeholder="m²"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Soverom</Label>
+                      <Input
+                        value={formData.bedrooms}
+                        onChange={(e) => handleChange('bedrooms', e.target.value)}
+                        placeholder="Antall"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Rom totalt</Label>
+                      <Input
+                        value={formData.rooms}
+                        onChange={(e) => handleChange('rooms', e.target.value)}
+                        placeholder="Antall"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Byggeår</Label>
+                      <Input
+                        value={formData.buildYear}
+                        onChange={(e) => handleChange('buildYear', e.target.value)}
+                        placeholder="År"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Energimerking</Label>
+                      <Input
+                        value={formData.energyRating}
+                        onChange={(e) => handleChange('energyRating', e.target.value)}
+                        placeholder="A-G"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-700 font-semibold text-xs">Tomteareal (m²)</Label>
+                      <Input
+                        value={formData.plotArea}
+                        onChange={(e) => handleChange('plotArea', e.target.value)}
+                        placeholder="m²"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <Label className="text-gray-700 font-semibold text-xs">Prisantydning</Label>
+                      <Input
+                        value={formData.totalPrice}
+                        onChange={(e) => handleChange('totalPrice', e.target.value)}
+                        placeholder="kr"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
+
+              <PageFooter pageNumber={1} totalPages={2} />
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-10 py-6 bg-gray-50 border-t-2 border-gray-200 text-center text-sm text-gray-600">
-            <p>Dette dokumentet er generert automatisk av Leily og er ment som et verktøy for finansiell planlegging.</p>
-            <p className="mt-1">For offisiell vurdering, vennligst kontakt din bankrådgiver.</p>
+          {/* Page 2 */}
+          <div className={`pdf-page bg-white shadow-xl ${isPrintMode ? 'print-mode' : ''}`} style={{ aspectRatio: '210/297' }}>
+            <div className="h-full flex flex-col">
+              {/* Content */}
+              <div className="flex-1 px-10 py-8 space-y-6 overflow-hidden">
+                {/* Loan Information */}
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
+                    2. Låneinformasjon
+                  </h2>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <Label htmlFor="equity" className="text-gray-700 font-semibold text-xs">Egenkapital</Label>
+                      <Input
+                        id="equity"
+                        value={formData.equity}
+                        onChange={(e) => handleChange('equity', e.target.value)}
+                        placeholder="kr"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="interestRate" className="text-gray-700 font-semibold text-xs">Rente (%)</Label>
+                      <Input
+                        id="interestRate"
+                        value={formData.interestRate}
+                        onChange={(e) => handleChange('interestRate', e.target.value)}
+                        placeholder="%"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="loanPeriod" className="text-gray-700 font-semibold text-xs">Nedbetalingstid (år)</Label>
+                      <Input
+                        id="loanPeriod"
+                        value={formData.loanPeriod}
+                        onChange={(e) => handleChange('loanPeriod', e.target.value)}
+                        placeholder="år"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                  </div>
+
+                  {loanAmount > 0 && (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-sm">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Lånebeløp</p>
+                            <p className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(Math.round(loanAmount))} kr</p>
+                          </div>
+                          {monthlyLoanPayment > 0 && (
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">Månedlig avdrag</p>
+                              <p className="text-lg font-bold text-blue-700">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Income */}
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
+                    3. Inntekter
+                  </h2>
+                  
+                  <div>
+                    <Label htmlFor="monthlyRent" className="text-gray-700 font-semibold text-xs">Månedlig leieinntekt</Label>
+                    <Input
+                      id="monthlyRent"
+                      value={formData.monthlyRent}
+                      onChange={(e) => handleChange('monthlyRent', e.target.value)}
+                      placeholder="kr/mnd"
+                      className="mt-1 rounded-none h-8"
+                    />
+                  </div>
+
+                  {annualRent > 0 && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-sm text-sm">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Årlig leieinntekt</p>
+                          <p className="text-lg font-bold text-green-700">{formatNumberWithSpaces(Math.round(annualRent))} kr</p>
+                        </div>
+                        {grossYield > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-600 mb-1">Bruttoavkastning</p>
+                            <p className="text-lg font-bold text-green-700">{grossYield.toFixed(2)}%</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Expenses */}
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-gray-900 pb-2 border-b-2 border-gray-200">
+                    4. Månedlige utgifter
+                  </h2>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <Label htmlFor="commonCosts" className="text-gray-700 font-semibold text-xs">Felleskostnader</Label>
+                      <Input
+                        id="commonCosts"
+                        value={formData.commonCosts}
+                        onChange={(e) => handleChange('commonCosts', e.target.value)}
+                        placeholder="kr/mnd"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="municipalFees" className="text-gray-700 font-semibold text-xs">Kommunale avgifter</Label>
+                      <Input
+                        id="municipalFees"
+                        value={formData.municipalFees}
+                        onChange={(e) => handleChange('municipalFees', e.target.value)}
+                        placeholder="kr/mnd"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insurance" className="text-gray-700 font-semibold text-xs">Forsikring</Label>
+                      <Input
+                        id="insurance"
+                        value={formData.insurance}
+                        onChange={(e) => handleChange('insurance', e.target.value)}
+                        placeholder="kr/mnd"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="electricityMonthly" className="text-gray-700 font-semibold text-xs">Strøm</Label>
+                      <Input
+                        id="electricityMonthly"
+                        value={formData.electricityMonthly}
+                        onChange={(e) => handleChange('electricityMonthly', e.target.value)}
+                        placeholder="kr/mnd"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sharedExpenses" className="text-gray-700 font-semibold text-xs">Andre utgifter</Label>
+                      <Input
+                        id="sharedExpenses"
+                        value={formData.sharedExpenses}
+                        onChange={(e) => handleChange('sharedExpenses', e.target.value)}
+                        placeholder="kr/mnd"
+                        className="mt-1 rounded-none h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Final Summary */}
+                {formData.totalPrice && formData.equity && (
+                  <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-sm">
+                    <h2 className="text-lg font-bold text-gray-900 mb-3">
+                      5. Økonomisk analyse
+                    </h2>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-2 text-sm">Månedlig oversikt</h3>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-gray-600">Leieinntekt:</span>
+                            <span className="font-semibold text-green-700">+{formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent) || 0))} kr</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-gray-600">Lånekostnad:</span>
+                            <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-gray-600">Driftskostnader:</span>
+                            <span className="font-semibold text-red-700">-{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between items-center py-2 bg-white px-2 rounded">
+                            <span className="font-bold text-gray-900">Netto kontantstrøm:</span>
+                            <span className={`text-lg font-bold ${monthlyCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                              {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr/mnd
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <PageFooter pageNumber={2} totalPages={2} />
+            </div>
           </div>
+
         </div>
       </div>
     </div>
