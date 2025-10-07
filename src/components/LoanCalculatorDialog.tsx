@@ -166,7 +166,8 @@ export const LoanCalculatorDialog = ({ open, onOpenChange, onApply, hasCredits }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
+        <div className="overflow-y-auto max-h-[calc(90vh-4rem)] pr-2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
@@ -339,6 +340,7 @@ export const LoanCalculatorDialog = ({ open, onOpenChange, onApply, hasCredits }
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
