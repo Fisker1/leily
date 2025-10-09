@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { Suspense, lazy, useEffect } from "react";
 import ComingSoon from "./pages/ComingSoon";
 import { APP_CONFIG, isProduction, FEATURES } from "@/lib/env";
+import CookieConsent from "@/components/legal/CookieConsent";
 
 // Coming soon logic: show for production only (unless explicitly disabled)
 const SHOULD_SHOW_COMING_SOON = isProduction && APP_CONFIG.comingSoon;
@@ -39,6 +40,7 @@ const Agent007 = lazy(() => import("./pages/Agent007"));
 const CreditsPurchasePage = lazy(() => import("./pages/CreditsPurchasePage"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Cookies = lazy(() => import("./pages/Cookies"));
 const EnvDebug = lazy(() => import("./pages/__env"));
 const Health = lazy(() => import("./pages/__health"));
 const SupabaseInfo = lazy(() => import("./pages/__supabase"));
@@ -88,6 +90,7 @@ const App = () => {
               <AuthProvider>
                 <Toaster />
                 <Sonner />
+                <CookieConsent />
                 <BrowserRouter>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
@@ -107,6 +110,7 @@ const App = () => {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/cookies" element={<Cookies />} />
                     <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
                     <Route path="/__env" element={<EnvDebug />} />
                     <Route path="/__health" element={<Health />} />

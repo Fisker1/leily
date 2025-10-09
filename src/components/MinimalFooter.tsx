@@ -24,6 +24,9 @@ const MinimalFooter = () => {
             <a href="/terms" className="hover:text-foreground transition-colors hover:underline">
               Vilkår
             </a>
+            <a href="/cookies" className="hover:text-foreground transition-colors hover:underline">
+              Cookies
+            </a>
             <a href="/#pricing" className="hover:text-foreground transition-colors hover:underline">
               Priser
             </a>
