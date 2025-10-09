@@ -970,6 +970,7 @@ serve(async (req) => {
       .from('finn_property_cache')
       .upsert({
         finn_code: finnCode,
+        user_id: user.id, // Track which user fetched this property
         property_data: enhancedPropertyData,
         extracted_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString() // 6 months
