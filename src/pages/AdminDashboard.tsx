@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
 import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft, Scale } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LegalDocumentsManager } from '@/components/admin/LegalDocumentsManager';
 
@@ -55,16 +55,32 @@ const AdminDashboard = () => {
   const [dataCopyLoading, setDataCopyLoading] = useState(false);
 
   useEffect(() => {
-    if (!roleLoading && !isAdmin) {
-      toast.error('Kun administratorer har tilgang til denne siden');
-      return;
-    }
-
     if (isAdmin) {
       fetchReports();
       fetchStats();
     }
   }, [isAdmin, roleLoading]);
+
+  // Redirect non-admins - security boundary
+  if (!roleLoading && !isAdmin) {
+    toast.error('Kun administratorer har tilgang til denne siden');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Show loading state while checking authorization
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="text-center">
+            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+            <p className="text-muted-foreground">Verifiserer tilgang...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const fetchReports = async () => {
     try {
