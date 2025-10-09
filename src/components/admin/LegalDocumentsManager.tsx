@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'isomorphic-dompurify';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -484,7 +485,7 @@ export const LegalDocumentsManager = () => {
           </DialogHeader>
           <div className="prose prose-sm max-w-none">
             {selectedDocument && selectedDocument.content_format === 'html' ? (
-              <div dangerouslySetInnerHTML={{ __html: selectedDocument.content }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedDocument.content) }} />
             ) : (
               <pre className="whitespace-pre-wrap text-sm">{selectedDocument?.content}</pre>
             )}
