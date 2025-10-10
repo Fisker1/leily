@@ -57,9 +57,55 @@ Med vennlig hilsen,
 Leily Support Team
 ```
 
+## 📝 Elektronisk Signering
+
+### 3. Scrive API Integrasjon
+- **Status:** Planlagt
+- **Beskrivelse:** Integrasjon med Scrive API for elektronisk signering av leieavtaler
+- **API:** Scrive har gratis API for testing og utvikling
+
+**Funksjoner:**
+- **Elektronisk Signering:** Digitale signaturer på leieavtaler
+- **Dokument Håndtering:** Automatisk generering og sending av signeringsdokumenter
+- **Signering Workflow:** Brukervennlig prosess for leietakere og utleiere
+- **Compliance:** Juridisk gyldige signaturer i henhold til norsk lov
+- **Status Tracking:** Sporing av signeringsstatus i sanntid
+
+**Teknisk Implementasjon:**
+- Scrive API integrasjon via Supabase Edge Functions
+- React komponenter for signeringsprosess
+- Database schema for signeringsdokumenter
+- E-post notifikasjoner for signeringsstatus
+- PDF generering og håndtering
+
+**API Endepunkter (Scrive):**
+- `POST /documents` - Opprett signeringsdokument
+- `GET /documents/{id}` - Hent dokument status
+- `POST /documents/{id}/send` - Send for signering
+- `GET /documents/{id}/signers` - Hent signeringsstatus
+
+**Brukstilfeller:**
+- Leieavtale signering
+- Tilleggsavtaler
+- Oppsigelsesdokumenter
+- Sikkerhetsdepositum avtaler
+
+**Fordeler:**
+- Redusert papirarbeid
+- Raskere signeringsprosess
+- Bedre dokumenthåndtering
+- Juridisk compliance
+- Forbedret brukeropplevelse
+
+**Implementasjonsplan:**
+1. **Fase 1:** Scrive API testing og utvikling
+2. **Fase 2:** Grunnleggende signeringsfunksjonalitet
+3. **Fase 3:** Avansert workflow og notifikasjoner
+4. **Fase 4:** Integrasjon med eksisterende leieavtale-system
+
 ## 🔧 Tekniske Forbedringer
 
-### 3. E-post Analytics
+### 4. E-post Analytics
 - **Status:** Planlagt
 - **Beskrivelse:** Sporing av e-post levering og åpningsrater
 - **Funksjoner:**
@@ -68,7 +114,7 @@ Leily Support Team
   - Klikk-rater
   - Bounce tracking
 
-### 4. E-post Personalisering
+### 5. E-post Personalisering
 - **Status:** Planlagt
 - **Beskrivelse:** Dynamisk innhold basert på brukerdata
 - **Funksjoner:**
@@ -90,7 +136,12 @@ Leily Support Team
 3. 🔄 Ticket system database
 4. 🔄 E-post routing konfigurasjon
 
-### Fase 3: Analytics (Q3 2025)
+### Fase 3: Scrive Integrasjon (Q3 2025)
+1. 🔄 Scrive API testing og utvikling
+2. 🔄 Grunnleggende signeringsfunksjonalitet
+3. 🔄 Integrasjon med leieavtale-system
+
+### Fase 4: Analytics (Q4 2025)
 1. 🔄 E-post tracking implementasjon
 2. 🔄 Dashboard for e-post statistikk
 3. 🔄 Rapportering og insights
@@ -100,10 +151,12 @@ Leily Support Team
 **Høy Prioritet:**
 - E-post design forbedring (Stripo)
 - Automatisk support reply system
+- Scrive API integrasjon (elektronisk signering)
 
 **Medium Prioritet:**
 - E-post analytics
 - Ticket tracking system
+- Avansert signeringsworkflow
 
 **Lav Prioritet:**
 - A/B testing
@@ -115,6 +168,8 @@ Leily Support Team
 - **Support E-post:** Alle henvendelser går til `anderslundoy@leily.no`
 - **Ticket System:** Unikt nummer for hver henvendelse
 - **Automatisk Reply:** Umiddelbar bekreftelse til brukere
+- **Scrive API:** Gratis API tilgjengelig for testing og utvikling
+- **Elektronisk Signering:** Juridisk gyldige signaturer for leieavtaler
 
 ---
 
