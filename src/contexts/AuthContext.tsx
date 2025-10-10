@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRateLimit } from '@/hooks/useRateLimit';
+import { useAccountCreatedEmail, useEmailVerificationEmail, usePasswordResetEmail } from '@/hooks/useEmailService';
 
 interface Profile {
   id: string;
@@ -24,6 +25,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithProvider: (provider: 'google' | 'facebook') => Promise<{ error: any }>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,6 +41,9 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const { checkRateLimit } = useRateLimit();
+  const { sendAccountCreatedEmail } = useAccountCreatedEmail();
+  const { sendEmailVerificationEmail } = useEmailVerificationEmail();
+  const { sendPasswordResetEmail } = usePasswordResetEmail();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -166,6 +171,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email,
           timestamp: new Date().toISOString()
         });
+
+        // Send welcome email if signup was successful
+        if (fullName) {
+          try {
+            await sendAccountCreatedEmail(email, fullName, 'kontakt@leily.no');
+            console.log('Welcome email sent successfully');
+          } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+            // Don't fail the signup if email fails
+          }
+        }
       }
 
       return { error };
@@ -230,6 +246,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      // Environment-aware redirect URL
+      const redirectUrl = import.meta.env.VITE_APP_URL 
+        ? `${import.meta.env.VITE_APP_URL}/reset-password`
+        : `${window.location.origin}/reset-password`;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        // Log failed password reset attempt
+        await logSecurityEvent('password_reset_failure', 'auth_attempts', {
+          email,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Log successful password reset request
+        await logSecurityEvent('password_reset_requested', 'auth_attempts', {
+          email,
+          timestamp: new Date().toISOString()
+        });
+
+        // Send custom password reset email via Microsoft Exchange
+        try {
+          // Get user profile to get full name
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('email', email)
+            .single();
+
+          const fullName = profileData?.full_name || email.split('@')[0];
+          
+          await sendPasswordResetEmail(email, fullName, redirectUrl);
+          console.log('Password reset email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send password reset email:', emailError);
+          // Don't fail the reset if email fails - Supabase will still send its own email
+        }
+      }
+
+      return { error };
+    } catch (error: any) {
+      await logSecurityEvent('password_reset_error', 'auth_attempts', {
+        email,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        security_level: 'CRITICAL'
+      });
+      return { error };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -240,6 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     signInWithProvider,
     updateProfile,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

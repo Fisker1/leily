@@ -158,40 +158,43 @@ ALTER TABLE lease_agreements
 
 ---
 
-## ☁️ Azure Communication Services (Planlagt Migrering)
+## 📧 Microsoft Graph Email Service (Implementert)
 
-> 🎯 **Status:** DOKUMENTERT - Klar for implementering  
-> 📅 **Forventet migrering:** Q2 2025
+> 🎯 **Status:** ✅ IMPLEMENTERT OG TESTET  
+> 📅 **Implementert:** Oktober 2025
 
-**Formål:** Samlet plattform for e-post og SMS (erstatter Resend + Link Mobility)
+**Formål:** Profesjonell e-postleveranse via Microsoft Graph API
 
 **Fordeler:**
-- **95% billigere e-post** ved høye volum
-- **20% billigere SMS** sammenlignet med Link Mobility
-- **Én plattform** for begge tjenester
-- **GDPR-compliant** (West Europe data center)
-- **Skalerbar** uten daglige/månedlige limiter
+- **Høy deliverability** via Microsoft Exchange
+- **Profesjonelle HTML-maler** med Leily-branding
+- **Automatisk integrert** med brukerregistrering og passord-tilbakestilling
+- **Skalerbar** uten volum-begrensninger
+- **GDPR-compliant** (Microsoft West Europe)
 
-**Setup (når migrering starter):**
-1. Opprett Azure Communication Services resource
-2. Verifiser `leily.no` domene i Azure
-3. Kjøp norsk telefonnummer (+47) for SMS
-4. Hent `AZURE_COMMUNICATION_CONNECTION_STRING`
-5. Oppdater `send-lease-notification` Edge Function
+**Implementert:**
+1. ✅ Azure App Registration "Leily Email Service"
+2. ✅ Microsoft Graph API-integrasjon
+3. ✅ Supabase Edge Function `send-leily-email`
+4. ✅ HTML e-postmaler med dynamisk innhold
+5. ✅ Integrert med AuthContext for automatisk e-postsending
 
-**Secrets (Supabase Vault - fremtidig):**
-- `AZURE_COMMUNICATION_CONNECTION_STRING` - Erstatter både Resend og Link Mobility
+**Secrets (Supabase Vault):**
+- `MICROSOFT_CLIENT_ID` - Azure App Registration Client ID
+- `MICROSOFT_CLIENT_SECRET` - Azure App Registration Client Secret  
+- `MICROSOFT_TENANT_ID` - Azure Tenant ID
+- `MICROSOFT_EMAIL_USER` - Sender e-postadresse (anderslundoy@leily.no)
 
-**Kostnader (estimert):**
-- E-post: $0.0001 per email (10 kr per 100,000 emails)
-- SMS: ~0.40 NOK per SMS
-- Telefonnummer: 50-100 NOK/måned
-- **Total besparelse:** ~90% vs. nåværende løsning
+**E-posttyper:**
+- Account created (velkommen)
+- Password reset (tilbakestill passord)
+- Lease ready (leieavtale klar)
+- Payment reminder (betalingspåminnelse)
 
-**Dokumentasjon (komplett):**
-- **Setup-guide:** `docs/integrations/azure-communication-services.md`
-- **E-post migrering:** `docs/migration/resend-to-azure.md`
-- **SMS migrering:** `docs/migration/link-mobility-to-azure.md`
+**Dokumentasjon:**
+- **Setup-guide:** `docs/integrations/microsoft-exchange.md`
+- **Frontend-integrasjon:** `src/hooks/useEmailService.tsx`
+- **Backend-implementasjon:** `supabase/functions/send-leily-email/`
 
 **Tidsplan:**
 | Fase | Aktivitet | Tidsestimat |

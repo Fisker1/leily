@@ -47,6 +47,31 @@ Visit http://localhost:8080
 - **Purpose**: Live application
 - **Features**: Coming soon page, analytics, optimized performance
 
+## 📧 Email Service
+
+The application uses **Microsoft Graph API** for email delivery with the following features:
+- Account creation confirmations
+- Password reset emails
+- Lease agreement notifications
+- Payment reminders
+
+**Architecture:**
+- **Supabase Edge Functions**: `send-leily-email` handles email sending
+- **Microsoft Graph API**: Primary email delivery method
+- **Templating System**: HTML templates with dynamic content replacement
+- **Authentication**: OAuth2 Client Credentials flow
+
+**Configuration:**
+- `MICROSOFT_CLIENT_ID` - Azure App Registration Client ID
+- `MICROSOFT_CLIENT_SECRET` - Azure App Registration Client Secret
+- `MICROSOFT_TENANT_ID` - Azure Tenant ID
+- `MICROSOFT_EMAIL_USER` - Sender email address (anderslundoy@leily.no)
+
+**Email Templates:**
+- Templates are embedded in `supabase/functions/send-leily-email/utils/renderTemplate.ts`
+- Supports placeholders: `{{name}}`, `{{email}}`, `{{reset_link}}`, etc.
+- Professional HTML design compatible with Outlook and Gmail
+
 ## 📁 Project Structure
 
 ```
