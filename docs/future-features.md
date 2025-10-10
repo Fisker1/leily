@@ -31,7 +31,6 @@
 - **Svar System:** Mulighet til å svare brukere direkte fra inbox
 
 **E-post Adresser som skal håndteres:**
-- `support@leily.no`
 - `kontakt@leily.no`
 - `admin@leily.no`
 - `info@leily.no`

@@ -239,7 +239,7 @@ Vi oppfordrer deg til å kontakte oss først ved bekymringer:
 E-post: privacy@leily.no
 
 **For generelle spørsmål:**  
-E-post: support@leily.no
+E-post: kontakt@leily.no
 
 **For utøvelse av rettigheter:**  
 Send en formell forespørsel til privacy@leily.no med:

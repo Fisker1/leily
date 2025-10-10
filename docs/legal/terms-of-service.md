@@ -103,7 +103,7 @@ Leily forbeholder seg retten til å suspendere eller avslutte kontoer som:
 I henhold til norsk forbrukerkjøpslov:
 - 14 dagers angrerett fra kjøpstidspunkt
 - Angreretten gjelder ikke dersom credits er brukt
-- Kontakt support@leily.no for å benytte angreretten
+- Kontakt kontakt@leily.no for å benytte angreretten
 
 ### 5.3 Abonnementer (fremtidig funksjonalitet)
 - Månedlige eller årlige abonnementer kan tilbys
@@ -213,7 +213,7 @@ Du kan når som helst:
 - Slette din konto
 - Eksportere dine data
 - Be om sletting av spesifikke data
-Kontakt support@leily.no for assistanse.
+Kontakt kontakt@leily.no for assistanse.
 
 ## 10. Endringer av vilkår
 
@@ -232,7 +232,7 @@ Kontakt support@leily.no for assistanse.
 
 ### 11.1 Din oppsigelse
 Du kan når som helst avslutte kontoen din ved å:
-- Kontakte support@leily.no
+- Kontakte kontakt@leily.no
 - Bruke funksjon for kontosletting i profilen (når tilgjengelig)
 
 ### 11.2 Leily sin oppsigelse
@@ -269,14 +269,14 @@ Disse vilkårene begrenser ikke dine rettigheter under:
 
 **Leily AS**  
 Organisasjonsnummer: [Settes inn]  
-E-post: support@leily.no  
+E-post: kontakt@leily.no  
 Nettside: https://leily.no
 
 For spørsmål om:
-- **Vilkår og betingelser**: support@leily.no
-- **Personvern**: privacy@leily.no
-- **Teknisk support**: support@leily.no
-- **Fakturering**: billing@leily.no
+- **Vilkår og betingelser**: kontakt@leily.no
+- **Personvern**: personvern@leily.no
+- **Teknisk support**: kontakt@leily.no
+- **Fakturering**: kontakt@leily.no
 
 ---
 
