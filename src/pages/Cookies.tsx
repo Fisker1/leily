@@ -176,7 +176,7 @@ const Cookies = () => {
               </ul>
               <p className="mt-4">
                 For å utøve dine rettigheter, besøk <a href="/min-side" className="text-primary hover:underline">Min side</a> eller 
-                kontakt oss på <a href="mailto:privacy@leily.no" className="text-primary hover:underline">privacy@leily.no</a>.
+                kontakt oss på <a href="mailto:personvern@leily.no" className="text-primary hover:underline">personvern@leily.no</a>.
               </p>
             </CardContent>
           </Card>
@@ -236,7 +236,7 @@ const Cookies = () => {
               <p>Hvis du har spørsmål om vår bruk av cookies, kan du kontakte oss:</p>
               <div className="mt-4 space-y-1 text-muted-foreground">
                 <p><strong>Leily AS</strong></p>
-                <p>E-post: <a href="mailto:privacy@leily.no" className="text-primary hover:underline">privacy@leily.no</a></p>
+                <p>E-post: <a href="mailto:personvern@leily.no" className="text-primary hover:underline">personvern@leily.no</a></p>
                 <p>Nettside: <a href="https://leily.no" className="text-primary hover:underline">https://leily.no</a></p>
               </div>
             </CardContent>

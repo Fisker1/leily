@@ -84,7 +84,7 @@ const Rental = () => {
   const { isAdmin, isAmbassador, loading: roleLoading } = useUserRole();
   
   // Access control - Allow ambassadors and specific admin user
-  const canCreateRentalAgreement = isAmbassador || isAdmin || user?.email === 'anderslundoy@gmail.com';
+  const canCreateRentalAgreement = isAmbassador || isAdmin || user?.email === 'anderslundoy@leily.no';
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [allProperties, setAllProperties] = useState<Property[]>([]);

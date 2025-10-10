@@ -7,7 +7,7 @@
 
 **Leily AS**  
 Organisasjonsnummer: [Settes inn]  
-E-post: privacy@leily.no  
+E-post: personvern@leily.no  
 Nettside: https://leily.no
 
 Leily AS er behandlingsansvarlig for personopplysningene som samles inn og behandles gjennom vår tjeneste.
@@ -107,7 +107,7 @@ Du kan protestere mot behandling som skjer på grunnlag av berettiget interesse.
 ### 4.7 Automatiserte beslutninger
 Du har rett til ikke å bli underlagt beslutninger som er utelukkende basert på automatisert behandling.
 
-**For å utøve rettighetene dine, kontakt:** privacy@leily.no
+**For å utøve rettighetene dine, kontakt:** personvern@leily.no
 
 ## 5. Datalagring og sikkerhet
 
@@ -230,19 +230,19 @@ Nettside: https://www.datatilsynet.no
 
 ### 10.2 Kontakt oss først
 Vi oppfordrer deg til å kontakte oss først ved bekymringer:
-- E-post: privacy@leily.no
+- E-post: personvern@leily.no
 - Vi vil gjøre vårt beste for å løse saken raskt
 
 ## 11. Kontaktinformasjon for personvern
 
 **For personvernspørsmål:**  
-E-post: privacy@leily.no
+E-post: personvern@leily.no
 
 **For generelle spørsmål:**  
 E-post: kontakt@leily.no
 
 **For utøvelse av rettigheter:**  
-Send en formell forespørsel til privacy@leily.no med:
+Send en formell forespørsel til personvern@leily.no med:
 - Ditt fulle navn
 - E-postadressen knyttet til kontoen
 - Hvilken rettighet du ønsker å utøve

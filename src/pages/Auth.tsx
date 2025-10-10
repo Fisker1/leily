@@ -240,7 +240,7 @@ const Auth = () => {
                         Test bruker for staging miljø
                       </div>
                       <div className="text-xs text-center font-mono">
-                        <div>Email: anderslundoy@protonmail.com</div>
+                        <div>Email: anderslundoy@leily.no</div>
                         <div>Passord: blåmeis</div>
                       </div>
                       <Button
@@ -250,7 +250,7 @@ const Auth = () => {
                         onClick={() => {
                           setFormData({
                             ...formData,
-                            email: 'anderslundoy@protonmail.com',
+                            email: 'anderslundoy@leily.no',
                             password: 'blåmeis'
                           });
                         }}

@@ -78,8 +78,12 @@ export function useEmailService(): UseEmailServiceReturn {
       const { data, error: functionError } = await supabase.functions.invoke('send-leily-email', {
         body: {
           emailType,
-          templateData,
-          options
+          templateData: {
+            ...templateData,
+            name: templateData.recipientName,
+            email: templateData.recipientEmail
+          },
+          to: options.to[0].email
         }
       });
 
