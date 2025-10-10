@@ -75,7 +75,7 @@ export function useEmailService(): UseEmailServiceReturn {
         import.meta.env.VITE_SUPABASE_ANON_KEY
       );
 
-      const { data, error: functionError } = await supabase.functions.invoke('send-exchange-email', {
+      const { data, error: functionError } = await supabase.functions.invoke('send-leily-email', {
         body: {
           emailType,
           templateData,
