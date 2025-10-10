@@ -124,7 +124,7 @@ async function sendEmailNotification(req: Request) {
 
   // Send email via Resend
   const { data, error: sendError } = await resend.emails.send({
-    from: 'Leily <noreply@alquiz.no>',
+    from: 'Leily <noreply@leily.no>',
     to: [recipientEmail],
     subject: emailSubject,
     html: emailHtml,

@@ -173,7 +173,7 @@ const TermsOfService = () => {
             <ul className="list-disc list-inside space-y-1 text-sm ml-4">
               <li>14 dagers angrerett fra kjøpstidspunkt</li>
               <li>Angreretten gjelder ikke dersom credits er brukt</li>
-              <li>Kontakt support@leily.no for å benytte angreretten</li>
+              <li>Kontakt kontakt@leily.no for å benytte angreretten</li>
             </ul>
           </div>
 
@@ -317,16 +317,12 @@ const TermsOfService = () => {
           
           <div className="grid gap-2 text-sm">
             <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-              <span className="text-muted-foreground">Generell support:</span>
-              <a href="mailto:support@leily.no" className="text-primary hover:underline">support@leily.no</a>
+              <span className="text-muted-foreground">Generell henvendelse:</span>
+              <a href="mailto:kontakt@leily.no" className="text-primary hover:underline">kontakt@leily.no</a>
             </div>
             <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
               <span className="text-muted-foreground">Personvern:</span>
-              <a href="mailto:privacy@leily.no" className="text-primary hover:underline">privacy@leily.no</a>
-            </div>
-            <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-              <span className="text-muted-foreground">Fakturering:</span>
-              <a href="mailto:billing@leily.no" className="text-primary hover:underline">billing@leily.no</a>
+              <a href="mailto:personvern@leily.no" className="text-primary hover:underline">personvern@leily.no</a>
             </div>
           </div>
 
