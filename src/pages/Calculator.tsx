@@ -11,6 +11,7 @@ import { Calculator as CalcIcon, CheckCircle2, FileText, Ruler, Library, Plus, W
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
 import CalculationLibrary from '@/components/CalculationLibrary';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
@@ -63,6 +64,8 @@ const Calculator = () => {
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
   const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
   const [showProFeatures, setShowProFeatures] = useState(false);
+  const [mobileView, setMobileView] = useState<'chat' | 'pdf'>('chat');
+  const isMobile = useIsMobile();
   
   const handleTabChange = (value: string) => {
     if (value === "building-planner" && !canAccessBuildingPlanner) {
@@ -391,25 +394,78 @@ const Calculator = () => {
           
           <TabsContent value="calculator" className="mt-6">
             {user ? (
-              <div className="h-[calc(100vh-12rem)]">
-                <ResizableSplitView
-                  defaultLeftWidth={40}
-                  left={
-                    <CalculatorChat 
-                      calculatorData={data}
-                      onDataUpdate={(field, value) => updateField(field, value)}
-                      hasCredits={isPro || isAdmin || hasCredits}
+              <>
+                {/* Desktop: Split view */}
+                {!isMobile && (
+                  <div className="h-[calc(100vh-12rem)]">
+                    <ResizableSplitView
+                      defaultLeftWidth={40}
+                      left={
+                        <CalculatorChat 
+                          calculatorData={data}
+                          onDataUpdate={(field, value) => updateField(field, value)}
+                          hasCredits={isPro || isAdmin || hasCredits}
+                        />
+                      }
+                      right={
+                        <CalculatorPDFPreview 
+                          data={data}
+                          onDataChange={(field, value) => updateField(field, value)}
+                          onSave={handleSaveCalculation}
+                        />
+                      }
                     />
-                  }
-                  right={
-                    <CalculatorPDFPreview 
-                      data={data}
-                      onDataChange={(field, value) => updateField(field, value)}
-                      onSave={handleSaveCalculation}
-                    />
-                  }
-                />
-              </div>
+                  </div>
+                )}
+
+                {/* Mobile: Tab-based view with slider */}
+                {isMobile && (
+                  <div className="flex flex-col h-[calc(100vh-12rem)]">
+                    {/* Content area */}
+                    <div className="flex-1 overflow-hidden">
+                      {mobileView === 'chat' ? (
+                        <CalculatorChat 
+                          calculatorData={data}
+                          onDataUpdate={(field, value) => updateField(field, value)}
+                          hasCredits={isPro || isAdmin || hasCredits}
+                        />
+                      ) : (
+                        <CalculatorPDFPreview 
+                          data={data}
+                          onDataChange={(field, value) => updateField(field, value)}
+                          onSave={handleSaveCalculation}
+                        />
+                      )}
+                    </div>
+
+                    {/* Bottom slider/tab bar */}
+                    <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                      <div className="flex">
+                        <button
+                          onClick={() => setMobileView('chat')}
+                          className={`flex-1 py-4 text-sm font-medium transition-colors border-b-2 ${
+                            mobileView === 'chat'
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          Chat & Inndata
+                        </button>
+                        <button
+                          onClick={() => setMobileView('pdf')}
+                          className={`flex-1 py-4 text-sm font-medium transition-colors border-b-2 ${
+                            mobileView === 'pdf'
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          PDF-forhåndsvisning
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <Card className="p-8 text-center">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
