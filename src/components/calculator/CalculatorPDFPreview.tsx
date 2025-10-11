@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, FileText, Calculator, TrendingUp, AlertCircle, CheckCircle, Home, PiggyBank, Wallet, Upload, File, Save } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { formatNumberWithSpaces } from '@/lib/utils';
@@ -252,30 +253,416 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
-      <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between h-[73px]">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          <span className="font-semibold text-lg">Boligfinansieringsrapport</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {onSave && (
-            <Button onClick={onSave} size="sm" variant="outline" className="gap-2 rounded h-9">
-              <Save className="h-4 w-4" />
+      {!isMobile && (
+        <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between h-[73px]">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            <span className="font-semibold text-lg">Boligfinansieringsrapport</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {onSave && (
+              <Button onClick={onSave} size="sm" variant="outline" className="gap-2 rounded h-9">
+                <Save className="h-4 w-4" />
+              </Button>
+            )}
+            <Button onClick={handleDownload} size="sm" className="gap-2 rounded h-9">
+              <Download className="h-4 w-4" />
+              Last ned PDF
             </Button>
-          )}
-          <Button onClick={handleDownload} size="sm" className="gap-2 rounded h-9">
-            <Download className="h-4 w-4" />
-            Last ned PDF
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={`flex-1 overflow-auto flex items-start justify-center ${
         isMobile ? 'p-0 bg-white' : 'p-8 bg-gray-100'
       }`}>
         
-        {/* PDF Pages Container - Scales to fit panel width while maintaining A4 ratio */}
-        <div className={`w-full ${isMobile ? 'space-y-0' : 'max-w-[850px] space-y-6'}`}>
+        {isMobile ? (
+          /* Mobile: Simple form layout */
+          <div className="w-full px-4 py-4 space-y-6 pb-20">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4">
+              <h1 className="text-base font-bold text-primary text-center">
+                Boligfinansieringsrapport
+              </h1>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {onSave && (
+                <Button 
+                  onClick={onSave}
+                  className="flex-1"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  Lagre
+                </Button>
+              )}
+              <Button 
+                onClick={handleDownload}
+                className="flex-1"
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Last ned PDF
+              </Button>
+            </div>
+
+            {/* 1. Nøkkelinformasjon */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm border-b pb-2">1. Nøkkelinformasjon</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="mobile-address" className="text-xs">Eiendomsadresse</Label>
+                <Input
+                  id="mobile-address"
+                  value={formData.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="Skriv inn adresse..."
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-finnCode" className="text-xs">FINN-kode</Label>
+                <Input
+                  id="mobile-finnCode"
+                  value={formData.finnCode}
+                  onChange={(e) => handleChange('finnCode', e.target.value)}
+                  placeholder="Skriv inn FINN-kode"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-propertyType" className="text-xs">Boligtype</Label>
+                <Input
+                  id="mobile-propertyType"
+                  value={formData.propertyType}
+                  onChange={(e) => handleChange('propertyType', e.target.value)}
+                  placeholder="Enebolig, Leilighet..."
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-ownershipType" className="text-xs">Eierform</Label>
+                <Input
+                  id="mobile-ownershipType"
+                  value={formData.ownershipType}
+                  onChange={(e) => handleChange('ownershipType', e.target.value)}
+                  placeholder="Selveier, Borettslag..."
+                  className="h-9"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-livingArea" className="text-xs">Primærrom (m²)</Label>
+                  <Input
+                    id="mobile-livingArea"
+                    value={formData.livingArea}
+                    onChange={(e) => handleChange('livingArea', e.target.value)}
+                    placeholder="m²"
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-bedrooms" className="text-xs">Soverom</Label>
+                  <Input
+                    id="mobile-bedrooms"
+                    value={formData.bedrooms}
+                    onChange={(e) => handleChange('bedrooms', e.target.value)}
+                    placeholder="Antall"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-rooms" className="text-xs">Rom totalt</Label>
+                  <Input
+                    id="mobile-rooms"
+                    value={formData.rooms}
+                    onChange={(e) => handleChange('rooms', e.target.value)}
+                    placeholder="Antall"
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-buildYear" className="text-xs">Byggeår</Label>
+                  <Input
+                    id="mobile-buildYear"
+                    value={formData.buildYear}
+                    onChange={(e) => handleChange('buildYear', e.target.value)}
+                    placeholder="År"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-energyRating" className="text-xs">Energimerking</Label>
+                  <Input
+                    id="mobile-energyRating"
+                    value={formData.energyRating}
+                    onChange={(e) => handleChange('energyRating', e.target.value)}
+                    placeholder="A-G"
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-plotArea" className="text-xs">Tomteareal (m²)</Label>
+                  <Input
+                    id="mobile-plotArea"
+                    value={formData.plotArea}
+                    onChange={(e) => handleChange('plotArea', e.target.value)}
+                    placeholder="m²"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-totalPrice" className="text-xs">Prisantydning</Label>
+                <Input
+                  id="mobile-totalPrice"
+                  value={formData.totalPrice}
+                  onChange={(e) => handleChange('totalPrice', e.target.value)}
+                  placeholder="kr"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* 2. Låneinformasjon */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm border-b pb-2">2. Låneinformasjon</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="mobile-equity" className="text-xs">Egenkapital</Label>
+                <Input
+                  id="mobile-equity"
+                  value={formData.equity}
+                  onChange={(e) => handleChange('equity', e.target.value)}
+                  placeholder="kr"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-interestRate" className="text-xs">Rente (%)</Label>
+                  <Input
+                    id="mobile-interestRate"
+                    value={formData.interestRate}
+                    onChange={(e) => handleChange('interestRate', e.target.value)}
+                    placeholder="%"
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-loanPeriod" className="text-xs">Nedbetalingstid (år)</Label>
+                  <Input
+                    id="mobile-loanPeriod"
+                    value={formData.loanPeriod}
+                    onChange={(e) => handleChange('loanPeriod', e.target.value)}
+                    placeholder="år"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              {loanAmount > 0 && (
+                <div className="p-3 border border-border rounded-lg bg-muted/30 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-muted-foreground">Lånebeløp:</span>
+                    <span className="font-semibold">{formatNumberWithSpaces(Math.round(loanAmount))} kr</span>
+                  </div>
+                  {monthlyLoanPayment > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-muted-foreground">Månedlig avdrag:</span>
+                      <span className="font-semibold">{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr</span>
+                    </div>
+                  )}
+                  {loanToValue > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-muted-foreground">Belåningsgrad (LTV):</span>
+                      <span className="font-semibold">{loanToValue.toFixed(1)}%</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Inntekter */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm border-b pb-2">3. Inntekter</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="mobile-monthlyRent" className="text-xs">
+                  Månedlig leieinntekt
+                  {formData.isRentAutoEstimated && !rentManuallyEdited && (
+                    <span className="ml-1 text-xs text-muted-foreground font-normal">(estimert)</span>
+                  )}
+                </Label>
+                <Input
+                  id="mobile-monthlyRent"
+                  value={formData.monthlyRent}
+                  onChange={(e) => handleChange('monthlyRent', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+
+              {annualRent > 0 && (
+                <div className="p-3 border border-border rounded-lg bg-muted/30 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-muted-foreground">Årlig leieinntekt:</span>
+                    <span className="font-semibold">{formatNumberWithSpaces(Math.round(annualRent))} kr</span>
+                  </div>
+                  {grossYield > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-muted-foreground">Bruttoavkastning:</span>
+                      <span className="font-semibold">{grossYield.toFixed(2)}%</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 4. Månedlige utgifter */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm border-b pb-2">4. Månedlige utgifter</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="mobile-commonCosts" className="text-xs">Felleskostnader</Label>
+                <Input
+                  id="mobile-commonCosts"
+                  value={formData.commonCosts}
+                  onChange={(e) => handleChange('commonCosts', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-municipalFees" className="text-xs">Kommunale avgifter</Label>
+                <Input
+                  id="mobile-municipalFees"
+                  value={formData.municipalFees}
+                  onChange={(e) => handleChange('municipalFees', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-insurance" className="text-xs">Forsikring</Label>
+                <Input
+                  id="mobile-insurance"
+                  value={formData.insurance}
+                  onChange={(e) => handleChange('insurance', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-electricityMonthly" className="text-xs">Strøm</Label>
+                <Input
+                  id="mobile-electricityMonthly"
+                  value={formData.electricityMonthly}
+                  onChange={(e) => handleChange('electricityMonthly', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mobile-sharedExpenses" className="text-xs">Andre utgifter</Label>
+                <Input
+                  id="mobile-sharedExpenses"
+                  value={formData.sharedExpenses}
+                  onChange={(e) => handleChange('sharedExpenses', e.target.value)}
+                  placeholder="kr/mnd"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* 5. Økonomisk analyse */}
+            {formData.totalPrice && formData.equity && (
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm border-b pb-2">5. Økonomisk analyse</h3>
+                
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="divide-y divide-border">
+                    {formData.monthlyRent && parseFloat(formData.monthlyRent) > 0 && (
+                      <div className="flex justify-between p-3 bg-background">
+                        <span className="text-xs text-muted-foreground">Leieinntekt</span>
+                        <span className="text-sm font-semibold">
+                          {formatNumberWithSpaces(Math.round(parseFloat(formData.monthlyRent)))} kr
+                        </span>
+                      </div>
+                    )}
+                    {monthlyLoanPayment > 0 && (
+                      <div className="flex justify-between p-3 bg-background">
+                        <span className="text-xs text-muted-foreground">Lånekostnad</span>
+                        <span className="text-sm font-semibold">
+                          -{formatNumberWithSpaces(Math.round(monthlyLoanPayment))} kr
+                        </span>
+                      </div>
+                    )}
+                    {totalMonthlyExpenses > 0 && (
+                      <div className="flex justify-between p-3 bg-background">
+                        <span className="text-xs text-muted-foreground">Driftskostnader</span>
+                        <span className="text-sm font-semibold">
+                          -{formatNumberWithSpaces(Math.round(totalMonthlyExpenses))} kr
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between p-3 bg-muted/50">
+                      <span className="text-sm font-bold">Netto kontantstrøm</span>
+                      <span className="text-sm font-bold">
+                        {monthlyCashFlow >= 0 ? '+' : ''}{formatNumberWithSpaces(Math.round(monthlyCashFlow))} kr
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="border border-border rounded-lg p-3 bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Årlig kontantstrøm</p>
+                    <p className="text-sm font-bold">{formatNumberWithSpaces(Math.round(annualCashFlow))} kr</p>
+                  </div>
+                  {grossYield > 0 && (
+                    <div className="border border-border rounded-lg p-3 bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-1">Bruttoavkastning</p>
+                      <p className="text-sm font-bold">{grossYield.toFixed(2)}%</p>
+                    </div>
+                  )}
+                  {netYield > 0 && (
+                    <div className="border border-border rounded-lg p-3 bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-1">Nettoavkastning</p>
+                      <p className="text-sm font-bold">{netYield.toFixed(2)}%</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Desktop: PDF layout */
+          <div className="w-full max-w-[850px] space-y-6">
           
           {/* Page 1 - Scales proportionally with A4 aspect ratio */}
           <div className={`pdf-page bg-white w-full ${isMobile ? 'shadow-none' : 'shadow-xl'}`} style={{ aspectRatio: '210/297' }}>
@@ -715,9 +1102,10 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
 
               <PageFooter pageNumber={2} totalPages={2} />
             </div>
-          </div>
 
-        </div>
+          </div>
+          </div>
+        )}
       </div>
     </div>
   );
