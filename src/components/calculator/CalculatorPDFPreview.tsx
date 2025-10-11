@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalculatorPDFPreviewProps {
   data?: Record<string, any>;
@@ -18,6 +19,7 @@ interface CalculatorPDFPreviewProps {
 
 export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: CalculatorPDFPreviewProps) => {
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     address: data.address || '',
     finnCode: data.finnCode || '',
@@ -268,13 +270,15 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
         </div>
       </div>
 
-      <div className="flex-1 p-8 overflow-auto bg-gray-100 flex items-start justify-center">
+      <div className={`flex-1 overflow-auto flex items-start justify-center ${
+        isMobile ? 'p-0 bg-white' : 'p-8 bg-gray-100'
+      }`}>
         
         {/* PDF Pages Container - Scales to fit panel width while maintaining A4 ratio */}
-        <div className="w-full max-w-[850px] space-y-6">
+        <div className={`w-full ${isMobile ? 'space-y-0' : 'max-w-[850px] space-y-6'}`}>
           
           {/* Page 1 - Scales proportionally with A4 aspect ratio */}
-          <div className="pdf-page bg-white shadow-xl w-full" style={{ aspectRatio: '210/297' }}>
+          <div className={`pdf-page bg-white w-full ${isMobile ? 'shadow-none' : 'shadow-xl'}`} style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Header with Gradient */}
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 px-10 py-8">
@@ -403,7 +407,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
           </div>
 
           {/* Page 2 - Scales proportionally with A4 aspect ratio */}
-          <div className="pdf-page bg-white shadow-xl w-full" style={{ aspectRatio: '210/297' }}>
+          <div className={`pdf-page bg-white w-full ${isMobile ? 'shadow-none' : 'shadow-xl'}`} style={{ aspectRatio: '210/297' }}>
             <div className="h-full flex flex-col">
               {/* Content */}
               <div className="flex-1 px-10 py-8 space-y-6 overflow-hidden">
