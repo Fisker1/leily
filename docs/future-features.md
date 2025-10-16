@@ -164,12 +164,13 @@ Leily Support Team
 
 ## 🏢 CRM System med PIL3 Integrasjon
 
-### 6. Dokumenter Seksjon med PIL3, Preview og Graphview
+### 6. Prosjektstyring Fane med PIL3, Preview og Graphview
 - **Status:** Planlagt
-- **Beskrivelse:** Komplett CRM-system for eiendomsforvaltning med PIL3-struktur
+- **Beskrivelse:** Komplett CRM-system for eiendomsforvaltning med PIL3-struktur i egen dedikert fane
 
 **Funksjoner:**
-- **PIL3 Slider:** Tredelt visning (PIL3, Preview, Graphview) under Dokumenter
+- **Dedikert Fane:** Egen "Prosjektstyring" fane for ryddig organisering
+- **PIL3 Slider:** Tredelt visning (PIL3, Preview, Graphview) i prosjektstyring-fanen
 - **CRM Oversikt:** Komplett oversikt over entreprenører, kontakter, bedrifter og prosjekter
 - **Dokument Håndtering:** Strukturert lagring av alle eiendomsrelaterte dokumenter
 - **Møte Tracking:** Oversikt over alle møter og prosjekter
@@ -179,10 +180,10 @@ Leily Support Team
 ```
 Portefølje
 ├── Eiendom av dokumenter og analyse
-│   └── Dokumenter (ny seksjon)
-│       ├── PIL3 (slider alternativ 1)
-│       ├── Preview (slider alternativ 2)  
-│       └── Graphview (slider alternativ 3)
+└── Prosjektstyring (ny fane)
+    ├── PIL3 (slider alternativ 1)
+    ├── Preview (slider alternativ 2)  
+    └── Graphview (slider alternativ 3)
 ```
 
 **PIL3 Funksjonalitet:**
@@ -315,7 +316,7 @@ Portefølje
 - **Scrive API:** Gratis API tilgjengelig for testing og utvikling
 - **Elektronisk Signering:** Juridisk gyldige signaturer for leieavtaler
 - **CRM System:** PIL3-basert struktur for komplett eiendomsforvaltning
-- **Dokumenter Seksjon:** Tredelt visning med PIL3, Preview og Graphview
+- **Prosjektstyring Fane:** Dedikert fane med PIL3, Preview og Graphview for ryddig organisering
 - **AI-drevet Oppdatering:** Stemmeinput og automatisk strukturering av CRM-data
 - **Sikkerhet:** XSS og script injection beskyttelse for all brukerinput
 
