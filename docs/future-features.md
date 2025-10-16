@@ -162,6 +162,150 @@ Leily Support Team
 - A/B testing
 - Avanserte personaliseringer
 
+## 🏢 CRM System med PIL3 Integrasjon
+
+### 6. Dokumenter Seksjon med PIL3, Preview og Graphview
+- **Status:** Planlagt
+- **Beskrivelse:** Komplett CRM-system for eiendomsforvaltning med PIL3-struktur
+
+**Funksjoner:**
+- **PIL3 Slider:** Tredelt visning (PIL3, Preview, Graphview) under Dokumenter
+- **CRM Oversikt:** Komplett oversikt over entreprenører, kontakter, bedrifter og prosjekter
+- **Dokument Håndtering:** Strukturert lagring av alle eiendomsrelaterte dokumenter
+- **Møte Tracking:** Oversikt over alle møter og prosjekter
+- **Banker og Långivere:** Sentralisert oversikt over finansielle partnere
+
+**UI/UX Struktur:**
+```
+Portefølje
+├── Eiendom av dokumenter og analyse
+│   └── Dokumenter (ny seksjon)
+│       ├── PIL3 (slider alternativ 1)
+│       ├── Preview (slider alternativ 2)  
+│       └── Graphview (slider alternativ 3)
+```
+
+**PIL3 Funksjonalitet:**
+- **Inspirasjon:** Obsidian-basert struktur for datamodellering
+- **Hierarkisk Organisering:** Strukturert visning av alle eiendomsdata
+- **Søk og Filtrering:** Avansert søkefunksjonalitet
+- **Relasjoner:** Visning av koblinger mellom ulike enheter
+
+**Preview Modus:**
+- **Dokument Visning:** Direkte visning av valgte dokumenter
+- **Formatering:** Riktig formatering av alle dokumenttyper
+- **Zoom og Navigasjon:** Brukervennlig dokumentnavigasjon
+
+**Graphview Modus:**
+- **Visuell Oversikt:** Grafisk representasjon av relasjoner
+- **Interaktiv Kart:** Klikkbare noder og forbindelser
+- **Data Visualisering:** Charts og grafer for eiendomsdata
+
+**CRM Komponenter:**
+- **Entreprenører:** Oversikt over alle entreprenører og deres prosjekter
+- **Kontakter:** Sentralisert kontaktliste med alle relevante personer
+- **Bedrifter:** Database over banker, forsikringsselskaper, advokater
+- **Møter:** Kalender og historikk over alle møter
+- **Prosjekter:** Tracking av alle pågående og fullførte prosjekter
+
+**Teknisk Implementasjon:**
+- **Database Schema:** Utvidet schema for CRM-data
+- **React Komponenter:** PIL3, Preview og Graphview komponenter
+- **State Management:** Avansert state håndtering for slider-funksjonalitet
+- **Data Visualisering:** Graph-biblioteker for visuell representasjon
+- **Søkefunksjonalitet:** Full-text søk og filtrering
+
+**Brukstilfeller:**
+- **Eiendomsforvaltning:** Komplett oversikt over alle eiendomsrelaterte aktiviteter
+- **Prosjektstyring:** Tracking av renoveringer og vedlikehold
+- **Kontakthåndtering:** Effektiv kommunikasjon med alle parter
+- **Dokumentarkiv:** Strukturert lagring og rask tilgang til dokumenter
+- **Rapportering:** Generering av rapporter og analyser
+
+**Fordeler:**
+- **Komplett Oversikt:** Alt på ett sted
+- **Effektiv Arbeidsflyt:** Rask tilgang til relevant informasjon
+- **Profesjonell Presentasjon:** Moderne og brukervennlig grensesnitt
+- **Skalerbarhet:** Kan utvides med nye funksjoner
+- **Integrasjon:** Kobler sammen alle aspekter av eiendomsforvaltning
+
+**Inspirasjon og Referanse:**
+- **Obsidian Struktur:** Bruker eksisterende PIL3-struktur som referanse
+- **Moderne CRM:** Inspirert av ledende CRM-systemer
+- **Eiendomsspesifikk:** Tilpasset eiendomsforvaltning
+
+### 7. AI-drevet Automatisk Oppdatering av Filtreet
+- **Status:** Planlagt
+- **Beskrivelse:** AI-assistert oppdatering av CRM-data via stemmeinput og automatisk strukturering
+
+**Funksjoner:**
+- **Mikrofon Input:** Stemme-til-tekst funksjonalitet for møteopptak
+- **AI Strukturering:** Automatisk organisering av møtedata i riktige kategorier
+- **Automatisk Oppdatering:** AI oppdaterer filtreet og filene basert på møteinnhold
+- **Manuell Override:** Mulighet til manuell redigering av alle felt
+- **Credit System:** Pro-funksjon som krever credits for AI-funksjonalitet
+
+**AI Funksjonalitet:**
+- **Møteopptak:** Konverterer stemme til strukturert tekst
+- **Data Ekstraksjon:** Identifiserer nøkkelinformasjon (navn, datoer, prosjekter, kontakter)
+- **Automatisk Kategorisering:** Plasserer informasjon i riktige CRM-seksjoner
+- **Relasjon Mapping:** Kobler sammen relaterte enheter og prosjekter
+- **Kvalitetskontroll:** Validerer og strukturerer data før lagring
+
+**Sikkerhet og Validering:**
+- **XSS Beskyttelse:** Kun tekstinput tillatt, ingen HTML/JavaScript
+- **Input Sanitization:** Automatisk rensing av alle brukerinputs
+- **Script Injection Prevention:** Blokkerer alle skadelige scripts
+- **Data Validering:** Kontrollerer at alle data følger definerte skjemaer
+- **Access Control:** Kun autoriserte brukere kan oppdatere data
+
+**Brukeropplevelse:**
+- **Stemme Input:** Enkel mikrofon-funksjonalitet for møteopptak
+- **Manuell Redigering:** Full kontroll over alle data via UI
+- **Hybrid Tilnærming:** Kombinerer AI-effektivitet med manuell kontroll
+- **Real-time Preview:** Se endringer før de lagres
+- **Undo/Redo:** Mulighet til å angre endringer
+
+**Teknisk Implementasjon:**
+- **Speech-to-Text API:** Integrasjon med stemme-til-tekst tjeneste
+- **AI Processing:** Natural Language Processing for dataekstraksjon
+- **Database Validation:** Sikker lagring med validering
+- **Frontend Sanitization:** Client-side input rensing
+- **Backend Validation:** Server-side sikkerhetskontroller
+
+**Credit System:**
+- **Pro Feature:** AI-funksjonalitet krever credits
+- **Usage Tracking:** Sporing av AI-bruk per bruker
+- **Credit Consumption:** Definerte kostnader per AI-operasjon
+- **Upgrade Path:** Mulighet til å kjøpe flere credits
+
+**Manuell Alternativ:**
+- **Full Kontroll:** Alle funksjoner tilgjengelig uten AI
+- **Strukturert Input:** Brukervennlige skjemaer for manuell registrering
+- **Bulk Import:** Mulighet til å importere data fra andre systemer
+- **Template System:** Forhåndsdefinerte maler for vanlige oppføringer
+
+**Sikkerhetsfunksjoner:**
+- **Input Filtering:** Automatisk filtrering av skadelig innhold
+- **Content Security Policy:** Strenge CSP-regler
+- **SQL Injection Prevention:** Parameteriserte queries
+- **Rate Limiting:** Begrenset antall AI-forespørsler per bruker
+- **Audit Logging:** Sporing av alle dataendringer
+
+**Brukstilfeller:**
+- **Møteopptak:** Automatisk registrering av møteinnhold
+- **Kontakt Oppdatering:** AI oppdaterer kontaktinformasjon
+- **Prosjekt Tracking:** Automatisk oppføring av prosjektstatus
+- **Dokument Kategorisering:** AI organiserer dokumenter
+- **Rapport Generering:** Automatisk generering av møterapporter
+
+**Fordeler:**
+- **Tidsbesparelse:** Raskere dataoppføring
+- **Konsistens:** Standardisert datastruktur
+- **Nøyaktighet:** Redusert menneskelige feil
+- **Skalerbarhet:** Håndterer store mengder data
+- **Brukervennlighet:** Enkel stemmeinput
+
 ## 📝 Notater
 
 - **Stripo Konto:** Tilgjengelig for e-post design
@@ -170,6 +314,10 @@ Leily Support Team
 - **Automatisk Reply:** Umiddelbar bekreftelse til brukere
 - **Scrive API:** Gratis API tilgjengelig for testing og utvikling
 - **Elektronisk Signering:** Juridisk gyldige signaturer for leieavtaler
+- **CRM System:** PIL3-basert struktur for komplett eiendomsforvaltning
+- **Dokumenter Seksjon:** Tredelt visning med PIL3, Preview og Graphview
+- **AI-drevet Oppdatering:** Stemmeinput og automatisk strukturering av CRM-data
+- **Sikkerhet:** XSS og script injection beskyttelse for all brukerinput
 
 ---
 
