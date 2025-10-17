@@ -2,8 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
 import { Button } from '@/components/ui/button';
-import { Download, FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle, Home } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle, Home } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatNumberWithSpaces } from '@/lib/utils';
 
@@ -691,27 +690,6 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     });
   }, [onDataChange]);
 
-  // Export as PNG
-  const handleExportPNG = useCallback(async () => {
-    if (!hotInstance) return;
-    
-    try {
-      const tableElement = hotInstance.rootElement;
-      const canvas = await html2canvas(tableElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: colors.surface,
-        logging: false
-      });
-      
-      const link = document.createElement('a');
-      link.download = `boligkalkyle-${activeTab}-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-    } catch (error) {
-      console.error('Error exporting PNG:', error);
-    }
-  }, [hotInstance, activeTab, colors.surface]);
 
   // Export as Excel with all sheets
   const handleExportExcel = useCallback(() => {
@@ -889,16 +867,10 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
             <FileSpreadsheet className="h-5 w-5" />
             <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={handleExportExcel} size="sm" className="gap-2">
-              <FileSpreadsheet className="h-4 w-4" />
-              Last ned Excel
-            </Button>
-            <Button onClick={handleExportPNG} size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Last ned bilde
-            </Button>
-          </div>
+          <Button onClick={handleExportExcel} size="sm" className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Last ned Excel
+          </Button>
         </div>
         
         {/* Modern tab navigation */}
