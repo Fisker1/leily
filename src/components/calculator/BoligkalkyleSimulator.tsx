@@ -318,7 +318,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     manualRowResize: true,
     stretchH: 'all',
     wordWrap: false,
-    preventOverflow: 'horizontal',
+    preventOverflow: 'horizontal' as const,
     columnSorting: false,
     filters: false,
     dropdownMenu: false,

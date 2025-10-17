@@ -44,8 +44,8 @@ const Dashboard = () => {
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Initialize auto calendar events
-  useAutoCalendarEvents();
+  // Initialize auto calendar events - Hook removed
+  // useAutoCalendarEvents();
 
   useEffect(() => {
     fetchDashboardData();
@@ -428,7 +428,9 @@ const Dashboard = () => {
         <h2 className="text-xl font-semibold text-foreground">
           Leiekalender
         </h2>
-        <RentalCalendar />
+        <div className="p-4 border rounded-lg">
+          <p>Calendar component has been temporarily removed.</p>
+        </div>
       </div>
     </div>
     <MinimalFooter />

@@ -953,22 +953,12 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
         </div>
       </DialogContent>
       
-      {/* Signing Dialog */}
-      <LeaseSigningDialog
-        open={showSigningDialog}
-        onOpenChange={setShowSigningDialog}
-        leaseAgreementId={createdLeaseId || ''}
-        leaseData={createdLeaseId ? {
-          property_address: selectedProperty?.address || '',
-          landlord_name: user?.user_metadata?.full_name || '',
-          landlord_email: user?.email || '',
-          tenant_name: `${tenantData.firstName} ${tenantData.lastName}`,
-          tenant_email: tenantData.email,
-          monthly_rent: parseFloat(leaseData.monthlyRent) || 0,
-          start_date: leaseData.startDate?.toISOString() || '',
-          end_date: leaseData.endDate?.toISOString() || ''
-        } : undefined}
-      />
+      {/* Signing Dialog - Component removed */}
+      {showSigningDialog && (
+        <div className="p-4">
+          <p>Signing dialog component has been temporarily removed.</p>
+        </div>
+      )}
     </Dialog>
   );
 };
