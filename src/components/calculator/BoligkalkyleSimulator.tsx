@@ -22,15 +22,22 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const hotTableRef = useRef<any>(null);
   const [hotInstance, setHotInstance] = useState<any>(null);
   const [hyperformulaInstance, setHyperformulaInstance] = useState<HyperFormula | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize HyperFormula
   useEffect(() => {
-    const hf = HyperFormula.buildEmpty({
-      licenseKey: 'gpl-v3',
-      useArrayArithmetic: true,
-      useColumnIndex: true,
-    });
-    setHyperformulaInstance(hf);
+    try {
+      const hf = HyperFormula.buildEmpty({
+        licenseKey: 'gpl-v3',
+        useArrayArithmetic: true,
+        useColumnIndex: true,
+      });
+      setHyperformulaInstance(hf);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error initializing HyperFormula:', error);
+      setIsLoading(false);
+    }
   }, []);
 
   // Define the spreadsheet structure based on "Kalkyle - 2021" Excel sheet
@@ -271,9 +278,9 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     height: 600,
     licenseKey: 'non-commercial-and-evaluation',
     colWidths: [200, 120, 120, 120, 120, 100, 100], // Wider first column for labels
-    formulas: {
+    formulas: hyperformulaInstance ? {
       engine: hyperformulaInstance
-    },
+    } : undefined,
     cells: (row: number, col: number) => {
       const editableCells = getEditableCells();
       const cellStyle = getCellStyling();
@@ -326,6 +333,25 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     fillHandle: false,
     undoRedo: true
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-white">
+        <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Laster kalkyle...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-white">
