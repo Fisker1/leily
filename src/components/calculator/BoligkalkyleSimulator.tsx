@@ -2,9 +2,13 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle, Home } from 'lucide-react';
+import { FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle, Home, Save } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatNumberWithSpaces } from '@/lib/utils';
+import { useCredits } from '@/hooks/useCredits';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 // Register all Handsontable modules
 registerAllModules();
@@ -22,6 +26,12 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const [hotInstance, setHotInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eiendom' | 'kalkyle' | 'lan' | 'oversikt' | 'risiko'>('eiendom');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Hooks for credits and authentication
+  const { credits, useCredit, canUseCredits } = useCredits();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   // Modern color palette inspired by Apple design
   const colors = {
@@ -691,47 +701,144 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   }, [onDataChange]);
 
 
-  // Export as Excel with all sheets
-  const handleExportExcel = useCallback(() => {
+  // Generate Excel workbook
+  const generateExcelWorkbook = useCallback(() => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Get all sheet data
+    const eiendomData = getEiendomData();
+    const kalkyleData = getKalkyleData();
+    const lanData = getLanData();
+    const oversiktData = getOversiktData();
+    const risikoData = getRisikoData();
+    
+    // Convert data to worksheets (values only, no formulas)
+    const eiendomWS = XLSX.utils.aoa_to_sheet(eiendomData);
+    const kalkyleWS = XLSX.utils.aoa_to_sheet(kalkyleData);
+    const lanWS = XLSX.utils.aoa_to_sheet(lanData);
+    const oversiktWS = XLSX.utils.aoa_to_sheet(oversiktData);
+    const risikoWS = XLSX.utils.aoa_to_sheet(risikoData);
+    
+    // Set column widths for better formatting
+    const columnWidths = [
+      { wch: 25 }, // Column A
+      { wch: 15 }, // Column B
+      { wch: 5 },  // Column C
+      { wch: 15 }, // Column D
+      { wch: 5 },  // Column E
+      { wch: 15 }, // Column F
+      { wch: 5 },  // Column G
+      { wch: 15 }  // Column H
+    ];
+    
+    [eiendomWS, kalkyleWS, lanWS, oversiktWS, risikoWS].forEach(ws => {
+      ws['!cols'] = columnWidths;
+    });
+    
+    // Add worksheets to workbook
+    XLSX.utils.book_append_sheet(workbook, eiendomWS, 'Eiendom');
+    XLSX.utils.book_append_sheet(workbook, kalkyleWS, 'Kalkyle');
+    XLSX.utils.book_append_sheet(workbook, lanWS, 'Lån');
+    XLSX.utils.book_append_sheet(workbook, oversiktWS, 'Oversikt');
+    XLSX.utils.book_append_sheet(workbook, risikoWS, 'Risiko');
+    
+    return workbook;
+  }, [getEiendomData, getKalkyleData, getLanData, getOversiktData, getRisikoData]);
+
+  // Save to library (no credits required)
+  const handleSaveToLibrary = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Feil",
+        description: "Du må være logget inn for å lagre filer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      const workbook = XLSX.utils.book_new();
+      const workbook = generateExcelWorkbook();
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       
-      // Get all sheet data
-      const eiendomData = getEiendomData();
-      const kalkyleData = getKalkyleData();
-      const lanData = getLanData();
-      const oversiktData = getOversiktData();
-      const risikoData = getRisikoData();
+      // Generate filename with current date
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `Boligkalkyle-${today}.xlsx`;
       
-      // Convert data to worksheets (values only, no formulas)
-      const eiendomWS = XLSX.utils.aoa_to_sheet(eiendomData);
-      const kalkyleWS = XLSX.utils.aoa_to_sheet(kalkyleData);
-      const lanWS = XLSX.utils.aoa_to_sheet(lanData);
-      const oversiktWS = XLSX.utils.aoa_to_sheet(oversiktData);
-      const risikoWS = XLSX.utils.aoa_to_sheet(risikoData);
-      
-      // Set column widths for better formatting
-      const columnWidths = [
-        { wch: 25 }, // Column A
-        { wch: 15 }, // Column B
-        { wch: 5 },  // Column C
-        { wch: 15 }, // Column D
-        { wch: 5 },  // Column E
-        { wch: 15 }, // Column F
-        { wch: 5 },  // Column G
-        { wch: 15 }  // Column H
-      ];
-      
-      [eiendomWS, kalkyleWS, lanWS, oversiktWS, risikoWS].forEach(ws => {
-        ws['!cols'] = columnWidths;
+      // Create blob from buffer
+      const blob = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
       });
       
-      // Add worksheets to workbook
-      XLSX.utils.book_append_sheet(workbook, eiendomWS, 'Eiendom');
-      XLSX.utils.book_append_sheet(workbook, kalkyleWS, 'Kalkyle');
-      XLSX.utils.book_append_sheet(workbook, lanWS, 'Lån');
-      XLSX.utils.book_append_sheet(workbook, oversiktWS, 'Oversikt');
-      XLSX.utils.book_append_sheet(workbook, risikoWS, 'Risiko');
+      // Upload to Supabase Storage
+      const filePath = `reports/${user.id}/boligkalkyle-${Date.now()}.xlsx`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('property-documents')
+        .upload(filePath, blob, {
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Save document metadata to database
+      const { error: dbError } = await supabase
+        .from('reports')
+        .insert([{
+          user_id: user.id,
+          report_type: 'boligkalkyle',
+          file_name: filename,
+          file_size: blob.size,
+          property_data: data,
+          calculations: {
+            generated_at: new Date().toISOString(),
+            file_path: filePath,
+            file_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          }
+        }]);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Suksess",
+        description: "Boligkalkyle lagret i biblioteket ditt",
+      });
+
+    } catch (error) {
+      console.error('Error saving to library:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke lagre filen i biblioteket",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user, generateExcelWorkbook, toast]);
+
+  // Download Excel (costs 5 credits)
+  const handleDownloadExcel = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Feil",
+        description: "Du må være logget inn for å laste ned filer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user has enough credits (5 credits required)
+    if (!canUseCredits || credits < 5) {
+      toast({
+        title: "Ikke nok kreditter",
+        description: "Du trenger 5 kreditter for å laste ned Excel-filen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const workbook = generateExcelWorkbook();
       
       // Generate filename with current date
       const today = new Date().toISOString().split('T')[0];
@@ -740,10 +847,25 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       // Write and download file
       XLSX.writeFile(workbook, filename);
       
+      // Deduct 5 credits
+      for (let i = 0; i < 5; i++) {
+        await useCredit();
+      }
+      
+      toast({
+        title: "Suksess",
+        description: "Excel-fil lastet ned (5 kreditter brukt)",
+      });
+      
     } catch (error) {
-      console.error('Error exporting Excel:', error);
+      console.error('Error downloading Excel:', error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke laste ned Excel-filen",
+        variant: "destructive",
+      });
     }
-  }, [getEiendomData, getKalkyleData, getLanData, getOversiktData, getRisikoData]);
+  }, [user, canUseCredits, credits, useCredit, generateExcelWorkbook, toast]);
 
   // Handsontable configuration
   const hotSettings = {
@@ -867,10 +989,27 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
             <FileSpreadsheet className="h-5 w-5" />
             <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
           </div>
-          <Button onClick={handleExportExcel} size="sm" className="gap-2">
-            <FileSpreadsheet className="h-4 w-4" />
-            Last ned Excel
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSaveToLibrary} 
+              size="sm" 
+              className="gap-2"
+              disabled={isSaving}
+              variant="outline"
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? 'Lagrer...' : 'Lagre'}
+            </Button>
+            <Button 
+              onClick={handleDownloadExcel} 
+              size="sm" 
+              className="gap-2"
+              disabled={!canUseCredits || credits < 5}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Last ned Excel (5 kreditter)
+            </Button>
+          </div>
         </div>
         
         {/* Modern tab navigation */}
