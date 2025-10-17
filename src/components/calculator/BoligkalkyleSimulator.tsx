@@ -46,7 +46,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Main calculation sheet data (Kalkyle - 2025)
+  // Main calculation sheet data (Kalkyle - 2025) - Demo version
   const getKalkyleData = useCallback(() => {
     return [
       // Header
@@ -60,58 +60,58 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       
       // Main summary table
       ['', '', 'Verditakst', 'Lånesum', 'Lånebelastning', 'Avdragsfrie år', '', '', '', ''],
-      ['', '', data.totalPrice || 7500000, data.loanAmount || 5766443, '76.89%', 0, '', '', '', ''],
+      ['', '', data.totalPrice || '7 500 000', data.loanAmount || '6 000 000', '80%', '0', '', '', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
       
       // Avkastning ved boligkjøp section
       ['', '', 'Avkastning ved boligkjøp', '', '', '', '', '', '', ''],
-      ['', '', 'Totalpris eiendom', 7688590, '', '', '', '', '', ''],
-      ['', '', 'Rente (%)', data.interestRate || 6.5, '', '', '', '', '', ''],
-      ['', '', 'Lån (kr)', 5766443, '', '', '', '', '', ''],
-      ['', '', 'Egenkapital', 1922148, '', '', '', '', '', ''],
-      ['', '', 'Lånebelastning kjøpesum', '75.00%', '', '', '', '', '', ''],
-      ['', '', 'Leieinntekt per mnd', data.monthlyRent || 60000, '', '', '', '', '', ''],
-      ['', '', 'Felleskostnader pr. mnd', '', '', '', '', '', '', ''],
-      ['', '', 'Kommunale avgifter pr. m', 2231, '', '', '', '', '', ''],
-      ['', '', 'Ledighet (3%)', 1800, '', '', '', '', '', ''],
-      ['', '', 'Vedlikehold (5%)', 3000, '', '', '', '', '', ''],
-      ['', '', 'Strøm, forsikring, diverse', 7694, '', '', '', '', '', ''],
-      ['', '', 'Netto leie pr. mnd. (før sk)', 46875, '', '', '', '', '', ''],
-      ['', '', 'Skatt (22%)', 10313, '', '', '', '', '', ''],
-      ['', '', 'Netto leie etter skatt', 36563, '', '', '', '', '', ''],
-      ['', '', 'Rentekostnad', 31051, '', '', '', '', '', ''],
-      ['', '', 'Fradrag renter (22%)', 6831, '', '', '', '', '', ''],
-      ['', '', 'Sum etter finanskost og sk', 12342, '', '', '', '', '', ''],
-      ['', '', 'Netto pr. år', 148110, '', '', '', '', '', ''],
-      ['', '', 'Avkastning egenkapitalen', '7.71%', '', '', '', '', '', ''],
+      ['', '', 'Totalpris eiendom', data.totalPrice || '7 500 000', '', '', '', '', '', ''],
+      ['', '', 'Rente (%)', data.interestRate || '5.5', '', '', '', '', '', ''],
+      ['', '', 'Lån (kr)', data.loanAmount || '6 000 000', '', '', '', '', '', ''],
+      ['', '', 'Egenkapital', '1 500 000', '', '', '', '', '', ''],
+      ['', '', 'Lånebelastning kjøpesum', '80%', '', '', '', '', '', ''],
+      ['', '', 'Leieinntekt per mnd', data.monthlyRent || '45 000', '', '', '', '', '', ''],
+      ['', '', 'Felleskostnader pr. mnd', '2 500', '', '', '', '', '', ''],
+      ['', '', 'Kommunale avgifter pr. m', '1 800', '', '', '', '', '', ''],
+      ['', '', 'Ledighet (3%)', '1 350', '', '', '', '', '', ''],
+      ['', '', 'Vedlikehold (5%)', '2 250', '', '', '', '', '', ''],
+      ['', '', 'Strøm, forsikring, diverse', '3 000', '', '', '', '', '', ''],
+      ['', '', 'Netto leie pr. mnd. (før sk)', '34 100', '', '', '', '', '', ''],
+      ['', '', 'Skatt (22%)', '7 502', '', '', '', '', '', ''],
+      ['', '', 'Netto leie etter skatt', '26 598', '', '', '', '', '', ''],
+      ['', '', 'Rentekostnad', '27 500', '', '', '', '', '', ''],
+      ['', '', 'Fradrag renter (22%)', '6 050', '', '', '', '', '', ''],
+      ['', '', 'Sum etter finanskost og sk', '5 148', '', '', '', '', '', ''],
+      ['', '', 'Netto pr. år', '61 776', '', '', '', '', '', ''],
+      ['', '', 'Avkastning egenkapitalen', '4.1%', '', '', '', '', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
       
       // Cashflow per mnd section
       ['', '', '', '', 'Cashflow per mnd', '', '', '', '', ''],
-      ['', '', '', '', 'Leieinntekt', 60000, '', '', '', ''],
-      ['', '', '', '', 'Felleskost', '', '', '', '', ''],
-      ['', '', '', '', 'Kom. Avg', 2231, '', '', '', ''],
-      ['', '', '', '', 'Vedlikehold (5%)', 3000, '', '', '', ''],
-      ['', '', '', '', 'Diverse', 7694, '', '', '', ''],
-      ['', '', '', '', 'Skatt *', 10313, '', '', '', ''],
-      ['', '', '', '', 'Ledighet (3%)', 1800, '', '', '', ''],
-      ['', '', '', '', 'Renter og avdrag', 38985, '', '', '', ''],
-      ['', '', '', '', 'Cashflow per mnd', -2423, '', '', '', ''],
+      ['', '', '', '', 'Leieinntekt', '45 000', '', '', '', ''],
+      ['', '', '', '', 'Felleskost', '2 500', '', '', '', ''],
+      ['', '', '', '', 'Kom. Avg', '1 800', '', '', '', ''],
+      ['', '', '', '', 'Vedlikehold (5%)', '2 250', '', '', '', ''],
+      ['', '', '', '', 'Diverse', '3 000', '', '', '', ''],
+      ['', '', '', '', 'Skatt *', '7 502', '', '', '', ''],
+      ['', '', '', '', 'Ledighet (3%)', '1 350', '', '', '', ''],
+      ['', '', '', '', 'Renter og avdrag', '32 500', '', '', '', ''],
+      ['', '', '', '', 'Cashflow per mnd', '-5 402', '', '', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
       
       // Nettoyield på eiendommen section
       ['', '', '', '', '', '', 'Nettoyield på eiendommen *', '', '', ''],
-      ['', '', '', '', '', '', 'Leieinntekter', 720000, '', ''],
-      ['', '', '', '', '', '', 'Driftskostnader', 157500, '', ''],
-      ['', '', '', '', '', '', 'Netto leieinntekt', 562500, '', ''],
-      ['', '', '', '', '', '', 'Kjøpesum', 7688590, '', ''],
-      ['', '', '', '', '', '', 'Netto yield', '7.32%', '', ''],
+      ['', '', '', '', '', '', 'Leieinntekter', '540 000', '', ''],
+      ['', '', '', '', '', '', 'Driftskostnader', '114 000', '', ''],
+      ['', '', '', '', '', '', 'Netto leieinntekt', '426 000', '', ''],
+      ['', '', '', '', '', '', 'Kjøpesum', '7 500 000', '', ''],
+      ['', '', '', '', '', '', 'Netto yield', '5.7%', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
@@ -121,21 +121,21 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     ];
   }, [data]);
 
-  // Loan calculation sheet data (Lån - Kalkyle 2025)
+  // Loan calculation sheet data (Lån - Kalkyle 2025) - Demo version
   const getLanData = useCallback(() => {
     return [
       // Header
       ['', 'Lånebeløp og betingelser', '', '', '', '', '', '', '', ''],
       
       // Loan details
-      ['', 'Lån', 5766443, '', '', '', '', '', '', ''],
-      ['', 'Nominell rente per år (PA)', 6.5, '', '', '', '', '', '', ''],
-      ['', 'Nedbetalingstid, antall år', 25, '', '', '', '', '', '', ''],
-      ['', 'Avdragsfrie år', 0, '', '', '', '', '', '', ''],
-      ['', 'Terminer per år', 12, '', '', '', '', '', '', ''],
-      ['', 'Termingebyr', 50, '', '', '', '', '', '', ''],
-      ['', 'Tinglysningsgebyr', '', '', '', '', '', '', '', ''],
-      ['', 'Etableringsgebyr', 950, '', '', '', '', '', '', ''],
+      ['', 'Lån', '6 000 000', '', '', '', '', '', '', ''],
+      ['', 'Nominell rente per år (PA)', '5.5', '', '', '', '', '', '', ''],
+      ['', 'Nedbetalingstid, antall år', '25', '', '', '', '', '', '', ''],
+      ['', 'Avdragsfrie år', '0', '', '', '', '', '', '', ''],
+      ['', 'Terminer per år', '12', '', '', '', '', '', '', ''],
+      ['', 'Termingebyr', '50', '', '', '', '', '', '', ''],
+      ['', 'Tinglysningsgebyr', '2 500', '', '', '', '', '', '', ''],
+      ['', 'Etableringsgebyr', '1 500', '', '', '', '', '', '', ''],
       ['', 'Inkludere gebyrer i lånebeløp?', 'Ja', '', '', '', '', '', '', ''],
       
       // Empty row
@@ -143,14 +143,14 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       
       // Cost summary
       ['', 'Avdrag, renter andre kostnader', '', '', '', '', '', '', '', ''],
-      ['', 'Lånebeløp inkl gebyrer', 5766443, '', '', '', '', '', '', ''],
-      ['', 'Avdrag og rente/termin', 38985, '', '', '', '', '', '', ''],
-      ['', 'Nedbetalt i perioden', 11695630, '', '', '', '', '', '', ''],
-      ['', 'Renter', 5929187, '', '', '', '', '', '', ''],
-      ['', 'Etablering og tinglysning', 950, '', '', '', '', '', '', ''],
-      ['', 'Sum kostnader', 5930137, '', '', '', '', '', '', ''],
-      ['', 'Total kostnad i % av lånesum', '102.8', '', '', '', '', '', '', ''],
-      ['', 'Termingebyr utgjør', 15000, '', '', '', '', '', '', ''],
+      ['', 'Lånebeløp inkl gebyrer', '6 004 000', '', '', '', '', '', '', ''],
+      ['', 'Avdrag og rente/termin', '36 750', '', '', '', '', '', '', ''],
+      ['', 'Nedbetalt i perioden', '11 025 000', '', '', '', '', '', '', ''],
+      ['', 'Renter', '5 021 000', '', '', '', '', '', '', ''],
+      ['', 'Etablering og tinglysning', '4 000', '', '', '', '', '', '', ''],
+      ['', 'Sum kostnader', '5 025 000', '', '', '', '', '', '', ''],
+      ['', 'Total kostnad i % av lånesum', '83.8', '', '', '', '', '', '', ''],
+      ['', 'Termingebyr utgjør', '15 000', '', '', '', '', '', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
@@ -159,27 +159,27 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       ['', '', '', '', '', 'Termin', 'Terminbeløp', 'Renter', 'Avdrag', 'Restgjeld'],
       
       // Initial debt
-      ['', '', '', '', '', 0, '', '', '', 5766443],
+      ['', '', '', '', '', '0', '', '', '', '6 004 000'],
       
       // First few installments
-      ['', '', '', '', '', 1, 38985, 31285, 7701, 5758742],
-      ['', '', '', '', '', 2, 38985, 31199, 7786, 5750956],
-      ['', '', '', '', '', 3, 38985, 31112, 7873, 5743083],
-      ['', '', '', '', '', 4, 38985, 31025, 7960, 5735123],
-      ['', '', '', '', '', 5, 38985, 30937, 8048, 5727075],
+      ['', '', '', '', '', '1', '36 750', '27 518', '9 232', '5 994 768'],
+      ['', '', '', '', '', '2', '36 750', '27 475', '9 275', '5 985 493'],
+      ['', '', '', '', '', '3', '36 750', '27 432', '9 318', '5 976 175'],
+      ['', '', '', '', '', '4', '36 750', '27 389', '9 361', '5 966 814'],
+      ['', '', '', '', '', '5', '36 750', '27 345', '9 405', '5 957 409'],
       
       // Annual summary header
       ['', '', '', '', '', '', '', '', '', ''],
       ['', '', '', '', '', 'Periode', 'Renter pr. Å', 'Avdrag pr. Å', '', ''],
-      ['', '', '', '', '', 'År 1', 372616, 95210, '', ''],
-      ['', '', '', '', '', 'År 2', 360234, 107592, '', ''],
-      ['', '', '', '', '', 'År 3', 347852, 119974, '', ''],
-      ['', '', '', '', '', 'År 4', 335470, 132356, '', ''],
-      ['', '', '', '', '', 'År 5', 323088, 144738, '', '']
+      ['', '', '', '', '', 'År 1', '328 500', '112 500', '', ''],
+      ['', '', '', '', '', 'År 2', '320 250', '120 750', '', ''],
+      ['', '', '', '', '', 'År 3', '311 625', '129 375', '', ''],
+      ['', '', '', '', '', 'År 4', '302 625', '138 375', '', ''],
+      ['', '', '', '', '', 'År 5', '293 250', '147 750', '', '']
     ];
   }, []);
 
-  // Total overview sheet data
+  // Total overview sheet data - Demo version
   const getOversiktData = useCallback(() => {
     return [
       // Header
@@ -192,11 +192,11 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
       
       // Investment details
-      ['', '', 'Verdi', 7500000, '', '', '', '', '', '', '', '', 7500000, ''],
-      ['', '', 'Lån', 6000000, '', '', '', '', '', '', '', '', 6000000, ''],
-      ['', '', 'Rente', 5.68, '', '', '', '', '', '', '', '', 5.68, ''],
+      ['', '', 'Verdi', '7 500 000', '', '', '', '', '', '', '', '', '7 500 000', ''],
+      ['', '', 'Lån', '6 000 000', '', '', '', '', '', '', '', '', '6 000 000', ''],
+      ['', '', 'Rente', '5.5', '', '', '', '', '', '', '', '', '5.5', ''],
       ['', '', 'Lånebelastning pr. enhet', '80%', '', '', '', '', '', '', '', '', '80%', ''],
-      ['', '', 'EK', 1500000, '', '', '', '', '', '', '', '', 1500000, ''],
+      ['', '', 'EK', '1 500 000', '', '', '', '', '', '', '', '', '1 500 000', ''],
       ['', '', 'Lånebelastning totalt', '', '', '', '', '', '', '', '', '', '80%', ''],
       
       // Empty row
@@ -204,37 +204,37 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       
       // Expenses section
       ['', '', 'UTGIFTER: pr. år', '', '', '', '', '', '', '', '', '', '', ''],
-      ['', '', 'Renteutgifter', 340800, '', '', '', '', '', '', '', '', 340800, ''],
-      ['', '', 'Felles utgifter', 3008, '', '', '', '', '', '', '', '', 3008, ''],
-      ['', '', 'Kommunale avgifter', 17840, '', '', '', '', '', '', '', '', 17840, ''],
-      ['', '', 'Forsikring', 2180, '', '', '', '', '', '', '', '', 2180, ''],
-      ['', '', 'Strøm', 575, '', '', '', '', '', '', '', '', 575, ''],
-      ['', '', 'Avdrag *', 35544, '', '', '', '', '', '', '', '', 35544, ''],
-      ['', '', 'Utgifter pr. enhet:', 399947, '', '', '', '', '', '', '', '', 399947, ''],
+      ['', '', 'Renteutgifter', '330 000', '', '', '', '', '', '', '', '', '330 000', ''],
+      ['', '', 'Felles utgifter', '30 000', '', '', '', '', '', '', '', '', '30 000', ''],
+      ['', '', 'Kommunale avgifter', '21 600', '', '', '', '', '', '', '', '', '21 600', ''],
+      ['', '', 'Forsikring', '8 000', '', '', '', '', '', '', '', '', '8 000', ''],
+      ['', '', 'Strøm', '36 000', '', '', '', '', '', '', '', '', '36 000', ''],
+      ['', '', 'Avdrag *', '135 000', '', '', '', '', '', '', '', '', '135 000', ''],
+      ['', '', 'Utgifter pr. enhet:', '560 600', '', '', '', '', '', '', '', '', '560 600', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
       
       // Income section
       ['', '', 'INNTEKTER: pr. år', '', '', '', '', '', '', '', '', '', '', ''],
-      ['', '', 'Leieinntekt', '-', '', '', '', '', '', '', '', '', '-', ''],
-      ['', '', 'Diverse inntekt', '-', '', '', '', '', '', '', '', '', '-', ''],
-      ['', '', 'Inntekter pr. enhet', '-', '', '', '', '', '', '', '', '', '-', ''],
+      ['', '', 'Leieinntekt', '540 000', '', '', '', '', '', '', '', '', '540 000', ''],
+      ['', '', 'Diverse inntekt', '0', '', '', '', '', '', '', '', '', '0', ''],
+      ['', '', 'Inntekter pr. enhet', '540 000', '', '', '', '', '', '', '', '', '540 000', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
       
       // Results section
-      ['', '', 'RESULTAT: før skatt', -399947, '', '', '', '', '', '', '', '', -399947, ''],
-      ['', '', 'Skatt 22%', -8799, '', '', '', '', '', '', '', '', -8799, ''],
-      ['', '', 'RESULTAT: etter skatt', -391148, '', '', '', '', '', '', '', '', -391148, ''],
-      ['', '', 'Rentefradrag', 74976, '', '', '', '', '', '', '', '', 74976, ''],
-      ['', '', 'Resultat e/ rentefradrag', -316172, '', '', '', '', '', '', '', '', -316172, ''],
-      ['', '', 'Pr. Mnd.', -26348, '', '', '', '', '', '', '', '', -26348, '']
+      ['', '', 'RESULTAT: før skatt', '-20 600', '', '', '', '', '', '', '', '', '-20 600', ''],
+      ['', '', 'Skatt 22%', '0', '', '', '', '', '', '', '', '', '0', ''],
+      ['', '', 'RESULTAT: etter skatt', '-20 600', '', '', '', '', '', '', '', '', '-20 600', ''],
+      ['', '', 'Rentefradrag', '72 600', '', '', '', '', '', '', '', '', '72 600', ''],
+      ['', '', 'Resultat e/ rentefradrag', '52 000', '', '', '', '', '', '', '', '', '52 000', ''],
+      ['', '', 'Pr. Mnd.', '4 333', '', '', '', '', '', '', '', '', '4 333', '']
     ];
   }, []);
 
-  // Risk assessment sheet data
+  // Risk assessment sheet data - Demo version
   const getRisikoData = useCallback(() => {
     return [
       // Header
@@ -246,11 +246,11 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       // ROS section
       ['', 'RISIKO- OG SÅRBARHETSANALYSE (ROS)', '', '', '', '', '', '', '', ''],
       ['', 'Hendelse / risiko', 'Sannsynlighet (1-5)', 'Konsekvens (1-5)', 'Risikonivå', 'Kommentar / beskrivelse', 'Tiltak / reduksjon', '', '', ''],
-      ['', 'Ledighet / tap av leietakere', 2, 3, 6, 'Kan føre til lavere kontantstrøm i perioder', 'Opprette bufferkonto, aktiv markedsføring', '', '', ''],
-      ['', 'Renteøkning', 2, 4, 8, 'Rente stiger over 7%, høyere månedlige kostnader', 'Vurdere fastrente eller ekstra nedbetaling', '', '', ''],
-      ['', 'Uforutsett vedlikehold', 4, 3, 12, 'Tak, rør eller bad krever akutt utbedring', 'Opprette vedlikeholdsfond', '', '', ''],
-      ['', 'Endring i boligmarkedet', 2, 4, 8, 'Lavere verdi ved salg', 'Langsiktig investeringshorisont', '', '', ''],
-      ['', 'Forsikringskostnader øker', 3, 2, 6, 'Prisjusteringer fra forsikringsselskap', 'Sammenligne forsikring årlig', '', '', ''],
+      ['', 'Ledighet / tap av leietakere', '2', '3', '6', 'Kan føre til lavere kontantstrøm i perioder', 'Opprette bufferkonto, aktiv markedsføring', '', '', ''],
+      ['', 'Renteøkning', '2', '4', '8', 'Rente stiger over 7%, høyere månedlige kostnader', 'Vurdere fastrente eller ekstra nedbetaling', '', '', ''],
+      ['', 'Uforutsett vedlikehold', '4', '3', '12', 'Tak, rør eller bad krever akutt utbedring', 'Opprette vedlikeholdsfond', '', '', ''],
+      ['', 'Endring i boligmarkedet', '2', '4', '8', 'Lavere verdi ved salg', 'Langsiktig investeringshorisont', '', '', ''],
+      ['', 'Forsikringskostnader øker', '3', '2', '6', 'Prisjusteringer fra forsikringsselskap', 'Sammenligne forsikring årlig', '', '', ''],
       
       // Empty row
       ['', '', '', '', '', '', '', '', '', ''],
@@ -268,7 +268,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       
       // Summary section
       ['', 'OPPSUMMERING OG TOTAL RISIKOVURDERING', '', '', '', '', '', '', '', ''],
-      ['', 'Gjennomsnittlig risikonivå', 8, '', '', '', '', '', '', ''],
+      ['', 'Gjennomsnittlig risikonivå', '8', '', '', '', '', '', '', ''],
       ['', 'Kommentar til risikobilde', 'Samlet risiko vurderes som middels. Tiltak bør revideres årlig eller ved store markedsendringer.', '', '', '', '', '', '', '']
     ];
   }, []);
@@ -451,12 +451,13 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       let cellType = 'text';
       let format = null;
       
-      // Numeric cells
+      // Numeric cells - check if it's a number string
       if (col > 2 && row > 0) {
         const data = getCurrentData();
         const cellValue = data[row]?.[col];
         
-        if (typeof cellValue === 'number') {
+        // Check if it's a number (including formatted numbers with spaces)
+        if (typeof cellValue === 'string' && /^[\d\s,.-]+$/.test(cellValue.replace(/\s/g, ''))) {
           cellType = 'numeric';
           format = '0,0';
         }
