@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createSecureTenant, SecureTenantData, logTenantDataAccess } from '@/lib/tenantSecurity';
-import { LeaseSigningDialog } from './signing/LeaseSigningDialog';
+// import { LeaseSigningDialog } from './signing/LeaseSigningDialog';
 
 interface RentalAgreementDialogProps {
   open: boolean;

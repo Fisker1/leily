@@ -683,10 +683,10 @@ export default function BuildingPlannerImproved() {
       } else {
         await saveProject(
           projectData.project_name,
-          projectData.calculation_id,
-          projectData.floor_plans,
+          null, // calculation_id
+          projectData.canvas_data, // floor_plans
           projectData.placed_items,
-          projectData.total_cost
+          calculateTotalCost() // total_cost
         );
         toast({
           title: "Prosjekt lagret",

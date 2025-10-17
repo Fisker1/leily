@@ -12,8 +12,8 @@ import Navigation from '@/components/Navigation';
 import MinimalFooter from '@/components/MinimalFooter';
 import CreditsBar from '@/components/CreditsBar';
 import { UserRoleBadge } from '@/components/UserRoleBadge';
-import { RentalCalendar } from '@/components/calendar/RentalCalendar';
-import { useAutoCalendarEvents } from '@/hooks/useAutoCalendarEvents';
+// import { RentalCalendar } from '@/components/calendar/RentalCalendar';
+// import { useAutoCalendarEvents } from '@/hooks/useAutoCalendarEvents';
 
 interface DashboardStats {
   totalProperties: number;

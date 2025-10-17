@@ -346,7 +346,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         <div className="border border-gray-300 rounded-lg overflow-hidden">
           <HotTable
             ref={hotTableRef}
-            settings={hotSettings}
+            {...hotSettings}
           />
         </div>
       </div>
