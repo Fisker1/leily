@@ -133,79 +133,70 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     ];
   }, [data]);
 
-  // Main calculation sheet data (Kalkyle - 2025) - Compact layout starting with Verditakst
+  // Main calculation sheet data (Kalkyle - 2025) - Ultra-compact layout
   const getKalkyleData = useCallback(() => {
     return [
-      // Row 1: Main summary table headers
-      ['Verditakst', 'Lånesum', 'Lånebelastning', 'Avdragsfrie år', '', '', '', ''],
-      
-      // Row 2: Main summary table values
-      [data.totalPrice || '7 500 000', data.loanAmount || '5 766 443', '76,89%', '0', '', '', '', ''],
-      
-      // Row 3: Empty
-      ['', '', '', '', '', '', '', ''],
-      
-      // Row 4: Section headers
+      // Row 1: Section headers
       ['Avkastning ved boligkjøp', '', '', 'Cashflow per mnd', '', 'Nettoyield på eiendommen *', '', ''],
       
-      // Row 5: Avkastning section - Totalpris eiendom
+      // Row 2: Avkastning section - Totalpris eiendom
       ['Totalpris eiendom', data.totalPrice || '7 688 590', '', 'Leieinntekt', '60 000', 'Leieinntekter', '720 000', ''],
       
-      // Row 6: Rente
+      // Row 3: Rente
       ['Rente', data.interestRate || '6,5', '', 'Felleskost', '', 'Driftskostnader', '157 500', ''],
       
-      // Row 7: Lån
+      // Row 4: Lån
       ['Lån', data.loanAmount || '5 766 443', '', 'Kom. Avg', '2 231', 'Netto leieinntekt', '562 500', ''],
       
-      // Row 8: Egenkapital
+      // Row 5: Egenkapital
       ['Egenkapital', '1 922 148', '', 'Vedlikehold (5%)', '2 000', 'Kjøpesum', '7 688 590', ''],
       
-      // Row 9: Lånebelastning kjøpesum
+      // Row 6: Lånebelastning kjøpesum
       ['Lånebelastning kjøpesum', '75,00%', '', 'Diverse', '7 694', 'Netto yield', '7,32%', ''],
       
-      // Row 10: Leieinntekt per mnd
+      // Row 7: Leieinntekt per mnd
       ['Leieinntekt per mnd', data.monthlyRent || '60 000', '', 'Skatt *', '10 313', '', '', ''],
       
-      // Row 11: Felleskostnader pr. mnd
+      // Row 8: Felleskostnader pr. mnd
       ['Felleskostnader pr. mnd', '', '', 'Ledighet (3%)', '1 200', '', '', ''],
       
-      // Row 12: Kommunale avgifter pr. m
+      // Row 9: Kommunale avgifter pr. m
       ['Kommunale avgifter pr. m', '2 231', '', 'Renter og avdrag', '38 985', '', '', ''],
       
-      // Row 13: Ledighet (3%)
+      // Row 10: Ledighet (3%)
       ['Ledighet (3%)', '1 200', '', 'Cashflow per mnd', '-2 423', '', '', ''],
       
-      // Row 14: Vedlikehold (5%)
+      // Row 11: Vedlikehold (5%)
       ['Vedlikehold (5%)', '2 000', '', '', '', '', '', ''],
       
-      // Row 15: Strøm, forsikring, diverse
+      // Row 12: Strøm, forsikring, diverse
       ['Strøm, forsikring, diverse', '7 694', '', '', '', '', '', ''],
       
-      // Row 16: Netto leie pr. mnd. (før sk)
+      // Row 13: Netto leie pr. mnd. (før sk)
       ['Netto leie pr. mnd. (før sk)', '46 875', '', '', '', '', '', ''],
       
-      // Row 17: Skatt (22%)
+      // Row 14: Skatt (22%)
       ['Skatt (22%)', '10 313', '', '', '', '', '', ''],
       
-      // Row 18: Netto leie etter skatt
+      // Row 15: Netto leie etter skatt
       ['Netto leie etter skatt', '36 563', '', '', '', '', '', ''],
       
-      // Row 19: Rentekostnad
+      // Row 16: Rentekostnad
       ['Rentekostnad', '31 051', '', '', '', '', '', ''],
       
-      // Row 20: Fradrag renter (22%)
+      // Row 17: Fradrag renter (22%)
       ['Fradrag renter (22%)', '6 831', '', '', '', '', '', ''],
       
-      // Row 21: Sum etter finanskost og sk
+      // Row 18: Sum etter finanskost og sk
       ['Sum etter finanskost og sk', '12 342', '', '', '', '', '', ''],
       
-      // Row 22: Netto pr. år
+      // Row 19: Netto pr. år
       ['Netto pr. år', '148 110', '', '', '', '', '', ''],
       
-      // Row 23: Avkastning egenkapitalen
+      // Row 20: Avkastning egenkapitalen
       ['Avkastning egenkapitalen', '7,71%', '', '', '', '', '', ''],
       
-      // Row 24: Empty rows for natural ending
+      // Row 21: Empty rows for natural ending
       ['', '', '', '', '', '', '', ''],
       ['', '', '', '', '', '', '', ''],
       ['', '', '', '', '', '', '', ''],
@@ -406,11 +397,10 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     // Kalkyle sheet - editable cells
     if (activeTab === 'kalkyle') {
       const kalkyleEditableCells = [
-        '1,0', '1,1', '1,3', // Verditakst, Lånesum, Avdragsfrie år
-        '4,1', '5,1', '6,1', // Totalpris, Rente, Lån
-        '9,1', '10,1', '11,1', '14,1', // Leieinntekt, Felleskost, Kom.avg, Diverse
-        '4,4', '5,4', '6,4', '7,4', '8,4', '9,4', '10,4', '11,4', // Cashflow inputs
-        '4,6', '7,6' // Nettoyield inputs (Leieinntekter, Kjøpesum)
+        '1,1', '2,1', '3,1', // Totalpris, Rente, Lån
+        '6,1', '7,1', '8,1', '11,1', // Leieinntekt, Felleskost, Kom.avg, Diverse
+        '1,4', '2,4', '3,4', '4,4', '5,4', '6,4', '7,4', '8,4', // Cashflow inputs
+        '1,6', '4,6' // Nettoyield inputs (Leieinntekter, Kjøpesum)
       ];
       
       kalkyleEditableCells.forEach(cellKey => {
@@ -455,54 +445,68 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     
     // Kalkyle sheet styling
     if (activeTab === 'kalkyle') {
-      // Table headers (row 1)
-      cellStyle['0,0'] = { className: 'table-header' };
-      cellStyle['0,1'] = { className: 'table-header' };
-      cellStyle['0,2'] = { className: 'table-header' };
-      cellStyle['0,3'] = { className: 'table-header' };
+      // Section headers (row 1)
+      cellStyle['0,0'] = { className: 'section-header' };
+      cellStyle['0,3'] = { className: 'section-header' };
+      cellStyle['0,5'] = { className: 'section-header' };
       
-      // Section headers (row 4)
-      cellStyle['3,0'] = { className: 'section-header' };
-      cellStyle['3,3'] = { className: 'section-header' };
-      cellStyle['3,5'] = { className: 'section-header' };
+      // Highlight important values with special border
+      cellStyle['1,1'] = { className: 'highlighted-value' }; // Totalpris eiendom
+      cellStyle['2,1'] = { className: 'highlighted-value' }; // Rente
+      cellStyle['3,1'] = { className: 'highlighted-value' }; // Lån
     }
     
-    // Labels (column 3) - all rows with labels
-    const labelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
-    labelRows.forEach(row => {
-      cellStyle[`${row},2`] = { className: 'label-cell' };
-    });
+    // Labels (column 0) - all rows with labels for Kalkyle sheet
+    if (activeTab === 'kalkyle') {
+      const labelRows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+      labelRows.forEach(row => {
+        cellStyle[`${row},0`] = { className: 'label-cell' };
+      });
+    }
     
-    // Cashflow labels (column 7)
-    const cashflowLabelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17];
-    cashflowLabelRows.forEach(row => {
-      cellStyle[`${row},6`] = { className: 'label-cell' };
-    });
+    // Cashflow labels (column 3) for Kalkyle sheet
+    if (activeTab === 'kalkyle') {
+      const cashflowLabelRows = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      cashflowLabelRows.forEach(row => {
+        cellStyle[`${row},3`] = { className: 'label-cell' };
+      });
+    }
     
-    // Nettoyield labels (column 9)
-    const nettoyieldLabelRows = [9, 10, 11, 12, 13];
-    nettoyieldLabelRows.forEach(row => {
-      cellStyle[`${row},8`] = { className: 'label-cell' };
-    });
+    // Nettoyield labels (column 5) for Kalkyle sheet
+    if (activeTab === 'kalkyle') {
+      const nettoyieldLabelRows = [1, 2, 3, 4, 5];
+      nettoyieldLabelRows.forEach(row => {
+        cellStyle[`${row},5`] = { className: 'label-cell' };
+      });
+    }
     
     // Calculated cells (gray background) - Kalkyle sheet
-    const calculatedCells = [
-      '6,4', // Lånebelastning
-      '12,3', // Egenkapital
-      '14,3', // Lånebelastning kjøpesum
-      '18,3', // Ledighet (3%)
-      '19,3', // Vedlikehold (5%)
-      '21,3', // Netto leie (før skatt)
-      '22,3', // Skatt (22%)
-      '23,3', // Netto leie etter skatt
-      '24,3', // Rentekostnad
-      '25,3', // Fradrag renter (22%)
-      '26,3', // Sum etter finanskost og sk
-      '27,3', // Netto pr. år
-      '28,3', // Avkastning egenkapitalen
-      '10,7', '11,7', '12,7', '13,7', '14,7', '15,7', '16,7', '17,7', '18,7', // Cashflow values
-      '10,9', '11,9', '12,9', '13,9' // Nettoyield values
-    ];
+    // Only apply calculated cells styling for Kalkyle sheet
+    if (activeTab === 'kalkyle') {
+      const calculatedCells = [
+        '4,1', // Egenkapital
+        '5,1', // Lånebelastning kjøpesum
+        '6,1', // Leieinntekt per mnd
+        '8,1', // Kommunale avgifter pr. m
+        '9,1', // Ledighet (3%)
+        '10,1', // Vedlikehold (5%)
+        '11,1', // Strøm, forsikring, diverse
+        '12,1', // Netto leie pr. mnd. (før sk)
+        '13,1', // Skatt (22%)
+        '14,1', // Netto leie etter skatt
+        '15,1', // Rentekostnad
+        '16,1', // Fradrag renter (22%)
+        '17,1', // Sum etter finanskost og sk
+        '18,1', // Netto pr. år
+        '19,1', // Avkastning egenkapitalen
+        '1,4', '2,4', '3,4', '4,4', '5,4', '6,4', '7,4', '8,4', '9,4', // Cashflow calculated values
+        '1,6', '2,6', '3,6', '4,6', '5,6' // Nettoyield calculated values
+      ];
+      
+      calculatedCells.forEach(cellKey => {
+        cellStyle[cellKey] = { className: 'calculated-cell' };
+      });
+    }
     
     // Loan sheet styling
     if (activeTab === 'lan') {
@@ -621,10 +625,6 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         cellStyle[cellKey] = { className: 'calculated-cell' };
       });
     }
-    
-    calculatedCells.forEach(cellKey => {
-      cellStyle[cellKey] = { className: 'calculated-cell' };
-    });
     
     return cellStyle;
   }, [activeTab]);
@@ -923,6 +923,14 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           color: ${colors.text};
           text-align: right;
           font-weight: 400;
+        }
+        
+        .handsontable .htCore td.highlighted-value {
+          background-color: ${colors.background};
+          color: ${colors.text};
+          font-weight: 600;
+          border: 2px solid ${colors.primary} !important;
+          box-shadow: 0 0 0 1px ${colors.primary};
         }
         
             .handsontable .htCore td[data-cell-type="numeric"] {
