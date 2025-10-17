@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
 import { Button } from '@/components/ui/button';
-import { Download, FileSpreadsheet } from 'lucide-react';
+import { Download, FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { formatNumberWithSpaces } from '@/lib/utils';
 
@@ -21,6 +21,22 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const hotTableRef = useRef<any>(null);
   const [hotInstance, setHotInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'kalkyle' | 'lan' | 'oversikt' | 'risiko'>('kalkyle');
+
+  // Modern color palette inspired by Apple design
+  const colors = {
+    primary: '#007AFF',      // iOS Blue
+    secondary: '#5856D6',    // iOS Purple
+    success: '#34C759',      // iOS Green
+    warning: '#FF9500',      // iOS Orange
+    danger: '#FF3B30',       // iOS Red
+    background: '#F2F2F7',   // iOS Light Gray
+    surface: '#FFFFFF',      // White
+    text: '#1C1C1E',         // iOS Dark Gray
+    textSecondary: '#8E8E93', // iOS Medium Gray
+    border: '#C6C6C8',       // iOS Light Border
+    accent: '#5AC8FA'        // iOS Light Blue
+  };
 
   // Initialize component
   useEffect(() => {
@@ -30,106 +46,276 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Define the spreadsheet structure based on "Kalkyle - 2021" Excel sheet
-  const getInitialData = useCallback(() => {
+  // Main calculation sheet data (Kalkyle - 2025)
+  const getKalkyleData = useCallback(() => {
     return [
-      // Row 0: Main header
-      ['Boligkalkyle - 2021', '', '', '', '', '', ''],
+      // Header
+      ['', '', 'Privat kalkyle eiendomsinvestering', '', '', '', '', '', '', ''],
       
-      // Row 1: Empty
-      ['', '', '', '', '', '', ''],
+      // Address
+      ['', '', data.address || 'Hafrsfjordgata 49', '', data.postalCode || '4010 Stavanger', '', '', '', '', ''],
       
-      // Row 2: Address and postal code
-      ['Adresse og postnummer', data.address || '', '', '', '', '', ''],
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
       
-      // Row 3: Empty
-      ['', '', '', '', '', '', ''],
+      // Main summary table
+      ['', '', 'Verditakst', 'Lånesum', 'Lånebelastning', 'Avdragsfrie år', '', '', '', ''],
+      ['', '', data.totalPrice || 7500000, data.loanAmount || 5766443, '76.89%', 0, '', '', '', ''],
       
-      // Row 4: Main property table header
-      ['', 'Verditakst', 'Lånesum', 'Lånebelastning', 'Avdragsfrie år', '', ''],
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
       
-      // Row 5: Main property values
-      ['', data.totalPrice || '', data.loanAmount || '', '=C6/B6', data.interestOnlyYears || '0', '', ''],
+      // Avkastning ved boligkjøp section
+      ['', '', 'Avkastning ved boligkjøp', '', '', '', '', '', '', ''],
+      ['', '', 'Totalpris eiendom', 7688590, '', '', '', '', '', ''],
+      ['', '', 'Rente (%)', data.interestRate || 6.5, '', '', '', '', '', ''],
+      ['', '', 'Lån (kr)', 5766443, '', '', '', '', '', ''],
+      ['', '', 'Egenkapital', 1922148, '', '', '', '', '', ''],
+      ['', '', 'Lånebelastning kjøpesum', '75.00%', '', '', '', '', '', ''],
+      ['', '', 'Leieinntekt per mnd', data.monthlyRent || 60000, '', '', '', '', '', ''],
+      ['', '', 'Felleskostnader pr. mnd', '', '', '', '', '', '', ''],
+      ['', '', 'Kommunale avgifter pr. m', 2231, '', '', '', '', '', ''],
+      ['', '', 'Ledighet (3%)', 1800, '', '', '', '', '', ''],
+      ['', '', 'Vedlikehold (5%)', 3000, '', '', '', '', '', ''],
+      ['', '', 'Strøm, forsikring, diverse', 7694, '', '', '', '', '', ''],
+      ['', '', 'Netto leie pr. mnd. (før sk)', 46875, '', '', '', '', '', ''],
+      ['', '', 'Skatt (22%)', 10313, '', '', '', '', '', ''],
+      ['', '', 'Netto leie etter skatt', 36563, '', '', '', '', '', ''],
+      ['', '', 'Rentekostnad', 31051, '', '', '', '', '', ''],
+      ['', '', 'Fradrag renter (22%)', 6831, '', '', '', '', '', ''],
+      ['', '', 'Sum etter finanskost og sk', 12342, '', '', '', '', '', ''],
+      ['', '', 'Netto pr. år', 148110, '', '', '', '', '', ''],
+      ['', '', 'Avkastning egenkapitalen', '7.71%', '', '', '', '', '', ''],
       
-      // Row 6: Empty
-      ['', '', '', '', '', '', ''],
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
       
-      // Row 7: Section header - Avkastning ved boligkjøp
-      ['Avkastning ved boligkjøp', '', '', '', '', '', ''],
+      // Cashflow per mnd section
+      ['', '', '', '', 'Cashflow per mnd', '', '', '', '', ''],
+      ['', '', '', '', 'Leieinntekt', 60000, '', '', '', ''],
+      ['', '', '', '', 'Felleskost', '', '', '', '', ''],
+      ['', '', '', '', 'Kom. Avg', 2231, '', '', '', ''],
+      ['', '', '', '', 'Vedlikehold (5%)', 3000, '', '', '', ''],
+      ['', '', '', '', 'Diverse', 7694, '', '', '', ''],
+      ['', '', '', '', 'Skatt *', 10313, '', '', '', ''],
+      ['', '', '', '', 'Ledighet (3%)', 1800, '', '', '', ''],
+      ['', '', '', '', 'Renter og avdrag', 38985, '', '', '', ''],
+      ['', '', '', '', 'Cashflow per mnd', -2423, '', '', '', ''],
       
-      // Row 8: Empty
-      ['', '', '', '', '', '', ''],
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
       
-      // Row 9-20: Avkastning section
-      ['Rente (%)', data.interestRate || '4.5', '', '', '', '', ''],
-      ['Lån (kr)', '=C6', '', '', '', '', ''],
-      ['Egenkapital', '=B6-C6', '', '', '', '', ''],
-      ['Lånebelastning kjøpesum', '=C6/B6', '', '', '', '', ''],
-      ['Leieinntekt per mnd', data.monthlyRent || '', '', '', '', '', ''],
-      ['Felleskostnader pr mnd', data.commonCosts || '', '', '', '', '', ''],
-      ['Kommunale avgifter', data.municipalFees || '', '', '', '', '', ''],
-      ['Ledighet (3 %)', '=B15*0.03', '', '', '', '', ''],
-      ['Vedlikehold (5 %)', '=B15*0.05', '', '', '', '', ''],
-      ['Strøm, forsikring, diverse', data.otherExpenses || '', '', '', '', '', ''],
-      ['Netto leie (før skatt)', '=B15-B16-B17-B18-B19-B20', '', '', '', '', ''],
-      ['Skatt (22 %)', '=B21*0.22', '', '', '', '', ''],
-      ['Sum etter finans og skatt', '=B21-B22', '', '', '', '', ''],
-      ['Netto pr. år', '=B23*12', '', '', '', '', ''],
-      ['Avkastning egenkapitalen (%)', '=B24/B13*100', '', '', '', '', ''],
+      // Nettoyield på eiendommen section
+      ['', '', '', '', '', '', 'Nettoyield på eiendommen *', '', '', ''],
+      ['', '', '', '', '', '', 'Leieinntekter', 720000, '', ''],
+      ['', '', '', '', '', '', 'Driftskostnader', 157500, '', ''],
+      ['', '', '', '', '', '', 'Netto leieinntekt', 562500, '', ''],
+      ['', '', '', '', '', '', 'Kjøpesum', 7688590, '', ''],
+      ['', '', '', '', '', '', 'Netto yield', '7.32%', '', ''],
       
-      // Row 25: Empty
-      ['', '', '', '', '', '', ''],
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
       
-      // Row 26: Section header - Cashflow per mnd (right side)
-      ['Cashflow per mnd', '', '', '', '', '', ''],
-      
-      // Row 27: Empty
-      ['', '', '', '', '', '', ''],
-      
-      // Row 28-35: Cashflow section
-      ['Leieinntekt', '=B15', '', '', '', '', ''],
-      ['Felleskost', '=B16', '', '', '', '', ''],
-      ['Kom. avg', '=B17', '', '', '', '', ''],
-      ['Vedlikehold (5 %)', '=B19', '', '', '', '', ''],
-      ['Diverse', '=B20', '', '', '', '', ''],
-      ['Skatt', '=B22', '', '', '', '', ''],
-      ['Ledighet (3 %)', '=B18', '', '', '', '', ''],
-      ['Renter og avdrag', '=PMT(B10/100/12,25*12,-B11)', '', '', '', '', ''],
-      ['Cashflow per mnd (sumfelt)', '=B28-B29-B30-B31-B32-B33-B34-B35', '', '', '', '', ''],
-      
-      // Row 36: Empty
-      ['', '', '', '', '', '', ''],
-      
-      // Row 37: Section header - Nettoyield på eiendommen
-      ['Nettoyield på eiendommen*', '', '', '', '', '', ''],
-      
-      // Row 38: Empty
-      ['', '', '', '', '', '', ''],
-      
-      // Row 39-43: Nettoyield section
-      ['Leieinntekter', '=B15*12', '', '', '', '', ''],
-      ['Driftskostnader', '=(B16+B17+B18+B19+B20)*12', '', '', '', '', ''],
-      ['Netto leieinntekt', '=B39-B40', '', '', '', '', ''],
-      ['Kjøpesum', '=B6', '', '', '', '', ''],
-      ['Netto yield (%)', '=B41/B42*100', '', '', '', '', ''],
+      // Note
+      ['', '', 'Dette arket kopierer du og har et eget for hver eiendom og hvert år.', '', '', '', '', '', '', '']
     ];
   }, [data]);
 
-  // Define which cells are editable (white cells in original Excel)
+  // Loan calculation sheet data (Lån - Kalkyle 2025)
+  const getLanData = useCallback(() => {
+    return [
+      // Header
+      ['', 'Lånebeløp og betingelser', '', '', '', '', '', '', '', ''],
+      
+      // Loan details
+      ['', 'Lån', 5766443, '', '', '', '', '', '', ''],
+      ['', 'Nominell rente per år (PA)', 6.5, '', '', '', '', '', '', ''],
+      ['', 'Nedbetalingstid, antall år', 25, '', '', '', '', '', '', ''],
+      ['', 'Avdragsfrie år', 0, '', '', '', '', '', '', ''],
+      ['', 'Terminer per år', 12, '', '', '', '', '', '', ''],
+      ['', 'Termingebyr', 50, '', '', '', '', '', '', ''],
+      ['', 'Tinglysningsgebyr', '', '', '', '', '', '', '', ''],
+      ['', 'Etableringsgebyr', 950, '', '', '', '', '', '', ''],
+      ['', 'Inkludere gebyrer i lånebeløp?', 'Ja', '', '', '', '', '', '', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
+      
+      // Cost summary
+      ['', 'Avdrag, renter andre kostnader', '', '', '', '', '', '', '', ''],
+      ['', 'Lånebeløp inkl gebyrer', 5766443, '', '', '', '', '', '', ''],
+      ['', 'Avdrag og rente/termin', 38985, '', '', '', '', '', '', ''],
+      ['', 'Nedbetalt i perioden', 11695630, '', '', '', '', '', '', ''],
+      ['', 'Renter', 5929187, '', '', '', '', '', '', ''],
+      ['', 'Etablering og tinglysning', 950, '', '', '', '', '', '', ''],
+      ['', 'Sum kostnader', 5930137, '', '', '', '', '', '', ''],
+      ['', 'Total kostnad i % av lånesum', '102.8', '', '', '', '', '', '', ''],
+      ['', 'Termingebyr utgjør', 15000, '', '', '', '', '', '', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
+      
+      // Amortization table header
+      ['', '', '', '', '', 'Termin', 'Terminbeløp', 'Renter', 'Avdrag', 'Restgjeld'],
+      
+      // Initial debt
+      ['', '', '', '', '', 0, '', '', '', 5766443],
+      
+      // First few installments
+      ['', '', '', '', '', 1, 38985, 31285, 7701, 5758742],
+      ['', '', '', '', '', 2, 38985, 31199, 7786, 5750956],
+      ['', '', '', '', '', 3, 38985, 31112, 7873, 5743083],
+      ['', '', '', '', '', 4, 38985, 31025, 7960, 5735123],
+      ['', '', '', '', '', 5, 38985, 30937, 8048, 5727075],
+      
+      // Annual summary header
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', 'Periode', 'Renter pr. Å', 'Avdrag pr. Å', '', ''],
+      ['', '', '', '', '', 'År 1', 372616, 95210, '', ''],
+      ['', '', '', '', '', 'År 2', 360234, 107592, '', ''],
+      ['', '', '', '', '', 'År 3', 347852, 119974, '', ''],
+      ['', '', '', '', '', 'År 4', 335470, 132356, '', ''],
+      ['', '', '', '', '', 'År 5', 323088, 144738, '', '']
+    ];
+  }, []);
+
+  // Total overview sheet data
+  const getOversiktData = useCallback(() => {
+    return [
+      // Header
+      ['', '', 'Eiendomsinvesteringer for Leily AS', '', '', '', '', '', '', '', '', '', '', ''],
+      
+      // Property columns
+      ['', '', 'Hafrsfjordgata 49', '', 'Adresse 2', '', 'Adresse 3', '', 'Adresse 4', '', 'Adresse 5', '', 'Total sum', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      
+      // Investment details
+      ['', '', 'Verdi', 7500000, '', '', '', '', '', '', '', '', 7500000, ''],
+      ['', '', 'Lån', 6000000, '', '', '', '', '', '', '', '', 6000000, ''],
+      ['', '', 'Rente', 5.68, '', '', '', '', '', '', '', '', 5.68, ''],
+      ['', '', 'Lånebelastning pr. enhet', '80%', '', '', '', '', '', '', '', '', '80%', ''],
+      ['', '', 'EK', 1500000, '', '', '', '', '', '', '', '', 1500000, ''],
+      ['', '', 'Lånebelastning totalt', '', '', '', '', '', '', '', '', '', '80%', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      
+      // Expenses section
+      ['', '', 'UTGIFTER: pr. år', '', '', '', '', '', '', '', '', '', '', ''],
+      ['', '', 'Renteutgifter', 340800, '', '', '', '', '', '', '', '', 340800, ''],
+      ['', '', 'Felles utgifter', 3008, '', '', '', '', '', '', '', '', 3008, ''],
+      ['', '', 'Kommunale avgifter', 17840, '', '', '', '', '', '', '', '', 17840, ''],
+      ['', '', 'Forsikring', 2180, '', '', '', '', '', '', '', '', 2180, ''],
+      ['', '', 'Strøm', 575, '', '', '', '', '', '', '', '', 575, ''],
+      ['', '', 'Avdrag *', 35544, '', '', '', '', '', '', '', '', 35544, ''],
+      ['', '', 'Utgifter pr. enhet:', 399947, '', '', '', '', '', '', '', '', 399947, ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      
+      // Income section
+      ['', '', 'INNTEKTER: pr. år', '', '', '', '', '', '', '', '', '', '', ''],
+      ['', '', 'Leieinntekt', '-', '', '', '', '', '', '', '', '', '-', ''],
+      ['', '', 'Diverse inntekt', '-', '', '', '', '', '', '', '', '', '-', ''],
+      ['', '', 'Inntekter pr. enhet', '-', '', '', '', '', '', '', '', '', '-', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+      
+      // Results section
+      ['', '', 'RESULTAT: før skatt', -399947, '', '', '', '', '', '', '', '', -399947, ''],
+      ['', '', 'Skatt 22%', -8799, '', '', '', '', '', '', '', '', -8799, ''],
+      ['', '', 'RESULTAT: etter skatt', -391148, '', '', '', '', '', '', '', '', -391148, ''],
+      ['', '', 'Rentefradrag', 74976, '', '', '', '', '', '', '', '', 74976, ''],
+      ['', '', 'Resultat e/ rentefradrag', -316172, '', '', '', '', '', '', '', '', -316172, ''],
+      ['', '', 'Pr. Mnd.', -26348, '', '', '', '', '', '', '', '', -26348, '']
+    ];
+  }, []);
+
+  // Risk assessment sheet data
+  const getRisikoData = useCallback(() => {
+    return [
+      // Header
+      ['', 'RISIKOVURDERING OG PACE-PLAN', '', '', '', '', '', '', '', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
+      
+      // ROS section
+      ['', 'RISIKO- OG SÅRBARHETSANALYSE (ROS)', '', '', '', '', '', '', '', ''],
+      ['', 'Hendelse / risiko', 'Sannsynlighet (1-5)', 'Konsekvens (1-5)', 'Risikonivå', 'Kommentar / beskrivelse', 'Tiltak / reduksjon', '', '', ''],
+      ['', 'Ledighet / tap av leietakere', 2, 3, 6, 'Kan føre til lavere kontantstrøm i perioder', 'Opprette bufferkonto, aktiv markedsføring', '', '', ''],
+      ['', 'Renteøkning', 2, 4, 8, 'Rente stiger over 7%, høyere månedlige kostnader', 'Vurdere fastrente eller ekstra nedbetaling', '', '', ''],
+      ['', 'Uforutsett vedlikehold', 4, 3, 12, 'Tak, rør eller bad krever akutt utbedring', 'Opprette vedlikeholdsfond', '', '', ''],
+      ['', 'Endring i boligmarkedet', 2, 4, 8, 'Lavere verdi ved salg', 'Langsiktig investeringshorisont', '', '', ''],
+      ['', 'Forsikringskostnader øker', 3, 2, 6, 'Prisjusteringer fra forsikringsselskap', 'Sammenligne forsikring årlig', '', '', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
+      
+      // PACE-PLAN section
+      ['', 'PACE-PLAN (Primary, Alternate, Contingency, Emergency)', '', '', '', '', '', '', '', ''],
+      ['', 'Risiko / situasjon', 'Primary (hovedløsning)', 'Alternate (alternativ)', 'Contingency (reserve)', 'Emergency (kriseplan)', 'Ansvarlig', '', '', ''],
+      ['', 'Ledighet', 'Kontrakter med lengre varighet', 'Korttidsutleie (Airbnb)', 'Forbedre markedsføring', 'Prisjustering', 'Susanne Hamre - Utleie forvalter', '', '', ''],
+      ['', 'Renteøkning', 'Forhandle lavere rente', 'Fast rente', 'Skyte inn privat kapital', 'Selge eiendom', 'Anders Lundøy - Daglig leder', '', '', ''],
+      ['', 'Vedlikehold', 'Forebyggende vedlikehold', 'Utføre vedlikehold selv', 'Leie inn entreprenør', 'Selge eiendom', 'Anders Lundøy - Daglig leder', '', '', ''],
+      ['', 'Tap av leieinntekt', 'Bufferkonto - Privat', 'Øke private lån', 'Forespørsel om investor lån', 'Selge eiendom', 'Anders Lundøy - Daglig leder', '', '', ''],
+      
+      // Empty row
+      ['', '', '', '', '', '', '', '', '', ''],
+      
+      // Summary section
+      ['', 'OPPSUMMERING OG TOTAL RISIKOVURDERING', '', '', '', '', '', '', '', ''],
+      ['', 'Gjennomsnittlig risikonivå', 8, '', '', '', '', '', '', ''],
+      ['', 'Kommentar til risikobilde', 'Samlet risiko vurderes som middels. Tiltak bør revideres årlig eller ved store markedsendringer.', '', '', '', '', '', '', '']
+    ];
+  }, []);
+
+  // Get data based on active tab
+  const getCurrentData = useCallback(() => {
+    switch (activeTab) {
+      case 'kalkyle':
+        return getKalkyleData();
+      case 'lan':
+        return getLanData();
+      case 'oversikt':
+        return getOversiktData();
+      case 'risiko':
+        return getRisikoData();
+      default:
+        return getKalkyleData();
+    }
+  }, [activeTab, getKalkyleData, getLanData, getOversiktData, getRisikoData]);
+
+  // Define which cells are editable
   const getEditableCells = useCallback(() => {
     const editableCells: { [key: string]: boolean } = {};
     
-    // Make input cells editable based on Excel structure
+    // Main calculation sheet
     const editableCellsList = [
-      '2,1', // Address
-      '5,1', // Verditakst (totalPrice)
-      '5,2', // Lånesum (loanAmount)
-      '5,4', // Avdragsfrie år (interestOnlyYears)
-      '9,1', // Rente (%)
-      '14,1', // Leieinntekt per mnd
-      '15,1', // Felleskostnader pr mnd
-      '16,1', // Kommunale avgifter
-      '19,1', // Strøm, forsikring, diverse
+      '2,2', '2,4', // Address, postal code
+      '4,2', '4,3', '4,5', // Verditakst, Lånesum, Avdragsfrie år
+      '8,3', '9,3', '10,3', // Totalpris, Rente, Lån
+      '12,3', '13,3', '14,3', '17,3', // Leieinntekt, Felleskost, Kom.avg, Diverse
+      '29,5', '30,5', '31,5', '33,5', // Cashflow inputs
+      '40,7', '43,7', // Nettoyield inputs
+      
+      // Loan sheet
+      '2,2', '3,2', '4,2', '5,2', '6,2', '7,2', '9,2', // Loan parameters
+      
+      // Overview sheet
+      '3,2', '3,4', '3,6', '3,8', '3,10', // Property values
+      '4,2', '4,4', '4,6', '4,8', '4,10', // Property values
+      '5,2', '5,4', '5,6', '5,8', '5,10', // Loan amounts
+      
+      // Risk sheet
+      '4,2', '4,3', '4,4', '4,5', '4,6', // Risk entries
+      '5,2', '5,3', '5,4', '5,5', '5,6', // Risk entries
+      '6,2', '6,3', '6,4', '6,5', '6,6', // Risk entries
+      '7,2', '7,3', '7,4', '7,5', '7,6', // Risk entries
+      '8,2', '8,3', '8,4', '8,5', '8,6'  // Risk entries
     ];
     
     editableCellsList.forEach(cellKey => {
@@ -139,70 +325,54 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     return editableCells;
   }, []);
 
-  // Define cell styling to match Excel appearance
+  // Define cell styling
   const getCellStyling = useCallback(() => {
     const cellStyle: { [key: string]: any } = {};
     
-    // Main header styling
-    cellStyle['0,0'] = {
-      className: 'main-header'
-    };
+    // Main headers
+    cellStyle['0,2'] = { className: 'main-header' };
+    cellStyle['0,1'] = { className: 'main-header' };
     
     // Section headers
-    const sectionRows = [7, 26, 37]; // Avkastning ved boligkjøp, Cashflow per mnd, Nettoyield
+    const sectionRows = [7, 28, 39]; // Avkastning ved boligkjøp, Cashflow per mnd, Nettoyield
     sectionRows.forEach(row => {
-      cellStyle[`${row},0`] = {
-        className: 'section-header'
-      };
+      cellStyle[`${row},2`] = { className: 'section-header' };
     });
     
-    // Table header row
-    cellStyle['4,1'] = { className: 'table-header' };
-    cellStyle['4,2'] = { className: 'table-header' };
-    cellStyle['4,3'] = { className: 'table-header' };
-    cellStyle['4,4'] = { className: 'table-header' };
+    // Table headers
+    cellStyle['3,2'] = { className: 'table-header' };
+    cellStyle['3,3'] = { className: 'table-header' };
+    cellStyle['3,4'] = { className: 'table-header' };
+    cellStyle['3,5'] = { className: 'table-header' };
     
-    // Calculated cells (read-only, gray background)
+    // Calculated cells
     const calculatedCells = [
-      '5,3', // Lånebelastning
-      '10,1', // Lån (kr)
-      '11,1', // Egenkapital
-      '12,1', // Lånebelastning kjøpesum
-      '17,1', // Ledighet (3 %)
-      '18,1', // Vedlikehold (5 %)
-      '20,1', // Netto leie (før skatt)
-      '21,1', // Skatt (22 %)
-      '22,1', // Sum etter finans og skatt
-      '23,1', // Netto pr. år
-      '24,1', // Avkastning egenkapitalen (%)
-      '28,1', // Leieinntekt (cashflow)
-      '29,1', // Felleskost (cashflow)
-      '30,1', // Kom. avg (cashflow)
-      '31,1', // Vedlikehold (cashflow)
-      '32,1', // Diverse (cashflow)
-      '33,1', // Skatt (cashflow)
-      '34,1', // Ledighet (cashflow)
-      '35,1', // Renter og avdrag
-      '36,1', // Cashflow per mnd (sumfelt)
-      '39,1', // Leieinntekter (nettoyield)
-      '40,1', // Driftskostnader (nettoyield)
-      '41,1', // Netto leieinntekt (nettoyield)
-      '42,1', // Kjøpesum (nettoyield)
-      '43,1', // Netto yield (%)
+      '4,4', // Lånebelastning
+      '10,3', // Lån (kr)
+      '11,3', // Egenkapital
+      '12,3', // Lånebelastning kjøpesum
+      '16,3', // Ledighet (3%)
+      '17,3', // Vedlikehold (5%)
+      '19,3', // Netto leie (før skatt)
+      '20,3', // Skatt (22%)
+      '21,3', // Netto leie etter skatt
+      '22,3', // Rentekostnad
+      '23,3', // Fradrag renter (22%)
+      '24,3', // Sum etter finanskost og sk
+      '25,3', // Netto pr. år
+      '26,3', // Avkastning egenkapitalen
+      '29,5', '30,5', '31,5', '32,5', '33,5', '34,5', '35,5', '36,5', '37,5', // Cashflow
+      '40,7', '41,7', '42,7', '43,7', '44,7' // Nettoyield
     ];
     
     calculatedCells.forEach(cellKey => {
-      cellStyle[cellKey] = {
-        className: 'calculated-cell'
-      };
+      cellStyle[cellKey] = { className: 'calculated-cell' };
     });
     
-    // Labels (column A)
-    for (let row = 2; row <= 43; row++) {
-      if (!cellStyle[`${row},0`]) {
-        cellStyle[`${row},0`] = {
-          className: 'label-cell'
-        };
+    // Labels (column B)
+    for (let row = 2; row <= 44; row++) {
+      if (!cellStyle[`${row},2`]) {
+        cellStyle[`${row},2`] = { className: 'label-cell' };
       }
     }
     
@@ -215,17 +385,21 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     
     changes.forEach((change: any) => {
       const [row, col, oldValue, newValue] = change;
-      // Map row/column to data field names
+      
+      // Map changes to property data
       const fieldMap: { [key: string]: string } = {
-        '2,1': 'address',
-        '5,1': 'totalPrice',
-        '5,2': 'loanAmount',
-        '5,4': 'interestOnlyYears',
-        '9,1': 'interestRate',
-        '14,1': 'monthlyRent',
-        '15,1': 'commonCosts',
-        '16,1': 'municipalFees',
-        '19,1': 'otherExpenses'
+        '2,2': 'address',
+        '2,4': 'postalCode',
+        '4,2': 'totalPrice',
+        '4,3': 'loanAmount',
+        '4,5': 'interestOnlyYears',
+        '8,3': 'totalPrice',
+        '9,3': 'interestRate',
+        '10,3': 'loanAmount',
+        '12,3': 'monthlyRent',
+        '13,3': 'commonCosts',
+        '14,3': 'municipalFees',
+        '17,3': 'otherExpenses'
       };
       
       const fieldKey = `${row},${col}`;
@@ -246,28 +420,28 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       const canvas = await html2canvas(tableElement, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         logging: false
       });
       
       const link = document.createElement('a');
-      link.download = `boligkalkyle-${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `boligkalkyle-${activeTab}-${new Date().toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL();
       link.click();
     } catch (error) {
       console.error('Error exporting PNG:', error);
     }
-  }, [hotInstance]);
+  }, [hotInstance, activeTab, colors.surface]);
 
   // Handsontable configuration
   const hotSettings = {
-    data: getInitialData(),
-    colHeaders: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
-    rowHeaders: true,
+    data: getCurrentData(),
+    colHeaders: false,
+    rowHeaders: false,
     width: '100%',
     height: 600,
     licenseKey: 'non-commercial-and-evaluation',
-    colWidths: [200, 120, 120, 120, 120, 100, 100], // Wider first column for labels
+    colWidths: [50, 50, 200, 120, 50, 120, 50, 120, 50, 120],
     cells: (row: number, col: number) => {
       const editableCells = getEditableCells();
       const cellStyle = getCellStyling();
@@ -277,18 +451,14 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       let cellType = 'text';
       let format = null;
       
-      // Numeric cells (mostly column B with values)
-      if (col === 1 && row > 0) {
-        const data = getInitialData();
+      // Numeric cells
+      if (col > 2 && row > 0) {
+        const data = getCurrentData();
         const cellValue = data[row]?.[col];
         
-        // Check if it's a formula or numeric value
-        if (typeof cellValue === 'string' && cellValue.startsWith('=')) {
+        if (typeof cellValue === 'number') {
           cellType = 'numeric';
-          format = '0,0'; // Number format with thousands separator
-        } else if (!isNaN(Number(cellValue)) && cellValue !== '') {
-          cellType = 'numeric';
-          format = '0,0'; // Number format with thousands separator
+          format = '0,0';
         }
       }
       
@@ -340,23 +510,53 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     );
   }
 
+  const tabs = [
+    { key: 'kalkyle', label: 'Kalkyle', icon: Calculator },
+    { key: 'lan', label: 'Lån', icon: CreditCard },
+    { key: 'oversikt', label: 'Oversikt', icon: BarChart3 },
+    { key: 'risiko', label: 'Risiko', icon: AlertTriangle }
+  ];
+
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="p-4 border-b border-border/50 bg-card flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5" />
-          <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
+      {/* Modern header with tabs */}
+      <div className="p-4 border-b border-border/50 bg-card">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
+          </div>
+          <Button onClick={handleExportPNG} size="sm" className="gap-2">
+            <Download className="h-4 w-4" />
+            Last ned bilde
+          </Button>
         </div>
-        <Button onClick={handleExportPNG} size="sm" className="gap-2">
-          <Download className="h-4 w-4" />
-          Last ned bilde
-        </Button>
+        
+        {/* Modern tab navigation */}
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === tab.key
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Spreadsheet */}
       <div className="flex-1 p-4">
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
+        <div className="border rounded-xl overflow-hidden shadow-sm" style={{ borderColor: colors.border }}>
           <HotTable
             ref={hotTableRef}
             {...hotSettings}
@@ -364,35 +564,62 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         </div>
       </div>
 
-      {/* Custom styles */}
+      {/* Modern styles */}
       <style>{`
-        .custom-cell {
-          border: 1px solid #d0d0d0 !important;
-        }
-        
         .handsontable {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          font-size: 12px;
-        }
-        
-        .handsontable th {
-          background-color: #f8f9fa !important;
-          font-weight: bold !important;
-          border: 1px solid #d0d0d0 !important;
-          text-align: center !important;
-          font-size: 11px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          font-size: 14px;
+          line-height: 1.4;
         }
         
         .handsontable td {
-          border: 1px solid #d0d0d0 !important;
-          padding: 4px 8px !important;
-          vertical-align: middle !important;
+          border: 1px solid ${colors.border};
+          padding: 12px 16px;
+          font-size: 14px;
+          transition: all 0.2s ease;
         }
         
-        .handsontable .htCore td.htDimmed {
-          background-color: #f5f5f5 !important;
-          color: #666666 !important;
-          font-weight: bold !important;
+        .handsontable td:hover {
+          background-color: ${colors.background};
+        }
+        
+        .handsontable .htCore td.main-header {
+          background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
+          color: white;
+          font-weight: 600;
+          text-align: center;
+          font-size: 16px;
+          letter-spacing: 0.5px;
+        }
+        
+        .handsontable .htCore td.section-header {
+          background: linear-gradient(135deg, ${colors.secondary}, ${colors.accent});
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+          letter-spacing: 0.3px;
+        }
+        
+        .handsontable .htCore td.table-header {
+          background: ${colors.primary};
+          color: white;
+          font-weight: 600;
+          text-align: center;
+          font-size: 13px;
+        }
+        
+        .handsontable .htCore td.label-cell {
+          background-color: ${colors.background};
+          color: ${colors.text};
+          font-weight: 500;
+          text-align: left;
+        }
+        
+        .handsontable .htCore td.calculated-cell {
+          background-color: ${colors.surface};
+          color: ${colors.text};
+          text-align: right;
+          font-weight: 400;
         }
         
         .handsontable .htCore td[data-cell-type="numeric"] {
@@ -403,41 +630,22 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           text-align: left !important;
         }
         
-        /* Section headers */
-        .handsontable .htCore td.section-header {
-          background-color: #e0e0e0 !important;
-          font-weight: bold !important;
-          color: #000000 !important;
-          font-size: 13px !important;
+        .handsontable .htCore {
+          border-collapse: separate;
+          border-spacing: 0;
         }
         
-        /* Main header */
-        .handsontable .htCore td.main-header {
-          background-color: #f0f0f0 !important;
-          font-weight: bold !important;
-          font-size: 16px !important;
-          text-align: center !important;
+        .handsontable .htCore td {
+          border-right: 1px solid ${colors.border};
+          border-bottom: 1px solid ${colors.border};
         }
         
-        /* Labels */
-        .handsontable .htCore td.label-cell {
-          font-weight: bold !important;
-          background-color: #ffffff !important;
+        .handsontable .htCore td:last-child {
+          border-right: none;
         }
         
-        /* Calculated cells */
-        .handsontable .htCore td.calculated-cell {
-          background-color: #f5f5f5 !important;
-          color: #666666 !important;
-          font-weight: bold !important;
-        }
-        
-        /* Table headers */
-        .handsontable .htCore td.table-header {
-          background-color: #e0e0e0 !important;
-          font-weight: bold !important;
-          text-align: center !important;
-          font-size: 12px !important;
+        .handsontable .htCore tr:last-child td {
+          border-bottom: none;
         }
       `}</style>
     </div>
