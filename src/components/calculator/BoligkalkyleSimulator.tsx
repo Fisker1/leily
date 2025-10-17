@@ -371,7 +371,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       cellStyle[`${row},8`] = { className: 'label-cell' };
     });
     
-    // Calculated cells (gray background)
+    // Calculated cells (gray background) - Kalkyle sheet
     const calculatedCells = [
       '6,4', // Lånebelastning
       '12,3', // Egenkapital
@@ -390,12 +390,130 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       '10,9', '11,9', '12,9', '13,9' // Nettoyield values
     ];
     
+    // Loan sheet styling
+    if (activeTab === 'lan') {
+      // Loan sheet headers
+      cellStyle['0,1'] = { className: 'main-header' };
+      cellStyle['10,1'] = { className: 'section-header' };
+      cellStyle['17,5'] = { className: 'table-header' };
+      cellStyle['17,6'] = { className: 'table-header' };
+      cellStyle['17,7'] = { className: 'table-header' };
+      cellStyle['17,8'] = { className: 'table-header' };
+      cellStyle['17,9'] = { className: 'table-header' };
+      cellStyle['20,5'] = { className: 'table-header' };
+      cellStyle['20,6'] = { className: 'table-header' };
+      cellStyle['20,7'] = { className: 'table-header' };
+      cellStyle['20,8'] = { className: 'table-header' };
+      
+      // Loan sheet calculated cells
+      const loanCalculatedCells = [
+        '11,2', '12,2', '13,2', '14,2', '15,2', '16,2', '17,2', '18,2', // Loan calculations
+        '18,6', '18,7', '18,8', '18,9', // Amortization table values
+        '19,6', '19,7', '19,8', '19,9', // First installment
+        '20,6', '20,7', '20,8', '20,9', // Second installment
+        '21,6', '21,7', '21,8', '21,9', // Third installment
+        '22,6', '22,7', '22,8', '22,9', // Fourth installment
+        '23,6', '23,7', '23,8', '23,9', // Fifth installment
+        '25,6', '25,7', '25,8', // Annual summary values
+        '26,6', '26,7', '26,8', // Year 1
+        '27,6', '27,7', '27,8', // Year 2
+        '28,6', '28,7', '28,8', // Year 3
+        '29,6', '29,7', '29,8', // Year 4
+        '30,6', '30,7', '30,8'  // Year 5
+      ];
+      
+      loanCalculatedCells.forEach(cellKey => {
+        cellStyle[cellKey] = { className: 'calculated-cell' };
+      });
+    }
+    
+    // Overview sheet styling
+    if (activeTab === 'oversikt') {
+      // Overview sheet headers
+      cellStyle['0,2'] = { className: 'main-header' };
+      cellStyle['1,2'] = { className: 'table-header' };
+      cellStyle['1,4'] = { className: 'table-header' };
+      cellStyle['1,6'] = { className: 'table-header' };
+      cellStyle['1,8'] = { className: 'table-header' };
+      cellStyle['1,10'] = { className: 'table-header' };
+      cellStyle['1,12'] = { className: 'table-header' };
+      cellStyle['7,2'] = { className: 'section-header' };
+      cellStyle['15,2'] = { className: 'section-header' };
+      cellStyle['19,2'] = { className: 'section-header' };
+      
+      // Overview sheet calculated cells
+      const overviewCalculatedCells = [
+        '3,3', '3,13', // Verdi
+        '4,3', '4,13', // Lån
+        '5,3', '5,13', // Rente
+        '6,3', '6,13', // Lånebelastning pr. enhet
+        '7,3', '7,13', // EK
+        '8,13', // Lånebelastning totalt
+        '9,3', '9,13', // Renteutgifter
+        '10,3', '10,13', // Felles utgifter
+        '11,3', '11,13', // Kommunale avgifter
+        '12,3', '12,13', // Forsikring
+        '13,3', '13,13', // Strøm
+        '14,3', '14,13', // Avdrag
+        '15,3', '15,13', // Utgifter pr. enhet
+        '17,3', '17,13', // Leieinntekt
+        '18,3', '18,13', // Diverse inntekt
+        '19,3', '19,13', // Inntekter pr. enhet
+        '21,3', '21,13', // RESULTAT: før skatt
+        '22,3', '22,13', // Skatt 22%
+        '23,3', '23,13', // RESULTAT: etter skatt
+        '24,3', '24,13', // Rentefradrag
+        '25,3', '25,13', // Resultat e/ rentefradrag
+        '26,3', '26,13'  // Pr. Mnd.
+      ];
+      
+      overviewCalculatedCells.forEach(cellKey => {
+        cellStyle[cellKey] = { className: 'calculated-cell' };
+      });
+    }
+    
+    // Risk sheet styling
+    if (activeTab === 'risiko') {
+      // Risk sheet headers
+      cellStyle['0,1'] = { className: 'main-header' };
+      cellStyle['2,1'] = { className: 'section-header' };
+      cellStyle['3,1'] = { className: 'table-header' };
+      cellStyle['3,2'] = { className: 'table-header' };
+      cellStyle['3,3'] = { className: 'table-header' };
+      cellStyle['3,4'] = { className: 'table-header' };
+      cellStyle['3,5'] = { className: 'table-header' };
+      cellStyle['3,6'] = { className: 'table-header' };
+      cellStyle['10,1'] = { className: 'section-header' };
+      cellStyle['11,1'] = { className: 'table-header' };
+      cellStyle['11,2'] = { className: 'table-header' };
+      cellStyle['11,3'] = { className: 'table-header' };
+      cellStyle['11,4'] = { className: 'table-header' };
+      cellStyle['11,5'] = { className: 'table-header' };
+      cellStyle['11,6'] = { className: 'table-header' };
+      cellStyle['18,1'] = { className: 'section-header' };
+      
+      // Risk sheet calculated cells
+      const riskCalculatedCells = [
+        '4,2', '4,3', '4,4', // Risk assessment values
+        '5,2', '5,3', '5,4', // Risk assessment values
+        '6,2', '6,3', '6,4', // Risk assessment values
+        '7,2', '7,3', '7,4', // Risk assessment values
+        '8,2', '8,3', '8,4', // Risk assessment values
+        '9,2', '9,3', '9,4', // Risk assessment values
+        '19,2' // Gjennomsnittlig risikonivå
+      ];
+      
+      riskCalculatedCells.forEach(cellKey => {
+        cellStyle[cellKey] = { className: 'calculated-cell' };
+      });
+    }
+    
     calculatedCells.forEach(cellKey => {
       cellStyle[cellKey] = { className: 'calculated-cell' };
     });
     
     return cellStyle;
-  }, []);
+  }, [activeTab]);
 
   // Handle cell changes
   const handleAfterChange = useCallback((changes: any) => {
@@ -701,12 +819,19 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               text-align: right !important;
             }
             
-            /* Ensure all value columns are right-aligned */
+            /* Ensure all value columns are right-aligned across all sheets */
+            .handsontable .htCore td:nth-child(3),
             .handsontable .htCore td:nth-child(4),
             .handsontable .htCore td:nth-child(5),
+            .handsontable .htCore td:nth-child(6),
+            .handsontable .htCore td:nth-child(7),
             .handsontable .htCore td:nth-child(8),
             .handsontable .htCore td:nth-child(9),
-            .handsontable .htCore td:nth-child(10) {
+            .handsontable .htCore td:nth-child(10),
+            .handsontable .htCore td:nth-child(11),
+            .handsontable .htCore td:nth-child(12),
+            .handsontable .htCore td:nth-child(13),
+            .handsontable .htCore td:nth-child(14) {
               text-align: right !important;
             }
         
