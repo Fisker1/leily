@@ -4,6 +4,7 @@ import { registerAllModules } from 'handsontable/registry';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet, Calculator, CreditCard, BarChart3, AlertTriangle, Home } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import { formatNumberWithSpaces } from '@/lib/utils';
 
 // Register all Handsontable modules
@@ -712,6 +713,60 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     }
   }, [hotInstance, activeTab, colors.surface]);
 
+  // Export as Excel with all sheets
+  const handleExportExcel = useCallback(() => {
+    try {
+      const workbook = XLSX.utils.book_new();
+      
+      // Get all sheet data
+      const eiendomData = getEiendomData();
+      const kalkyleData = getKalkyleData();
+      const lanData = getLanData();
+      const oversiktData = getOversiktData();
+      const risikoData = getRisikoData();
+      
+      // Convert data to worksheets (values only, no formulas)
+      const eiendomWS = XLSX.utils.aoa_to_sheet(eiendomData);
+      const kalkyleWS = XLSX.utils.aoa_to_sheet(kalkyleData);
+      const lanWS = XLSX.utils.aoa_to_sheet(lanData);
+      const oversiktWS = XLSX.utils.aoa_to_sheet(oversiktData);
+      const risikoWS = XLSX.utils.aoa_to_sheet(risikoData);
+      
+      // Set column widths for better formatting
+      const columnWidths = [
+        { wch: 25 }, // Column A
+        { wch: 15 }, // Column B
+        { wch: 5 },  // Column C
+        { wch: 15 }, // Column D
+        { wch: 5 },  // Column E
+        { wch: 15 }, // Column F
+        { wch: 5 },  // Column G
+        { wch: 15 }  // Column H
+      ];
+      
+      [eiendomWS, kalkyleWS, lanWS, oversiktWS, risikoWS].forEach(ws => {
+        ws['!cols'] = columnWidths;
+      });
+      
+      // Add worksheets to workbook
+      XLSX.utils.book_append_sheet(workbook, eiendomWS, 'Eiendom');
+      XLSX.utils.book_append_sheet(workbook, kalkyleWS, 'Kalkyle');
+      XLSX.utils.book_append_sheet(workbook, lanWS, 'Lån');
+      XLSX.utils.book_append_sheet(workbook, oversiktWS, 'Oversikt');
+      XLSX.utils.book_append_sheet(workbook, risikoWS, 'Risiko');
+      
+      // Generate filename with current date
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `Boligkalkyle-${today}.xlsx`;
+      
+      // Write and download file
+      XLSX.writeFile(workbook, filename);
+      
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+    }
+  }, [getEiendomData, getKalkyleData, getLanData, getOversiktData, getRisikoData]);
+
   // Handsontable configuration
   const hotSettings = {
     data: getCurrentData(),
@@ -834,10 +889,16 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
             <FileSpreadsheet className="h-5 w-5" />
             <span className="font-semibold text-lg">Boligkalkyle Simulator</span>
           </div>
-          <Button onClick={handleExportPNG} size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            Last ned bilde
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleExportExcel} size="sm" className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Last ned Excel
+            </Button>
+            <Button onClick={handleExportPNG} size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Last ned bilde
+            </Button>
+          </div>
         </div>
         
         {/* Modern tab navigation */}
