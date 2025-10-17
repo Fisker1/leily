@@ -46,85 +46,64 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Property information sheet data - Eiendom og lånetakerinformasjon
+  // Property information sheet data - Compact A4 layout
   const getEiendomData = useCallback(() => {
     return [
-      // Row 1: Main header
-      ['Privat kalkyle eiendomsinvestering', '', '', '', '', '', '', ''],
+      // Row 1: Section headers
+      ['Eiendomsinformasjon', '', 'Låneinformasjon', '', 'Investeringsinformasjon', '', '', ''],
       
-      // Row 2: Empty
-      ['', '', '', '', '', '', '', ''],
+      // Row 2: Address
+      ['Adresse', data.address || 'Hafrsfjordgata 49', 'Lånebeløp', data.loanAmount || '6 000 000', 'Kjøpesum', data.totalPrice || '7 500 000', '', ''],
       
-      // Row 3: Property information header
-      ['Eiendomsinformasjon', '', '', '', '', '', '', ''],
+      // Row 3: Postal code and city
+      ['Postnummer og sted', data.postalCode || '4010 Stavanger', 'Rente', data.interestRate || '5.5%', 'Egenkapital', '1 500 000', '', ''],
       
-      // Row 4: Address
-      ['Adresse', data.address || 'Hafrsfjordgata 49', '', '', '', '', '', ''],
+      // Row 4: Property type
+      ['Eiendomstype', 'Leilighet', 'Løpetid', '25 år', 'Lånebelastning', '80%', '', ''],
       
-      // Row 5: Postal code and city
-      ['Postnummer og sted', data.postalCode || '4010 Stavanger', '', '', '', '', '', ''],
+      // Row 5: Size
+      ['Størrelse', '85 m²', 'Avdragsfrie år', '0', 'Månedlig leie', data.monthlyRent || '45 000', '', ''],
       
-      // Row 6: Property type
-      ['Eiendomstype', 'Leilighet', '', '', '', '', '', ''],
-      
-      // Row 7: Size
-      ['Størrelse', '85 m²', '', '', '', '', '', ''],
-      
-      // Row 8: Year built
+      // Row 6: Year built
       ['Byggeår', '2015', '', '', '', '', '', ''],
       
-      // Row 9: Empty
+      // Row 7: Empty
       ['', '', '', '', '', '', '', ''],
       
-      // Row 10: Loan information header
-      ['Låneinformasjon', '', '', '', '', '', '', ''],
+      // Row 8: Key property information header
+      ['Nøkkelinformasjon om eiendommen', '', '', '', '', '', '', ''],
       
-      // Row 11: Loan amount
-      ['Lånebeløp', data.loanAmount || '6 000 000', '', '', '', '', '', ''],
+      // Row 9: Property value
+      ['Verditakst', '7 500 000', '', '', '', '', '', ''],
       
-      // Row 12: Interest rate
-      ['Rente', data.interestRate || '5.5%', '', '', '', '', '', ''],
+      // Row 10: Market value per m²
+      ['Verdi per m²', '88 235', '', '', '', '', '', ''],
       
-      // Row 13: Loan term
-      ['Løpetid', '25 år', '', '', '', '', '', ''],
+      // Row 11: Rental yield
+      ['Leieavkastning', '7.2%', '', '', '', '', '', ''],
       
-      // Row 14: Interest-free years
-      ['Avdragsfrie år', '0', '', '', '', '', '', ''],
+      // Row 12: Property condition
+      ['Tilstand', 'God', '', '', '', '', '', ''],
       
-      // Row 15: Empty
+      // Row 13: Energy rating
+      ['Energimerking', 'B', '', '', '', '', '', ''],
+      
+      // Row 14: Empty
       ['', '', '', '', '', '', '', ''],
       
-      // Row 16: Investment information header
-      ['Investeringsinformasjon', '', '', '', '', '', '', ''],
-      
-      // Row 17: Purchase price
-      ['Kjøpesum', data.totalPrice || '7 500 000', '', '', '', '', '', ''],
-      
-      // Row 18: Equity
-      ['Egenkapital', '1 500 000', '', '', '', '', '', ''],
-      
-      // Row 19: Loan-to-value ratio
-      ['Lånebelastning', '80%', '', '', '', '', '', ''],
-      
-      // Row 20: Monthly rent
-      ['Månedlig leie', data.monthlyRent || '45 000', '', '', '', '', '', ''],
-      
-      // Row 21: Empty
-      ['', '', '', '', '', '', '', ''],
-      
-      // Row 22: Contact information header
+      // Row 15: Contact information header
       ['Kontaktinformasjon', '', '', '', '', '', '', ''],
       
-      // Row 23: Buyer name
+      // Row 16: Buyer name
       ['Kjøper', 'Anders Lundøy', '', '', '', '', '', ''],
       
-      // Row 24: Buyer email
+      // Row 17: Buyer email
       ['E-post', 'anders@leily.no', '', '', '', '', '', ''],
       
-      // Row 25: Buyer phone
+      // Row 18: Buyer phone
       ['Telefon', '+47 123 45 678', '', '', '', '', '', ''],
       
-      // Row 26: Empty rows for natural ending
+      // Row 19: Empty rows for natural ending
       ['', '', '', '', '', '', '', ''],
       ['', '', '', '', '', '', '', ''],
       ['', '', '', '', '', '', '', ''],
@@ -382,11 +361,12 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     // Property sheet - editable cells
     if (activeTab === 'eiendom') {
       const propertyEditableCells = [
-        '3,1', '4,1', // Address, postal code
-        '5,1', '6,1', '7,1', // Property type, size, year built
-        '10,1', '11,1', '12,1', '13,1', // Loan amount, interest rate, term, interest-free years
-        '16,1', '17,1', '19,1', // Purchase price, equity, monthly rent
-        '22,1', '23,1', '24,1' // Buyer name, email, phone
+        '1,1', '2,1', // Address, postal code
+        '3,1', '4,1', '5,1', // Property type, size, year built
+        '1,3', '2,3', '3,3', '4,3', // Loan amount, interest rate, term, interest-free years
+        '1,5', '2,5', '3,5', '4,5', // Purchase price, equity, loan-to-value, monthly rent
+        '8,1', '9,1', '10,1', '11,1', '12,1', // Key property info (value, per m², yield, condition, energy)
+        '15,1', '16,1', '17,1' // Buyer name, email, phone
       ];
       
       propertyEditableCells.forEach(cellKey => {
@@ -418,24 +398,37 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     // Property sheet styling
     if (activeTab === 'eiendom') {
       // Property sheet headers
-      cellStyle['0,0'] = { className: 'main-header' };
-      cellStyle['2,0'] = { className: 'section-header' };
-      cellStyle['9,0'] = { className: 'section-header' };
-      cellStyle['15,0'] = { className: 'section-header' };
-      cellStyle['21,0'] = { className: 'section-header' };
+      cellStyle['0,0'] = { className: 'section-header' };
+      cellStyle['0,2'] = { className: 'section-header' };
+      cellStyle['0,4'] = { className: 'section-header' };
+      cellStyle['7,0'] = { className: 'section-header' };
+      cellStyle['14,0'] = { className: 'section-header' };
       
       // Property sheet labels
-      const propertyLabelRows = [3, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19, 22, 23, 24];
+      const propertyLabelRows = [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 15, 16, 17];
       propertyLabelRows.forEach(row => {
         cellStyle[`${row},0`] = { className: 'label-cell' };
       });
       
+      // Loan info labels
+      const loanLabelRows = [1, 2, 3, 4];
+      loanLabelRows.forEach(row => {
+        cellStyle[`${row},2`] = { className: 'label-cell' };
+      });
+      
+      // Investment info labels
+      const investmentLabelRows = [1, 2, 3, 4];
+      investmentLabelRows.forEach(row => {
+        cellStyle[`${row},4`] = { className: 'label-cell' };
+      });
+      
       // Property sheet calculated cells
       const propertyCalculatedCells = [
-        '3,1', '4,1', '5,1', '6,1', '7,1', // Property info values
-        '10,1', '11,1', '12,1', '13,1', // Loan info values
-        '16,1', '17,1', '18,1', '19,1', // Investment info values
-        '22,1', '23,1', '24,1' // Contact info values
+        '1,1', '2,1', '3,1', '4,1', '5,1', '6,1', // Property info values
+        '1,3', '2,3', '3,3', '4,3', // Loan info values
+        '1,5', '2,5', '3,5', '4,5', // Investment info values
+        '8,1', '9,1', '10,1', '11,1', '12,1', // Key property info values
+        '15,1', '16,1', '17,1' // Contact info values
       ];
       
       propertyCalculatedCells.forEach(cellKey => {
