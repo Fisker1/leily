@@ -58,6 +58,7 @@ interface LeaseData {
 
 const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded }: RentalAgreementDialogProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);

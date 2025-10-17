@@ -19,7 +19,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   data = {},
   onDataChange
 }) => {
-  const hotTableRef = useRef<HotTable>(null);
+  const hotTableRef = useRef<any>(null);
   const [hotInstance, setHotInstance] = useState<any>(null);
   const [hyperformulaInstance, setHyperformulaInstance] = useState<HyperFormula | null>(null);
 
@@ -352,7 +352,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       </div>
 
       {/* Custom styles */}
-      <style jsx>{`
+      <style>{`
         .custom-cell {
           border: 1px solid #d0d0d0 !important;
         }

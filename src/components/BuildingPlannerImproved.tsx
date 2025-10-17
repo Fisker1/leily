@@ -681,7 +681,13 @@ export default function BuildingPlannerImproved() {
           description: `${projectName} er oppdatert`
         });
       } else {
-        await saveProject(projectData);
+        await saveProject(
+          projectData.project_name,
+          projectData.calculation_id,
+          projectData.floor_plans,
+          projectData.placed_items,
+          projectData.total_cost
+        );
         toast({
           title: "Prosjekt lagret",
           description: `${projectName} er lagret`
