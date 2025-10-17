@@ -137,7 +137,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const getKalkyleData = useCallback(() => {
     return [
       // Row 1: Section headers
-      ['Avkastning ved boligkjøp', '', '', 'Cashflow per mnd', '', 'Nettoyield på eiendommen *', '', ''],
+      ['Avkastning ved boligkjøp', '', '', 'Pengestrøm', '', 'Nettoavkastning', '', ''],
       
       // Row 2: Avkastning section - Totalpris eiendom
       ['Totalpris eiendom', data.totalPrice || '7 688 590', '', 'Leieinntekt', '60 000', 'Leieinntekter', '720 000', ''],
