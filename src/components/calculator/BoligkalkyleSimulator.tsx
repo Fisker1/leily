@@ -134,7 +134,15 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       ['', '', 'Avkastning egenkapitalen', '7,71%', '', '', '', '', '', ''],
       
       // Row 29: Note
-      ['', '', 'Dette arket kopierer du og har et eget for hver eiendom og hvert år.', '', '', '', '', '', '', '']
+      ['', '', 'Dette arket kopierer du og har et eget for hver eiendom og hvert år.', '', '', '', '', '', '', ''],
+      
+      // Row 30-35: Empty rows for natural ending
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', '', '', '']
     ];
   }, [data]);
 
@@ -449,7 +457,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     colHeaders: false,
     rowHeaders: false,
     width: '100%',
-    height: 500,
+    height: 700,
     licenseKey: 'non-commercial-and-evaluation',
     colWidths: [30, 30, 200, 120, 30, 120, 30, 120, 30, 120], // Column widths matching Excel layout
     cells: (row: number, col: number) => {
@@ -567,16 +575,16 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       </div>
 
       {/* Spreadsheet */}
-      <div className="flex-1 p-4 overflow-hidden">
-        <div className="border rounded-xl overflow-hidden shadow-sm h-full" style={{ borderColor: colors.border }}>
-          <div className="h-full overflow-auto">
-            <HotTable
-              ref={hotTableRef}
-              {...hotSettings}
-            />
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="border rounded-xl overflow-hidden shadow-sm" style={{ borderColor: colors.border }}>
+            <div className="overflow-auto">
+              <HotTable
+                ref={hotTableRef}
+                {...hotSettings}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Modern styles */}
       <style>{`
