@@ -9,6 +9,8 @@ import { useCredits } from '@/hooks/useCredits';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Register all Handsontable modules
 registerAllModules();
@@ -27,6 +29,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eiendom' | 'kalkyle' | 'lan' | 'oversikt' | 'risiko'>('eiendom');
   const [isSaving, setIsSaving] = useState(false);
+  const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   
   // Hooks for credits and authentication
   const { credits, useCredit, canUseCredits } = useCredits();
@@ -816,8 +820,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     }
   }, [user, generateExcelWorkbook, toast]);
 
-  // Download Excel (costs 5 credits)
-  const handleDownloadExcel = useCallback(async () => {
+  // Show credit confirmation dialog
+  const handleDownloadExcel = useCallback(() => {
     if (!user) {
       toast({
         title: "Feil",
@@ -837,6 +841,20 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       return;
     }
 
+    // Check if user has chosen to not show this dialog again
+    const dontShowAgainKey = 'boligkalkyle-download-dialog-dont-show';
+    const shouldShowDialog = !localStorage.getItem(dontShowAgainKey);
+    
+    if (shouldShowDialog) {
+      setShowCreditDialog(true);
+    } else {
+      // Direct download if user has chosen to skip dialog
+      performDownload();
+    }
+  }, [user, canUseCredits, credits]);
+
+  // Perform actual download
+  const performDownload = useCallback(async () => {
     try {
       const workbook = generateExcelWorkbook();
       
@@ -865,7 +883,25 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         variant: "destructive",
       });
     }
-  }, [user, canUseCredits, credits, useCredit, generateExcelWorkbook, toast]);
+  }, [generateExcelWorkbook, useCredit, toast]);
+
+  // Handle dialog confirmation
+  const handleConfirmDownload = useCallback(() => {
+    // Save user's preference if they checked "don't show again"
+    if (dontShowAgain) {
+      localStorage.setItem('boligkalkyle-download-dialog-dont-show', 'true');
+    }
+    
+    setShowCreditDialog(false);
+    setDontShowAgain(false);
+    performDownload();
+  }, [dontShowAgain, performDownload]);
+
+  // Handle dialog cancellation
+  const handleCancelDownload = useCallback(() => {
+    setShowCreditDialog(false);
+    setDontShowAgain(false);
+  }, []);
 
   // Handsontable configuration
   const hotSettings = {
@@ -1007,7 +1043,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               disabled={!canUseCredits || credits < 5}
             >
               <FileSpreadsheet className="h-4 w-4" />
-              Last ned Excel (5 kreditter)
+              Last ned Excel
             </Button>
           </div>
         </div>
@@ -1212,6 +1248,53 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           overflow: hidden;
         }
       `}</style>
+
+      {/* Credit confirmation dialog */}
+      <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+              Last ned Excel-fil
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Det koster <span className="font-semibold text-blue-600">5 kreditter</span> å laste ned Excel-filen til din datamaskin.
+              <br /><br />
+              Du har for øyeblikket <span className="font-semibold">{credits} kreditter</span> tilgjengelig.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-2 py-4">
+            <Checkbox 
+              id="dont-show-again" 
+              checked={dontShowAgain}
+              onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+            />
+            <label 
+              htmlFor="dont-show-again" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Ikke vis denne meldingen igjen
+            </label>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCancelDownload}
+              className="flex-1"
+            >
+              Avbryt
+            </Button>
+            <Button 
+              onClick={handleConfirmDownload}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+            >
+              Last ned (5 kreditter)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
