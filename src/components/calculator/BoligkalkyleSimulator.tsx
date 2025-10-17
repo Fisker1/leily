@@ -629,21 +629,57 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     changes.forEach((change: any) => {
       const [row, col, oldValue, newValue] = change;
       
-      // Map changes to property data
-      const fieldMap: { [key: string]: string } = {
-        '2,2': 'address',
-        '2,4': 'postalCode',
-        '4,2': 'totalPrice',
-        '4,3': 'loanAmount',
-        '4,5': 'interestOnlyYears',
-        '8,3': 'totalPrice',
-        '9,3': 'interestRate',
-        '10,3': 'loanAmount',
-        '12,3': 'monthlyRent',
-        '13,3': 'commonCosts',
-        '14,3': 'municipalFees',
-        '17,3': 'otherExpenses'
+      // Map changes to property data - Context-aware field mapping
+      const getFieldMap = (activeTab: string) => {
+        if (activeTab === 'eiendom') {
+          return {
+            '1,1': 'address',
+            '2,1': 'postalCode',
+            '3,1': 'propertyType',
+            '4,1': 'size',
+            '5,1': 'yearBuilt',
+            '1,3': 'loanAmount',
+            '2,3': 'interestRate',
+            '3,3': 'loanTerm',
+            '4,3': 'interestOnlyYears',
+            '1,5': 'purchasePrice',
+            '2,5': 'equity',
+            '3,5': 'loanToValue',
+            '4,5': 'monthlyRent',
+            '8,1': 'propertyValue',
+            '9,1': 'valuePerM2',
+            '10,1': 'rentalYield',
+            '11,1': 'propertyCondition',
+            '12,1': 'energyRating',
+            '15,1': 'buyerName',
+            '16,1': 'buyerEmail',
+            '17,1': 'buyerPhone'
+          };
+        } else if (activeTab === 'kalkyle') {
+          return {
+            '1,1': 'totalPrice',
+            '2,1': 'interestRate',
+            '3,1': 'loanAmount',
+            '6,1': 'monthlyRent',
+            '7,1': 'commonCosts',
+            '8,1': 'municipalFees',
+            '11,1': 'otherExpenses',
+            '1,4': 'rentalIncome',
+            '2,4': 'cashflow_commonCosts',
+            '3,4': 'cashflow_municipalFees',
+            '4,4': 'maintenance',
+            '5,4': 'cashflow_otherExpenses',
+            '6,4': 'tax',
+            '7,4': 'vacancy',
+            '8,4': 'interestAndPrincipal',
+            '1,6': 'annualRentalIncome',
+            '4,6': 'netto_purchasePrice'
+          };
+        }
+        return {};
       };
+      
+      const fieldMap = getFieldMap(activeTab);
       
       const fieldKey = `${row},${col}`;
       const fieldName = fieldMap[fieldKey];
