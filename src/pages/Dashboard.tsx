@@ -12,6 +12,8 @@ import Navigation from '@/components/Navigation';
 import MinimalFooter from '@/components/MinimalFooter';
 import CreditsBar from '@/components/CreditsBar';
 import { UserRoleBadge } from '@/components/UserRoleBadge';
+import { RentalCalendar } from '@/components/calendar/RentalCalendar';
+import { useAutoCalendarEvents } from '@/hooks/useAutoCalendarEvents';
 
 interface DashboardStats {
   totalProperties: number;
@@ -41,6 +43,9 @@ const Dashboard = () => {
   });
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Initialize auto calendar events
+  useAutoCalendarEvents();
 
   useEffect(() => {
     fetchDashboardData();
@@ -417,6 +422,14 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Calendar Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">
+          Leiekalender
+        </h2>
+        <RentalCalendar />
+      </div>
     </div>
     <MinimalFooter />
     </>

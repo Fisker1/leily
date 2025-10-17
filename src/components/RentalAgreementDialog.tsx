@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createSecureTenant, SecureTenantData, logTenantDataAccess } from '@/lib/tenantSecurity';
+import { LeaseSigningDialog } from './signing/LeaseSigningDialog';
 
 interface RentalAgreementDialogProps {
   open: boolean;
@@ -61,6 +62,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
   const [loading, setLoading] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [createdLeaseId, setCreatedLeaseId] = useState<string | null>(null);
+  const [showSigningDialog, setShowSigningDialog] = useState(false);
   const [propertyFormData, setPropertyFormData] = useState({
     address: "",
     city: "",
@@ -348,104 +350,8 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
       return;
     }
 
-    setLoading(true);
-
-    try {
-      console.log('Sending lease to signing:', createdLeaseId);
-
-      // Call Edge Function to create signature request
-      const { data: result, error } = await supabase.functions.invoke(
-        'signicat-signing/create-signature-request',
-        {
-          body: { leaseId: createdLeaseId },
-        }
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create signature request');
-      }
-
-      // Check if using mock mode
-      if (result.mock) {
-        toast({
-          title: "Test-modus aktivert",
-          description: "Signicat er ikke konfigurert. Bruker test-modus. Legg til SIGNICAT_* secrets for ekte BankID-signering.",
-        });
-      } else {
-        toast({
-          title: "Sendt til signering!",
-          description: "Du vil nå bli videresendt til BankID for signering.",
-        });
-      }
-
-      // Send notification to tenant
-      try {
-        await supabase.functions.invoke('send-lease-notification/email', {
-          body: {
-            signatureId: result.signatureId,
-            recipientType: 'tenant',
-          },
-        });
-        console.log('Tenant notification sent');
-      } catch (notifError) {
-        console.error('Failed to send tenant notification:', notifError);
-        // Don't fail the whole process if notification fails
-      }
-
-      // Reset form and close dialog
-      setTenantData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        nationalId: '',
-        address: '',
-        occupation: '',
-        monthlyIncome: '',
-        emergencyContact: '',
-        emergencyPhone: ''
-      });
-      setLeaseData({
-        propertyId: '',
-        monthlyRent: '',
-        depositAmount: '',
-        startDate: null,
-        endDate: null,
-        leaseTerms: '',
-        utilitiesIncluded: false,
-        parkingIncluded: false,
-        petsAllowed: false,
-        smokingAllowed: false,
-        createDepositAccount: false,
-        bankName: 'Instabank'
-      });
-      setCreatedLeaseId(null);
-      setStep(1);
-      onOpenChange(false);
-
-      // If not mock mode, redirect to signing page
-      if (!result.mock && result.landlordSigningUrl) {
-        // Navigate to signature page instead of external URL for better UX
-        window.location.href = `/lease/${createdLeaseId}/signature`;
-      } else if (result.mock) {
-        // In mock mode, go to signature page
-        window.location.href = `/lease/${createdLeaseId}/signature`;
-      }
-
-    } catch (error: any) {
-      console.error('Error sending to signing:', error);
-      toast({
-        title: "Kunne ikke sende til signering",
-        description: error.message || 'Prøv igjen senere',
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Open signing dialog instead of calling API directly
+    setShowSigningDialog(true);
   };
 
   const selectedProperty = properties.find(p => p.id === leaseData.propertyId);
@@ -1045,6 +951,23 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
           </div>
         </div>
       </DialogContent>
+      
+      {/* Signing Dialog */}
+      <LeaseSigningDialog
+        open={showSigningDialog}
+        onOpenChange={setShowSigningDialog}
+        leaseAgreementId={createdLeaseId || ''}
+        leaseData={createdLeaseId ? {
+          property_address: selectedProperty?.address || '',
+          landlord_name: user?.user_metadata?.full_name || '',
+          landlord_email: user?.email || '',
+          tenant_name: `${tenantData.firstName} ${tenantData.lastName}`,
+          tenant_email: tenantData.email,
+          monthly_rent: parseFloat(leaseData.monthlyRent) || 0,
+          start_date: leaseData.startDate?.toISOString() || '',
+          end_date: leaseData.endDate?.toISOString() || ''
+        } : undefined}
+      />
     </Dialog>
   );
 };

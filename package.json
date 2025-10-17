@@ -12,6 +12,7 @@
     "docs:open": "xdg-open docs/index.md || open docs/index.md || true"
   },
   "dependencies": {
+    "@handsontable/react-wrapper": "^16.1.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -50,7 +51,9 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "fabric": "^6.7.1",
+    "handsontable": "^16.1.1",
     "html2canvas": "^1.4.1",
+    "hyperformula": "^3.1.0",
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^2.28.0",
     "jspdf": "^3.0.1",

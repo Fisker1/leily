@@ -12,7 +12,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import BuildingPlannerBasic from '@/components/BuildingPlannerBasic';
+import BuildingPlannerImproved from '@/components/BuildingPlannerImproved';
 import CalculationLibrary from '@/components/CalculationLibrary';
 import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { useCalculationHistory } from '@/hooks/useCalculationHistory';
@@ -27,6 +27,7 @@ import { FinnPropertyData } from '@/types/finn';
 import { useLoanCalculator } from '@/hooks/useLoanCalculator';
 import { CalculatorChat } from '@/components/calculator/CalculatorChat';
 import { CalculatorPDFPreview } from '@/components/calculator/CalculatorPDFPreview';
+import { BoligkalkyleSimulator } from '@/components/calculator/BoligkalkyleSimulator';
 import { ResizableSplitView } from '@/components/calculator/ResizableSplitView';
 
 const Calculator = () => {
@@ -64,7 +65,7 @@ const Calculator = () => {
   const [isLoanAmountManuallyEdited, setIsLoanAmountManuallyEdited] = useState(false);
   const [activeTab, setActiveTab] = useState("calculator"); // calculator | building-planner | library
   const [showProFeatures, setShowProFeatures] = useState(false);
-  const [mobileView, setMobileView] = useState<'chat' | 'pdf'>('chat');
+  const [mobileView, setMobileView] = useState<'chat' | 'spreadsheet'>('chat');
   const isMobile = useIsMobile();
   
   const handleTabChange = (value: string) => {
@@ -408,10 +409,9 @@ const Calculator = () => {
                         />
                       }
                       right={
-                        <CalculatorPDFPreview 
+                        <BoligkalkyleSimulator 
                           data={data}
                           onDataChange={(field, value) => updateField(field, value)}
-                          onSave={handleSaveCalculation}
                         />
                       }
                     />
@@ -430,10 +430,9 @@ const Calculator = () => {
                           hasCredits={isPro || isAdmin || hasCredits}
                         />
                       ) : (
-                        <CalculatorPDFPreview 
+                        <BoligkalkyleSimulator 
                           data={data}
                           onDataChange={(field, value) => updateField(field, value)}
-                          onSave={handleSaveCalculation}
                         />
                       )}
                     </div>
@@ -452,14 +451,14 @@ const Calculator = () => {
                           Chat & Inndata
                         </button>
                         <button
-                          onClick={() => setMobileView('pdf')}
+                          onClick={() => setMobileView('spreadsheet')}
                           className={`flex-1 py-4 text-sm font-medium transition-colors border-b-2 ${
-                            mobileView === 'pdf'
+                            mobileView === 'spreadsheet'
                               ? 'border-primary text-primary'
                               : 'border-transparent text-muted-foreground hover:text-foreground'
                           }`}
                         >
-                          PDF-forhåndsvisning
+                          Kalkyle
                         </button>
                       </div>
                     </div>
@@ -489,7 +488,7 @@ const Calculator = () => {
           
           <TabsContent value="building-planner">
             {canAccessBuildingPlanner ? (
-              <BuildingPlannerBasic />
+              <BuildingPlannerImproved />
             ) : (
               <Card className="max-w-2xl mx-auto">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
