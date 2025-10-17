@@ -691,7 +691,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     width: '100%',
     height: 700,
     licenseKey: 'non-commercial-and-evaluation',
-    colWidths: [200, 120, 30, 120, 30, 120, 30, 120], // Column widths without unused left columns
+    colWidths: [180, 140, 40, 140, 40, 140, 40, 140], // Balanced column widths for symmetry
     cells: (row: number, col: number) => {
       const editableCells = getEditableCells();
       const cellStyle = getCellStyling();
@@ -862,14 +862,15 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         
             .handsontable td {
               border: 1px solid ${colors.border};
-              padding: 4px 8px;
+              padding: 6px 10px;
               font-size: 12px;
               transition: all 0.2s ease;
               max-width: 200px;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              height: 24px;
+              height: 28px;
+              line-height: 16px;
             }
         
         .handsontable td:hover {
@@ -885,6 +886,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               letter-spacing: 0.2px;
               white-space: normal;
               height: 28px;
+              line-height: 16px;
             }
             
             .handsontable .htCore td.section-header {
@@ -894,7 +896,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               font-size: 12px;
               letter-spacing: 0.1px;
               white-space: normal;
-              height: 26px;
+              height: 28px;
+              line-height: 16px;
             }
             
             .handsontable .htCore td.table-header {
@@ -903,7 +906,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               font-weight: 600;
               text-align: center;
               font-size: 11px;
-              height: 26px;
+              height: 28px;
+              line-height: 16px;
             }
         
         .handsontable .htCore td.label-cell {
@@ -950,11 +954,30 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
               text-align: right !important;
             }
         
-        .handsontable .htCore {
-          border-collapse: separate;
-          border-spacing: 0;
-          table-layout: fixed;
-        }
+            .handsontable .htCore {
+              border-collapse: separate;
+              border-spacing: 0;
+              table-layout: fixed;
+            }
+            
+            .handsontable .htCore tr {
+              height: 28px;
+            }
+            
+            .handsontable .htCore tr td {
+              height: 28px !important;
+              vertical-align: middle;
+              min-height: 28px;
+              max-height: 28px;
+            }
+            
+            .handsontable .htCore tbody tr {
+              height: 28px !important;
+            }
+            
+            .handsontable .htCore thead tr {
+              height: 28px !important;
+            }
         
         .handsontable .htCore td {
           border-right: 1px solid ${colors.border};
