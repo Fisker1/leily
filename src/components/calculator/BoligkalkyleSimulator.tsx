@@ -441,7 +441,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     width: '100%',
     height: 600,
     licenseKey: 'non-commercial-and-evaluation',
-    colWidths: [50, 50, 200, 120, 50, 120, 50, 120, 50, 120],
+    colWidths: [40, 40, 180, 100, 40, 100, 40, 100, 40, 100], // Smaller column widths
     cells: (row: number, col: number) => {
       const editableCells = getEditableCells();
       const cellStyle = getCellStyling();
@@ -480,15 +480,16 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     contextMenu: false,
     manualColumnResize: true,
     manualRowResize: true,
-    stretchH: 'all' as const,
-    wordWrap: false,
+    stretchH: 'none' as const, // Changed from 'all' to 'none' to prevent overflow
+    wordWrap: true, // Enable word wrap
     preventOverflow: 'horizontal' as const,
     columnSorting: false,
     filters: false,
     dropdownMenu: false,
     comments: false,
     fillHandle: false,
-    undoRedo: true
+    undoRedo: true,
+    overflow: 'hidden' as const // Add overflow hidden
   };
 
   if (isLoading) {
@@ -555,12 +556,14 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       </div>
 
       {/* Spreadsheet */}
-      <div className="flex-1 p-4">
-        <div className="border rounded-xl overflow-hidden shadow-sm" style={{ borderColor: colors.border }}>
-          <HotTable
-            ref={hotTableRef}
-            {...hotSettings}
-          />
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="border rounded-xl overflow-hidden shadow-sm h-full" style={{ borderColor: colors.border }}>
+          <div className="h-full overflow-auto">
+            <HotTable
+              ref={hotTableRef}
+              {...hotSettings}
+            />
+          </div>
         </div>
       </div>
 
@@ -570,13 +573,24 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           font-size: 14px;
           line-height: 1.4;
+          max-width: 100%;
+          overflow: hidden;
+        }
+        
+        .handsontable .htCore {
+          max-width: 100%;
+          overflow: hidden;
         }
         
         .handsontable td {
           border: 1px solid ${colors.border};
-          padding: 12px 16px;
-          font-size: 14px;
+          padding: 8px 12px;
+          font-size: 13px;
           transition: all 0.2s ease;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         
         .handsontable td:hover {
@@ -588,16 +602,18 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           color: white;
           font-weight: 600;
           text-align: center;
-          font-size: 16px;
-          letter-spacing: 0.5px;
+          font-size: 14px;
+          letter-spacing: 0.3px;
+          white-space: normal;
         }
         
         .handsontable .htCore td.section-header {
           background: linear-gradient(135deg, ${colors.secondary}, ${colors.accent});
           color: white;
           font-weight: 600;
-          font-size: 14px;
-          letter-spacing: 0.3px;
+          font-size: 13px;
+          letter-spacing: 0.2px;
+          white-space: normal;
         }
         
         .handsontable .htCore td.table-header {
@@ -605,7 +621,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           color: white;
           font-weight: 600;
           text-align: center;
-          font-size: 13px;
+          font-size: 12px;
         }
         
         .handsontable .htCore td.label-cell {
@@ -613,6 +629,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           color: ${colors.text};
           font-weight: 500;
           text-align: left;
+          white-space: normal;
         }
         
         .handsontable .htCore td.calculated-cell {
@@ -633,6 +650,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         .handsontable .htCore {
           border-collapse: separate;
           border-spacing: 0;
+          table-layout: fixed;
         }
         
         .handsontable .htCore td {
@@ -646,6 +664,17 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         
         .handsontable .htCore tr:last-child td {
           border-bottom: none;
+        }
+        
+        /* Ensure the table doesn't overflow its container */
+        .handsontable .ht_master {
+          max-width: 100%;
+          overflow: hidden;
+        }
+        
+        .handsontable .ht_master .wtHolder {
+          max-width: 100%;
+          overflow: hidden;
         }
       `}</style>
     </div>
