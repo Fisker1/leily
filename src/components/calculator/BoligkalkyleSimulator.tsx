@@ -46,7 +46,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Main calculation sheet data (Kalkyle - 2025) - Demo version matching Excel layout
+  // Main calculation sheet data (Kalkyle - 2025) - One-pager layout matching Excel A4 structure
   const getKalkyleData = useCallback(() => {
     return [
       // Row 1: Empty
@@ -97,67 +97,43 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       // Row 16: Felleskostnader pr. mnd
       ['', '', 'Felleskostnader pr. mnd', '', '', '', 'Ledighet (3%)', '1 200', '', ''],
       
-      // Row 17: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 18: Kommunale avgifter pr. m
+      // Row 17: Kommunale avgifter pr. m
       ['', '', 'Kommunale avgifter pr. m', '2 231', '', '', 'Renter og avdrag', '38 985', '', ''],
       
-      // Row 19: Ledighet (3%)
+      // Row 18: Ledighet (3%)
       ['', '', 'Ledighet (3%)', '1 200', '', '', 'Cashflow per mnd', '-2 423', '', ''],
       
-      // Row 20: Vedlikehold (5%)
+      // Row 19: Vedlikehold (5%)
       ['', '', 'Vedlikehold (5%)', '2 000', '', '', '', '', '', ''],
       
-      // Row 21: Strøm, forsikring, diverse
+      // Row 20: Strøm, forsikring, diverse
       ['', '', 'Strøm, forsikring, diverse', '7 694', '', '', '', '', '', ''],
       
-      // Row 22: Netto leie pr. mnd. (før sk)
+      // Row 21: Netto leie pr. mnd. (før sk)
       ['', '', 'Netto leie pr. mnd. (før sk)', '46 875', '', '', '', '', '', ''],
       
-      // Row 23: Skatt (22%)
+      // Row 22: Skatt (22%)
       ['', '', 'Skatt (22%)', '10 313', '', '', '', '', '', ''],
       
-      // Row 24: Netto leie etter skatt
+      // Row 23: Netto leie etter skatt
       ['', '', 'Netto leie etter skatt', '36 563', '', '', '', '', '', ''],
       
-      // Row 25: Rentekostnad
+      // Row 24: Rentekostnad
       ['', '', 'Rentekostnad', '31 051', '', '', '', '', '', ''],
       
-      // Row 26: Fradrag renter (22%)
+      // Row 25: Fradrag renter (22%)
       ['', '', 'Fradrag renter (22%)', '6 831', '', '', '', '', '', ''],
       
-      // Row 27: Sum etter finanskost og sk
+      // Row 26: Sum etter finanskost og sk
       ['', '', 'Sum etter finanskost og sk', '12 342', '', '', '', '', '', ''],
       
-      // Row 28: Netto pr. år
+      // Row 27: Netto pr. år
       ['', '', 'Netto pr. år', '148 110', '', '', '', '', '', ''],
       
-      // Row 29: Avkastning egenkapitalen
+      // Row 28: Avkastning egenkapitalen
       ['', '', 'Avkastning egenkapitalen', '7,71%', '', '', '', '', '', ''],
       
-      // Row 30: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 31: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 32: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 33: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 34: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 35: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 36: Empty
-      ['', '', '', '', '', '', '', '', '', ''],
-      
-      // Row 37: Note
+      // Row 29: Note
       ['', '', 'Dette arket kopierer du og har et eget for hver eiendom og hvert år.', '', '', '', '', '', '', '']
     ];
   }, [data]);
@@ -334,12 +310,12 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   const getEditableCells = useCallback(() => {
     const editableCells: { [key: string]: boolean } = {};
     
-    // Main calculation sheet - matching Excel layout
+    // Main calculation sheet - matching Excel layout (one-pager)
     const editableCellsList = [
       '3,2', '3,4', // Address, postal code
       '6,2', '6,3', '6,5', // Verditakst, Lånesum, Avdragsfrie år
       '9,3', '10,3', '11,3', // Totalpris, Rente, Lån
-      '14,3', '15,3', '17,3', '20,3', // Leieinntekt, Felleskost, Kom.avg, Diverse
+      '14,3', '15,3', '16,3', '19,3', // Leieinntekt, Felleskost, Kom.avg, Diverse
       '9,7', '10,7', '11,7', '12,7', '13,7', '14,7', '15,7', '16,7', // Cashflow inputs
       '9,9', '12,9' // Nettoyield inputs (Leieinntekter, Kjøpesum)
     ];
@@ -370,13 +346,13 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     cellStyle['8,8'] = { className: 'section-header' };
     
     // Labels (column 3) - all rows with labels
-    const labelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
+    const labelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
     labelRows.forEach(row => {
       cellStyle[`${row},2`] = { className: 'label-cell' };
     });
     
     // Cashflow labels (column 7)
-    const cashflowLabelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+    const cashflowLabelRows = [9, 10, 11, 12, 13, 14, 15, 16, 17];
     cashflowLabelRows.forEach(row => {
       cellStyle[`${row},6`] = { className: 'label-cell' };
     });
@@ -390,9 +366,9 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     // Calculated cells (gray background)
     const calculatedCells = [
       '6,4', // Lånebelastning
-      '10,3', // Egenkapital
-      '12,3', // Lånebelastning kjøpesum
-      '17,3', // Ledighet (3%)
+      '12,3', // Egenkapital
+      '14,3', // Lånebelastning kjøpesum
+      '18,3', // Ledighet (3%)
       '19,3', // Vedlikehold (5%)
       '21,3', // Netto leie (før skatt)
       '22,3', // Skatt (22%)
@@ -473,7 +449,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     colHeaders: false,
     rowHeaders: false,
     width: '100%',
-    height: 600,
+    height: 500,
     licenseKey: 'non-commercial-and-evaluation',
     colWidths: [30, 30, 200, 120, 30, 120, 30, 120, 30, 120], // Column widths matching Excel layout
     cells: (row: number, col: number) => {
@@ -617,47 +593,51 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           overflow: hidden;
         }
         
-        .handsontable td {
-          border: 1px solid ${colors.border};
-          padding: 8px 12px;
-          font-size: 13px;
-          transition: all 0.2s ease;
-          max-width: 200px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+            .handsontable td {
+              border: 1px solid ${colors.border};
+              padding: 4px 8px;
+              font-size: 12px;
+              transition: all 0.2s ease;
+              max-width: 200px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              height: 24px;
+            }
         
         .handsontable td:hover {
           background-color: ${colors.background};
         }
         
-        .handsontable .htCore td.main-header {
-          background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
-          color: white;
-          font-weight: 600;
-          text-align: center;
-          font-size: 14px;
-          letter-spacing: 0.3px;
-          white-space: normal;
-        }
-        
-        .handsontable .htCore td.section-header {
-          background: linear-gradient(135deg, ${colors.secondary}, ${colors.accent});
-          color: white;
-          font-weight: 600;
-          font-size: 13px;
-          letter-spacing: 0.2px;
-          white-space: normal;
-        }
-        
-        .handsontable .htCore td.table-header {
-          background: ${colors.primary};
-          color: white;
-          font-weight: 600;
-          text-align: center;
-          font-size: 12px;
-        }
+            .handsontable .htCore td.main-header {
+              background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
+              color: white;
+              font-weight: 600;
+              text-align: center;
+              font-size: 13px;
+              letter-spacing: 0.2px;
+              white-space: normal;
+              height: 28px;
+            }
+            
+            .handsontable .htCore td.section-header {
+              background: linear-gradient(135deg, ${colors.secondary}, ${colors.accent});
+              color: white;
+              font-weight: 600;
+              font-size: 12px;
+              letter-spacing: 0.1px;
+              white-space: normal;
+              height: 26px;
+            }
+            
+            .handsontable .htCore td.table-header {
+              background: ${colors.primary};
+              color: white;
+              font-weight: 600;
+              text-align: center;
+              font-size: 11px;
+              height: 26px;
+            }
         
         .handsontable .htCore td.label-cell {
           background-color: ${colors.background};
