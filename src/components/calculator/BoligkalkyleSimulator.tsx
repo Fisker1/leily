@@ -474,10 +474,36 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
         const data = getCurrentData();
         const cellValue = data[row]?.[col];
         
-        // Check if it's a number (including formatted numbers with spaces)
-        if (typeof cellValue === 'string' && /^[\d\s,.-]+$/.test(cellValue.replace(/\s/g, ''))) {
-          cellType = 'numeric';
-          format = '0,0';
+        if (typeof cellValue === 'string' && cellValue.trim() !== '') {
+          // Clean the value for numeric check: remove spaces, thousands separators, and percentage signs
+          const cleanedForParse = cellValue.replace(/[\s%]/g, '').replace(/\./g, '').replace(',', '.');
+          
+          const parsedValue = parseFloat(cleanedForParse);
+          
+          if (!isNaN(parsedValue)) {
+            cellType = 'numeric';
+            
+            // Determine format based on original cellValue content
+            if (cellValue.includes('%')) {
+              format = '0.0%'; // For percentages like '4.1%' or '80%'
+            } else if (cellValue.includes(',')) {
+              // If it contains a comma, assume it's a decimal separator
+              if (cellValue.split(',')[1]?.length > 0) {
+                format = '0,0.00'; // Example: 1.234,56
+              } else {
+                format = '0,0'; // Example: 1.234
+              }
+            } else if (cellValue.includes('.')) {
+              // If it contains a period, assume it's a decimal separator
+              if (cellValue.split('.')[1]?.length > 0) {
+                format = '0.00'; // Example: 1234.56
+              } else {
+                format = '0'; // Example: 1234
+              }
+            } else {
+              format = '0,0'; // Default for integers with thousands separator
+            }
+          }
         }
       }
       
@@ -662,13 +688,27 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           font-weight: 400;
         }
         
-        .handsontable .htCore td[data-cell-type="numeric"] {
-          text-align: right !important;
-        }
-        
-        .handsontable .htCore td[data-cell-type="text"] {
-          text-align: left !important;
-        }
+            .handsontable .htCore td[data-cell-type="numeric"] {
+              text-align: right !important;
+            }
+            
+            .handsontable .htCore td[data-cell-type="text"] {
+              text-align: left !important;
+            }
+            
+            /* Force right alignment for all numeric values */
+            .handsontable .htCore td.calculated-cell {
+              text-align: right !important;
+            }
+            
+            /* Ensure all value columns are right-aligned */
+            .handsontable .htCore td:nth-child(4),
+            .handsontable .htCore td:nth-child(5),
+            .handsontable .htCore td:nth-child(8),
+            .handsontable .htCore td:nth-child(9),
+            .handsontable .htCore td:nth-child(10) {
+              text-align: right !important;
+            }
         
         .handsontable .htCore {
           border-collapse: separate;
