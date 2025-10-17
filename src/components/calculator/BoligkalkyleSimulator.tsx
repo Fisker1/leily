@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { HotTable } from '@handsontable/react-wrapper';
 import { registerAllModules } from 'handsontable/registry';
-import { HyperFormula } from 'hyperformula';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -21,23 +20,14 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
 }) => {
   const hotTableRef = useRef<any>(null);
   const [hotInstance, setHotInstance] = useState<any>(null);
-  const [hyperformulaInstance, setHyperformulaInstance] = useState<HyperFormula | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize HyperFormula
+  // Initialize component
   useEffect(() => {
-    try {
-      const hf = HyperFormula.buildEmpty({
-        licenseKey: 'gpl-v3',
-        useArrayArithmetic: true,
-        useColumnIndex: true,
-      });
-      setHyperformulaInstance(hf);
+    const timer = setTimeout(() => {
       setIsLoading(false);
-    } catch (error) {
-      console.error('Error initializing HyperFormula:', error);
-      setIsLoading(false);
-    }
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Define the spreadsheet structure based on "Kalkyle - 2021" Excel sheet
@@ -278,9 +268,6 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     height: 600,
     licenseKey: 'non-commercial-and-evaluation',
     colWidths: [200, 120, 120, 120, 120, 100, 100], // Wider first column for labels
-    formulas: hyperformulaInstance ? {
-      engine: hyperformulaInstance
-    } : undefined,
     cells: (row: number, col: number) => {
       const editableCells = getEditableCells();
       const cellStyle = getCellStyling();
