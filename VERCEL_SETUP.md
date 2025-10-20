@@ -79,7 +79,7 @@ This guide walks through setting up two Vercel projects for staging and producti
 - Default development branch
 - All new features and changes go here first
 - Auto-deploys to staging environment
-- Used for testing and Loveable integration
+- Used for testing and development
 
 ### Production Branch (`main`)
 - Production-ready code only

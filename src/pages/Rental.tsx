@@ -356,7 +356,7 @@ const Rental = () => {
     }
   };
 
-  const getCashflowValue = (property: any) => {
+  const getCashflowValue = (property: Record<string, unknown>) => {
     // For demo properties, bruk realistisk demo_cashflow
     if (property.demo_cashflow !== undefined) {
       return property.demo_cashflow;
@@ -861,7 +861,7 @@ const Rental = () => {
       <RentalAgreementDialog
         open={rentalAgreementDialogOpen}
         onOpenChange={setRentalAgreementDialogOpen}
-        properties={allProperties}
+        properties={allProperties as unknown as Array<{ id: string; address: string; city?: string; size_sqm?: number; [key: string]: unknown }>}
         onPropertyAdded={fetchUserProperties}
       />
 
@@ -876,9 +876,9 @@ const Rental = () => {
       <TenantChatDialog
         open={tenantChatDialogOpen}
         onOpenChange={setTenantChatDialogOpen}
-        property={selectedProperty}
-        lease={selectedProperty?.lease_agreements?.[0]}
-        tenant={selectedProperty?.lease_agreements?.[0]?.tenants}
+        property={selectedProperty as unknown as Record<string, unknown>}
+        lease={selectedProperty?.lease_agreements?.[0] as Record<string, unknown>}
+        tenant={selectedProperty?.lease_agreements?.[0]?.tenants as Record<string, unknown>}
       />
       <MinimalFooter />
     </div>

@@ -136,7 +136,7 @@ serve(async (req) => {
       authorizationUsed: 'Bearer token in headers'
     });
 
-    let propertiesWithLeases = [];
+    const propertiesWithLeases = [];
     
     if (properties && properties.length > 0) {
       // Get lease agreements for each property using separate queries to avoid foreign key conflicts

@@ -66,7 +66,7 @@ const ExtendedPropertyDetails = () => {
     parking: false
   });
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setPropertyDetails(prev => ({
       ...prev,
       [field]: value

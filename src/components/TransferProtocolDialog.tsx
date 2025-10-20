@@ -93,11 +93,11 @@ const TransferProtocolDialog = ({
     }))
   );
 
-  const handleProtocolDataChange = (field: keyof ProtocolData, value: any) => {
+  const handleProtocolDataChange = (field: keyof ProtocolData, value: string | number | boolean | Date) => {
     setProtocolData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleRoomDataChange = (roomIndex: number, field: keyof RoomInspection, value: any) => {
+  const handleRoomDataChange = (roomIndex: number, field: keyof RoomInspection, value: string | number | boolean | string[] | File[]) => {
     setRooms(prev => prev.map((room, index) => 
       index === roomIndex ? { ...room, [field]: value } : room
     ));

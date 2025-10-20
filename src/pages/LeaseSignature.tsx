@@ -23,9 +23,9 @@ export default function LeaseSignature() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [lease, setLease] = useState<any>(null);
-  const [signature, setSignature] = useState<any>(null);
-  const [landlordProfile, setLandlordProfile] = useState<any>(null);
+  const [lease, setLease] = useState<Record<string, unknown> | null>(null);
+  const [signature, setSignature] = useState<Record<string, unknown> | null>(null);
+  const [landlordProfile, setLandlordProfile] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!user || !leaseId) {
@@ -98,10 +98,10 @@ export default function LeaseSignature() {
         .single();
 
       setLandlordProfile(profileData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching data:', error);
       toast.error('Kunne ikke hente leieavtaledata', {
-        description: error.message,
+        description: (error as Error).message,
       });
     } finally {
       setLoading(false);

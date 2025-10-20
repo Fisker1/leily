@@ -126,7 +126,7 @@ const SimpleAuth = () => {
     try {
       // Vipps bruker custom OIDC provider i Supabase
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'vipps' as any, // Custom provider
+        provider: 'vipps' as 'google' | 'facebook' | 'github' | 'discord' | 'twitter' | 'apple' | 'azure' | 'bitbucket' | 'linkedin' | 'notion' | 'twitch' | 'workos' | 'zoom', // Custom provider
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
           queryParams: {

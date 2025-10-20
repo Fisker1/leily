@@ -19,9 +19,9 @@ interface Message {
 interface TenantChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  property: any;
-  lease: any;
-  tenant: any;
+  property: Record<string, unknown>;
+  lease: Record<string, unknown>;
+  tenant: Record<string, unknown>;
 }
 
 const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: TenantChatDialogProps) => {
@@ -54,7 +54,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('lease_id', lease.id)
+        .eq('lease_id', String(lease.id))
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -94,7 +94,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
       const { error } = await supabase
         .from('chat_messages')
         .insert({
-          lease_id: lease.id,
+          lease_id: String(lease.id),
           sender_type: 'landlord',
           sender_id: user.id,
           message_content: messageContent
@@ -140,9 +140,9 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
           <DialogTitle className="flex items-center gap-3">
             <MessageCircle className="w-5 h-5 text-primary" />
             <div>
-              <span>Leiechat - {property?.address}</span>
+              <span>Leiechat - {String(property?.address || '')}</span>
               <div className="text-sm font-normal text-muted-foreground mt-1">
-                Med {tenant?.first_name} {tenant?.last_name}
+                Med {String(tenant?.first_name || '')} {String(tenant?.last_name || '')}
               </div>
             </div>
           </DialogTitle>
@@ -156,7 +156,7 @@ const TenantChatDialog = ({ open, onOpenChange, property, lease, tenant }: Tenan
               <div className="flex gap-3 justify-end">
                 <div className="max-w-[70%] rounded-lg px-4 py-3 bg-primary/10 border border-primary/20">
                   <p className="text-sm leading-relaxed text-primary">
-                    Hei {tenant?.first_name}! Velkommen som leietaker i {property?.address}. 
+                    Hei {String(tenant?.first_name || '')}! Velkommen som leietaker i {String(property?.address || '')}. 
                     Hvis du har noen spørsmål om eiendommen eller området, bare send meg en melding her. 
                     Jeg håper du trives!
                   </p>

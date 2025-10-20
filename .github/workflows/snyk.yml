@@ -29,7 +29,6 @@ jobs:
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -56,7 +55,6 @@ jobs:
 
       - name: Run Snyk to check Docker image for vulnerabilities
         uses: snyk/actions/docker@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -79,7 +77,6 @@ jobs:
 
       - name: Run Snyk Infrastructure as Code test
         uses: snyk/actions/iac@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:

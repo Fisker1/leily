@@ -79,9 +79,10 @@ const RentalMap = () => {
       } else {
         throw new Error('Invalid token response');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Token fetch failed:', error);
-      setError(`Token error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Token error: ${errorMessage}`);
       return null;
     }
   };
@@ -264,10 +265,11 @@ const RentalMap = () => {
               addMarkers();
             });
 
-            map.current.on('error', (e: any) => {
+            map.current.on('error', (e: unknown) => {
               console.error('❌ Map error:', e);
               // Don't stop for tile loading errors
-              if (!e.error || (e.error && e.error.status !== 403)) {
+              const error = e as { error?: { status?: number } };
+              if (!error.error || (error.error && error.error.status !== 403)) {
                 setError('Kartfeil: Kan ikke laste kartet');
                 setLoading(false);
               }
@@ -288,9 +290,9 @@ const RentalMap = () => {
             setLoading(false);
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('❌ Map init failed:', error);
-        setError(`Initialisering feilet: ${error.message}`);
+        setError(`Initialisering feilet: ${(error as Error).message || String(error)}`);
         setLoading(false);
       }
     };

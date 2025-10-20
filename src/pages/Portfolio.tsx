@@ -111,7 +111,7 @@ const Portfolio = () => {
   const { isPro, subscriptionTier } = useSubscription();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [propertyDocuments, setPropertyDocuments] = useState<Record<string, any[]>>({});
+  const [propertyDocuments, setPropertyDocuments] = useState<Record<string, Record<string, unknown>[]>>({});
   const [propertyTenants, setPropertyTenants] = useState<Record<string, (Tenant & { leases: LeaseAgreement[] })[]>>({});
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null);
   
@@ -445,7 +445,7 @@ const Portfolio = () => {
     console.log('Fetching documents for all properties:', properties);
     
     try {
-      const documentsByProperty: Record<string, any[]> = {};
+      const documentsByProperty: Record<string, Record<string, unknown>[]> = {};
       
       for (const property of properties) {
         if (property.id !== 'example-1') { // Skip example properties
@@ -597,7 +597,7 @@ const Portfolio = () => {
 
     // Build chart data
     return months.map(month => {
-      const dataPoint: any = {
+      const dataPoint: Record<string, unknown> = {
         month: format(month, 'MMM yyyy')
       };
 
@@ -663,7 +663,7 @@ const Portfolio = () => {
   }, [priceChartData, propertyChartData]);
 
   // Handle legend click to filter properties
-  const handleLegendClick = (e: any) => {
+  const handleLegendClick = (e: { dataKey: string }) => {
     const dataKey = e.dataKey as string;
     if (dataKey === 'Gjennomsnitt') return; // Don't filter average line
     
@@ -1712,7 +1712,7 @@ const Portfolio = () => {
       <RentalAgreementDialog
         open={rentalAgreementDialogOpen}
         onOpenChange={setRentalAgreementDialogOpen}
-        properties={properties}
+        properties={properties as unknown as Array<{ id: string; address: string; city?: string; size_sqm?: number; [key: string]: unknown }>}
         onPropertyAdded={fetchUserProperties}
       />
       <MinimalFooter />

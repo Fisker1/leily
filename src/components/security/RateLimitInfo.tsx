@@ -88,7 +88,7 @@ export const RateLimitInfo: React.FC = () => {
                     <div className="text-xs text-muted-foreground">{item.description}</div>
                   </div>
                   <div className="text-right space-y-1">
-                    <Badge variant={getSeverityColor(item.severity) as any} className="text-xs">
+                    <Badge variant={getSeverityColor(item.severity) as "default" | "secondary" | "destructive" | "outline"} className="text-xs">
                       {item.limit}
                     </Badge>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">

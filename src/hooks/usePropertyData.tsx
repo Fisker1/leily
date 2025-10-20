@@ -93,7 +93,7 @@ export const usePropertyData = () => {
 
       // Geocode addresses for properties that don't have coordinates
       const propertiesWithCoordinates = await Promise.all(
-        (data || []).map(async (property: any) => {
+        (data || []).map(async (property: Record<string, unknown>) => {
           const coords = await geocodeAddress(property.address, property.city, property.postal_code);
           return { ...property, coordinates: coords };
         })
@@ -124,7 +124,7 @@ export const usePropertyData = () => {
 
       // Geocode calculation addresses
       const calculationsWithCoordinates = await Promise.all(
-        (data || []).map(async (calc: any) => {
+        (data || []).map(async (calc: Record<string, unknown>) => {
           if (calc.property_address) {
             const coords = await geocodeAddress(calc.property_address);
             return { ...calc, coordinates: coords };

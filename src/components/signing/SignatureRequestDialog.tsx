@@ -32,7 +32,7 @@ interface SignatureRequestDialogProps {
   leaseId: string;
   propertyAddress: string;
   tenantName: string;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: Record<string, unknown>) => void;
 }
 
 const formSchema = z.object({
@@ -117,10 +117,10 @@ export function SignatureRequestDialog({
       }
 
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating signature request:', error);
       toast.error('Kunne ikke opprette signeringsforespørsel', {
-        description: error.message || 'Prøv igjen senere',
+        description: (error as Error).message || 'Prøv igjen senere',
       });
     } finally {
       setIsLoading(false);

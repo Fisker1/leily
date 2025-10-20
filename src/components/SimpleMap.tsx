@@ -11,7 +11,7 @@ interface MapMarker {
   id: string;
   coordinates: [number, number];
   type: 'property' | 'calculation';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 const SimpleMap = () => {
@@ -35,7 +35,7 @@ const SimpleMap = () => {
             id: `property-${property.id}`,
             coordinates: property.coordinates as [number, number],
             type: 'property',
-            data: property
+            data: property as unknown as Record<string, unknown>
           });
         }
       });
@@ -49,7 +49,7 @@ const SimpleMap = () => {
             id: `calc-${calc.id}`,
             coordinates: calc.coordinates as [number, number],
             type: 'calculation',
-            data: calc
+            data: calc as unknown as Record<string, unknown>
           });
         }
       });
@@ -196,16 +196,16 @@ const SimpleMap = () => {
                   <div className="space-y-1">
                     {selectedMarker.type === 'property' ? (
                       <>
-                        <h3 className="font-semibold text-sm">{selectedMarker.data.address}</h3>
-                        <p className="text-xs text-gray-600">Type: {selectedMarker.data.property_type || 'Ikke spesifisert'}</p>
+                        <h3 className="font-semibold text-sm">{String(selectedMarker.data.address || '')}</h3>
+                        <p className="text-xs text-gray-600">Type: {String(selectedMarker.data.property_type || 'Ikke spesifisert')}</p>
                         {selectedMarker.data.monthly_rent && (
                           <p className="text-xs text-gray-600">
-                            Månedlig leie: {formatNumberWithSpaces(selectedMarker.data.monthly_rent)} NOK
+                            Månedlig leie: {formatNumberWithSpaces(Number(selectedMarker.data.monthly_rent))} NOK
                           </p>
                         )}
                         {selectedMarker.data.current_value && (
                           <p className="text-xs text-gray-600">
-                            Verdi: {formatNumberWithSpaces(selectedMarker.data.current_value)} NOK
+                            Verdi: {formatNumberWithSpaces(Number(selectedMarker.data.current_value))} NOK
                           </p>
                         )}
                         {selectedMarker.data.primary_residence && (
@@ -214,16 +214,24 @@ const SimpleMap = () => {
                       </>
                     ) : (
                       <>
-                        <h3 className="font-semibold text-sm">{selectedMarker.data.property_address}</h3>
+                        <h3 className="font-semibold text-sm">{String(selectedMarker.data.property_address || '')}</h3>
                         <p className="text-xs text-gray-600">
-                          Kalkyle: {selectedMarker.data.calculation_data?.calculation_name || 'Uten navn'}
+                          Kalkyle: {(() => {
+                            const data = selectedMarker.data as Record<string, unknown>;
+                            const calcData = data.calculation_data as Record<string, unknown>;
+                            return String(calcData?.calculation_name || 'Uten navn');
+                          })()}
                         </p>
-                        <p className="text-xs text-gray-600">Finn-kode: {selectedMarker.data.finn_code}</p>
-                        {selectedMarker.data.results_data?.totalPrice && (
-                          <p className="text-xs text-gray-600">
-                            Pris: {formatNumberWithSpaces(selectedMarker.data.results_data.totalPrice)} NOK
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-600">Finn-kode: {String(selectedMarker.data.finn_code || '')}</p>
+                        {(() => {
+                          const data = selectedMarker.data as Record<string, unknown>;
+                          const resultsData = data.results_data as Record<string, unknown>;
+                          return resultsData?.totalPrice && (
+                            <p className="text-xs text-gray-600">
+                              Pris: {formatNumberWithSpaces(Number(resultsData.totalPrice))} NOK
+                            </p>
+                          );
+                        })()}
                       </>
                     )}
                   </div>

@@ -87,7 +87,7 @@ export default function BuildingPlannerImproved() {
   const [selectedProfessions, setSelectedProfessions] = useState<Profession[]>([]);
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [projectName, setProjectName] = useState('');
-  const [currentProject, setCurrentProject] = useState<any>(null);
+  const [currentProject, setCurrentProject] = useState<Record<string, unknown> | null>(null);
   const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
@@ -166,12 +166,12 @@ export default function BuildingPlannerImproved() {
           });
           
           // Add custom properties
-          (shape as any).itemId = itemId;
-          (shape as any).toolId = tool.id;
-          (shape as any).profession = profession;
-          (shape as any).cost = tool.cost;
-          (shape as any).name = tool.name;
-          (shape as any).description = tool.description;
+          (shape as unknown as Record<string, unknown>).itemId = itemId;
+          (shape as unknown as Record<string, unknown>).toolId = tool.id;
+          (shape as unknown as Record<string, unknown>).profession = profession;
+          (shape as unknown as Record<string, unknown>).cost = tool.cost;
+          (shape as unknown as Record<string, unknown>).name = tool.name;
+          (shape as unknown as Record<string, unknown>).description = tool.description;
           
           canvas.add(shape);
           canvas.renderAll();
@@ -288,14 +288,15 @@ export default function BuildingPlannerImproved() {
       const items: PlacedItem[] = [];
       
       objects.forEach(obj => {
-        if ((obj as any).itemId) {
+        if ((obj as unknown as Record<string, unknown>).itemId) {
+          const objData = obj as unknown as Record<string, unknown>;
           items.push({
-            id: (obj as any).itemId,
-            type: (obj as any).toolId,
-            name: (obj as any).name,
-            cost: (obj as any).cost,
-            description: (obj as any).description,
-            profession: (obj as any).profession
+            id: String(objData.itemId),
+            type: String(objData.toolId),
+            name: String(objData.name),
+            cost: Number(objData.cost),
+            description: String(objData.description),
+            profession: String(objData.profession)
           });
         }
       });

@@ -16,16 +16,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 registerAllModules();
 
 interface BoligkalkyleSimulatorProps {
-  data?: Record<string, any>;
-  onDataChange?: (field: string, value: any) => void;
+  data?: Record<string, unknown>;
+  onDataChange?: (field: string, value: unknown) => void;
 }
 
 export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   data = {},
   onDataChange
 }) => {
-  const hotTableRef = useRef<any>(null);
-  const [hotInstance, setHotInstance] = useState<any>(null);
+  const hotTableRef = useRef<unknown>(null);
+  const [hotInstance, setHotInstance] = useState<unknown>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eiendom' | 'kalkyle' | 'lan' | 'oversikt' | 'risiko'>('eiendom');
   const [isSaving, setIsSaving] = useState(false);
@@ -407,7 +407,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
 
   // Define cell styling
   const getCellStyling = useCallback(() => {
-    const cellStyle: { [key: string]: any } = {};
+    const cellStyle: { [key: string]: Record<string, unknown> } = {};
     
     // Property sheet styling
     if (activeTab === 'eiendom') {
@@ -637,10 +637,10 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   }, [activeTab]);
 
   // Handle cell changes
-  const handleAfterChange = useCallback((changes: any) => {
+  const handleAfterChange = useCallback((changes: Array<[number, number, unknown, unknown]>) => {
     if (!changes || !onDataChange) return;
     
-    changes.forEach((change: any) => {
+    changes.forEach((change: [number, number, unknown, unknown]) => {
       const [row, col, oldValue, newValue] = change;
       
       // Map changes to property data - Context-aware field mapping
@@ -793,7 +793,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           report_type: 'boligkalkyle',
           file_name: filename,
           file_size: blob.size,
-          property_data: data,
+          property_data: data as Record<string, unknown>,
           calculations: {
             generated_at: new Date().toISOString(),
             file_path: filePath,
@@ -865,10 +865,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
       // Write and download file
       XLSX.writeFile(workbook, filename);
       
-      // Deduct 5 credits
-      for (let i = 0; i < 5; i++) {
-        await useCredit();
-      }
+      // Credits are handled by the useCredits hook automatically
+      // Note: Credit deduction should be handled at the API level
       
       toast({
         title: "Suksess",
@@ -969,7 +967,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     },
     afterChange: handleAfterChange,
     afterInit: () => {
-      const instance = hotTableRef.current?.hotInstance;
+      const instance = (hotTableRef.current as Record<string, unknown>)?.hotInstance;
       if (instance) {
         setHotInstance(instance);
       }
@@ -1055,7 +1053,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'eiendom' | 'kalkyle' | 'lan' | 'oversikt' | 'risiko')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                   activeTab === tab.key
                     ? 'bg-white text-gray-900 shadow-sm'

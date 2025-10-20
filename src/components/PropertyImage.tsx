@@ -134,9 +134,10 @@ const PropertyImage = ({ imageUrl, address, city, className = "", alt }: Propert
           setLoading(false);
         });
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('❌ Satellite map init failed:', error);
-        setError(error.message || 'Kunne ikke laste satellittbilde');
+        const errorMessage = error instanceof Error ? error.message : 'Kunne ikke laste satellittbilde';
+        setError(errorMessage);
         setLoading(false);
       }
     };

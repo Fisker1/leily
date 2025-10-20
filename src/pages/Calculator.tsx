@@ -186,7 +186,7 @@ const Calculator = () => {
     );
   };
 
-  const handleLoadCalculation = (calculation: any) => {
+  const handleLoadCalculation = (calculation: Record<string, unknown>) => {
     // Load the calculation data into the form
     const loadedData = calculation.calculation_data;
     Object.keys(loadedData).forEach(key => {
@@ -243,7 +243,7 @@ const Calculator = () => {
   }, [calculatorData.totalPrice, calculatorData.equity, isLoanAmountManuallyEdited, updateField]);
 
   const selectedModules = locationState.selectedModules || [];
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     updateField(field, value);
     // Also update location state to maintain data
     setLocationState(prev => ({
@@ -410,7 +410,7 @@ const Calculator = () => {
                       }
                       right={
                         <BoligkalkyleSimulator 
-                          data={data}
+                          data={data as unknown as Record<string, unknown>}
                           onDataChange={(field, value) => updateField(field, value)}
                         />
                       }
@@ -431,7 +431,7 @@ const Calculator = () => {
                         />
                       ) : (
                         <BoligkalkyleSimulator 
-                          data={data}
+                          data={data as unknown as Record<string, unknown>}
                           onDataChange={(field, value) => updateField(field, value)}
                         />
                       )}
@@ -482,7 +482,7 @@ const Calculator = () => {
           <TabsContent value="library">
             <CalculationLibrary 
               onLoadCalculation={handleLoadCalculation}
-              currentCalculationData={canShowResults ? data : null}
+              currentCalculationData={canShowResults ? data as unknown as Record<string, unknown> : null}
             />
           </TabsContent>
           

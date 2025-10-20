@@ -9,7 +9,14 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "docs:open": "xdg-open docs/index.md || open docs/index.md || true"
+    "docs:open": "xdg-open docs/index.md || open docs/index.md || true",
+    "security:test": "snyk test",
+    "security:test:docker": "snyk container test leily:latest",
+    "security:monitor": "snyk monitor",
+    "security:auth": "snyk auth",
+    "security:fix": "snyk wizard",
+    "security:scan": "node scripts/security-scan.js",
+    "security:scan:build": "node scripts/security-scan.js --build"
   },
   "dependencies": {
     "@handsontable/react-wrapper": "^16.1.1",
@@ -90,8 +97,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
+    "snyk": "^1.1248.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",

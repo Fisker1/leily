@@ -34,9 +34,9 @@ interface CalculatorModulesProps {
   monthlyCashFlow: number;
   onModuleActivate: (moduleId: string) => void;
   onGenerateReport: () => void;
-  selectedModules?: any[];
-  calculatorData?: any;
-  onDataChange: (field: string, value: any) => void;
+  selectedModules?: string[];
+  calculatorData?: Record<string, unknown>;
+  onDataChange: (field: string, value: unknown) => void;
 }
 
 const CalculatorModules = ({
@@ -58,7 +58,7 @@ const CalculatorModules = ({
   const navigate = useNavigate();
   const [expandedModules, setExpandedModules] = useState(false);
   const [activeModules, setActiveModules] = useState<string[]>([]);
-  const [moduleData, setModuleData] = useState<{[key: string]: any}>({});
+  const [moduleData, setModuleData] = useState<{[key: string]: Record<string, unknown>}>({});
 
   const modules = [
     {
@@ -118,7 +118,7 @@ const CalculatorModules = ({
     });
   };
 
-  const handleModuleDataChange = (moduleId: string, field: string, value: any) => {
+  const handleModuleDataChange = (moduleId: string, field: string, value: unknown) => {
     setModuleData(prev => ({
       ...prev,
       [moduleId]: {
@@ -132,7 +132,7 @@ const CalculatorModules = ({
     return moduleData[moduleId] || {};
   };
 
-  const renderModuleForm = (module: any) => {
+  const renderModuleForm = (module: { id: string; title: string; description: string; icon: unknown; badge: string; [key: string]: unknown }) => {
     const data = getModuleData(module.id);
     
     switch (module.id) {

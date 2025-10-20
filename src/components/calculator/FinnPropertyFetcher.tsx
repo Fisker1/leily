@@ -153,9 +153,9 @@ const FinnPropertyFetcher: React.FC<FinnPropertyFetcherProps> = ({
         throw new Error(data.message || 'Kunne ikke hente eiendomsdata');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching property:', error);
-      const errorMessage = error.message || 'Kunne ikke hente eiendomsdata';
+      const errorMessage = (error as Error).message || 'Kunne ikke hente eiendomsdata';
       setError(errorMessage);
       
       toast({

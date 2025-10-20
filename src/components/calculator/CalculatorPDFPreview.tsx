@@ -13,8 +13,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalculatorPDFPreviewProps {
-  data?: Record<string, any>;
-  onDataChange?: (field: string, value: any) => void;
+  data?: Record<string, unknown>;
+  onDataChange?: (field: string, value: unknown) => void;
   onSave?: () => void;
 }
 
@@ -61,7 +61,7 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
       ...Object.keys(data).reduce((acc, key) => {
         if (data[key]) acc[key] = data[key];
         return acc;
-      }, {} as any)
+      }, {} as Record<string, unknown>)
     }));
   }, [data]);
 

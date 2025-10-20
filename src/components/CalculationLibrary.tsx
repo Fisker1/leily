@@ -39,7 +39,7 @@ import { formatNumberWithSpaces } from "@/lib/utils";
 
 interface CalculationLibraryProps {
   onLoadCalculation?: (calculation: CalculationHistoryItem) => void;
-  currentCalculationData?: any;
+  currentCalculationData?: Record<string, unknown>;
 }
 
 const CalculationLibrary = ({ 
@@ -84,10 +84,10 @@ const CalculationLibrary = ({
     });
   };
 
-  const getCalculationSummary = (data: any) => {
-    const totalPrice = parseFloat(data.totalPrice) || 0;
-    const monthlyRent = data.isRental ? parseFloat(data.expectedAnnualRent) / 12 || 0 : 0;
-    const yield_ = data.isRental && totalPrice > 0 ? (parseFloat(data.expectedAnnualRent) / totalPrice * 100) : 0;
+  const getCalculationSummary = (data: Record<string, unknown>) => {
+    const totalPrice = parseFloat(String(data.totalPrice)) || 0;
+    const monthlyRent = data.isRental ? parseFloat(String(data.expectedAnnualRent)) / 12 || 0 : 0;
+    const yield_ = data.isRental && totalPrice > 0 ? (parseFloat(String(data.expectedAnnualRent)) / totalPrice * 100) : 0;
 
     return {
       totalPrice,
@@ -168,7 +168,7 @@ const CalculationLibrary = ({
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-muted-foreground">Type</p>
-                              <p className="font-medium capitalize">{summary.propertyType || 'Ikke oppgitt'}</p>
+                              <p className="font-medium capitalize">{String(summary.propertyType) || 'Ikke oppgitt'}</p>
                             </div>
                             <div>
                               <p className="text-muted-foreground">Pris</p>

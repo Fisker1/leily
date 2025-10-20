@@ -1,6 +1,6 @@
 # Leily - Real Estate Platform
 
-A modern, lightweight real estate platform built with React, TypeScript, and Supabase.
+A modern, lightweight real estate platform built with React, TypeScript, and Supabase. The project is fully independent of any Lovable tooling or SDKs.
 
 ## 🏗️ Architecture
 
@@ -46,6 +46,57 @@ Visit http://localhost:8080
 - **URL**: https://www.leily.no
 - **Purpose**: Live application
 - **Features**: Coming soon page, analytics, optimized performance
+
+## 🔒 Security
+
+This project uses [Snyk](https://snyk.io) for comprehensive security scanning of dependencies, containers, and infrastructure.
+
+### Security Scanning
+
+#### Quick Start
+```bash
+# Install Snyk CLI
+npm install -g snyk
+
+# Authenticate with Snyk
+npm run security:auth
+
+# Run security tests
+npm run security:test
+```
+
+#### Available Security Commands
+| Command | Description |
+|---------|-------------|
+| `npm run security:test` | Test dependencies for vulnerabilities |
+| `npm run security:test:docker` | Test Docker container for vulnerabilities |
+| `npm run security:monitor` | Monitor project on Snyk dashboard |
+| `npm run security:auth` | Authenticate with Snyk |
+| `npm run security:fix` | Interactive vulnerability fix wizard |
+| `npm run security:scan` | Comprehensive security scan |
+| `npm run security:scan:build` | Build and scan Docker image |
+
+#### Docker Security
+```bash
+# Build and scan Docker image
+npm run security:scan:build
+
+# Test existing image
+npm run security:test:docker
+```
+
+#### CI/CD Integration
+- **Automatic scanning** on every push to `main` and `stage`
+- **High-severity vulnerabilities** fail the build
+- **SARIF reports** uploaded to GitHub Security tab
+- **Container scanning** for Docker images
+
+#### Security Reports
+- **Local reports**: Generated in `./security-reports/`
+- **Snyk Dashboard**: [app.snyk.io](https://app.snyk.io)
+- **GitHub Security**: Security tab in repository
+
+For detailed security information, see [SECURITY.md](./SECURITY.md).
 
 ## 📧 Email Service
 

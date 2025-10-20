@@ -131,7 +131,7 @@ export const PropertyDetailsDialog = ({ property, open, onOpenChange }: Property
     }
   };
 
-  const handleValuationFromAPI = async (valuation: any) => {
+  const handleValuationFromAPI = async (valuation: { estimatedValue: number; confidence?: number; source?: string }) => {
     if (valuation.estimatedValue) {
       try {
         const { error } = await supabase

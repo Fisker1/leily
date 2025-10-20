@@ -32,7 +32,7 @@ export function EmailTestComponent() {
 
     try {
       let templateData;
-      let emailType = selectedTemplate;
+      const emailType = selectedTemplate;
 
       switch (selectedTemplate) {
         case 'account_created':
@@ -138,7 +138,7 @@ export function EmailTestComponent() {
             id="template-select"
             className="w-full p-2 border border-gray-300 rounded-md"
             value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value as any)}
+            onChange={(e) => setSelectedTemplate(e.target.value as 'account_created' | 'password_reset' | 'lease_agreement_ready')}
           >
             <option value="account_created">Account Created (Welcome)</option>
             <option value="password_reset">Password Reset</option>

@@ -320,7 +320,7 @@ const PropertyLeaseHistory = ({ propertyId, propertyAddress }: PropertyLeaseHist
                                                           <div>
                                                             <strong>Rom for rom:</strong>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                                                              {parsed.rooms.map((room: any, index: number) => (
+                                                              {parsed.rooms.map((room: { roomName: string; condition: string; rent: number; description?: string; notes?: string; damages?: string[]; photoUrls?: string[] }, index: number) => (
                                                                 <div key={index} className="bg-white p-3 rounded border">
                                                                   <div className="flex items-center justify-between mb-2">
                                                                     <h5 className="font-medium">{room.roomName}</h5>

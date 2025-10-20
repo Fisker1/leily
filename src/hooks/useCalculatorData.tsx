@@ -78,7 +78,7 @@ const initialData: CalculatorData = {
 export const useCalculatorData = () => {
   const [data, setData] = useState<CalculatorData>(initialData);
   
-  const updateField = useCallback((field: string, value: any, moduleId?: string) => {
+  const updateField = useCallback((field: string, value: unknown, moduleId?: string) => {
     setData(prev => {
       const newData = { ...prev, [field]: value };
       

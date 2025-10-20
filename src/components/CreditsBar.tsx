@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Star, Infinity } from 'lucide-react';
+import { Star, Infinity as InfinityIcon } from 'lucide-react';
 import { useCredits } from '@/hooks/useCredits';
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -36,7 +36,7 @@ const CreditsBar = ({ maxCredits = 100, className = "" }: CreditsBarProps) => {
       {isAmbassador ? (
         <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
           <Star className="w-3 h-3 mr-1 fill-current" />
-          <Infinity className="w-3 h-3" />
+          <InfinityIcon className="w-3 h-3" />
           Credits
         </Badge>
       ) : (

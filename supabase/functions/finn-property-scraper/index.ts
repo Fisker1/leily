@@ -196,7 +196,7 @@ async function extractFinnDataWithAI(finnCode: string, htmlContent: string): Pro
         }
         
         // Extract title and address properly - address should be from structured data or HTML fallback
-        let propertyTitle = advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`;
+        const propertyTitle = advertisingConfig?.config?.pageTitle || `Eiendom ${finnCode}`;
         let propertyAddress = getTargetValue('street_address') || getTargetValue('address') || getTargetValue('location') || 'Adresse ikke tilgjengelig';
         
         // If we didn't find a proper address in structured data, try to extract from HTML
@@ -570,7 +570,7 @@ function extractFacilitiesFromFasilitetSection(htmlContent: string): string[] {
           if (facilityText.length > 2 && facilityText.length < 50) {
             // Clean up the text
             const cleanedFacility = facilityText
-              .replace(/^\s*[•·\-\*]\s*/, '') // Remove bullet points
+              .replace(/^\s*[•·\-*]\s*/, '') // Remove bullet points
               .trim();
             
             if (cleanedFacility && !facilities.includes(cleanedFacility)) {

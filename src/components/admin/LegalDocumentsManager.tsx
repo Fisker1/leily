@@ -93,7 +93,7 @@ export const LegalDocumentsManager = () => {
 
       if (error) throw error;
       setDocuments(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching documents:', error);
       toast.error('Feil ved henting av dokumenter');
     } finally {
@@ -163,7 +163,7 @@ export const LegalDocumentsManager = () => {
         notes: '',
       });
       fetchDocuments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading document:', error);
       toast.error('Feil ved opplasting av dokument');
     }
@@ -174,7 +174,7 @@ export const LegalDocumentsManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Ikke autentisert');
 
-      const updateData: any = { status: newStatus };
+      const updateData: Record<string, unknown> = { status: newStatus };
       
       if (newStatus === 'approved') {
         updateData.approved_by = user.id;
@@ -192,7 +192,7 @@ export const LegalDocumentsManager = () => {
 
       toast.success('Dokumentstatus oppdatert');
       fetchDocuments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating status:', error);
       toast.error('Feil ved oppdatering av status');
     }

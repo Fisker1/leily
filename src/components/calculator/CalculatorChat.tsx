@@ -18,8 +18,8 @@ interface Message {
 }
 
 interface CalculatorChatProps {
-  calculatorData?: Record<string, any>;
-  onDataUpdate?: (field: string, value: any) => void;
+  calculatorData?: Record<string, unknown>;
+  onDataUpdate?: (field: string, value: unknown) => void;
   hasCredits?: boolean;
 }
 
@@ -106,14 +106,19 @@ Alt fylles automatisk ut i rapporten! 📄`
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const extractPropertyDataFromAdvertising = (adData: any) => {
-    const targeting = adData?.config?.adServer?.gam?.targeting || [];
-    const data: any = {};
+  const extractPropertyDataFromAdvertising = (adData: Record<string, unknown>) => {
+    const config = adData?.config as Record<string, unknown>;
+    const adServer = config?.adServer as Record<string, unknown>;
+    const gam = adServer?.gam as Record<string, unknown>;
+    const targeting = gam?.targeting as Array<Record<string, unknown>> || [];
+    const data: Record<string, unknown> = {};
     
-    targeting.forEach((item: any) => {
-      if (item.value && item.value.length > 0) {
+    targeting.forEach((item: Record<string, unknown>) => {
+      const value = item.value as unknown[];
+      const key = item.key as string;
+      if (value && value.length > 0) {
         // Store all values, not just first one
-        data[item.key] = item.value.length === 1 ? item.value[0] : item.value;
+        data[key] = value.length === 1 ? value[0] : value;
       }
     });
     
@@ -167,9 +172,9 @@ Alt fylles automatisk ut i rapporten! 📄`
     return data;
   };
 
-  const shaveHtml = (html: string): { extracted: string; preview: any; tokens: number } => {
+  const shaveHtml = (html: string): { extracted: string; preview: Record<string, unknown>; tokens: number } => {
     console.log('Starting HTML shaving, original size:', html.length);
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     
     // PRIORITET 1: advertising-initial-state (VIKTIGST!)
     const advertisingMatch = html.match(/<script[^>]*id="advertising-initial-state"[^>]*type="application\/json"[^>]*>([\s\S]*?)<\/script>/i);
@@ -243,27 +248,30 @@ Alt fylles automatisk ut i rapporten! 📄`
         try {
           result.nextData = JSON.parse(nextDataMatch[1]);
           console.log('✅ Found __NEXT_DATA__ as fallback');
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Failed to parse __NEXT_DATA__:', e);
+        }
       }
     }
     
     // Create preview for user
-    const preview: any = {};
+    const preview: Record<string, unknown> = {};
     if (result.propertyData) {
-      preview.finnCode = result.propertyData.id;
-      preview.price = result.propertyData.price;
-      preview.primarySize = result.propertyData.primary_size;
-      preview.bedrooms = result.propertyData.bedrooms;
-      preview.rooms = result.propertyData.rooms;
-      preview.propertyType = result.propertyData.property_type;
-      preview.constructionYear = result.propertyData.construction_year;
-      preview.plotArea = result.propertyData.plot_area;
-      preview.ownershipType = result.propertyData.ownership_type;
-      preview.facilities = result.propertyData.facilities;
-      preview.energyRating = result.propertyData.energy_rating || result.energyRating;
-      preview.sharedExpenses = result.propertyData.shared_cost || result.propertyData.common_cost || result.commonCosts;
-      preview.municipalFees = result.propertyData.municipal_fee || result.propertyData.property_tax || result.municipalFees;
-      preview.commonCosts = result.propertyData.common_cost || result.commonCosts;
+      const propData = result.propertyData as Record<string, unknown>;
+      preview.finnCode = propData.id;
+      preview.price = propData.price;
+      preview.primarySize = propData.primary_size;
+      preview.bedrooms = propData.bedrooms;
+      preview.rooms = propData.rooms;
+      preview.propertyType = propData.property_type;
+      preview.constructionYear = propData.construction_year;
+      preview.plotArea = propData.plot_area;
+      preview.ownershipType = propData.ownership_type;
+      preview.facilities = propData.facilities;
+      preview.energyRating = propData.energy_rating || result.energyRating;
+      preview.sharedExpenses = propData.shared_cost || propData.common_cost || result.commonCosts;
+      preview.municipalFees = propData.municipal_fee || propData.property_tax || result.municipalFees;
+      preview.commonCosts = propData.common_cost || result.commonCosts;
       
       console.log('📋 Preview data created:', {
         propertyType: preview.propertyType,
@@ -394,14 +402,14 @@ Alt fylles automatisk ut i rapporten! 📄`
           primarySize: result.preview.primarySize,
           energyRating: result.preview.energyRating, // New
           buildYear: result.preview.constructionYear, // New
-          balcony: result.preview.facilities?.some((f: string) => 
+          balcony: (result.preview.facilities as string[])?.some((f: string) => 
             f.toLowerCase().includes('balkong') || f.toLowerCase().includes('terrasse')
           ),
-          elevator: result.preview.facilities?.some((f: string) => 
+          elevator: (result.preview.facilities as string[])?.some((f: string) => 
             f.toLowerCase().includes('heis')
           ),
           furnished: false, // Default
-          parking: result.preview.facilities?.some((f: string) => f.toLowerCase().includes('parkering')),
+          parking: (result.preview.facilities as string[])?.some((f: string) => f.toLowerCase().includes('parkering')),
           utilities: false // Default
         };
 

@@ -20,7 +20,7 @@ export const FinnPropertyDisplay: React.FC<FinnPropertyDisplayProps> = ({
   onViewOnFinn
 }) => {
   // Helper function to check if a value exists and is valid
-  const hasValue = (value: any): boolean => {
+  const hasValue = (value: unknown): boolean => {
     return value !== null && value !== undefined && value !== '' && value !== 0;
   };
 

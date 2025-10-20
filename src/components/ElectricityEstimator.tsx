@@ -69,10 +69,11 @@ export const ElectricityEstimator = ({
         title: 'Strøm estimert',
         description: `Estimert månedlig strømkostnad: ${formatNumberWithSpaces(data.estimated_monthly_cost)} kr`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error estimating electricity:', error);
       
-      if (error.message?.includes('429')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('429')) {
         toast({
           title: 'For mange forespørsler',
           description: 'Vennligst vent litt før du prøver igjen',

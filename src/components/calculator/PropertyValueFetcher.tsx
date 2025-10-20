@@ -21,7 +21,7 @@ const PropertyValueFetcher: React.FC<PropertyValueFetcherProps> = ({
 }) => {
   const [address, setAddress] = useState(initialAddress);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const { toast } = useToast();
 
   const handleGetValue = async () => {

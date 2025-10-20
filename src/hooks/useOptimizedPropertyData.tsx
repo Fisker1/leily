@@ -28,7 +28,7 @@ export interface CalculationProperty {
 
 // Global cache for geocoding results
 const geocodeCache = new Map<string, [number, number] | null>();
-let geocodingQueue: Array<{ resolve: (value: [number, number] | null) => void; address: string }> = [];
+const geocodingQueue: Array<{ resolve: (value: [number, number] | null) => void; address: string }> = [];
 let isProcessingQueue = false;
 
 const processGeocodingQueue = async () => {
@@ -162,7 +162,7 @@ export const useOptimizedPropertyData = () => {
 
       // Only geocode properties that don't have coordinates yet
       const propertiesWithCoordinates = await Promise.all(
-        (data || []).map(async (property: any) => {
+        (data || []).map(async (property: Record<string, unknown>) => {
           // Use existing coordinates from database if available and valid
           if (property.coordinates && Array.isArray(property.coordinates) && property.coordinates.length === 2) {
             const [lng, lat] = property.coordinates;
@@ -224,7 +224,7 @@ export const useOptimizedPropertyData = () => {
       // Geocode calculation addresses with batching
       console.log('🔍 Processing calculations for map display...');
       const calculationsWithCoordinates = await Promise.all(
-        (data || []).slice(0, 20).map(async (calc: any) => { // Further limit to 20 for performance
+        (data || []).slice(0, 20).map(async (calc: Record<string, unknown>) => { // Further limit to 20 for performance
           console.log(`Processing calculation: ${calc.property_address || 'Unnamed'}`);
           
           // Use existing coordinates from database if available

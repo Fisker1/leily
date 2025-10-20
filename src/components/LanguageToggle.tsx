@@ -45,7 +45,7 @@ const LanguageToggle = () => {
         {Object.entries(FLAGS).map(([lang, flag]) => (
           <DropdownMenuItem
             key={lang}
-            onClick={() => setLanguage(lang as any)}
+            onClick={() => setLanguage(lang as 'en' | 'no')}
             className="cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
           >
             <span className="text-lg mr-3">{flag}</span>

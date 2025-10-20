@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface PropertyValuationAPIProps {
-  onValuationReceived?: (valuation: any) => void;
+  onValuationReceived?: (valuation: { estimatedValue: number; confidence?: number; source: string; address: string; propertyData?: Record<string, unknown>; error?: string }) => void;
   propertyId?: string;
   initialAddress?: string;
   initialPostalCode?: string;
@@ -23,7 +23,7 @@ interface ValuationResult {
   confidence?: 'low' | 'medium' | 'high';
   source: 'kartverket' | 'estimated';
   address: string;
-  propertyData?: any;
+  propertyData?: Record<string, unknown>;
   error?: string;
 }
 
@@ -256,13 +256,13 @@ const PropertyValuationAPI: React.FC<PropertyValuationAPIProps> = ({
 
             {result.propertyData && (
               <div className="text-sm text-muted-foreground space-y-1">
-                <p><strong>Kommune:</strong> {result.propertyData.municipality}</p>
-                <p><strong>Fylke:</strong> {result.propertyData.county}</p>
+                <p><strong>Kommune:</strong> {String(result.propertyData.municipality || '')}</p>
+                <p><strong>Fylke:</strong> {String(result.propertyData.county || '')}</p>
                 {result.propertyData.area && (
-                  <p><strong>Areal:</strong> {result.propertyData.area} m²</p>
+                  <p><strong>Areal:</strong> {String(result.propertyData.area)} m²</p>
                 )}
                 {result.propertyData.propertyType && (
-                  <p><strong>Type:</strong> {result.propertyData.propertyType}</p>
+                  <p><strong>Type:</strong> {String(result.propertyData.propertyType)}</p>
                 )}
               </div>
             )}

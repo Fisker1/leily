@@ -24,7 +24,7 @@ import { createSecureTenant, SecureTenantData, logTenantDataAccess } from '@/lib
 interface RentalAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  properties: any[];
+  properties: Array<{ id: string; address: string; city?: string; size_sqm?: number; [key: string]: unknown }>;
   onPropertyAdded?: () => void;
 }
 
@@ -105,7 +105,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
     setTenantData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLeaseDataChange = (field: keyof LeaseData, value: any) => {
+  const handleLeaseDataChange = (field: keyof LeaseData, value: string | number | boolean | Date) => {
     setLeaseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -534,7 +534,7 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
                     <SelectContent>
                       {properties.filter(p => p.id !== 'example').map((property) => (
                         <SelectItem key={property.id} value={property.id}>
-                          {property.address}, {property.city} ({property.size_sqm}m²)
+                          {property.address}, {String(property.city || '')} ({String(property.size_sqm || '')}m²)
                         </SelectItem>
                       ))}
                       <SelectItem value="create-new">
@@ -813,8 +813,8 @@ const RentalAgreementDialog = ({ open, onOpenChange, properties, onPropertyAdded
                     <div className="space-y-2 text-sm">
                       {selectedProperty && (
                         <>
-                          <p><strong>Adresse:</strong> {selectedProperty.address}, {selectedProperty.city}</p>
-                          <p><strong>Størrelse:</strong> {selectedProperty.size_sqm}m²</p>
+                          <p><strong>Adresse:</strong> {selectedProperty.address}, {String(selectedProperty.city || '')}</p>
+                          <p><strong>Størrelse:</strong> {String(selectedProperty.size_sqm || '')}m²</p>
                         </>
                       )}
                       <p><strong>Månedlig leie:</strong> {parseInt(leaseData.monthlyRent || '0').toLocaleString()} kr</p>

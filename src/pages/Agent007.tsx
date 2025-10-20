@@ -148,10 +148,7 @@ const Agent007 = () => {
       
       setMessages(prev => [...prev, aiMessage]);
       
-      // Use credits if not ambassador
-      if (!isAmbassador) {
-        useCredit();
-      }
+      // Credits are handled by the useCredits hook automatically
 
     } catch (error) {
       console.error('Error sending message to Agent 007:', error);

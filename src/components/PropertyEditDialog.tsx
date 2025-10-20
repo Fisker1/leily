@@ -120,7 +120,7 @@ export const PropertyEditDialog = ({ property, open, onOpenChange, onPropertyUpd
           primary_residence: formData.primary_residence,
           show_in_rental: formData.show_in_rental,
           image_url: imageUrl,
-        } as any)
+        } as Record<string, unknown>)
         .eq('id', property.id);
 
       if (error) throw error;
