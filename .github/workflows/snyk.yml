@@ -57,7 +57,7 @@ jobs:
           command: monitor
 
       - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: snyk.sarif
@@ -87,7 +87,7 @@ jobs:
           args: --severity-threshold=high --sarif-file-output=snyk-container.sarif
 
       - name: Upload container scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: snyk-container.sarif
@@ -112,7 +112,7 @@ jobs:
           args: --severity-threshold=high --sarif-file-output=snyk-iac.sarif
 
       - name: Upload IaC scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: snyk-iac.sarif
