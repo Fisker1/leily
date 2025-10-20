@@ -60,7 +60,16 @@ const CalculatorModules = ({
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [moduleData, setModuleData] = useState<{[key: string]: Record<string, unknown>}>({});
 
-  const modules = [
+  type ModuleDef = {
+    id: string;
+    title: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge: string;
+    color: string;
+  };
+
+  const modules: ModuleDef[] = [
     {
       id: "Lønnsomhetsanalyse",
       title: "Lønnsomhetsanalyse",
@@ -132,7 +141,7 @@ const CalculatorModules = ({
     return moduleData[moduleId] || {};
   };
 
-  const renderModuleForm = (module: { id: string; title: string; description: string; icon: unknown; badge: string; [key: string]: unknown }) => {
+  const renderModuleForm = (module: ModuleDef) => {
     const data = getModuleData(module.id);
     
     switch (module.id) {

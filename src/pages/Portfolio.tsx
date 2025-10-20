@@ -662,9 +662,11 @@ const Portfolio = () => {
     });
   }, [priceChartData, propertyChartData]);
 
-  // Handle legend click to filter properties
-  const handleLegendClick = (e: { dataKey: string }) => {
-    const dataKey = e.dataKey as string;
+  // Handle legend click to filter properties with safe, narrow typing
+  type LegendClickEvent = { dataKey?: unknown };
+  const handleLegendClick = (e: LegendClickEvent) => {
+    const rawKey = e?.dataKey;
+    const dataKey = typeof rawKey === 'string' ? rawKey : String(rawKey ?? '');
     if (dataKey === 'Gjennomsnitt') return; // Don't filter average line
     
     setSelectedProperties(prev => {

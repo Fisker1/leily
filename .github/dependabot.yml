@@ -8,15 +8,35 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    # Group minor and patch updates together
+    rebase-strategy: auto
+    # Group updates to reduce PR noise
     groups:
-      dependencies:
+      dev-deps:
+        patterns:
+          - "eslint*"
+          - "@types/*"
+          - "typescript*"
+          - "vitest*"
+          - "tailwind*"
+        update-types: ["minor", "patch"]
+      react-stack:
+        patterns:
+          - "react*"
+          - "@tanstack/*"
+        update-types: ["minor", "patch"]
+      misc:
         patterns:
           - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    # Only create PRs for security updates automatically
+        exclude-patterns:
+          - "react*"
+          - "@tanstack/*"
+          - "eslint*"
+          - "@types/*"
+          - "typescript*"
+          - "vitest*"
+          - "tailwind*"
+        update-types: ["minor", "patch"]
+    # Keep versions sensible
     versioning-strategy: increase-if-necessary
     labels:
       - "dependencies"

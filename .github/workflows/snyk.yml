@@ -7,6 +7,9 @@ on:
     branches: [ main, stage ]
   pull_request:
     branches: [ main, stage ]
+  # Ensure Dependabot PRs can access repo secrets safely using base-branch workflow
+  pull_request_target:
+    branches: [ main, stage ]
   workflow_dispatch: {}
   schedule:
     - cron: "0 3 * * *" # Daily at 03:00 UTC
@@ -20,6 +23,8 @@ jobs:
   snyk-dependencies:
     name: Snyk Dependencies Scan
     runs-on: ubuntu-latest
+    # Run on normal events; for pull_request_target only allow Dependabot
+    if: ${{ github.event_name != 'pull_request_target' || github.actor == 'dependabot[bot]' }}
     permissions:
       contents: read
       security-events: write
@@ -91,6 +96,7 @@ jobs:
   snyk-iac:
     name: Snyk Infrastructure Scan
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request_target' || github.actor == 'dependabot[bot]' }}
     permissions:
       contents: read
       security-events: write
@@ -115,6 +121,7 @@ jobs:
   snyk-policy:
     name: Snyk Policy Check
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request_target' || github.actor == 'dependabot[bot]' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

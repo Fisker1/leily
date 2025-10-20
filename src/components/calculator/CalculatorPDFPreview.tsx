@@ -19,35 +19,41 @@ interface CalculatorPDFPreviewProps {
 }
 
 export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: CalculatorPDFPreviewProps) => {
+  const toStringSafe = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v));
+  const toNumberSafe = (v: unknown): number => {
+    const n = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
+    return isNaN(n) ? 0 : n;
+  };
+
   const [isPrintMode, setIsPrintMode] = useState(false);
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
-    address: data.address || '',
-    finnCode: data.finnCode || '',
-    totalPrice: data.totalPrice || '',
-    propertyType: data.propertyType || '',
-    ownershipType: data.ownershipType || '',
-    livingArea: data.livingArea || '',
-    bedrooms: data.bedrooms || '',
-    rooms: data.rooms || '',
-    buildYear: data.buildYear || '',
-    energyRating: data.energyRating || '',
-    plotArea: data.plotArea || '',
-    municipality: data.municipality || '',
-    county: data.county || '',
-    facilities: data.facilities || [],
-    equity: data.equity || '',
-    interestRate: data.interestRate || '',
-    loanPeriod: data.loanPeriod || '',
-    monthlyRent: data.monthlyRent || '',
-    commonCosts: data.commonCosts || '',
-    municipalFees: data.municipalFees || '',
-    insurance: data.insurance || '',
-    electricityMonthly: data.electricityMonthly || '',
-    sharedExpenses: data.sharedExpenses || '',
+    address: toStringSafe(data.address),
+    finnCode: toStringSafe(data.finnCode),
+    totalPrice: toStringSafe(data.totalPrice),
+    propertyType: toStringSafe(data.propertyType),
+    ownershipType: toStringSafe(data.ownershipType),
+    livingArea: toStringSafe(data.livingArea),
+    bedrooms: toStringSafe(data.bedrooms),
+    rooms: toStringSafe(data.rooms),
+    buildYear: toStringSafe(data.buildYear),
+    energyRating: toStringSafe(data.energyRating),
+    plotArea: toStringSafe(data.plotArea),
+    municipality: toStringSafe(data.municipality),
+    county: toStringSafe(data.county),
+    facilities: Array.isArray(data.facilities) ? data.facilities : [],
+    equity: toStringSafe(data.equity),
+    interestRate: toStringSafe(data.interestRate),
+    loanPeriod: toStringSafe(data.loanPeriod),
+    monthlyRent: toStringSafe(data.monthlyRent),
+    commonCosts: toStringSafe(data.commonCosts),
+    municipalFees: toStringSafe(data.municipalFees),
+    insurance: toStringSafe(data.insurance),
+    electricityMonthly: toStringSafe(data.electricityMonthly),
+    sharedExpenses: toStringSafe(data.sharedExpenses),
     hasExternalLender: data.hasExternalLender || false,
-    externalLenderName: data.externalLenderName || '',
-    covenantFileUrl: data.covenantFileUrl || '',
+    externalLenderName: toStringSafe(data.externalLenderName),
+    covenantFileUrl: toStringSafe(data.covenantFileUrl),
     isRentAutoEstimated: data.isRentAutoEstimated || false
   });
   
@@ -59,7 +65,8 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
     setFormData(prev => ({
       ...prev,
       ...Object.keys(data).reduce((acc, key) => {
-        if (data[key]) acc[key] = data[key];
+        const v = (data as Record<string, unknown>)[key];
+        acc[key] = Array.isArray(v) ? v : toStringSafe(v);
         return acc;
       }, {} as Record<string, unknown>)
     }));
@@ -147,22 +154,22 @@ export const CalculatorPDFPreview = ({ data = {}, onDataChange, onSave }: Calcul
 
   // Calculate totals
   const loanAmount = formData.totalPrice && formData.equity 
-    ? parseFloat(formData.totalPrice) - parseFloat(formData.equity)
+    ? toNumberSafe(formData.totalPrice) - toNumberSafe(formData.equity)
     : 0;
   
   const monthlyLoanPayment = loanAmount > 0 && formData.interestRate && formData.loanPeriod
-    ? loanAmount * (parseFloat(formData.interestRate) / 100 / 12) / (1 - Math.pow(1 + parseFloat(formData.interestRate) / 100 / 12, -(parseFloat(formData.loanPeriod) * 12)))
+    ? loanAmount * (toNumberSafe(formData.interestRate) / 100 / 12) / (1 - Math.pow(1 + toNumberSafe(formData.interestRate) / 100 / 12, -(toNumberSafe(formData.loanPeriod) * 12)))
     : 0;
 
-  const totalMonthlyExpenses = (parseFloat(formData.commonCosts) || 0) + 
-    (parseFloat(formData.municipalFees) || 0) + 
-    (parseFloat(formData.insurance) || 0) + 
-    (parseFloat(formData.electricityMonthly) || 0) +
-    (parseFloat(formData.sharedExpenses) || 0);
+  const totalMonthlyExpenses = toNumberSafe(formData.commonCosts) + 
+    toNumberSafe(formData.municipalFees) + 
+    toNumberSafe(formData.insurance) + 
+    toNumberSafe(formData.electricityMonthly) +
+    toNumberSafe(formData.sharedExpenses);
 
-  const monthlyCashFlow = (parseFloat(formData.monthlyRent) || 0) - totalMonthlyExpenses - monthlyLoanPayment;
+  const monthlyCashFlow = toNumberSafe(formData.monthlyRent) - totalMonthlyExpenses - monthlyLoanPayment;
   
-  const annualRent = (parseFloat(formData.monthlyRent) || 0) * 12;
+  const annualRent = toNumberSafe(formData.monthlyRent) * 12;
   const grossYield = formData.totalPrice && annualRent > 0
     ? (annualRent / parseFloat(formData.totalPrice)) * 100
     : 0;

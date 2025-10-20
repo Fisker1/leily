@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Hammer, Zap, Wrench, Save, FolderOpen, Trash2, Plus, Upload, Calculator, Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Move, MousePointer2 } from 'lucide-react';
-import { useBuildingProjects } from '@/hooks/useBuildingProjects';
+import { useBuildingProjects, BuildingProject } from '@/hooks/useBuildingProjects';
 import { useToast } from '@/hooks/use-toast';
 import { formatNumberWithSpaces } from '@/lib/utils';
 
@@ -87,7 +87,7 @@ export default function BuildingPlannerImproved() {
   const [selectedProfessions, setSelectedProfessions] = useState<Profession[]>([]);
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [projectName, setProjectName] = useState('');
-  const [currentProject, setCurrentProject] = useState<Record<string, unknown> | null>(null);
+  const [currentProject, setCurrentProject] = useState<BuildingProject | null>(null);
   const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
@@ -168,7 +168,7 @@ export default function BuildingPlannerImproved() {
           // Add custom properties
           (shape as unknown as Record<string, unknown>).itemId = itemId;
           (shape as unknown as Record<string, unknown>).toolId = tool.id;
-          (shape as unknown as Record<string, unknown>).profession = profession;
+          (shape as unknown as Record<string, unknown>).profession = profession as Profession;
           (shape as unknown as Record<string, unknown>).cost = tool.cost;
           (shape as unknown as Record<string, unknown>).name = tool.name;
           (shape as unknown as Record<string, unknown>).description = tool.description;

@@ -793,7 +793,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
           report_type: 'boligkalkyle',
           file_name: filename,
           file_size: blob.size,
-          property_data: data as Record<string, unknown>,
+          property_data: data as any,
           calculations: {
             generated_at: new Date().toISOString(),
             file_path: filePath,

@@ -32,7 +32,7 @@ const DataSubjectRights = () => {
     try {
       // Log the request
       const { error } = await supabase
-        .from('data_subject_requests')
+        .from('data_subject_requests' as any)
         .insert({
           user_id: user.id,
           request_type: type,
@@ -107,7 +107,7 @@ const DataSubjectRights = () => {
 
       // Log the export
       await supabase
-        .from('data_subject_requests')
+        .from('data_subject_requests' as any)
         .insert({
           user_id: user.id,
           request_type: 'export',

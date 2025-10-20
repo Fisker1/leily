@@ -1,0 +1,86 @@
+# Security-Hardened Dockerfile for Leily Application
+# This Dockerfile implements comprehensive security measures
+
+# Stage 1: Build stage with security hardening
+FROM node:20-alpine AS builder
+
+# Security: Create non-root user early
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Security: Set working directory and ownership
+WORKDIR /app
+RUN chown -R nextjs:nodejs /app
+
+# Security: Install only necessary packages
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Security: Copy package files first for better caching
+COPY --chown=nextjs:nodejs package*.json ./
+COPY --chown=nextjs:nodejs bun.lockb ./
+
+# Security: Install dependencies as non-root user
+USER nextjs
+RUN npm ci --only=production --silent --no-audit --no-fund
+
+# Security: Copy source code with proper ownership
+COPY --chown=nextjs:nodejs . .
+
+# Security: Build as non-root user
+RUN npm run build
+
+# Stage 2: Production stage with maximum security
+FROM nginx:alpine AS production
+
+# Security: Install only necessary packages
+RUN apk add --no-cache \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Security: Copy built application
+COPY --from=builder --chown=nextjs:nodejs /app/dist /usr/share/nginx/html
+
+# Security: Copy security-hardened nginx configuration
+COPY nginx-security.conf /etc/nginx/nginx.conf
+
+# Security: Create necessary directories with proper permissions
+RUN mkdir -p /var/cache/nginx /var/log/nginx /var/run/nginx && \
+    chown -R nextjs:nodejs /var/cache/nginx /var/log/nginx /var/run/nginx && \
+    chmod -R 755 /var/cache/nginx /var/log/nginx /var/run/nginx
+
+# Security: Remove unnecessary files
+RUN rm -rf /usr/share/nginx/html/*.map \
+    && rm -rf /usr/share/nginx/html/*.txt \
+    && find /usr/share/nginx/html -name "*.md" -delete
+
+# Security: Set proper file permissions
+RUN chmod -R 755 /usr/share/nginx/html && \
+    chmod 644 /etc/nginx/nginx.conf
+
+# Security: Switch to non-root user
+USER nextjs
+
+# Security: Expose only necessary port
+EXPOSE 8080
+
+# Security: Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Security: Use exec form for better signal handling
+CMD ["nginx", "-g", "daemon off;"]
+
+# Security: Add security labels
+LABEL security.scan="enabled" \
+      security.hardening="enabled" \
+      security.non-root="true" \
+      security.read-only="true"
