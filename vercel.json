@@ -19,4 +19,6 @@
       ]
     }
   ]
+  ,
+  "ignoreCommand": "bash -lc 'if [ \"$VERCEL_GIT_COMMIT_AUTHOR_LOGIN\" = \"dependabot[bot]\" ]; then echo Skipping build for Dependabot; exit 0; fi'"
 }
