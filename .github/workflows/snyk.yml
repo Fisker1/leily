@@ -12,10 +12,17 @@ on:
     - cron: "0 3 * * *" # Daily at 03:00 UTC
 
 jobs:
+  permissions:
+    # Default permissions for all jobs
+    contents: read
+    security-events: write
   # Node.js dependency scanning
   snyk-dependencies:
     name: Snyk Dependencies Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +41,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --file=package.json
+          args: --severity-threshold=high --file=package.json --sarif-file-output=snyk.sarif
 
       - name: Monitor project in Snyk (dependencies)
         if: ${{ success() }}
@@ -56,6 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: snyk-dependencies
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,7 +79,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: leily:latest
-          args: --severity-threshold=high
+          args: --severity-threshold=high --sarif-file-output=snyk-container.sarif
 
       - name: Upload container scan results
         uses: github/codeql-action/upload-sarif@v3
@@ -81,6 +91,9 @@ jobs:
   snyk-iac:
     name: Snyk Infrastructure Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,7 +103,13 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=high --sarif-file-output=snyk-iac.sarif
+
+      - name: Upload IaC scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk-iac.sarif
 
   # Security policy check
   snyk-policy:
