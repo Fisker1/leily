@@ -2,17 +2,10 @@
 # Scans for vulnerabilities in dependencies, containers, and infrastructure
 name: Snyk Security Scan
 
+# Temporarily disabled automatic runs to stop noisy daily emails.
+# This workflow now only runs when manually triggered via the Actions UI.
 on:
-  push:
-    branches: [ main, stage ]
-  pull_request:
-    branches: [ main, stage ]
-  # Ensure Dependabot PRs can access repo secrets safely using base-branch workflow
-  pull_request_target:
-    branches: [ main, stage ]
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 3 * * *" # Daily at 03:00 UTC
 
 permissions:
   contents: read
