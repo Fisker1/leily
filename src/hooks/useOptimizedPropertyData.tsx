@@ -161,33 +161,48 @@ export const useOptimizedPropertyData = () => {
       console.log('Properties fetched:', data?.length || 0);
 
       // Only geocode properties that don't have coordinates yet
+      const normalizeProperty = (property: Record<string, unknown>): Property => ({
+        id: String((property as any).id ?? ''),
+        address: String((property as any).address ?? ''),
+        city: (property as any).city ?? undefined,
+        postal_code: (property as any).postal_code ?? undefined,
+        property_type: (property as any).property_type ?? undefined,
+        monthly_rent: typeof (property as any).monthly_rent === 'number' ? (property as any).monthly_rent : undefined,
+        current_value: typeof (property as any).current_value === 'number' ? (property as any).current_value : undefined,
+        show_in_rental: !!(property as any).show_in_rental,
+        primary_residence: !!(property as any).primary_residence,
+        owner_id: String((property as any).owner_id ?? ''),
+        coordinates: Array.isArray((property as any).coordinates) ? ((property as any).coordinates as [number, number]) : undefined,
+      });
+
       const propertiesWithCoordinates = await Promise.all(
         (data || []).map(async (property: Record<string, unknown>) => {
+          const prop = normalizeProperty(property);
           // Use existing coordinates from database if available and valid
-          if (property.coordinates && Array.isArray(property.coordinates) && property.coordinates.length === 2) {
-            const [lng, lat] = property.coordinates;
+          if (prop.coordinates && Array.isArray(prop.coordinates) && prop.coordinates.length === 2) {
+            const [lng, lat] = prop.coordinates;
             if (typeof lng === 'number' && typeof lat === 'number' && !isNaN(lng) && !isNaN(lat)) {
-              console.log(`Using existing coordinates for ${property.address}:`, property.coordinates);
-              return { ...property, coordinates: property.coordinates as [number, number] };
+              console.log(`Using existing coordinates for ${prop.address}:`, prop.coordinates);
+              return prop;
             }
           }
-          
-          console.log(`Geocoding ${property.address}...`);
+
+          console.log(`Geocoding ${prop.address}...`);
           // Otherwise geocode the address
-          const coords = await geocodeAddress(property.address, property.city, property.postal_code);
-          
+          const coords = await geocodeAddress(prop.address, prop.city, prop.postal_code);
+
           if (coords) {
             // Save coordinates to database
             await supabase
               .from('properties')
               .update({ coordinates: coords })
-              .eq('id', property.id);
-            
-            console.log(`Geocoded and saved coordinates for ${property.address}:`, coords);
-            return { ...property, coordinates: coords };
+              .eq('id', prop.id);
+
+            console.log(`Geocoded and saved coordinates for ${prop.address}:`, coords);
+            return { ...prop, coordinates: coords };
           }
-          
-          return property;
+
+          return prop;
         })
       );
 

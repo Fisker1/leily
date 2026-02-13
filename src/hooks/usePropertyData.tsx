@@ -92,10 +92,25 @@ export const usePropertyData = () => {
       if (error) throw error;
 
       // Geocode addresses for properties that don't have coordinates
+      const normalizeProperty = (property: Record<string, unknown>): Property => {
+        return {
+          id: String((property as any).id ?? ''),
+          address: String((property as any).address ?? ''),
+          city: (property as any).city ?? undefined,
+          postal_code: (property as any).postal_code ?? undefined,
+          property_type: (property as any).property_type ?? undefined,
+          monthly_rent: typeof (property as any).monthly_rent === 'number' ? (property as any).monthly_rent : undefined,
+          current_value: typeof (property as any).current_value === 'number' ? (property as any).current_value : undefined,
+          show_in_rental: !!(property as any).show_in_rental,
+          owner_id: String((property as any).owner_id ?? ''),
+          coordinates: (property as any).coordinates as [number, number] | undefined,
+        };
+      };
+
       const propertiesWithCoordinates = await Promise.all(
         (data || []).map(async (property: Record<string, unknown>) => {
-          const coords = await geocodeAddress(property.address, property.city, property.postal_code);
-          return { ...property, coordinates: coords };
+          const coords = await geocodeAddress((property as any).address, (property as any).city, (property as any).postal_code);
+          return { ...normalizeProperty(property), coordinates: coords };
         })
       );
 
