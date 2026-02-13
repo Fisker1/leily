@@ -1,0 +1,7 @@
+clean: squash migrations, consolidate config, slim root
+
+- Squash 147 migration files into single baseline (560KB)
+- Merge .env.staging.example + .env.production.example into .env.example
+- Merge SECURITY.md into README.md, rewrite to be minimal
+- Simplify .gitignore to essentials
+- Remove tsbuildinfo from tracking
