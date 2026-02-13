@@ -24,8 +24,8 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
   data = {},
   onDataChange
 }) => {
-  const hotTableRef = useRef<unknown>(null);
-  const [hotInstance, setHotInstance] = useState<unknown>(null);
+  const hotTableRef = useRef<any>(null);
+  const [hotInstance, setHotInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'eiendom' | 'kalkyle' | 'lan' | 'oversikt' | 'risiko'>('eiendom');
   const [isSaving, setIsSaving] = useState(false);
@@ -967,7 +967,7 @@ export const BoligkalkyleSimulator: React.FC<BoligkalkyleSimulatorProps> = ({
     },
     afterChange: handleAfterChange,
     afterInit: () => {
-      const instance = (hotTableRef.current as Record<string, unknown>)?.hotInstance;
+      const instance = (hotTableRef.current as any)?.hotInstance || (hotTableRef.current as any)?.hotTableInstance || null;
       if (instance) {
         setHotInstance(instance);
       }
