@@ -8,8 +8,8 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy, useEffect } from "react";
 import ComingSoon from "./pages/ComingSoon";
-import { APP_CONFIG, isProduction, FEATURES } from "@/lib/env";
-import CookieConsent from "@/components/legal/CookieConsent";
+import { APP_CONFIG, isProduction, FEATURES } from "@/shared/lib/env";
+import CookieConsent from "@/features/legal/components/CookieConsent";
 
 // Coming soon logic: show for production only (unless explicitly disabled)
 const SHOULD_SHOW_COMING_SOON = isProduction && APP_CONFIG.comingSoon;
@@ -23,28 +23,28 @@ if (typeof window !== 'undefined' && FEATURES.debug) {
 }
 
 // Lazy load all pages for better performance
-const Index = lazy(() => import("./pages/Index"));
-const SimpleAuth = lazy(() => import("./pages/SimpleAuth"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Index = lazy(() => import("@/features/marketing/pages/Index"));
+const SimpleAuth = lazy(() => import("@/features/auth/pages/SimpleAuth"));
+const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
+const AdminDashboard = lazy(() => import("@/features/admin/pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Rental = lazy(() => import("./pages/Rental"));
-const Portfolio = lazy(() => import("./pages/Portfolio"));
-const Calculator = lazy(() => import("./pages/Calculator"));
-const RiskAnalysis = lazy(() => import("./pages/calculator/RiskAnalysis"));
-const ExtendedPropertyDetails = lazy(() => import("./pages/calculator/ExtendedPropertyDetails"));
-const BankReport = lazy(() => import("./pages/BankReport"));
-const MyProfile = lazy(() => import("./pages/MyProfile"));
-const UtleieAgent = lazy(() => import("./pages/UtleieAgent"));
-const Agent007 = lazy(() => import("./pages/Agent007"));
-const CreditsPurchasePage = lazy(() => import("./pages/CreditsPurchasePage"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Cookies = lazy(() => import("./pages/Cookies"));
-const EnvDebug = lazy(() => import("./pages/__env"));
-const Health = lazy(() => import("./pages/__health"));
-const SupabaseInfo = lazy(() => import("./pages/__supabase"));
-const LeaseSignature = lazy(() => import("./pages/LeaseSignature"));
+const Rental = lazy(() => import("@/features/rental/pages/Rental"));
+const Portfolio = lazy(() => import("@/features/rental/pages/Portfolio"));
+const Calculator = lazy(() => import("@/features/calculator/pages/Calculator"));
+const RiskAnalysis = lazy(() => import("@/features/calculator/pages/RiskAnalysis"));
+const ExtendedPropertyDetails = lazy(() => import("@/features/calculator/pages/ExtendedPropertyDetails"));
+const BankReport = lazy(() => import("@/features/calculator/pages/BankReport"));
+const MyProfile = lazy(() => import("@/features/profile/pages/MyProfile"));
+const UtleieAgent = lazy(() => import("@/features/ai/pages/UtleieAgent"));
+const Agent007 = lazy(() => import("@/features/ai/pages/Agent007"));
+const CreditsPurchasePage = lazy(() => import("@/features/credits/pages/CreditsPurchasePage"));
+const Terms = lazy(() => import("@/features/legal/pages/Terms"));
+const Privacy = lazy(() => import("@/features/legal/pages/Privacy"));
+const Cookies = lazy(() => import("@/features/legal/pages/Cookies"));
+const EnvDebug = lazy(() => import("./pages/debug/__env"));
+const Health = lazy(() => import("./pages/debug/__health"));
+const SupabaseInfo = lazy(() => import("./pages/debug/__supabase"));
+const LeaseSignature = lazy(() => import("@/features/signing/pages/LeaseSignature"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -112,9 +112,14 @@ const App = () => {
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/cookies" element={<Cookies />} />
                     <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
-                    <Route path="/__env" element={<EnvDebug />} />
-                    <Route path="/__health" element={<Health />} />
-                    <Route path="/__supabase" element={<SupabaseInfo />} />
+                    {/* Debug routes — hidden in production */}
+                    {!isProduction && (
+                      <>
+                        <Route path="/__env" element={<EnvDebug />} />
+                        <Route path="/__health" element={<Health />} />
+                        <Route path="/__supabase" element={<SupabaseInfo />} />
+                      </>
+                    )}
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

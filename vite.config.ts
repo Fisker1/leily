@@ -12,13 +12,21 @@ export default defineConfig(({ mode }) => ({
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
     target: ['es2020', 'edge88', 'firefox78', 'chrome78', 'safari14'],
     cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          handsontable: ['handsontable', '@handsontable/react-wrapper'],
+          pdf: ['jspdf', 'html2canvas'],
+          maps: ['mapbox-gl'],
+          charts: ['recharts'],
+          supabase: ['@supabase/supabase-js'],
         },
       },
     },

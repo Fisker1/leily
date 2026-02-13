@@ -191,11 +191,11 @@ src/
 
 **Staging Project** (`leily-staging`):
 ```bash
-# Environment Variables
+# Environment Variables (use your own values from Supabase dashboard)
 VITE_ENVIRONMENT=staging
-VITE_SUPABASE_URL=https://wdwjmapvuibsqiifslno.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indkd2ptYXB2dWlic3FpaWZzbG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODU3ODksImV4cCI6MjA3MzI2MTc4OX0.WbEjzF_D8D1g3-i8NA5UIPl-D1ny2W8ZjD2sEp260Cs
-VITE_SUPABASE_PROJECT_ID=wdwjmapvuibsqiifslno
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-dashboard>
+VITE_SUPABASE_PROJECT_ID=your-project-id
 VITE_APP_URL=https://stage.leily.no
 VITE_COMING_SOON=false
 VITE_ENABLE_ANALYTICS=false

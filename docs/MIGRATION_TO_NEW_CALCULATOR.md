@@ -56,14 +56,14 @@
 #### Import Changes
 ```typescript
 // ❌ GAMMEL
-import ProfitabilityCalculator from '@/components/calculator/ProfitabilityCalculator';
-import CalculatorModules from '@/components/calculator/CalculatorModules';
-import { LoanCalculator } from '@/components/LoanCalculator';
+import ProfitabilityCalculator from '@/features/calculator/components/ProfitabilityCalculator';
+import CalculatorModules from '@/features/calculator/components/CalculatorModules';
+import { LoanCalculator } from '@/features/calculator/components/LoanCalculator';
 
 // ✅ NYE
-import { CalculatorChat } from '@/components/calculator/CalculatorChat';
-import { CalculatorPDFPreview } from '@/components/calculator/CalculatorPDFPreview';
-import { ResizableSplitView } from '@/components/calculator/ResizableSplitView';
+import { CalculatorChat } from '@/features/calculator/components/CalculatorChat';
+import { CalculatorPDFPreview } from '@/features/calculator/components/CalculatorPDFPreview';
+import { ResizableSplitView } from '@/features/calculator/components/ResizableSplitView';
 ```
 
 #### Data Structure Changes

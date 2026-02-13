@@ -1,6 +1,6 @@
 import React, { useState, useEffect, forwardRef } from "react";
 import { Input } from "@/components/ui/input";
-import { formatNumberWithSpaces, parseFormattedNumber } from "@/lib/utils";
+import { formatNumberWithSpaces, parseFormattedNumber } from "@/shared/lib/utils";
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   value?: string | number;

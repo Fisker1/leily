@@ -158,6 +158,19 @@ For security vulnerabilities, please:
 2. **DO** contact the security team directly
 3. **DO** use encrypted communication for sensitive issues
 
+### 📦 npm audit status (feb 2025)
+
+Kjør `npm audit` for oppdatert status. Kjente gjenværende sårbarheter:
+
+| Pakke | Alvorlighet | Notat |
+|-------|-------------|--------|
+| **jspdf** ≤4.0.0 | Critical | Oppgrader til 4.1.0 med `npm audit fix --force` (breaking change – test PDF-generering). |
+| **xlsx** | High | Ingen fix tilgjengelig; vurder alternativ (f.eks. SheetJS pro eller annen bibliotek) eller begrens bruk av brukerstyrte filer. |
+| **vite / esbuild** | Moderate | Gjelder dev-server, ikke production build. Fiks med vite 7+ (breaking) når klar. |
+| **tar** (via @mapbox/node-pre-gyp) | High | Transitiv avhengighet fra mapbox-gl; oppdater når mapbox-gl får fix. |
+
+Anbefaling: Kjør `npm run security:test` (Snyk) og `npm audit` regelmessig.
+
 ### 📚 Additional Resources
 
 - [Snyk CLI Documentation](https://docs.snyk.io/snyk-cli)

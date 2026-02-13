@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useRateLimit } from '@/hooks/useRateLimit';
-import { useAccountCreatedEmail, useEmailVerificationEmail, usePasswordResetEmail } from '@/hooks/useEmailService';
+import { supabase } from '@/shared/integrations/supabase/client';
+import { useToast } from '@/shared/hooks/use-toast';
+import { useRateLimit } from '@/shared/hooks/useRateLimit';
+import { useAccountCreatedEmail, useEmailVerificationEmail, usePasswordResetEmail } from '@/shared/hooks/useEmailService';
 
 interface Profile {
   id: string;
