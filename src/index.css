@@ -6,7 +6,8 @@
 /* Property Investment Platform Design System - Clean White & Professional */
 
 @layer base {
-  :root {
+  :root,
+  html.light {
     /* Core backgrounds - Clean whites and subtle grays */
     --background: 0 0% 100%;
     --foreground: 215 25% 27%;
@@ -80,7 +81,7 @@
     --sidebar-ring: 158 75% 48%;
   }
 
-  .dark {
+  html.dark {
     /* Improved professional dark mode with deep blue-gray background */
     --background: 215 25% 12%;
     --foreground: 210 15% 92%;

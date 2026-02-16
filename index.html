@@ -77,9 +77,18 @@
       }
     </script>
     
+    <!-- Apply theme immediately to avoid white flash / wrong theme before React -->
+    <script>
+      (function() {
+        var theme = localStorage.getItem('leily-theme');
+        var isDark = theme === 'dark';
+        document.documentElement.classList.add(isDark ? 'dark' : 'light');
+        document.documentElement.classList.remove(isDark ? 'light' : 'dark');
+      })();
+    </script>
     <!-- Critical CSS for above-the-fold content -->
     <style>
-      :root {
+      :root, html.light {
         --background: 0 0% 100%;
         --foreground: 215 25% 27%;
         --primary: 158 75% 48%;
@@ -89,7 +98,7 @@
         --muted: 210 25% 95%;
         --muted-foreground: 215 25% 45%;
       }
-      .dark {
+      html.dark {
         --background: 215 25% 12%;
         --foreground: 210 15% 92%;
         --primary: 158 50% 35%;
@@ -99,19 +108,17 @@
         --muted-foreground: 210 10% 70%;
       }
       * { border-color: hsl(var(--border)); }
-      body {
+      body, #root {
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
+      }
+      body {
         font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         line-height: 1.5;
         margin: 0;
       }
       #root { min-height: 100vh; }
     </style>
-    
-    <!-- Preload main CSS to avoid render blocking -->
-    <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
   </head>
 
   <body>

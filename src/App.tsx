@@ -46,6 +46,7 @@ const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const storedTheme = localStorage.getItem('leily-theme');
     if (!storedTheme) {
+      document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
       localStorage.setItem('leily-theme', 'light');
     }
