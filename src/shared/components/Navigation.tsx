@@ -42,9 +42,9 @@ const Navigation = () => {
           {/* Center Navigation - Only visible on desktop */}
           <div className="hidden md:flex flex-1 justify-center">
             <div className="flex items-center space-x-8">
-              <Link to="/calculator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+              <Link to="/kalkulator" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
-                Eiendomskalkulator
+                Kalkulator
               </Link>
               <Link to="/utleie" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
@@ -133,12 +133,12 @@ const Navigation = () => {
             <div className="px-4 py-6 space-y-6">
               <nav className="flex flex-col space-y-4">
                 <Link 
-                  to="/calculator" 
+                  to="/kalkulator" 
                   className="text-foreground hover:text-primary transition-colors font-medium text-lg flex items-center gap-3 py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Calculator className="h-5 w-5" />
-                  Eiendomskalkulator
+                  Kalkulator
                 </Link>
                 <Link 
                   to="/utleie" 

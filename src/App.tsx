@@ -86,9 +86,9 @@ const App = () => {
                       <Route path="/agent-007" element={<Agent007 />} />
                       <Route path="/credits" element={<CreditsPurchasePage />} />
                       <Route path="/portfolio" element={<Portfolio />} />
-                      <Route path="/calculator" element={<Calculator />} />
-                      <Route path="/calculator/risk-analysis" element={<RiskAnalysis />} />
-                      <Route path="/calculator/extended-details" element={<ExtendedPropertyDetails />} />
+                      <Route path="/kalkulator" element={<Calculator />} />
+                      <Route path="/kalkulator/risk-analysis" element={<RiskAnalysis />} />
+                      <Route path="/kalkulator/extended-details" element={<ExtendedPropertyDetails />} />
                       <Route path="/bank-report" element={<BankReport />} />
                       <Route path="/min-side" element={<MyProfile />} />
                       <Route path="/admin" element={<AdminDashboard />} />

@@ -29,6 +29,7 @@ import { CalculatorChat } from '@/features/calculator/components/CalculatorChat'
 import { CalculatorPDFPreview } from '@/features/calculator/components/CalculatorPDFPreview';
 import { BoligkalkyleSimulator } from '@/features/calculator/components/BoligkalkyleSimulator';
 import { ResizableSplitView } from '@/features/calculator/components/ResizableSplitView';
+import { SimpleLoanCalculator } from '@/features/calculator/components/SimpleLoanCalculator';
 
 const Calculator = () => {
   const {
@@ -352,7 +353,7 @@ const Calculator = () => {
           <div className="flex items-center justify-center gap-4">
             <h1 className="text-4xl font-bold text-foreground flex items-center gap-3">
               <CalcIcon className="h-10 w-10 text-primary" />
-              Eiendomskalkulator
+              Kalkulator
             </h1>
             {hasCredits && (
               <Badge variant="secondary" className="flex items-center gap-1">
@@ -364,6 +365,11 @@ const Calculator = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Analyserer lønnsomheten
           </p>
+        </div>
+
+        {/* Enkel lånekalkulator - alltid synlig, ingen innlogging kreves */}
+        <div className="mb-10">
+          <SimpleLoanCalculator />
         </div>
 
         {/* Tab selector */}

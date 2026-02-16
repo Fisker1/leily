@@ -180,7 +180,7 @@ const ExtendedPropertyDetails = () => {
         });
       }
 
-      navigate('/calculator', { 
+      navigate('/kalkulator', { 
         state: { 
           ...initialData,
           selectedModules: updatedModules,
@@ -213,7 +213,7 @@ const ExtendedPropertyDetails = () => {
           <Button 
             variant="ghost" 
             className="mb-4"
-            onClick={() => navigate('/calculator')}
+            onClick={() => navigate('/kalkulator')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Tilbake til kalkulator

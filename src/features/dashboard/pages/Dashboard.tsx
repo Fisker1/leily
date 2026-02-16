@@ -204,7 +204,7 @@ const Dashboard = () => {
       title: 'Kalkyle/Nytt kjøp',
       description: 'Analyser nye investeringsmuligheter',
       icon: Calculator,
-      href: '/calculator',
+      href: '/kalkulator',
       color: 'secondary',
     },
   ];
