@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
 
+/** Safely parse a numeric string, returning 0 for empty/invalid values */
+const safeFloat = (value: string | number | undefined | null): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 interface CalculatorData {
   // Basic data
   propertyType: string;
@@ -178,34 +185,41 @@ export const useCalculatorData = () => {
   }, [data, isModuleActivated]);
   
   const getReportData = useCallback(() => {
-    const totalExpenses = parseFloat(data.municipalFees) + parseFloat(data.electricityMonthly) + 
-                          parseFloat(data.insurance) + parseFloat(data.sharedExpenses);
-                          
-    const monthlyInterest = parseFloat(data.interestRate) / 100 / 12;
-    const numberOfPayments = parseFloat(data.loanPeriod) * 12;
-    const monthlyLoanPayment = parseFloat(data.loanAmount) * 
-      (monthlyInterest * Math.pow(1 + monthlyInterest, numberOfPayments)) / 
-      (Math.pow(1 + monthlyInterest, numberOfPayments) - 1);
-      
+    const totalExpenses = safeFloat(data.municipalFees) + safeFloat(data.electricityMonthly) +
+                          safeFloat(data.insurance) + safeFloat(data.sharedExpenses);
+
+    const monthlyInterest = safeFloat(data.interestRate) / 100 / 12;
+    const numberOfPayments = safeFloat(data.loanPeriod) * 12;
+    const loanAmount = safeFloat(data.loanAmount);
+    const totalPrice = safeFloat(data.totalPrice);
+    const annualRent = safeFloat(data.expectedAnnualRent);
+
+    let monthlyLoanPayment = 0;
+    if (numberOfPayments > 0 && monthlyInterest > 0 && loanAmount > 0) {
+      monthlyLoanPayment = loanAmount *
+        (monthlyInterest * Math.pow(1 + monthlyInterest, numberOfPayments)) /
+        (Math.pow(1 + monthlyInterest, numberOfPayments) - 1);
+    }
+
     const monthlyCashFlow = data.isRental
-      ? parseFloat(data.expectedAnnualRent) / 12 - totalExpenses - monthlyLoanPayment
+      ? annualRent / 12 - totalExpenses - monthlyLoanPayment
       : -totalExpenses - monthlyLoanPayment;
-      
-    const grossYield = data.isRental
-      ? (parseFloat(data.expectedAnnualRent) / parseFloat(data.totalPrice)) * 100
+
+    const grossYield = data.isRental && totalPrice > 0
+      ? (annualRent / totalPrice) * 100
       : 0;
 
     return {
       basicData: {
-        propertyValue: parseFloat(data.totalPrice),
-        monthlyRent: parseFloat(data.expectedAnnualRent) / 12,
-        loanAmount: parseFloat(data.loanAmount),
+        propertyValue: totalPrice,
+        monthlyRent: annualRent / 12,
+        loanAmount,
         expenses: totalExpenses,
         monthlyLoanPayment,
         monthlyCashFlow,
         grossYield,
         calculatorMode: data.isRental ? 'investment' : 'private',
-        loanToValue: (parseFloat(data.loanAmount) / parseFloat(data.totalPrice)) * 100
+        loanToValue: totalPrice > 0 ? (loanAmount / totalPrice) * 100 : 0
       },
       profitabilityData: isModuleActivated('Lønnsomhetsanalyse') ? getModuleData('Lønnsomhetsanalyse') : null,
       advancedData: isModuleActivated('Avanserte beregninger') ? getModuleData('Avanserte beregninger') : null,

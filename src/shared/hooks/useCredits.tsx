@@ -40,7 +40,7 @@ export const useCredits = () => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('credits-changes')
+      .channel(`credits-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -77,18 +77,19 @@ export const useCredits = () => {
   const useCredit = async () => {
     if (!user?.id) return false;
     if (isAdmin || isAmbassador) return true;
+    if (credits <= 0) return false;
 
     try {
-      const newCredits = Math.max(0, credits - 1);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ credits: newCredits })
-        .eq('id', user.id);
+      // Use atomic decrement to prevent race conditions (TOCTOU)
+      const { data, error } = await supabase.rpc('use_credits', {
+        credits_to_use: 1,
+        operation_type: 'client_use_credit'
+      });
 
       if (error) throw error;
 
-      setCredits(newCredits);
+      // Refresh credits from the server to stay in sync
+      await fetchCredits();
       return true;
     } catch (error) {
       console.error('Error using credit:', error);

@@ -283,7 +283,7 @@ const translations: Record<Language, Translations> = {
       },
       contact: {
         title: 'Kontakt oss',
-        email: 'kontakt@aproposbolig.no',
+        email: 'kontakt@leily.no',
         phone: '+47 123 45 678',
       },
       social: {
@@ -459,7 +459,7 @@ const translations: Record<Language, Translations> = {
       },
       contact: {
         title: 'Contact us',
-        email: 'contact@aproposbolig.no',
+        email: 'kontakt@leily.no',
         phone: '+47 123 45 678',
       },
       social: {
@@ -914,7 +914,18 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('no');
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      const stored = localStorage.getItem('leily-language');
+      if (stored && stored in translations) return stored as Language;
+    } catch {}
+    return 'no';
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    try { localStorage.setItem('leily-language', lang); } catch {}
+  };
 
   const contextValue = {
     language,

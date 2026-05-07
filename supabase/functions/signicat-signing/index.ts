@@ -121,7 +121,7 @@ async function createSignatureRequest(req: Request) {
     description: `Leieavtale for ${lease.property.address}, ${lease.property.city}`,
     externalId: leaseId,
     dataToSign: {
-      base64Content: btoa(htmlTemplate), // Convert HTML to base64
+      base64Content: btoa(unescape(encodeURIComponent(htmlTemplate))), // Convert HTML to base64 (safe for Norwegian characters)
       fileName: fileName,
     },
     advanced: {
@@ -288,10 +288,34 @@ async function handleWebhook(req: Request) {
   // Validate webhook signature
   const webhookSecret = Deno.env.get('SIGNICAT_WEBHOOK_SECRET');
   const signature = req.headers.get('x-signicat-signature');
-  
-  // TODO: Implement proper signature validation
-  
-  const payload = await req.json();
+
+  // SECURITY: Validate webhook signature to prevent forged signing events
+  let payload: any;
+  if (webhookSecret && signature) {
+    const encoder = new TextEncoder();
+    const bodyText = await req.text();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const expectedSig = await crypto.subtle.sign('HMAC', key, encoder.encode(bodyText));
+    const expectedHex = Array.from(new Uint8Array(expectedSig))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    if (signature !== expectedHex) {
+      console.error('Webhook signature mismatch — possible forged request');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 401 });
+    }
+
+    payload = JSON.parse(bodyText);
+  } else {
+    console.warn('SIGNICAT_WEBHOOK_SECRET not configured — webhook signature validation skipped');
+    payload = await req.json();
+  }
   console.log('Received Signicat webhook:', payload);
 
   const supabaseClient = createClient(

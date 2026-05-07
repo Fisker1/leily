@@ -42,15 +42,6 @@ serve(async (req) => {
       console.log('📊 Estimated rent received:', estimatedRent, 'kr/mnd');
     }
     
-    // Parse message if it's JSON
-    let actualMessage = message;
-    try {
-      const parsedMessage = JSON.parse(message);
-      actualMessage = message; // Keep the JSON string for processing
-    } catch (e) {
-      // Not JSON, regular message
-    }
-
     // Check if user is ambassador or admin (unlimited access)
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: profile } = await serviceSupabase
@@ -244,7 +235,7 @@ BRUK TOOL CALLING når du har hentet ut data fra dokumenter eller HTML.`;
       
       messages.push({ role: 'user', content });
     } else {
-      messages.push({ role: 'user', content: actualMessage });
+      messages.push({ role: 'user', content: message });
     }
 
     // Define tool for structured data extraction

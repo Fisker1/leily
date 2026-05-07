@@ -847,10 +847,19 @@ serve(async (req) => {
     // STEP 4: Scrape the property from Finn.no
     console.log('🌐 Scraping Finn.no property...');
     const htmlContent = await scrapeFinnPropertyHTML(finnCode);
+    if (!htmlContent) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to fetch property page from Finn.no'
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     console.log('✅ HTML content fetched, length:', htmlContent.length);
 
     console.log('🤖 Extracting property data with AI...');
-    const propertyData = await extractFinnDataWithAI(htmlContent, finnCode);
+    const propertyData = await extractFinnDataWithAI(finnCode, htmlContent);
     console.log('✅ Property data extracted');
 
     // STEP 5: Enhance data with market analysis and cost estimations
