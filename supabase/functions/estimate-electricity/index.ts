@@ -46,7 +46,7 @@ Returner BARE et tall (månedlig kostnad i NOK) uten tekst eller forklaring. Avr
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "gpt-4o-mini",
         messages: [
           { 
             role: "system", 

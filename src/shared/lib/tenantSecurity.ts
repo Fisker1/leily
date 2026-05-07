@@ -1,16 +1,6 @@
 // SECURE tenant data management - uses proper database-level encryption
 import { supabase } from '@/shared/integrations/supabase/client';
 
-// Import rate limiting for sensitive operations
-let rateLimitHook: any = null;
-const getRateLimitHook = async () => {
-  if (!rateLimitHook) {
-    const { useRateLimit } = await import('@/shared/hooks/useRateLimit');
-    rateLimitHook = useRateLimit;
-  }
-  return rateLimitHook;
-};
-
 // Secure data interfaces
 export interface SecureTenantData {
   first_name: string;
@@ -31,14 +21,14 @@ export interface MaskedTenantData {
   id: string;
   first_name: string;
   last_name: string;
-  email_masked: string;
-  phone_masked: string;
-  national_id_masked: string;
+  email_masked: string | null;
+  phone_masked: string | null;
+  national_id_masked: string | null;
   address?: string;
   occupation?: string;
   monthly_income?: number;
   emergency_contact?: string;
-  emergency_phone_masked: string;
+  emergency_phone_masked: string | null;
   property_owner_id: string;
   created_at: string;
   updated_at: string;

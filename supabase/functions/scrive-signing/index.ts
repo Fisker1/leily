@@ -478,7 +478,7 @@ async function getDocumentStatus(
     // Get Scrive document ID from database
     const { data: signingDocument, error: docError } = await supabaseClient
       .from('signing_documents')
-      .select('scrive_document_id')
+      .select('scrive_document_id, status')
       .eq('id', documentId)
       .single()
 

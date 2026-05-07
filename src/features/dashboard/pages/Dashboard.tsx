@@ -47,7 +47,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
@@ -64,7 +64,8 @@ const Dashboard = () => {
       // Execute queries individually with error handling
       const propertiesResult = await supabase
         .from('properties')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', user.id);
       
       if (propertiesResult.error) {
         console.error('Properties query failed:', propertiesResult.error);
@@ -103,6 +104,7 @@ const Dashboard = () => {
       const recentActivityResult = await supabase
         .from('audit_log')
         .select('id, action, table_name, details, created_at')
+        .eq('user_id', user.id)
         .in('table_name', ['properties', 'tenants', 'lease_agreements', 'calculation_history'])
         .order('created_at', { ascending: false })
         .limit(5);

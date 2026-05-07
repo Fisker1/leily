@@ -327,6 +327,7 @@ export const useLoanCalculator = () => {
 
   // Delete scenario
   const deleteScenario = useCallback(async (scenarioId: string) => {
+    if (!user) return false;
     setLoading(true);
     try {
       const { error } = await supabase

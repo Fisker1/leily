@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Send, Mail, Phone, MapPin } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { supabase } from "@/shared/integrations/supabase/client";
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -26,20 +27,37 @@ const FeedbackDialog = ({ open, onOpenChange }: FeedbackDialogProps) => {
       return;
     }
 
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Vennligst oppgi en gyldig e-postadresse");
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // TODO: Implementere email-sending via Microsoft Azure senere
-    console.log("Feedback submission:", { name, email, message });
-    
-    // Simuler sending
-    setTimeout(() => {
+
+    try {
+      const { error } = await supabase.functions.invoke('send-leily-email', {
+        body: {
+          to: 'kontakt@leily.no',
+          subject: `Tilbakemelding fra ${name}`,
+          html: `<p><strong>Navn:</strong> ${name}</p><p><strong>E-post:</strong> ${email}</p><p><strong>Melding:</strong></p><p>${message}</p>`,
+          replyTo: email,
+        },
+      });
+
+      if (error) throw error;
+
       toast.success("Takk for din tilbakemelding!");
       setName("");
       setEmail("");
       setMessage("");
-      setIsSubmitting(false);
       onOpenChange(false);
-    }, 1000);
+    } catch (err) {
+      console.error("Feedback submission error:", err);
+      toast.error("Kunne ikke sende melding. Prøv igjen senere.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
