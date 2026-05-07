@@ -918,13 +918,19 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const stored = localStorage.getItem('leily-language');
       if (stored && stored in translations) return stored as Language;
-    } catch {}
+    } catch {
+      // localStorage unavailable (e.g. private browsing)
+    }
     return 'no';
   });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    try { localStorage.setItem('leily-language', lang); } catch {}
+    try {
+      localStorage.setItem('leily-language', lang);
+    } catch {
+      // localStorage unavailable
+    }
   };
 
   const contextValue = {

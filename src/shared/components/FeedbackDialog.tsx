@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Send, Mail, Phone, MapPin } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { supabase } from "@/shared/integrations/supabase/client";
 
@@ -15,7 +14,6 @@ interface FeedbackDialogProps {
 }
 
 const FeedbackDialog = ({ open, onOpenChange }: FeedbackDialogProps) => {
-  const { translations } = useLanguage();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

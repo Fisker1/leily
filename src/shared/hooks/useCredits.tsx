@@ -4,7 +4,7 @@ import { useUserRole } from './useUserRole';
 import { supabase } from '@/shared/integrations/supabase/client';
 
 export const useCredits = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { isAdmin, isAmbassador } = useUserRole();
   const [credits, setCredits] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,7 @@ export const useCredits = () => {
 
     try {
       // Use atomic decrement to prevent race conditions (TOCTOU)
-      const { data, error } = await supabase.rpc('use_credits', {
+      const { error } = await supabase.rpc('use_credits', {
         credits_to_use: 1,
         operation_type: 'client_use_credit'
       });
