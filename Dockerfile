@@ -5,17 +5,20 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build args become VITE_ env vars at build time
+# Build args become VITE_ env vars at build time.
+# VITE_APP_URL is intentionally left empty — the app detects
+# its own origin at runtime via window.location.origin, which
+# works correctly behind any reverse proxy (Tailscale Serve, etc.)
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_SUPABASE_PROJECT_ID
-ARG VITE_APP_URL=http://localhost:3000
-ARG VITE_ENVIRONMENT=staging
+ARG VITE_APP_URL
+ARG VITE_ENVIRONMENT=production
 ARG VITE_COMING_SOON=false
 ARG VITE_ENABLE_ANALYTICS=false
 ARG VITE_DEBUG=false

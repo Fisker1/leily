@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig(({ mode }) => ({
+  // Use relative paths so assets work behind any reverse proxy (Tailscale Serve, etc.)
+  base: './',
   server: {
     host: "::",
     port: 8080,
