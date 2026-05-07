@@ -8,6 +8,11 @@ dist
 .env
 .env.local
 !.env.example
+!.env.selfhost.example
+
+# Docker volumes (persistent data — never commit)
+volumes/db/data
+volumes/storage
 
 # Editor
 .vscode
