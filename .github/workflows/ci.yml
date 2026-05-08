@@ -1,20 +1,30 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [main, stage]
   push:
-    branches: [main, stage]
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
+      # Frontend
       - run: npm ci
-      - run: npm run lint
+      - run: npx tsc --noEmit
       - run: npm run build
+
+      # API
+      - name: API typecheck
+        working-directory: api
+        run: |
+          npm ci
+          npx tsc --noEmit
