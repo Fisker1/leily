@@ -10,7 +10,7 @@ services:
 
   # ─── Postgres ────────────────────────────────────────────────
   db:
-    image: supabase/postgres:15.8.1.060
+    image: supabase/postgres:15.8.1.085
     container_name: leily-db
     restart: unless-stopped
     ports:
@@ -37,22 +37,22 @@ services:
 
   # ─── Kong API Gateway ────────────────────────────────────────
   kong:
-    image: kong:2.8.1
+    image: kong/kong:3.9.1
     container_name: leily-kong
     restart: unless-stopped
     ports:
       - "8000:8000/tcp"
     environment:
       KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
       KONG_DNS_ORDER: LAST,A,CNAME
-      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth,request-termination,ip-restriction,post-function
       KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
       KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
     volumes:
-      - ./volumes/kong/kong.yml:/home/kong/kong.yml:ro
+      - ./volumes/kong/kong.yml:/usr/local/kong/kong.yml:ro
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s
@@ -64,7 +64,7 @@ services:
 
   # ─── GoTrue (Auth) ──────────────────────────────────────────
   auth:
-    image: supabase/gotrue:v2.170.0
+    image: supabase/gotrue:v2.186.0
     container_name: leily-auth
     restart: unless-stopped
     environment:
@@ -104,7 +104,7 @@ services:
 
   # ─── PostgREST (REST API) ───────────────────────────────────
   rest:
-    image: postgrest/postgrest:v12.2.8
+    image: postgrest/postgrest:v14.8
     container_name: leily-rest
     restart: unless-stopped
     environment:
@@ -126,7 +126,7 @@ services:
 
   # ─── Storage ────────────────────────────────────────────────
   storage:
-    image: supabase/storage-api:v1.14.5
+    image: supabase/storage-api:v1.48.26
     container_name: leily-storage
     restart: unless-stopped
     environment:
@@ -158,7 +158,7 @@ services:
 
   # ─── Image proxy (for storage transformations) ──────────────
   imgproxy:
-    image: darthsim/imgproxy:v3.8.0
+    image: darthsim/imgproxy:v3.30.1
     container_name: leily-imgproxy
     restart: unless-stopped
     environment:
@@ -176,7 +176,7 @@ services:
 
   # ─── Postgres Meta (required by Studio) ─────────────────────
   meta:
-    image: supabase/postgres-meta:v0.84.2
+    image: supabase/postgres-meta:v0.96.3
     container_name: leily-meta
     restart: unless-stopped
     environment:
@@ -197,7 +197,7 @@ services:
 
   # ─── Supabase Studio (admin UI at localhost:54323) ──────────
   studio:
-    image: supabase/studio:20250317-6471e17
+    image: supabase/studio:2026.04.27-sha-5f60601
     container_name: leily-studio
     restart: unless-stopped
     ports:
@@ -219,7 +219,7 @@ services:
 
   # ─── Edge Functions (Deno) ──────────────────────────────────
   functions:
-    image: supabase/edge-runtime:v1.67.4
+    image: supabase/edge-runtime:v1.71.2
     container_name: leily-functions
     restart: unless-stopped
     environment:
