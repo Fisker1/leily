@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Home, Building2, FileText, Wallet, Settings, LogOut, LayoutDashboard } from "lucide-react";
+import { Home, Building2, FileText, Wallet, Settings } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 const navItems = [
@@ -8,7 +8,6 @@ const navItems = [
   { path: "/eiendommer", label: "Eiendommer", icon: Building2 },
   { path: "/kontrakter", label: "Kontrakter", icon: FileText },
   { path: "/okonomi", label: "Økonomi", icon: Wallet },
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 interface AppShellProps {
@@ -21,7 +20,7 @@ interface AppShellProps {
 export default function AppShell({ children, title, subtitle, actions }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   if (!user) {
     navigate("/auth");

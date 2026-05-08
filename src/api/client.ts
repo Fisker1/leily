@@ -116,98 +116,6 @@ export const finance = {
   removeTransaction: (id: string) => request<{ ok: boolean }>(`/finance/transactions/${id}`, { method: "DELETE" }),
 };
 
-// ─── Admin Dashboard ────────────────────────────────────
-export const adminDashboard = {
-  /** Aggregated stats for admin overview */
-  summary: async (): Promise<AdminSummary> => {
-    const [statsData, finData, txData] = await Promise.all([
-      dashboard.stats(),
-      finance.overview(),
-      finance.transactions(200),
-    ]);
-    return buildAdminSummary(statsData, finData, txData);
-  },
-};
-
-function buildAdminSummary(
-  stats: DashboardStats,
-  fin: FinanceOverview,
-  txs: Transaction[]
-): AdminSummary {
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-  // Group transactions by month (last 12 months)
-  const monthlyMap: Record<string, { income: number; expense: number }> = {};
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    monthlyMap[key] = { income: 0, expense: 0 };
-  }
-  for (const tx of txs) {
-    const key = tx.date?.slice(0, 7);
-    if (key && monthlyMap[key] !== undefined) {
-      if (tx.type === "income") monthlyMap[key].income += tx.amount;
-      else monthlyMap[key].expense += tx.amount;
-    }
-  }
-  const monthlyTrend: MonthlyDataPoint[] = Object.entries(monthlyMap).map(
-    ([month, v]) => ({ month, income: v.income, expense: v.expense, net: v.income - v.expense })
-  );
-
-  // Expense breakdown by category (current month)
-  const catMap: Record<string, number> = {};
-  for (const tx of txs) {
-    if (tx.type === "expense" && tx.date?.startsWith(thisMonth)) {
-      catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
-    }
-  }
-  const expenseByCategory: CategoryBreakdown[] = Object.entries(catMap)
-    .map(([category, amount]) => ({ category, amount }))
-    .sort((a, b) => b.amount - a.amount);
-
-  // Property-level data
-  const propertyBreakdown: PropertyFinance[] = fin.properties.map((p) => ({
-    id: p.id,
-    address: p.address,
-    city: p.city,
-    currentValue: p.current_value,
-    purchasePrice: p.purchase_price,
-    loanAmount: p.loan_amount,
-    equity: p.current_value - p.loan_amount,
-    monthlyRent: p.monthly_rent,
-    monthlyCost: p.monthly_cost,
-    cashflow: p.cashflow,
-    yieldPct: p.yield_pct,
-    interestRate: p.interest_rate,
-    hasTenant: p.has_tenant,
-    appreciation: p.purchase_price > 0 ? ((p.current_value - p.purchase_price) / p.purchase_price) * 100 : 0,
-  }));
-
-  // Recent transactions
-  const recentTransactions = txs.slice(0, 20);
-
-  return {
-    kpis: {
-      totalPortfolioValue: stats.totalValue,
-      totalLoan: stats.totalLoan,
-      totalEquity: stats.equity,
-      monthlyIncome: stats.monthlyIncome,
-      monthlyCosts: fin.totals.costs,
-      monthlyCashflow: fin.totals.cashflow,
-      properties: stats.properties,
-      tenants: stats.tenants,
-      occupancy: stats.occupancy,
-      avgYield: fin.totals.avg_yield,
-    },
-    monthlyTrend,
-    expenseByCategory,
-    propertyBreakdown,
-    recentTransactions,
-    expiringLeases: stats.expiringLeases,
-  };
-}
-
 // ─── Messages ───────────────────────────────────────────
 export const messages = {
   list: (leaseId: string) => request<Message[]>(`/messages/${leaseId}`),
@@ -219,6 +127,7 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
+  created_at?: string;
 }
 
 export interface Property {
@@ -348,57 +257,3 @@ export interface FinanceOverview {
   };
 }
 
-// ─── Admin Dashboard Types ──────────────────────────────
-export interface AdminSummary {
-  kpis: {
-    totalPortfolioValue: number;
-    totalLoan: number;
-    totalEquity: number;
-    monthlyIncome: number;
-    monthlyCosts: number;
-    monthlyCashflow: number;
-    properties: number;
-    tenants: number;
-    occupancy: number;
-    avgYield: number;
-  };
-  monthlyTrend: MonthlyDataPoint[];
-  expenseByCategory: CategoryBreakdown[];
-  propertyBreakdown: PropertyFinance[];
-  recentTransactions: Transaction[];
-  expiringLeases: Array<{
-    id: string;
-    end_date: string;
-    property_address: string;
-    tenant_name: string;
-  }>;
-}
-
-export interface MonthlyDataPoint {
-  month: string;
-  income: number;
-  expense: number;
-  net: number;
-}
-
-export interface CategoryBreakdown {
-  category: string;
-  amount: number;
-}
-
-export interface PropertyFinance {
-  id: string;
-  address: string;
-  city?: string;
-  currentValue: number;
-  purchasePrice: number;
-  loanAmount: number;
-  equity: number;
-  monthlyRent: number;
-  monthlyCost: number;
-  cashflow: number;
-  yieldPct: number;
-  interestRate: number;
-  hasTenant: boolean;
-  appreciation: number;
-}

@@ -2,123 +2,42 @@ import AppShell from "@/components/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, MapPin, Bed, Ruler, Eye, Edit, Trash2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/shared/integrations/supabase/client";
+import { properties, Property } from "@/api/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/shared/hooks/use-toast";
-import { formatNumberWithSpaces } from "@/shared/lib/utils";
-import PropertyImage from "@/features/property/components/PropertyImage";
-import { PropertyAddDialog } from "@/features/property/components/PropertyAddDialog";
-import { PropertyEditDialog } from "@/features/property/components/PropertyEditDialog";
-import { PropertyDetailsDialog } from "@/features/property/components/PropertyDetailsDialog";
-import { PropertyDocumentsDialog } from "@/features/property/components/PropertyDocumentsDialog";
 
-interface Property {
-  id: string;
-  address: string;
-  city?: string;
-  postal_code?: string;
-  property_type?: string;
-  size_sqm?: number;
-  bedrooms?: number;
-  purchase_price?: number;
-  current_value?: number;
-  monthly_rent?: number;
-  image_url?: string;
-  owner_id: string;
-  created_at?: string;
-  active_lease?: {
-    id: string;
-    tenant_name: string;
-    monthly_rent: number;
-    end_date: string;
-  } | null;
-}
+const fmt = (n: number) =>
+  new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
 
 const Eiendommer = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [items, setItems] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [selected, setSelected] = useState<Property | null>(null);
 
-  useEffect(() => {
-    if (user) fetchProperties();
-  }, [user]);
-
-  const fetchProperties = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch active leases for each property
-      const propsWithLeases = await Promise.all(
-        (data || []).map(async (prop) => {
-          const { data: leases } = await supabase
-            .from("lease_agreements")
-            .select("id, monthly_rent, end_date, tenant_id")
-            .eq("property_id", prop.id)
-            .eq("status", "active")
-            .limit(1);
-
-          let activeLease = null;
-          if (leases && leases.length > 0) {
-            const { data: tenant } = await supabase
-              .from("tenants")
-              .select("first_name, last_name")
-              .eq("id", leases[0].tenant_id)
-              .single();
-
-            activeLease = {
-              id: leases[0].id,
-              tenant_name: tenant ? `${tenant.first_name} ${tenant.last_name}` : "Ukjent",
-              monthly_rent: leases[0].monthly_rent,
-              end_date: leases[0].end_date,
-            };
-          }
-
-          return { ...prop, active_lease: activeLease } as Property;
-        })
-      );
-
-      setProperties(propsWithLeases);
-    } catch (err) {
-      console.error("Error fetching properties:", err);
-    } finally {
-      setLoading(false);
-    }
+  const reload = () => {
+    properties.list().then(setItems).catch(console.error).finally(() => setLoading(false));
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Er du sikker på at du vil slette denne eiendommen?")) return;
+  useEffect(reload, []);
 
-    const { error } = await supabase.from("properties").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Feil", description: "Kunne ikke slette eiendommen", variant: "destructive" });
-    } else {
-      toast({ title: "Slettet", description: "Eiendommen er fjernet" });
-      fetchProperties();
-    }
+  const handleDelete = async (id: string) => {
+    if (!confirm("Slette denne eiendommen?")) return;
+    await properties.remove(id);
+    toast({ title: "Slettet" });
+    reload();
   };
 
   if (loading) {
     return (
       <AppShell title="Eiendommer">
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />
-          ))}
-        </div>
+        <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />)}</div>
       </AppShell>
     );
   }
@@ -126,147 +45,68 @@ const Eiendommer = () => {
   return (
     <AppShell
       title="Eiendommer"
-      subtitle={`${properties.length} registrert`}
+      subtitle={`${items.length} registrert`}
       actions={
-        <PropertyAddDialog onPropertyAdded={fetchProperties}>
-          <Button size="sm" className="bg-primary text-primary-foreground h-8 px-3">
-            <Plus className="h-4 w-4 mr-1" />
-            Ny
-          </Button>
-        </PropertyAddDialog>
+        <Button size="sm" className="h-8 px-3" onClick={() => setAddOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" /> Ny
+        </Button>
       }
     >
-      {properties.length === 0 ? (
+      {items.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Ingen eiendommer ennå</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Legg til din første eiendom for å komme i gang
-            </p>
-            <PropertyAddDialog onPropertyAdded={fetchProperties}>
-              <Button className="bg-primary text-primary-foreground">
-                <Plus className="h-4 w-4 mr-2" />
-                Legg til eiendom
-              </Button>
-            </PropertyAddDialog>
+            <p className="text-sm text-muted-foreground mb-4">Legg til din første eiendom</p>
+            <Button onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-2" />Legg til</Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {properties.map(property => (
-            <Card key={property.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                {/* Image + overlay */}
-                <div className="relative h-36">
-                  <PropertyImage
-                    imageUrl={property.image_url}
-                    address={property.address}
-                    city={property.city}
-                    className="w-full h-full object-cover"
-                    alt={property.address}
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge
-                      variant={property.active_lease ? "default" : "secondary"}
-                      className="text-xs"
-                    >
-                      {property.active_lease ? "Utleid" : "Ledig"}
-                    </Badge>
+          {items.map(p => (
+            <Card key={p.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm truncate">{p.address}</h3>
+                    <p className="text-xs text-muted-foreground">{[p.postal_code, p.city].filter(Boolean).join(" ")}</p>
                   </div>
+                  <Badge variant={p.active_lease ? "default" : "secondary"} className="text-xs ml-2">
+                    {p.active_lease ? "Utleid" : "Ledig"}
+                  </Badge>
                 </div>
 
-                {/* Info */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-sm mb-1 truncate">
-                    {property.address}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {[property.postal_code, property.city].filter(Boolean).join(" ")}
-                  </p>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                  {p.property_type && <span>{p.property_type}</span>}
+                  {p.size_sqm && <span className="flex items-center gap-1"><Ruler className="h-3 w-3" />{p.size_sqm} m²</span>}
+                  {p.bedrooms && <span className="flex items-center gap-1"><Bed className="h-3 w-3" />{p.bedrooms}</span>}
+                </div>
 
-                  {/* Quick stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    {property.property_type && (
-                      <span>{property.property_type}</span>
-                    )}
-                    {property.size_sqm && (
-                      <span className="flex items-center gap-1">
-                        <Ruler className="h-3 w-3" />
-                        {property.size_sqm} m²
-                      </span>
-                    )}
-                    {property.bedrooms && (
-                      <span className="flex items-center gap-1">
-                        <Bed className="h-3 w-3" />
-                        {property.bedrooms}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Rent / tenant info */}
-                  {property.active_lease ? (
-                    <div className="bg-primary/5 rounded-lg p-3 mb-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Leie</span>
-                        <span className="font-semibold text-primary">
-                          {formatNumberWithSpaces(property.active_lease.monthly_rent)} kr/mnd
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs mt-1">
-                        <span className="text-muted-foreground">{property.active_lease.tenant_name}</span>
-                        <span className="text-muted-foreground">
-                          til {new Date(property.active_lease.end_date).toLocaleDateString("nb-NO")}
-                        </span>
-                      </div>
+                {p.active_lease ? (
+                  <div className="bg-primary/5 rounded-lg p-3 mb-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Leie</span>
+                      <span className="font-semibold text-primary">{fmt(p.active_lease.monthly_rent)} kr/mnd</span>
                     </div>
-                  ) : property.monthly_rent ? (
-                    <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Forventet leie</span>
-                        <span className="font-medium">
-                          {formatNumberWithSpaces(property.monthly_rent)} kr/mnd
-                        </span>
-                      </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className="text-muted-foreground">{p.active_lease.tenant_name}</span>
+                      <span className="text-muted-foreground">til {new Date(p.active_lease.end_date).toLocaleDateString("nb-NO")}</span>
                     </div>
-                  ) : null}
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => { setSelectedProperty(property); setDetailsOpen(true); }}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Detaljer
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs"
-                      onClick={() => { setSelectedProperty(property); setDocumentsOpen(true); }}
-                    >
-                      Dokumenter
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => { setSelectedProperty(property); setEditOpen(true); }}
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(property.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
                   </div>
+                ) : p.monthly_rent ? (
+                  <div className="bg-muted/50 rounded-lg p-3 mb-3 flex justify-between text-sm">
+                    <span className="text-muted-foreground">Forventet leie</span>
+                    <span className="font-medium">{fmt(p.monthly_rent)} kr/mnd</span>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setSelected(p); setEditOpen(true); }}>
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(p.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -274,29 +114,107 @@ const Eiendommer = () => {
         </div>
       )}
 
-      {/* Dialogs */}
-      {selectedProperty && (
-        <>
-          <PropertyEditDialog
-            property={selectedProperty}
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            onPropertyUpdated={fetchProperties}
-          />
-          <PropertyDetailsDialog
-            property={selectedProperty}
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-          />
-          <PropertyDocumentsDialog
-            property={selectedProperty}
-            open={documentsOpen}
-            onOpenChange={setDocumentsOpen}
-          />
-        </>
+      {/* Add dialog */}
+      <PropertyFormDialog open={addOpen} onOpenChange={setAddOpen} onSave={async (data) => {
+        await properties.create(data);
+        toast({ title: "Eiendom lagt til" });
+        setAddOpen(false);
+        reload();
+      }} />
+
+      {/* Edit dialog */}
+      {selected && (
+        <PropertyFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          initial={selected}
+          onSave={async (data) => {
+            await properties.update(selected.id, data);
+            toast({ title: "Oppdatert" });
+            setEditOpen(false);
+            reload();
+          }}
+        />
       )}
     </AppShell>
   );
 };
+
+// ─── Reusable property form dialog ───────────────────────
+function PropertyFormDialog({
+  open, onOpenChange, initial, onSave,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  initial?: Partial<Property>;
+  onSave: (data: Partial<Property>) => Promise<void>;
+}) {
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    const fd = new FormData(e.currentTarget);
+    const data: Partial<Property> = {
+      address: fd.get("address") as string,
+      city: fd.get("city") as string,
+      postal_code: fd.get("postal_code") as string,
+      property_type: fd.get("property_type") as string || "Leilighet",
+      size_sqm: Number(fd.get("size_sqm")) || undefined,
+      bedrooms: Number(fd.get("bedrooms")) || undefined,
+      purchase_price: Number(fd.get("purchase_price")) || undefined,
+      current_value: Number(fd.get("current_value")) || undefined,
+      loan_amount: Number(fd.get("loan_amount")) || undefined,
+      interest_rate: Number(fd.get("interest_rate")) || undefined,
+      monthly_rent: Number(fd.get("monthly_rent")) || undefined,
+    };
+    try {
+      await onSave(data);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{initial ? "Rediger eiendom" : "Ny eiendom"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Field label="Adresse" name="address" defaultValue={initial?.address} required />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Postnr" name="postal_code" defaultValue={initial?.postal_code} />
+            <Field label="By" name="city" defaultValue={initial?.city} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Type" name="property_type" defaultValue={initial?.property_type || "Leilighet"} />
+            <Field label="Soverom" name="bedrooms" type="number" defaultValue={initial?.bedrooms} />
+          </div>
+          <Field label="Størrelse (m²)" name="size_sqm" type="number" defaultValue={initial?.size_sqm} />
+          <Field label="Kjøpspris (kr)" name="purchase_price" type="number" defaultValue={initial?.purchase_price} />
+          <Field label="Nåverdi (kr)" name="current_value" type="number" defaultValue={initial?.current_value} />
+          <Field label="Lån (kr)" name="loan_amount" type="number" defaultValue={initial?.loan_amount} />
+          <Field label="Rente (%)" name="interest_rate" type="number" defaultValue={initial?.interest_rate} step="0.1" />
+          <Field label="Månedlig leie (kr)" name="monthly_rent" type="number" defaultValue={initial?.monthly_rent} />
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Lagrer..." : initial ? "Oppdater" : "Legg til"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, name, defaultValue, type, required, step }: {
+  label: string; name: string; defaultValue?: any; type?: string; required?: boolean; step?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={name} className="text-xs">{label}</Label>
+      <Input id={name} name={name} type={type || "text"} defaultValue={defaultValue ?? ""} required={required} step={step} className="h-9" />
+    </div>
+  );
+}
 
 export default Eiendommer;

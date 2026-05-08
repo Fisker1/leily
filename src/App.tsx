@@ -12,8 +12,6 @@ const Eiendommer = lazy(() => import("@/pages/Eiendommer"));
 const Kontrakter = lazy(() => import("@/pages/Kontrakter"));
 const Okonomi = lazy(() => import("@/pages/Okonomi"));
 const Innstillinger = lazy(() => import("@/pages/Innstillinger"));
-const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
-const LeaseSignature = lazy(() => import("@/features/signing/pages/LeaseSignature"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -38,8 +36,6 @@ const App = () => (
               <Route path="/kontrakter" element={<Kontrakter />} />
               <Route path="/okonomi" element={<Okonomi />} />
               <Route path="/innstillinger" element={<Innstillinger />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
               <Route path="*" element={<Navigate to="/oversikt" replace />} />
             </Routes>
           </Suspense>

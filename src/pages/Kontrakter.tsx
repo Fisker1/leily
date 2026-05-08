@@ -2,306 +2,274 @@ import AppShell from "@/components/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, FileText, MessageCircle, PenTool, Calendar, User } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/shared/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, FileText, MessageCircle, Calendar, User, Send, XCircle } from "lucide-react";
+import { leases, properties as propertiesApi, messages as messagesApi, Lease, Property, Message } from "@/api/client";
 import { useState, useEffect } from "react";
-import { formatNumberWithSpaces } from "@/shared/lib/utils";
-import RentalAgreementDialog from "@/features/rental/components/RentalAgreementDialog";
-import TenantChatDialog from "@/features/rental/components/TenantChatDialog";
-import TransferProtocolDialog from "@/features/rental/components/TransferProtocolDialog";
+import { useToast } from "@/shared/hooks/use-toast";
 
-interface Lease {
-  id: string;
-  property_id: string;
-  tenant_id: string;
-  monthly_rent: number;
-  start_date: string;
-  end_date: string;
-  status: string;
-  signature_status?: string;
-  property_address?: string;
-  property_city?: string;
-  tenant_name?: string;
-}
-
-interface PropertyOption {
-  id: string;
-  address: string;
-  city?: string;
-  size_sqm?: number;
-}
+const fmt = (n: number) => new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
 
 const Kontrakter = () => {
-  const { user } = useAuth();
-  const [leases, setLeases] = useState<Lease[]>([]);
-  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const { toast } = useToast();
+  const [items, setItems] = useState<Lease[]>([]);
+  const [props, setProps] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newLeaseOpen, setNewLeaseOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [selectedLease, setSelectedLease] = useState<Lease | null>(null);
+  const [chatLease, setChatLease] = useState<Lease | null>(null);
 
-  useEffect(() => {
-    if (user) fetchData();
-  }, [user]);
-
-  const fetchData = async () => {
-    if (!user) return;
-    try {
-      // Fetch leases
-      const { data: leaseData } = await supabase
-        .from("lease_agreements")
-        .select("*")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
-
-      // Fetch properties for the dialog
-      const { data: propData } = await supabase
-        .from("properties")
-        .select("id, address, city, size_sqm")
-        .eq("owner_id", user.id);
-
-      // Enrich leases with property & tenant names
-      const enriched = await Promise.all(
-        (leaseData || []).map(async (lease) => {
-          const prop = propData?.find(p => p.id === lease.property_id);
-          let tenantName = "Ukjent";
-          if (lease.tenant_id) {
-            const { data: tenant } = await supabase
-              .from("tenants")
-              .select("first_name, last_name")
-              .eq("id", lease.tenant_id)
-              .single();
-            if (tenant) tenantName = `${tenant.first_name} ${tenant.last_name}`;
-          }
-          return {
-            ...lease,
-            property_address: prop?.address || "Ukjent",
-            property_city: prop?.city || "",
-            tenant_name: tenantName,
-          };
-        })
-      );
-
-      setLeases(enriched);
-      setProperties(propData || []);
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
+  const reload = () => {
+    Promise.all([leases.list(), propertiesApi.list()])
+      .then(([l, p]) => { setItems(l); setProps(p); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   };
 
-  const activeLeases = leases.filter(l => l.status === "active");
-  const inactiveLeases = leases.filter(l => l.status !== "active");
+  useEffect(reload, []);
 
-  if (loading) {
-    return (
-      <AppShell title="Kontrakter">
-        <div className="space-y-4">
-          {[1, 2].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-xl" />)}
-        </div>
-      </AppShell>
-    );
-  }
+  const active = items.filter(l => l.status === "active");
+  const inactive = items.filter(l => l.status !== "active");
+
+  const handleTerminate = async (id: string) => {
+    if (!confirm("Avslutte denne kontrakten?")) return;
+    await leases.terminate(id);
+    toast({ title: "Kontrakt avsluttet" });
+    reload();
+  };
+
+  if (loading) return <AppShell title="Kontrakter"><div className="space-y-4">{[1, 2].map(i => <div key={i} className="h-28 bg-muted animate-pulse rounded-xl" />)}</div></AppShell>;
 
   return (
     <AppShell
       title="Kontrakter"
-      subtitle={`${activeLeases.length} aktive`}
+      subtitle={`${active.length} aktive`}
       actions={
-        <Button
-          size="sm"
-          className="bg-primary text-primary-foreground h-8 px-3"
-          onClick={() => setNewLeaseOpen(true)}
-          disabled={properties.length === 0}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Ny
+        <Button size="sm" className="h-8 px-3" onClick={() => setNewOpen(true)} disabled={props.length === 0}>
+          <Plus className="h-4 w-4 mr-1" /> Ny
         </Button>
       }
     >
-      {leases.length === 0 ? (
+      {items.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Ingen kontrakter</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {properties.length === 0
-                ? "Legg til en eiendom først, deretter kan du opprette kontrakter"
-                : "Opprett din første leiekontrakt"}
+              {props.length === 0 ? "Legg til en eiendom først" : "Opprett din første leiekontrakt"}
             </p>
-            {properties.length > 0 && (
-              <Button
-                className="bg-primary text-primary-foreground"
-                onClick={() => setNewLeaseOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Ny kontrakt
-              </Button>
-            )}
+            {props.length > 0 && <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-2" />Ny kontrakt</Button>}
           </CardContent>
         </Card>
       ) : (
         <Tabs defaultValue="active" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 h-9">
-            <TabsTrigger value="active" className="text-xs">
-              Aktive ({activeLeases.length})
-            </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs">
-              Historikk ({inactiveLeases.length})
-            </TabsTrigger>
+            <TabsTrigger value="active" className="text-xs">Aktive ({active.length})</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs">Historikk ({inactive.length})</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="active" className="space-y-3 mt-3">
-            {activeLeases.map(lease => (
-              <LeaseCard
-                key={lease.id}
-                lease={lease}
-                onChat={() => { setSelectedLease(lease); setChatOpen(true); }}
-                onTransfer={() => { setSelectedLease(lease); setTransferOpen(true); }}
+          <TabsContent value="active" className="space-y-3">
+            {active.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Ingen aktive kontrakter</p>}
+            {active.map(l => (
+              <LeaseCard key={l.id} lease={l}
+                onChat={() => { setChatLease(l); setChatOpen(true); }}
+                onTerminate={() => handleTerminate(l.id)}
               />
             ))}
-            {activeLeases.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Ingen aktive kontrakter
-              </p>
-            )}
           </TabsContent>
-
-          <TabsContent value="history" className="space-y-3 mt-3">
-            {inactiveLeases.map(lease => (
-              <LeaseCard key={lease.id} lease={lease} />
-            ))}
-            {inactiveLeases.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Ingen historikk ennå
-              </p>
-            )}
+          <TabsContent value="history" className="space-y-3">
+            {inactive.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Ingen historikk</p>}
+            {inactive.map(l => <LeaseCard key={l.id} lease={l} />)}
           </TabsContent>
         </Tabs>
       )}
 
-      {/* Dialogs */}
-      <RentalAgreementDialog
-        open={newLeaseOpen}
-        onOpenChange={setNewLeaseOpen}
-        properties={properties}
-        onPropertyAdded={fetchData}
-      />
+      {/* New lease dialog */}
+      <NewLeaseDialog open={newOpen} onOpenChange={setNewOpen} properties={props} onCreated={() => { setNewOpen(false); reload(); }} />
 
-      {selectedLease && (
-        <>
-          <TenantChatDialog
-            open={chatOpen}
-            onOpenChange={setChatOpen}
-            property={{ id: selectedLease.property_id, address: selectedLease.property_address }}
-            lease={{ id: selectedLease.id, monthly_rent: selectedLease.monthly_rent }}
-            tenant={{ name: selectedLease.tenant_name }}
-          />
-          <TransferProtocolDialog
-            open={transferOpen}
-            onOpenChange={setTransferOpen}
-            leaseId={selectedLease.id}
-            propertyAddress={selectedLease.property_address || ""}
-            tenantName={selectedLease.tenant_name || ""}
-            protocolType="move_in"
-          />
-        </>
-      )}
+      {/* Chat dialog */}
+      {chatLease && <ChatDialog open={chatOpen} onOpenChange={setChatOpen} lease={chatLease} />}
     </AppShell>
   );
 };
 
-function LeaseCard({
-  lease,
-  onChat,
-  onTransfer,
-}: {
-  lease: Lease;
-  onChat?: () => void;
-  onTransfer?: () => void;
-}) {
+// ─── Lease card ─────────────────────────────────────────
+function LeaseCard({ lease, onChat, onTerminate }: { lease: Lease; onChat?: () => void; onTerminate?: () => void }) {
   const isActive = lease.status === "active";
-  const daysLeft = Math.ceil(
-    (new Date(lease.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
+  const daysLeft = Math.ceil((new Date(lease.end_date).getTime() - Date.now()) / 86400000);
 
   return (
     <Card className={!isActive ? "opacity-60" : undefined}>
       <CardContent className="p-4">
-        {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-sm truncate">{lease.property_address}</h3>
             <p className="text-xs text-muted-foreground">{lease.property_city}</p>
           </div>
-          <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
-            <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
-              {isActive ? "Aktiv" : "Utløpt"}
-            </Badge>
-            {lease.signature_status && (
-              <Badge
-                variant="outline"
-                className={
-                  lease.signature_status === "fully_signed"
-                    ? "text-green-700 border-green-300 text-xs"
-                    : "text-yellow-700 border-yellow-300 text-xs"
-                }
-              >
-                {lease.signature_status === "fully_signed" ? "Signert" : "Venter"}
-              </Badge>
-            )}
-          </div>
+          <Badge variant={isActive ? "default" : "secondary"} className="text-xs ml-2">
+            {isActive ? "Aktiv" : lease.status === "terminated" ? "Avsluttet" : "Utløpt"}
+          </Badge>
         </div>
-
-        {/* Details */}
         <div className="grid grid-cols-3 gap-3 text-xs mb-3">
           <div>
-            <span className="text-muted-foreground flex items-center gap-1">
-              <User className="h-3 w-3" />
-              Leietaker
-            </span>
+            <span className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" />Leietaker</span>
             <p className="font-medium mt-0.5 truncate">{lease.tenant_name}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Leie</span>
-            <p className="font-medium mt-0.5">{formatNumberWithSpaces(lease.monthly_rent)} kr</p>
+            <p className="font-medium mt-0.5">{fmt(lease.monthly_rent)} kr</p>
           </div>
           <div>
-            <span className="text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {isActive ? "Gjenstår" : "Utløp"}
-            </span>
-            <p className="font-medium mt-0.5">
-              {isActive
-                ? `${daysLeft > 0 ? daysLeft : 0} dager`
-                : new Date(lease.end_date).toLocaleDateString("nb-NO")}
-            </p>
+            <span className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />{isActive ? "Gjenstår" : "Utløp"}</span>
+            <p className="font-medium mt-0.5">{isActive ? `${Math.max(daysLeft, 0)} dager` : new Date(lease.end_date).toLocaleDateString("nb-NO")}</p>
           </div>
         </div>
-
-        {/* Actions */}
-        {isActive && (onChat || onTransfer) && (
-          <div className="flex items-center gap-2 pt-2 border-t border-border">
-            {onChat && (
-              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={onChat}>
-                <MessageCircle className="h-3 w-3 mr-1" />
-                Melding
-              </Button>
-            )}
-            {onTransfer && (
-              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={onTransfer}>
-                <PenTool className="h-3 w-3 mr-1" />
-                Overlevering
-              </Button>
-            )}
+        {isActive && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            {onChat && <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={onChat}><MessageCircle className="h-3 w-3 mr-1" />Melding</Button>}
+            {onTerminate && <Button variant="outline" size="sm" className="h-8 text-xs text-destructive" onClick={onTerminate}><XCircle className="h-3 w-3 mr-1" />Avslutt</Button>}
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ─── New lease dialog ───────────────────────────────────
+function NewLeaseDialog({ open, onOpenChange, properties, onCreated }: {
+  open: boolean; onOpenChange: (o: boolean) => void; properties: Property[]; onCreated: () => void;
+}) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [propertyId, setPropertyId] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await leases.create({
+        property_id: propertyId,
+        tenant_first_name: fd.get("first_name") as string,
+        tenant_last_name: fd.get("last_name") as string,
+        tenant_email: fd.get("email") as string,
+        tenant_phone: fd.get("phone") as string,
+        monthly_rent: Number(fd.get("monthly_rent")),
+        deposit: Number(fd.get("deposit")) || 0,
+        start_date: fd.get("start_date") as string,
+        end_date: fd.get("end_date") as string,
+      });
+      toast({ title: "Kontrakt opprettet" });
+      onCreated();
+    } catch (err: any) {
+      toast({ title: "Feil", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Ny kontrakt</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Eiendom</Label>
+            <Select value={propertyId} onValueChange={setPropertyId} required>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Velg eiendom" /></SelectTrigger>
+              <SelectContent>
+                {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.address}, {p.city}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="border-t pt-3">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Leietaker</p>
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Fornavn" name="first_name" required />
+              <F label="Etternavn" name="last_name" required />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <F label="E-post" name="email" type="email" />
+              <F label="Telefon" name="phone" />
+            </div>
+          </div>
+          <div className="border-t pt-3">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Kontraktdetaljer</p>
+            <F label="Månedlig leie (kr)" name="monthly_rent" type="number" required />
+            <F label="Depositum (kr)" name="deposit" type="number" />
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Startdato" name="start_date" type="date" required />
+              <F label="Sluttdato" name="end_date" type="date" required />
+            </div>
+          </div>
+          <Button type="submit" className="w-full" disabled={saving || !propertyId}>
+            {saving ? "Oppretter..." : "Opprett kontrakt"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Chat dialog ────────────────────────────────────────
+function ChatDialog({ open, onOpenChange, lease }: { open: boolean; onOpenChange: (o: boolean) => void; lease: Lease }) {
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (open && lease.id) {
+      messagesApi.list(lease.id).then(setMsgs).catch(console.error);
+    }
+  }, [open, lease.id]);
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    const msg = await messagesApi.send(lease.id, text.trim());
+    setMsgs(prev => [...prev, msg]);
+    setText("");
+    setSending(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm flex flex-col h-[70vh]">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Meldinger — {lease.tenant_name}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto space-y-2 py-2">
+          {msgs.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Ingen meldinger ennå</p>}
+          {msgs.map(m => (
+            <div key={m.id} className={`flex ${m.sender === "landlord" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.sender === "landlord" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                <p>{m.content}</p>
+                <p className="text-[10px] opacity-70 mt-1">{new Date(m.created_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-2 border-t">
+          <Textarea value={text} onChange={e => setText(e.target.value)} placeholder="Skriv melding..." className="min-h-[40px] h-10 resize-none" onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
+          <Button size="sm" className="h-10 px-3" onClick={handleSend} disabled={sending || !text.trim()}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function F({ label, name, type, required, defaultValue }: { label: string; name: string; type?: string; required?: boolean; defaultValue?: any }) {
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={name} className="text-xs">{label}</Label>
+      <Input id={name} name={name} type={type || "text"} defaultValue={defaultValue ?? ""} required={required} className="h-9" />
+    </div>
   );
 }
 

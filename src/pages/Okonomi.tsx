@@ -2,101 +2,38 @@ import AppShell from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Wallet, Building2, Calculator } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/shared/integrations/supabase/client";
+import { finance, FinanceOverview } from "@/api/client";
 import { useState, useEffect } from "react";
-import { formatNumberWithSpaces } from "@/shared/lib/utils";
-import { SimpleLoanCalculator } from "@/features/calculator/components/SimpleLoanCalculator";
 
-interface PropertyFinance {
-  id: string;
-  address: string;
-  city?: string;
-  monthly_rent: number;
-  purchase_price: number;
-  current_value: number;
-  loan_amount: number;
-  interest_rate: number;
-  monthly_cost: number;
-  cashflow: number;
-  yield_pct: number;
-}
+const fmt = (n: number) => new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
 
 const Okonomi = () => {
-  const { user } = useAuth();
-  const [finances, setFinances] = useState<PropertyFinance[]>([]);
+  const [data, setData] = useState<FinanceOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Simple loan calculator state
+  const [loanAmt, setLoanAmt] = useState(3000000);
+  const [rate, setRate] = useState(4.5);
+  const [years, setYears] = useState(25);
+
   useEffect(() => {
-    if (user) fetchFinances();
-  }, [user]);
+    finance.overview().then(setData).catch(console.error).finally(() => setLoading(false));
+  }, []);
 
-  const fetchFinances = async () => {
-    if (!user) return;
-    try {
-      const { data: properties } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("owner_id", user.id);
+  // Loan calc
+  const monthlyRate = rate / 100 / 12;
+  const numPayments = years * 12;
+  const monthlyPayment = monthlyRate > 0
+    ? (loanAmt * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+    : loanAmt / numPayments;
+  const totalPaid = monthlyPayment * numPayments;
+  const totalInterest = totalPaid - loanAmt;
 
-      // Get active lease rents
-      const { data: leases } = await supabase
-        .from("lease_agreements")
-        .select("property_id, monthly_rent")
-        .eq("owner_id", user.id)
-        .eq("status", "active");
-
-      const leaseMap = new Map(leases?.map(l => [l.property_id, l.monthly_rent]) || []);
-
-      const fin: PropertyFinance[] = (properties || []).map(p => {
-        const rent = leaseMap.get(p.id) || p.monthly_rent || 0;
-        const loanAmount = p.loan_amount || 0;
-        const rate = p.interest_rate || 3.5;
-        const monthlyInterest = (loanAmount * (rate / 100)) / 12;
-        const estimatedMonthlyCost = monthlyInterest + (rent * 0.15); // 15% overhead estimate
-        const cashflow = rent - estimatedMonthlyCost;
-        const value = p.current_value || p.purchase_price || 0;
-        const yieldPct = value > 0 ? ((rent * 12) / value) * 100 : 0;
-
-        return {
-          id: p.id,
-          address: p.address,
-          city: p.city || "",
-          monthly_rent: rent,
-          purchase_price: p.purchase_price || 0,
-          current_value: value,
-          loan_amount: loanAmount,
-          interest_rate: rate,
-          monthly_cost: estimatedMonthlyCost,
-          cashflow,
-          yield_pct: yieldPct,
-        };
-      });
-
-      setFinances(fin);
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const totalRent = finances.reduce((s, f) => s + f.monthly_rent, 0);
-  const totalCosts = finances.reduce((s, f) => s + f.monthly_cost, 0);
-  const totalCashflow = totalRent - totalCosts;
-  const totalValue = finances.reduce((s, f) => s + f.current_value, 0);
-  const totalLoan = finances.reduce((s, f) => s + f.loan_amount, 0);
-  const avgYield = finances.length > 0 ? finances.reduce((s, f) => s + f.yield_pct, 0) / finances.length : 0;
-
-  if (loading) {
-    return (
-      <AppShell title="Økonomi">
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />)}
-        </div>
-      </AppShell>
-    );
+  if (loading || !data) {
+    return <AppShell title="Økonomi"><div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />)}</div></AppShell>;
   }
+
+  const t = data.totals;
 
   return (
     <AppShell title="Økonomi" subtitle="Finansiell oversikt">
@@ -106,100 +43,50 @@ const Okonomi = () => {
           <TabsTrigger value="calculator" className="text-xs">Kalkulator</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 mt-3">
-          {/* Summary cards */}
+        <TabsContent value="overview" className="space-y-4">
+          {/* Summary */}
           <div className="grid grid-cols-2 gap-3">
-            <SummaryCard
-              label="Mnd. inntekt"
-              value={`${formatNumberWithSpaces(totalRent)} kr`}
-              icon={<TrendingUp className="h-4 w-4" />}
-              positive
-            />
-            <SummaryCard
-              label="Mnd. kostnader"
-              value={`${formatNumberWithSpaces(Math.round(totalCosts))} kr`}
-              icon={<TrendingDown className="h-4 w-4" />}
-            />
-            <SummaryCard
-              label="Pengestrøm"
-              value={`${totalCashflow >= 0 ? "+" : ""}${formatNumberWithSpaces(Math.round(totalCashflow))} kr`}
-              icon={<Wallet className="h-4 w-4" />}
-              positive={totalCashflow >= 0}
-            />
-            <SummaryCard
-              label="Snitt avkastning"
-              value={`${avgYield.toFixed(1)}%`}
-              icon={<TrendingUp className="h-4 w-4" />}
-              positive={avgYield > 4}
-            />
+            <S label="Mnd. inntekt" value={`${fmt(t.income)} kr`} icon={<TrendingUp className="h-4 w-4" />} positive />
+            <S label="Mnd. kostnader" value={`${fmt(t.costs)} kr`} icon={<TrendingDown className="h-4 w-4" />} />
+            <S label="Pengestrøm" value={`${t.cashflow >= 0 ? "+" : ""}${fmt(t.cashflow)} kr`} icon={<Wallet className="h-4 w-4" />} positive={t.cashflow >= 0} />
+            <S label="Snitt avkastning" value={`${t.avg_yield.toFixed(1)}%`} icon={<TrendingUp className="h-4 w-4" />} positive={t.avg_yield > 4} />
           </div>
 
-          {/* Portfolio value */}
+          {/* Portfolio bar */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs text-muted-foreground font-medium">Porteføljeverdi</span>
-                <span className="text-xs text-muted-foreground">Belåning</span>
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Verdi: {fmt(t.portfolio_value)} kr</span>
+                <span>Lån: {fmt(t.total_loan)} kr</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-bold">{formatNumberWithSpaces(totalValue)} kr</span>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {formatNumberWithSpaces(totalLoan)} kr
-                  {totalValue > 0 && (
-                    <span className="ml-1 text-xs">
-                      ({((totalLoan / totalValue) * 100).toFixed(0)}%)
-                    </span>
-                  )}
-                </span>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full" style={{ width: `${t.portfolio_value > 0 ? Math.min((t.total_loan / t.portfolio_value) * 100, 100) : 0}%` }} />
               </div>
-              {totalValue > 0 && (
-                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${Math.min((totalLoan / totalValue) * 100, 100)}%` }}
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Per-property breakdown */}
-          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Per eiendom
-          </h2>
-
-          {finances.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Ingen eiendommer registrert
-            </p>
+          {/* Per property */}
+          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Building2 className="h-4 w-4" />Per eiendom</h2>
+          {data.properties.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Ingen eiendommer</p>
           ) : (
             <div className="space-y-3">
-              {finances.map(f => (
-                <Card key={f.id}>
+              {data.properties.map(p => (
+                <Card key={p.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex justify-between mb-2">
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-sm truncate">{f.address}</h3>
-                        <p className="text-xs text-muted-foreground">{f.city}</p>
+                        <h3 className="font-semibold text-sm truncate">{p.address}</h3>
+                        <p className="text-xs text-muted-foreground">{p.city}</p>
                       </div>
-                      <span className={`text-sm font-bold flex-shrink-0 ml-2 ${f.cashflow >= 0 ? "text-primary" : "text-destructive"}`}>
-                        {f.cashflow >= 0 ? "+" : ""}{formatNumberWithSpaces(Math.round(f.cashflow))} kr
+                      <span className={`text-sm font-bold ml-2 ${p.cashflow >= 0 ? "text-primary" : "text-destructive"}`}>
+                        {p.cashflow >= 0 ? "+" : ""}{fmt(p.cashflow)} kr
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Leie</span>
-                        <p className="font-medium">{formatNumberWithSpaces(f.monthly_rent)} kr</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Avkastning</span>
-                        <p className="font-medium">{f.yield_pct.toFixed(1)}%</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Rente</span>
-                        <p className="font-medium">{f.interest_rate}%</p>
-                      </div>
+                      <div><span className="text-muted-foreground">Leie</span><p className="font-medium">{fmt(p.monthly_rent)} kr</p></div>
+                      <div><span className="text-muted-foreground">Avkastning</span><p className="font-medium">{p.yield_pct}%</p></div>
+                      <div><span className="text-muted-foreground">Rente</span><p className="font-medium">{p.interest_rate}%</p></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -208,16 +95,28 @@ const Okonomi = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="calculator" className="mt-3">
+        <TabsContent value="calculator" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Calculator className="h-4 w-4" />
-                Lånekalkulator
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SimpleLoanCalculator />
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Calculator className="h-4 w-4" />Lånekalkulator</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <Slider label="Lånebeløp" value={loanAmt} onChange={setLoanAmt} min={500000} max={15000000} step={100000} format={v => `${fmt(v)} kr`} />
+              <Slider label="Rente" value={rate} onChange={setRate} min={1} max={10} step={0.1} format={v => `${v.toFixed(1)}%`} />
+              <Slider label="Nedbetalingstid" value={years} onChange={setYears} min={5} max={30} step={1} format={v => `${v} år`} />
+
+              <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Månedlig betaling</span>
+                  <span className="font-bold text-primary">{fmt(Math.round(monthlyPayment))} kr</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Totalt betalt</span>
+                  <span className="font-medium">{fmt(Math.round(totalPaid))} kr</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Totale renter</span>
+                  <span className="font-medium text-destructive">{fmt(Math.round(totalInterest))} kr</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -226,29 +125,30 @@ const Okonomi = () => {
   );
 };
 
-function SummaryCard({
-  label,
-  value,
-  icon,
-  positive,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  positive?: boolean;
+function S({ label, value, icon, positive }: { label: string; value: string; icon: React.ReactNode; positive?: boolean }) {
+  return (
+    <Card><CardContent className="p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={positive ? "text-primary" : "text-muted-foreground"}>{icon}</span>
+        <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      </div>
+      <p className={`text-lg font-bold ${positive === false ? "text-destructive" : ""}`}>{value}</p>
+    </CardContent></Card>
+  );
+}
+
+function Slider({ label, value, onChange, min, max, step, format }: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; format: (v: number) => string;
 }) {
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className={positive ? "text-primary" : "text-muted-foreground"}>{icon}</span>
-          <span className="text-xs text-muted-foreground font-medium">{label}</span>
-        </div>
-        <p className={`text-lg font-bold ${positive === false ? "text-destructive" : ""}`}>
-          {value}
-        </p>
-      </CardContent>
-    </Card>
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold">{format(value)}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))}
+        className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary" />
+    </div>
   );
 }
 

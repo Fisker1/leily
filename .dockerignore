@@ -3,7 +3,5 @@ dist
 .git
 .env
 .env.local
-.env.selfhost.example
 *.md
-.github
-volumes
+api

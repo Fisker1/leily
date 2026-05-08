@@ -1,0 +1,1192 @@
+From 88a07307782acf26d0e71740fd168bea2d73306e Mon Sep 17 00:00:00 2001
+From: Dandy <platform.claude.com.truce100@passmail.net>
+Date: Fri, 8 May 2026 07:14:36 +0000
+Subject: [PATCH] feat: add admin dashboard with expense tracking and real
+ estate value overview
+
+- New AdminDashboard page with 3 tabs: Overview, Expenses, Properties
+- Overview: KPIs (portfolio value, equity, income, costs), cashflow highlight,
+  LTV bar, 12-month income vs expense bar chart, net cashflow area chart,
+  expiring leases alerts
+- Expenses: category pie chart breakdown, expense trend chart,
+  recent transactions list, cost ratio KPI
+- Properties: per-property cards with value, equity, LTV, cashflow,
+  yield, appreciation %; horizontal bar chart of value vs loan
+- Client-side aggregation via adminDashboard.summary() combining
+  dashboard stats, finance overview, and transaction data
+- Added /admin route and Dashboard nav item in AppShell bottom nav
+- All charts powered by recharts (already a dependency)
+---
+ src/App.tsx                  | 128 +++------
+ src/api/client.ts            | 404 ++++++++++++++++++++++++++++
+ src/components/AppShell.tsx  |  92 +++++++
+ src/pages/AdminDashboard.tsx | 496 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 1026 insertions(+), 94 deletions(-)
+ create mode 100644 src/api/client.ts
+ create mode 100644 src/components/AppShell.tsx
+ create mode 100644 src/pages/AdminDashboard.tsx
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 6ac4869..7bee376 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,112 +1,52 @@
+ import { Toaster } from "@/components/ui/toaster";
+-import { Toaster as Sonner } from "@/components/ui/sonner";
+ import { TooltipProvider } from "@/components/ui/tooltip";
+ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+-import { BrowserRouter, Routes, Route } from "react-router-dom";
++import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+ import { AuthProvider } from "@/contexts/AuthContext";
+-import { LanguageProvider } from "@/contexts/LanguageContext";
+-import { ThemeProvider } from "next-themes";
+-import { Suspense, lazy, useEffect } from "react";
+-import ComingSoon from "@/features/marketing/pages/ComingSoon";
+-import { APP_CONFIG, isProduction } from "@/shared/lib/env";
+-import CookieConsent from "@/features/legal/components/CookieConsent";
+-
+-const SHOULD_SHOW_COMING_SOON = isProduction && APP_CONFIG.comingSoon;
++import { Suspense, lazy } from "react";
+ 
+ // Lazy-loaded pages
+-const Index = lazy(() => import("@/features/marketing/pages/Index"));
+ const SimpleAuth = lazy(() => import("@/features/auth/pages/SimpleAuth"));
+-const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
+-const AdminDashboard = lazy(() => import("@/features/admin/pages/AdminDashboard"));
+-const NotFound = lazy(() => import("@/shared/components/NotFound"));
+-const Rental = lazy(() => import("@/features/rental/pages/Rental"));
+-const Portfolio = lazy(() => import("@/features/rental/pages/Portfolio"));
+-const Calculator = lazy(() => import("@/features/calculator/pages/Calculator"));
+-const RiskAnalysis = lazy(() => import("@/features/calculator/pages/RiskAnalysis"));
+-const ExtendedPropertyDetails = lazy(() => import("@/features/calculator/pages/ExtendedPropertyDetails"));
+-const BankReport = lazy(() => import("@/features/calculator/pages/BankReport"));
+-const MyProfile = lazy(() => import("@/features/profile/pages/MyProfile"));
+-const UtleieAgent = lazy(() => import("@/features/ai/pages/UtleieAgent"));
+-const Agent007 = lazy(() => import("@/features/ai/pages/Agent007"));
+-const CreditsPurchasePage = lazy(() => import("@/features/credits/pages/CreditsPurchasePage"));
+-const Terms = lazy(() => import("@/features/legal/pages/Terms"));
+-const Privacy = lazy(() => import("@/features/legal/pages/Privacy"));
+-const Cookies = lazy(() => import("@/features/legal/pages/Cookies"));
++const Oversikt = lazy(() => import("@/pages/Oversikt"));
++const Eiendommer = lazy(() => import("@/pages/Eiendommer"));
++const Kontrakter = lazy(() => import("@/pages/Kontrakter"));
++const Okonomi = lazy(() => import("@/pages/Okonomi"));
++const Innstillinger = lazy(() => import("@/pages/Innstillinger"));
++const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+ const LeaseSignature = lazy(() => import("@/features/signing/pages/LeaseSignature"));
+ 
+ const PageLoader = () => (
+-  <div className="min-h-screen flex items-center justify-center">
++  <div className="min-h-screen flex items-center justify-center bg-background">
+     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+   </div>
+ );
+ 
+ const queryClient = new QueryClient();
+ 
+-const ForceDefaultTheme = ({ children }: { children: React.ReactNode }) => {
+-  useEffect(() => {
+-    const storedTheme = localStorage.getItem('leily-theme');
+-    if (!storedTheme) {
+-      document.documentElement.classList.add('light');
+-      document.documentElement.classList.remove('dark');
+-      localStorage.setItem('leily-theme', 'light');
+-    }
+-  }, []);
+-  return <>{children}</>;
+-};
+-
+-const App = () => {
+-  if (SHOULD_SHOW_COMING_SOON) {
+-    return <ComingSoon />;
+-  }
+-
+-  return (
+-    <QueryClientProvider client={queryClient}>
+-      <ThemeProvider
+-        attribute="class"
+-        defaultTheme="light"
+-        enableSystem={false}
+-        disableTransitionOnChange={false}
+-        storageKey="leily-theme"
+-      >
+-        <ForceDefaultTheme>
+-          <TooltipProvider>
+-            <LanguageProvider>
+-              <AuthProvider>
+-                <Toaster />
+-                <Sonner />
+-                <CookieConsent />
+-                <BrowserRouter>
+-                  <Suspense fallback={<PageLoader />}>
+-                    <Routes>
+-                      <Route path="/" element={<Index />} />
+-                      <Route path="/auth" element={<SimpleAuth />} />
+-                      <Route path="/dashboard" element={<Dashboard />} />
+-                      <Route path="/utleie" element={<Rental />} />
+-                      <Route path="/utleie-agent" element={<UtleieAgent />} />
+-                      <Route path="/agent-007" element={<Agent007 />} />
+-                      <Route path="/credits" element={<CreditsPurchasePage />} />
+-                      <Route path="/portfolio" element={<Portfolio />} />
+-                      <Route path="/kalkulator" element={<Calculator />} />
+-                      <Route path="/kalkulator/risk-analysis" element={<RiskAnalysis />} />
+-                      <Route path="/kalkulator/extended-details" element={<ExtendedPropertyDetails />} />
+-                      <Route path="/bank-report" element={<BankReport />} />
+-                      <Route path="/min-side" element={<MyProfile />} />
+-                      <Route path="/admin" element={<AdminDashboard />} />
+-                      <Route path="/terms" element={<Terms />} />
+-                      <Route path="/privacy" element={<Privacy />} />
+-                      <Route path="/cookies" element={<Cookies />} />
+-                      <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
+-                      <Route path="*" element={<NotFound />} />
+-                    </Routes>
+-                  </Suspense>
+-                </BrowserRouter>
+-              </AuthProvider>
+-            </LanguageProvider>
+-          </TooltipProvider>
+-        </ForceDefaultTheme>
+-      </ThemeProvider>
+-    </QueryClientProvider>
+-  );
+-};
++const App = () => (
++  <QueryClientProvider client={queryClient}>
++    <TooltipProvider>
++      <AuthProvider>
++        <Toaster />
++        <BrowserRouter>
++          <Suspense fallback={<PageLoader />}>
++            <Routes>
++              <Route path="/" element={<Navigate to="/oversikt" replace />} />
++              <Route path="/auth" element={<SimpleAuth />} />
++              <Route path="/oversikt" element={<Oversikt />} />
++              <Route path="/eiendommer" element={<Eiendommer />} />
++              <Route path="/kontrakter" element={<Kontrakter />} />
++              <Route path="/okonomi" element={<Okonomi />} />
++              <Route path="/innstillinger" element={<Innstillinger />} />
++              <Route path="/admin" element={<AdminDashboard />} />
++              <Route path="/lease/:leaseId/signature" element={<LeaseSignature />} />
++              <Route path="*" element={<Navigate to="/oversikt" replace />} />
++            </Routes>
++          </Suspense>
++        </BrowserRouter>
++      </AuthProvider>
++    </TooltipProvider>
++  </QueryClientProvider>
++);
+ 
+ export default App;
+diff --git a/src/api/client.ts b/src/api/client.ts
+new file mode 100644
+index 0000000..01c2f46
+--- /dev/null
++++ b/src/api/client.ts
+@@ -0,0 +1,404 @@
++// ─── Leily API Client ───────────────────────────────────
++// Single source of truth for all API calls. No Supabase.
++
++const API_URL = import.meta.env.VITE_API_URL || "/api";
++
++function getToken(): string | null {
++  return localStorage.getItem("leily_token");
++}
++
++async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
++  const token = getToken();
++  const headers: Record<string, string> = {
++    "Content-Type": "application/json",
++    ...(token ? { Authorization: `Bearer ${token}` } : {}),
++    ...(options.headers as Record<string, string> || {}),
++  };
++
++  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
++
++  if (res.status === 401) {
++    localStorage.removeItem("leily_token");
++    localStorage.removeItem("leily_user");
++    window.location.href = "/auth";
++    throw new Error("Ikke autentisert");
++  }
++
++  if (!res.ok) {
++    const body = await res.json().catch(() => ({}));
++    throw new Error(body.error || `Feil: ${res.status}`);
++  }
++
++  return res.json();
++}
++
++// ─── Auth ────────────────────────────────────────────────
++export const auth = {
++  async login(email: string, password: string) {
++    const data = await request<{ user: User; token: string }>("/auth/login", {
++      method: "POST",
++      body: JSON.stringify({ email, password }),
++    });
++    localStorage.setItem("leily_token", data.token);
++    localStorage.setItem("leily_user", JSON.stringify(data.user));
++    return data;
++  },
++
++  async register(email: string, password: string, full_name?: string) {
++    const data = await request<{ user: User; token: string }>("/auth/register", {
++      method: "POST",
++      body: JSON.stringify({ email, password, full_name }),
++    });
++    localStorage.setItem("leily_token", data.token);
++    localStorage.setItem("leily_user", JSON.stringify(data.user));
++    return data;
++  },
++
++  async me() {
++    return request<{ user: User }>("/auth/me");
++  },
++
++  logout() {
++    localStorage.removeItem("leily_token");
++    localStorage.removeItem("leily_user");
++    window.location.href = "/auth";
++  },
++
++  getUser(): User | null {
++    try {
++      const raw = localStorage.getItem("leily_user");
++      return raw ? JSON.parse(raw) : null;
++    } catch {
++      return null;
++    }
++  },
++
++  isLoggedIn(): boolean {
++    return !!getToken();
++  },
++};
++
++// ─── Dashboard ──────────────────────────────────────────
++export const dashboard = {
++  stats: () => request<DashboardStats>("/dashboard"),
++};
++
++// ─── Properties ─────────────────────────────────────────
++export const properties = {
++  list: () => request<Property[]>("/properties"),
++  get: (id: string) => request<Property>(`/properties/${id}`),
++  create: (data: Partial<Property>) => request<Property>("/properties", { method: "POST", body: JSON.stringify(data) }),
++  update: (id: string, data: Partial<Property>) => request<Property>(`/properties/${id}`, { method: "PUT", body: JSON.stringify(data) }),
++  remove: (id: string) => request<{ ok: boolean }>(`/properties/${id}`, { method: "DELETE" }),
++};
++
++// ─── Leases ─────────────────────────────────────────────
++export const leases = {
++  list: () => request<Lease[]>("/leases"),
++  create: (data: CreateLeaseData) => request<Lease>("/leases", { method: "POST", body: JSON.stringify(data) }),
++  update: (id: string, data: Partial<Lease>) => request<Lease>(`/leases/${id}`, { method: "PUT", body: JSON.stringify(data) }),
++  terminate: (id: string) => request<Lease>(`/leases/${id}/terminate`, { method: "POST" }),
++};
++
++// ─── Tenants ────────────────────────────────────────────
++export const tenants = {
++  list: () => request<Tenant[]>("/tenants"),
++  create: (data: Partial<Tenant>) => request<Tenant>("/tenants", { method: "POST", body: JSON.stringify(data) }),
++  update: (id: string, data: Partial<Tenant>) => request<Tenant>(`/tenants/${id}`, { method: "PUT", body: JSON.stringify(data) }),
++  remove: (id: string) => request<{ ok: boolean }>(`/tenants/${id}`, { method: "DELETE" }),
++};
++
++// ─── Finance ────────────────────────────────────────────
++export const finance = {
++  overview: () => request<FinanceOverview>("/finance/overview"),
++  transactions: (limit?: number) => request<Transaction[]>(`/finance/transactions${limit ? `?limit=${limit}` : ""}`),
++  addTransaction: (data: Partial<Transaction>) => request<Transaction>("/finance/transactions", { method: "POST", body: JSON.stringify(data) }),
++  removeTransaction: (id: string) => request<{ ok: boolean }>(`/finance/transactions/${id}`, { method: "DELETE" }),
++};
++
++// ─── Admin Dashboard ────────────────────────────────────
++export const adminDashboard = {
++  /** Aggregated stats for admin overview */
++  summary: async (): Promise<AdminSummary> => {
++    const [statsData, finData, txData] = await Promise.all([
++      dashboard.stats(),
++      finance.overview(),
++      finance.transactions(200),
++    ]);
++    return buildAdminSummary(statsData, finData, txData);
++  },
++};
++
++function buildAdminSummary(
++  stats: DashboardStats,
++  fin: FinanceOverview,
++  txs: Transaction[]
++): AdminSummary {
++  const now = new Date();
++  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
++
++  // Group transactions by month (last 12 months)
++  const monthlyMap: Record<string, { income: number; expense: number }> = {};
++  for (let i = 11; i >= 0; i--) {
++    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
++    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
++    monthlyMap[key] = { income: 0, expense: 0 };
++  }
++  for (const tx of txs) {
++    const key = tx.date?.slice(0, 7);
++    if (key && monthlyMap[key] !== undefined) {
++      if (tx.type === "income") monthlyMap[key].income += tx.amount;
++      else monthlyMap[key].expense += tx.amount;
++    }
++  }
++  const monthlyTrend: MonthlyDataPoint[] = Object.entries(monthlyMap).map(
++    ([month, v]) => ({ month, income: v.income, expense: v.expense, net: v.income - v.expense })
++  );
++
++  // Expense breakdown by category (current month)
++  const catMap: Record<string, number> = {};
++  for (const tx of txs) {
++    if (tx.type === "expense" && tx.date?.startsWith(thisMonth)) {
++      catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
++    }
++  }
++  const expenseByCategory: CategoryBreakdown[] = Object.entries(catMap)
++    .map(([category, amount]) => ({ category, amount }))
++    .sort((a, b) => b.amount - a.amount);
++
++  // Property-level data
++  const propertyBreakdown: PropertyFinance[] = fin.properties.map((p) => ({
++    id: p.id,
++    address: p.address,
++    city: p.city,
++    currentValue: p.current_value,
++    purchasePrice: p.purchase_price,
++    loanAmount: p.loan_amount,
++    equity: p.current_value - p.loan_amount,
++    monthlyRent: p.monthly_rent,
++    monthlyCost: p.monthly_cost,
++    cashflow: p.cashflow,
++    yieldPct: p.yield_pct,
++    interestRate: p.interest_rate,
++    hasTenant: p.has_tenant,
++    appreciation: p.purchase_price > 0 ? ((p.current_value - p.purchase_price) / p.purchase_price) * 100 : 0,
++  }));
++
++  // Recent transactions
++  const recentTransactions = txs.slice(0, 20);
++
++  return {
++    kpis: {
++      totalPortfolioValue: stats.totalValue,
++      totalLoan: stats.totalLoan,
++      totalEquity: stats.equity,
++      monthlyIncome: stats.monthlyIncome,
++      monthlyCosts: fin.totals.costs,
++      monthlyCashflow: fin.totals.cashflow,
++      properties: stats.properties,
++      tenants: stats.tenants,
++      occupancy: stats.occupancy,
++      avgYield: fin.totals.avg_yield,
++    },
++    monthlyTrend,
++    expenseByCategory,
++    propertyBreakdown,
++    recentTransactions,
++    expiringLeases: stats.expiringLeases,
++  };
++}
++
++// ─── Messages ───────────────────────────────────────────
++export const messages = {
++  list: (leaseId: string) => request<Message[]>(`/messages/${leaseId}`),
++  send: (leaseId: string, content: string) => request<Message>(`/messages/${leaseId}`, { method: "POST", body: JSON.stringify({ content, sender: "landlord" }) }),
++};
++
++// ─── Types ──────────────────────────────────────────────
++export interface User {
++  id: string;
++  email: string;
++  full_name?: string;
++}
++
++export interface Property {
++  id: string;
++  address: string;
++  city?: string;
++  postal_code?: string;
++  property_type?: string;
++  size_sqm?: number;
++  bedrooms?: number;
++  purchase_price?: number;
++  current_value?: number;
++  loan_amount?: number;
++  interest_rate?: number;
++  monthly_rent?: number;
++  image_url?: string;
++  notes?: string;
++  created_at?: string;
++  active_lease?: {
++    id: string;
++    tenant_id: string;
++    monthly_rent: number;
++    start_date: string;
++    end_date: string;
++    tenant_name: string;
++  } | null;
++}
++
++export interface Lease {
++  id: string;
++  property_id: string;
++  tenant_id: string;
++  monthly_rent: number;
++  deposit?: number;
++  start_date: string;
++  end_date: string;
++  status: string;
++  notes?: string;
++  property_address?: string;
++  property_city?: string;
++  tenant_name?: string;
++  created_at?: string;
++}
++
++export interface CreateLeaseData {
++  property_id: string;
++  tenant_id?: string;
++  tenant_first_name?: string;
++  tenant_last_name?: string;
++  tenant_email?: string;
++  tenant_phone?: string;
++  monthly_rent: number;
++  deposit?: number;
++  start_date: string;
++  end_date: string;
++  notes?: string;
++}
++
++export interface Tenant {
++  id: string;
++  first_name: string;
++  last_name: string;
++  email?: string;
++  phone?: string;
++  created_at?: string;
++}
++
++export interface Transaction {
++  id: string;
++  property_id?: string;
++  lease_id?: string;
++  type: "income" | "expense";
++  category: string;
++  amount: number;
++  description?: string;
++  date: string;
++}
++
++export interface Message {
++  id: string;
++  lease_id: string;
++  sender: "landlord" | "tenant";
++  content: string;
++  created_at: string;
++}
++
++export interface DashboardStats {
++  properties: number;
++  tenants: number;
++  activeLeases: number;
++  monthlyIncome: number;
++  totalValue: number;
++  totalLoan: number;
++  equity: number;
++  occupancy: number;
++  avgYield: number;
++  expiringLeases: Array<{
++    id: string;
++    end_date: string;
++    property_address: string;
++    tenant_name: string;
++  }>;
++}
++
++export interface FinanceOverview {
++  properties: Array<{
++    id: string;
++    address: string;
++    city?: string;
++    monthly_rent: number;
++    monthly_cost: number;
++    cashflow: number;
++    purchase_price: number;
++    current_value: number;
++    loan_amount: number;
++    interest_rate: number;
++    yield_pct: number;
++    has_tenant: boolean;
++  }>;
++  totals: {
++    income: number;
++    costs: number;
++    cashflow: number;
++    portfolio_value: number;
++    total_loan: number;
++    avg_yield: number;
++  };
++}
++
++// ─── Admin Dashboard Types ──────────────────────────────
++export interface AdminSummary {
++  kpis: {
++    totalPortfolioValue: number;
++    totalLoan: number;
++    totalEquity: number;
++    monthlyIncome: number;
++    monthlyCosts: number;
++    monthlyCashflow: number;
++    properties: number;
++    tenants: number;
++    occupancy: number;
++    avgYield: number;
++  };
++  monthlyTrend: MonthlyDataPoint[];
++  expenseByCategory: CategoryBreakdown[];
++  propertyBreakdown: PropertyFinance[];
++  recentTransactions: Transaction[];
++  expiringLeases: Array<{
++    id: string;
++    end_date: string;
++    property_address: string;
++    tenant_name: string;
++  }>;
++}
++
++export interface MonthlyDataPoint {
++  month: string;
++  income: number;
++  expense: number;
++  net: number;
++}
++
++export interface CategoryBreakdown {
++  category: string;
++  amount: number;
++}
++
++export interface PropertyFinance {
++  id: string;
++  address: string;
++  city?: string;
++  currentValue: number;
++  purchasePrice: number;
++  loanAmount: number;
++  equity: number;
++  monthlyRent: number;
++  monthlyCost: number;
++  cashflow: number;
++  yieldPct: number;
++  interestRate: number;
++  hasTenant: boolean;
++  appreciation: number;
++}
+diff --git a/src/components/AppShell.tsx b/src/components/AppShell.tsx
+new file mode 100644
+index 0000000..a8a5cac
+--- /dev/null
++++ b/src/components/AppShell.tsx
+@@ -0,0 +1,92 @@
++import { Link, useLocation, useNavigate } from "react-router-dom";
++import { useAuth } from "@/contexts/AuthContext";
++import { Home, Building2, FileText, Wallet, Settings, LogOut, LayoutDashboard } from "lucide-react";
++import { cn } from "@/shared/lib/utils";
++
++const navItems = [
++  { path: "/oversikt", label: "Oversikt", icon: Home },
++  { path: "/eiendommer", label: "Eiendommer", icon: Building2 },
++  { path: "/kontrakter", label: "Kontrakter", icon: FileText },
++  { path: "/okonomi", label: "Økonomi", icon: Wallet },
++  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
++];
++
++interface AppShellProps {
++  children: React.ReactNode;
++  title: string;
++  subtitle?: string;
++  actions?: React.ReactNode;
++}
++
++export default function AppShell({ children, title, subtitle, actions }: AppShellProps) {
++  const location = useLocation();
++  const navigate = useNavigate();
++  const { user, signOut } = useAuth();
++
++  if (!user) {
++    navigate("/auth");
++    return null;
++  }
++
++  return (
++    <div className="min-h-screen bg-background pb-20">
++      {/* Top header */}
++      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border/50">
++        <div className="px-4 py-3 flex items-center justify-between">
++          <div className="min-w-0 flex-1">
++            <h1 className="text-lg font-bold text-foreground truncate">{title}</h1>
++            {subtitle && (
++              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
++            )}
++          </div>
++          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
++            {actions}
++            <Link
++              to="/innstillinger"
++              className={cn(
++                "p-2 rounded-lg transition-colors",
++                location.pathname === "/innstillinger"
++                  ? "bg-primary/10 text-primary"
++                  : "text-muted-foreground hover:text-foreground"
++              )}
++            >
++              <Settings className="h-5 w-5" />
++            </Link>
++          </div>
++        </div>
++      </header>
++
++      {/* Main content */}
++      <main className="px-4 py-4">{children}</main>
++
++      {/* Bottom navigation */}
++      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border/50 safe-area-bottom">
++        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
++          {navItems.map(({ path, label, icon: Icon }) => {
++            const isActive = location.pathname === path;
++            return (
++              <Link
++                key={path}
++                to={path}
++                className={cn(
++                  "flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-lg transition-colors min-w-0 flex-1",
++                  isActive
++                    ? "text-primary"
++                    : "text-muted-foreground hover:text-foreground"
++                )}
++              >
++                <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
++                <span className={cn(
++                  "text-[10px] leading-tight truncate",
++                  isActive ? "font-semibold" : "font-medium"
++                )}>
++                  {label}
++                </span>
++              </Link>
++            );
++          })}
++        </div>
++      </nav>
++    </div>
++  );
++}
+diff --git a/src/pages/AdminDashboard.tsx b/src/pages/AdminDashboard.tsx
+new file mode 100644
+index 0000000..8b49491
+--- /dev/null
++++ b/src/pages/AdminDashboard.tsx
+@@ -0,0 +1,496 @@
++import AppShell from "@/components/AppShell";
++import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
++import { Badge } from "@/components/ui/badge";
++import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
++import {
++  Building2, TrendingUp, TrendingDown, Wallet, Users, AlertTriangle,
++  PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Home, Percent,
++} from "lucide-react";
++import {
++  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
++  PieChart as RPieChart, Pie, Cell, Legend, LineChart, Line, Area, AreaChart,
++} from "recharts";
++import { adminDashboard, AdminSummary } from "@/api/client";
++import { useState, useEffect } from "react";
++
++/* ── helpers ─────────────────────────────────────────── */
++const fmt = (n: number) =>
++  new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
++
++const fmtMonth = (m: string) => {
++  const [y, mo] = m.split("-");
++  const labels = ["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"];
++  return `${labels[parseInt(mo) - 1]} ${y.slice(2)}`;
++};
++
++const COLORS = [
++  "hsl(var(--primary))",
++  "hsl(var(--chart-2, 220 70% 50%))",
++  "hsl(var(--chart-3, 340 75% 55%))",
++  "hsl(var(--chart-4, 160 60% 45%))",
++  "hsl(var(--chart-5, 30 80% 55%))",
++  "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6",
++];
++
++/* ── main component ──────────────────────────────────── */
++const AdminDashboard = () => {
++  const [data, setData] = useState<AdminSummary | null>(null);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState<string | null>(null);
++
++  useEffect(() => {
++    adminDashboard
++      .summary()
++      .then(setData)
++      .catch((e) => setError(e.message))
++      .finally(() => setLoading(false));
++  }, []);
++
++  if (loading || !data) {
++    return (
++      <AppShell title="Admin Dashboard">
++        <div className="space-y-4">
++          {[1, 2, 3, 4, 5].map((i) => (
++            <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
++          ))}
++        </div>
++      </AppShell>
++    );
++  }
++
++  if (error) {
++    return (
++      <AppShell title="Admin Dashboard">
++        <Card className="border-destructive">
++          <CardContent className="p-6 text-center text-destructive">
++            <p className="font-semibold">Feil ved lasting</p>
++            <p className="text-sm mt-1">{error}</p>
++          </CardContent>
++        </Card>
++      </AppShell>
++    );
++  }
++
++  const k = data.kpis;
++  const ltv = k.totalPortfolioValue > 0 ? (k.totalLoan / k.totalPortfolioValue) * 100 : 0;
++
++  return (
++    <AppShell title="Admin Dashboard" subtitle="Portefølje &amp; økonomi">
++      <Tabs defaultValue="overview" className="space-y-4">
++        <TabsList className="grid w-full grid-cols-3 h-9">
++          <TabsTrigger value="overview" className="text-xs">Oversikt</TabsTrigger>
++          <TabsTrigger value="expenses" className="text-xs">Utgifter</TabsTrigger>
++          <TabsTrigger value="properties" className="text-xs">Eiendommer</TabsTrigger>
++        </TabsList>
++
++        {/* ═══════════════ TAB: OVERVIEW ═══════════════ */}
++        <TabsContent value="overview" className="space-y-4">
++          {/* KPI grid */}
++          <div className="grid grid-cols-2 gap-3">
++            <KPI icon={<Building2 className="h-4 w-4" />} label="Porteføljeverdi" value={`${fmt(k.totalPortfolioValue)} kr`} positive />
++            <KPI icon={<Wallet className="h-4 w-4" />} label="Egenkapital" value={`${fmt(k.totalEquity)} kr`} positive />
++            <KPI icon={<TrendingUp className="h-4 w-4" />} label="Mnd. inntekt" value={`${fmt(k.monthlyIncome)} kr`} positive />
++            <KPI icon={<TrendingDown className="h-4 w-4" />} label="Mnd. kostnader" value={`${fmt(k.monthlyCosts)} kr`} />
++          </div>
++
++          {/* Cashflow highlight */}
++          <Card className={k.monthlyCashflow >= 0 ? "border-green-300 bg-green-50 dark:bg-green-950/20" : "border-red-300 bg-red-50 dark:bg-red-950/20"}>
++            <CardContent className="p-4 flex items-center justify-between">
++              <div className="flex items-center gap-2">
++                {k.monthlyCashflow >= 0 ? (
++                  <ArrowUpRight className="h-5 w-5 text-green-600" />
++                ) : (
++                  <ArrowDownRight className="h-5 w-5 text-red-600" />
++                )}
++                <span className="text-sm font-semibold">Månedlig pengestrøm</span>
++              </div>
++              <span className={`text-lg font-bold ${k.monthlyCashflow >= 0 ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"}`}>
++                {k.monthlyCashflow >= 0 ? "+" : ""}{fmt(k.monthlyCashflow)} kr
++              </span>
++            </CardContent>
++          </Card>
++
++          {/* Secondary KPIs */}
++          <div className="grid grid-cols-3 gap-3">
++            <MiniKPI label="Eiendommer" value={String(k.properties)} />
++            <MiniKPI label="Belegg" value={`${k.occupancy.toFixed(0)}%`} />
++            <MiniKPI label="Avkastning" value={`${k.avgYield.toFixed(1)}%`} />
++          </div>
++
++          {/* LTV bar */}
++          <Card>
++            <CardContent className="p-4">
++              <div className="flex justify-between text-xs text-muted-foreground mb-1">
++                <span>Belåningsgrad (LTV)</span>
++                <span className="font-semibold">{ltv.toFixed(1)}%</span>
++              </div>
++              <div className="h-3 bg-muted rounded-full overflow-hidden">
++                <div
++                  className={`h-full rounded-full transition-all ${ltv > 80 ? "bg-red-500" : ltv > 60 ? "bg-yellow-500" : "bg-green-500"}`}
++                  style={{ width: `${Math.min(ltv, 100)}%` }}
++                />
++              </div>
++              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
++                <span>Lån: {fmt(k.totalLoan)} kr</span>
++                <span>Verdi: {fmt(k.totalPortfolioValue)} kr</span>
++              </div>
++            </CardContent>
++          </Card>
++
++          {/* Monthly income vs expense trend */}
++          <Card>
++            <CardHeader className="pb-2">
++              <CardTitle className="text-sm flex items-center gap-2">
++                <BarChart3 className="h-4 w-4" /> Inntekt vs. utgifter (12 mnd)
++              </CardTitle>
++            </CardHeader>
++            <CardContent className="p-2">
++              <ResponsiveContainer width="100%" height={220}>
++                <BarChart data={data.monthlyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
++                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
++                  <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10 }} />
++                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
++                  <Tooltip
++                    formatter={(value: number) => `${fmt(value)} kr`}
++                    labelFormatter={fmtMonth}
++                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
++                  />
++                  <Bar dataKey="income" name="Inntekt" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
++                  <Bar dataKey="expense" name="Utgifter" fill="hsl(var(--destructive, 0 84% 60%))" radius={[3, 3, 0, 0]} />
++                </BarChart>
++              </ResponsiveContainer>
++            </CardContent>
++          </Card>
++
++          {/* Net cashflow trend line */}
++          <Card>
++            <CardHeader className="pb-2">
++              <CardTitle className="text-sm flex items-center gap-2">
++                <TrendingUp className="h-4 w-4" /> Netto pengestrøm
++              </CardTitle>
++            </CardHeader>
++            <CardContent className="p-2">
++              <ResponsiveContainer width="100%" height={180}>
++                <AreaChart data={data.monthlyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
++                  <defs>
++                    <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
++                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
++                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
++                    </linearGradient>
++                  </defs>
++                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
++                  <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10 }} />
++                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
++                  <Tooltip
++                    formatter={(value: number) => `${fmt(value)} kr`}
++                    labelFormatter={fmtMonth}
++                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
++                  />
++                  <Area type="monotone" dataKey="net" name="Netto" stroke="hsl(var(--primary))" fill="url(#netGrad)" strokeWidth={2} />
++                </AreaChart>
++              </ResponsiveContainer>
++            </CardContent>
++          </Card>
++
++          {/* Expiring leases */}
++          {data.expiringLeases.length > 0 && (
++            <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/20">
++              <CardContent className="p-4">
++                <div className="flex items-center gap-2 mb-3">
++                  <AlertTriangle className="h-4 w-4 text-orange-600" />
++                  <span className="text-sm font-semibold text-orange-800 dark:text-orange-200">Kontrakter som utløper</span>
++                </div>
++                {data.expiringLeases.map((l) => (
++                  <div key={l.id} className="flex justify-between text-sm mb-2">
++                    <div className="min-w-0">
++                      <p className="font-medium truncate">{l.property_address}</p>
++                      <p className="text-xs text-muted-foreground">{l.tenant_name}</p>
++                    </div>
++                    <Badge variant="outline" className="text-orange-700 border-orange-300 ml-2 flex-shrink-0">
++                      {new Date(l.end_date).toLocaleDateString("nb-NO")}
++                    </Badge>
++                  </div>
++                ))}
++              </CardContent>
++            </Card>
++          )}
++        </TabsContent>
++
++        {/* ═══════════════ TAB: EXPENSES ═══════════════ */}
++        <TabsContent value="expenses" className="space-y-4">
++          {/* Monthly totals */}
++          <div className="grid grid-cols-2 gap-3">
++            <KPI icon={<TrendingDown className="h-4 w-4" />} label="Mnd. utgifter" value={`${fmt(k.monthlyCosts)} kr`} />
++            <KPI icon={<Percent className="h-4 w-4" />} label="Kostnadsandel" value={`${k.monthlyIncome > 0 ? ((k.monthlyCosts / k.monthlyIncome) * 100).toFixed(0) : 0}%`} positive={k.monthlyCosts < k.monthlyIncome} />
++          </div>
++
++          {/* Expense category pie chart */}
++          {data.expenseByCategory.length > 0 ? (
++            <Card>
++              <CardHeader className="pb-2">
++                <CardTitle className="text-sm flex items-center gap-2">
++                  <PieChart className="h-4 w-4" /> Utgifter etter kategori
++                </CardTitle>
++              </CardHeader>
++              <CardContent className="p-2">
++                <ResponsiveContainer width="100%" height={260}>
++                  <RPieChart>
++                    <Pie
++                      data={data.expenseByCategory}
++                      dataKey="amount"
++                      nameKey="category"
++                      cx="50%"
++                      cy="50%"
++                      outerRadius={90}
++                      innerRadius={50}
++                      paddingAngle={2}
++                      label={({ category, percent }: { category: string; percent: number }) =>
++                        `${category} ${(percent * 100).toFixed(0)}%`
++                      }
++                      labelLine={{ strokeWidth: 1 }}
++                    >
++                      {data.expenseByCategory.map((_, i) => (
++                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
++                      ))}
++                    </Pie>
++                    <Tooltip formatter={(value: number) => `${fmt(value)} kr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
++                  </RPieChart>
++                </ResponsiveContainer>
++
++                {/* Category table */}
++                <div className="mt-2 space-y-2 px-2">
++                  {data.expenseByCategory.map((cat, i) => (
++                    <div key={cat.category} className="flex items-center justify-between text-sm">
++                      <div className="flex items-center gap-2">
++                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
++                        <span className="capitalize">{cat.category}</span>
++                      </div>
++                      <span className="font-medium">{fmt(cat.amount)} kr</span>
++                    </div>
++                  ))}
++                </div>
++              </CardContent>
++            </Card>
++          ) : (
++            <Card>
++              <CardContent className="p-8 text-center text-muted-foreground">
++                <PieChart className="h-10 w-10 mx-auto mb-3 opacity-40" />
++                <p className="text-sm">Ingen utgifter registrert denne måneden</p>
++              </CardContent>
++            </Card>
++          )}
++
++          {/* Expense trend bar */}
++          <Card>
++            <CardHeader className="pb-2">
++              <CardTitle className="text-sm flex items-center gap-2">
++                <BarChart3 className="h-4 w-4" /> Utgiftsutvikling (12 mnd)
++              </CardTitle>
++            </CardHeader>
++            <CardContent className="p-2">
++              <ResponsiveContainer width="100%" height={200}>
++                <BarChart data={data.monthlyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
++                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
++                  <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10 }} />
++                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
++                  <Tooltip formatter={(value: number) => `${fmt(value)} kr`} labelFormatter={fmtMonth} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
++                  <Bar dataKey="expense" name="Utgifter" fill="hsl(var(--destructive, 0 84% 60%))" radius={[3, 3, 0, 0]} />
++                </BarChart>
++              </ResponsiveContainer>
++            </CardContent>
++          </Card>
++
++          {/* Recent transactions */}
++          <Card>
++            <CardHeader className="pb-2">
++              <CardTitle className="text-sm">Siste transaksjoner</CardTitle>
++            </CardHeader>
++            <CardContent className="p-0">
++              {data.recentTransactions.length === 0 ? (
++                <p className="text-sm text-muted-foreground text-center py-6">Ingen transaksjoner</p>
++              ) : (
++                <div className="divide-y">
++                  {data.recentTransactions.map((tx) => (
++                    <div key={tx.id} className="flex items-center justify-between px-4 py-3">
++                      <div className="min-w-0 flex-1">
++                        <p className="text-sm font-medium truncate">{tx.description || tx.category}</p>
++                        <p className="text-xs text-muted-foreground">
++                          {new Date(tx.date).toLocaleDateString("nb-NO")} &middot; {tx.category}
++                        </p>
++                      </div>
++                      <span className={`text-sm font-bold ml-3 flex-shrink-0 ${tx.type === "income" ? "text-green-600" : "text-red-600"}`}>
++                        {tx.type === "income" ? "+" : "-"}{fmt(tx.amount)} kr
++                      </span>
++                    </div>
++                  ))}
++                </div>
++              )}
++            </CardContent>
++          </Card>
++        </TabsContent>
++
++        {/* ═══════════════ TAB: PROPERTIES ═══════════════ */}
++        <TabsContent value="properties" className="space-y-4">
++          {/* Portfolio value summary */}
++          <Card>
++            <CardContent className="p-4">
++              <div className="flex justify-between items-center mb-3">
++                <span className="text-sm font-semibold">Porteføljeverdier</span>
++                <span className="text-lg font-bold">{fmt(k.totalPortfolioValue)} kr</span>
++              </div>
++              <div className="space-y-2">
++                <ValueRow label="Totalt lån" value={k.totalLoan} color="text-red-600" />
++                <ValueRow label="Total egenkapital" value={k.totalEquity} color="text-green-600" />
++              </div>
++            </CardContent>
++          </Card>
++
++          {/* Property value chart */}
++          {data.propertyBreakdown.length > 0 && (
++            <Card>
++              <CardHeader className="pb-2">
++                <CardTitle className="text-sm flex items-center gap-2">
++                  <Building2 className="h-4 w-4" /> Verdi per eiendom
++                </CardTitle>
++              </CardHeader>
++              <CardContent className="p-2">
++                <ResponsiveContainer width="100%" height={Math.max(180, data.propertyBreakdown.length * 50)}>
++                  <BarChart data={data.propertyBreakdown} layout="vertical" margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
++                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
++                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1_000_000).toFixed(1)}M`} />
++                    <YAxis type="category" dataKey="address" tick={{ fontSize: 10 }} width={100} />
++                    <Tooltip formatter={(value: number) => `${fmt(value)} kr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
++                    <Bar dataKey="currentValue" name="Verdi" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
++                    <Bar dataKey="loanAmount" name="Lån" fill="hsl(var(--destructive, 0 84% 60%))" radius={[0, 3, 3, 0]} />
++                  </BarChart>
++                </ResponsiveContainer>
++              </CardContent>
++            </Card>
++          )}
++
++          {/* Per-property cards */}
++          {data.propertyBreakdown.length === 0 ? (
++            <Card>
++              <CardContent className="p-8 text-center text-muted-foreground">
++                <Building2 className="h-10 w-10 mx-auto mb-3 opacity-40" />
++                <p className="text-sm">Ingen eiendommer registrert</p>
++              </CardContent>
++            </Card>
++          ) : (
++            data.propertyBreakdown.map((p) => (
++              <Card key={p.id}>
++                <CardContent className="p-4">
++                  <div className="flex justify-between mb-3">
++                    <div className="min-w-0">
++                      <h3 className="font-semibold text-sm truncate">{p.address}</h3>
++                      {p.city && <p className="text-xs text-muted-foreground">{p.city}</p>}
++                    </div>
++                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
++                      {p.hasTenant ? (
++                        <Badge className="bg-green-100 text-green-800 text-[10px]">Utleid</Badge>
++                      ) : (
++                        <Badge variant="outline" className="text-[10px]">Ledig</Badge>
++                      )}
++                    </div>
++                  </div>
++
++                  {/* Value / Equity / LTV */}
++                  <div className="grid grid-cols-3 gap-3 text-xs mb-3">
++                    <div>
++                      <span className="text-muted-foreground">Verdi</span>
++                      <p className="font-semibold">{fmt(p.currentValue)} kr</p>
++                    </div>
++                    <div>
++                      <span className="text-muted-foreground">Egenkapital</span>
++                      <p className="font-semibold text-green-600">{fmt(p.equity)} kr</p>
++                    </div>
++                    <div>
++                      <span className="text-muted-foreground">Belåning</span>
++                      <p className="font-semibold">{p.currentValue > 0 ? ((p.loanAmount / p.currentValue) * 100).toFixed(0) : 0}%</p>
++                    </div>
++                  </div>
++
++                  {/* Financial details */}
++                  <div className="grid grid-cols-3 gap-3 text-xs mb-3">
++                    <div>
++                      <span className="text-muted-foreground">Mnd. leie</span>
++                      <p className="font-medium">{fmt(p.monthlyRent)} kr</p>
++                    </div>
++                    <div>
++                      <span className="text-muted-foreground">Mnd. kost</span>
++                      <p className="font-medium">{fmt(p.monthlyCost)} kr</p>
++                    </div>
++                    <div>
++                      <span className="text-muted-foreground">Pengestrøm</span>
++                      <p className={`font-bold ${p.cashflow >= 0 ? "text-green-600" : "text-red-600"}`}>
++                        {p.cashflow >= 0 ? "+" : ""}{fmt(p.cashflow)} kr
++                      </p>
++                    </div>
++                  </div>
++
++                  {/* Yield & Appreciation */}
++                  <div className="flex gap-3 text-xs">
++                    <div className="flex items-center gap-1">
++                      <Percent className="h-3 w-3 text-muted-foreground" />
++                      <span className="text-muted-foreground">Avk:</span>
++                      <span className="font-semibold">{p.yieldPct}%</span>
++                    </div>
++                    <div className="flex items-center gap-1">
++                      <TrendingUp className="h-3 w-3 text-muted-foreground" />
++                      <span className="text-muted-foreground">Verdiøkning:</span>
++                      <span className={`font-semibold ${p.appreciation >= 0 ? "text-green-600" : "text-red-600"}`}>
++                        {p.appreciation >= 0 ? "+" : ""}{p.appreciation.toFixed(1)}%
++                      </span>
++                    </div>
++                    <div className="flex items-center gap-1">
++                      <Home className="h-3 w-3 text-muted-foreground" />
++                      <span className="text-muted-foreground">Rente:</span>
++                      <span className="font-semibold">{p.interestRate}%</span>
++                    </div>
++                  </div>
++                </CardContent>
++              </Card>
++            ))
++          )}
++        </TabsContent>
++      </Tabs>
++    </AppShell>
++  );
++};
++
++/* ── Sub-components ──────────────────────────────────── */
++function KPI({ icon, label, value, positive }: { icon: React.ReactNode; label: string; value: string; positive?: boolean }) {
++  return (
++    <Card>
++      <CardContent className="p-4">
++        <div className="flex items-center gap-2 mb-1">
++          <span className={positive ? "text-primary" : "text-muted-foreground"}>{icon}</span>
++          <span className="text-xs text-muted-foreground font-medium">{label}</span>
++        </div>
++        <p className={`text-lg font-bold ${positive === false ? "text-destructive" : ""}`}>{value}</p>
++      </CardContent>
++    </Card>
++  );
++}
++
++function MiniKPI({ label, value }: { label: string; value: string }) {
++  return (
++    <Card>
++      <CardContent className="p-3 text-center">
++        <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
++        <p className="text-base font-bold">{value}</p>
++      </CardContent>
++    </Card>
++  );
++}
++
++function ValueRow({ label, value, color }: { label: string; value: number; color: string }) {
++  return (
++    <div className="flex justify-between text-sm">
++      <span className="text-muted-foreground">{label}</span>
++      <span className={`font-semibold ${color}`}>{fmt(value)} kr</span>
++    </div>
++  );
++}
++
++export default AdminDashboard;
+-- 
+2.34.1
+

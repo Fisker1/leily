@@ -1,12 +1,11 @@
 import AppShell from "@/components/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, LogOut, Mail, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Innstillinger = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   const initials = user?.email
     ? user.email.substring(0, 2).toUpperCase()
@@ -18,15 +17,12 @@ const Innstillinger = () => {
       <Card className="mb-6">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+              {initials}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">
-                {user?.user_metadata?.full_name || user?.email || "Bruker"}
+                {user?.full_name || user?.email || "Bruker"}
               </p>
               <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
                 <Mail className="h-3 w-3" />
@@ -71,7 +67,7 @@ const Innstillinger = () => {
       <Button
         variant="outline"
         className="w-full text-destructive hover:text-destructive hover:bg-destructive/5"
-        onClick={() => signOut()}
+        onClick={logout}
       >
         <LogOut className="h-4 w-4 mr-2" />
         Logg ut
