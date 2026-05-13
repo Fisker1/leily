@@ -1,0 +1,1249 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  public: {
+    Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      building_projects: {
+        Row: {
+          calculation_id: string | null
+          created_at: string
+          floor_plans: Json
+          id: string
+          placed_items: Json
+          project_name: string
+          total_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_id?: string | null
+          created_at?: string
+          floor_plans?: Json
+          id?: string
+          placed_items?: Json
+          project_name?: string
+          total_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_projects_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculation_history: {
+        Row: {
+          calculation_data: Json
+          calculation_name: string | null
+          coordinates: number[] | null
+          created_at: string
+          finn_code: string | null
+          id: string
+          property_address: string | null
+          results_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculation_data: Json
+          calculation_name?: string | null
+          coordinates?: number[] | null
+          created_at?: string
+          finn_code?: string | null
+          id?: string
+          property_address?: string | null
+          results_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculation_data?: Json
+          calculation_name?: string | null
+          coordinates?: number[] | null
+          created_at?: string
+          finn_code?: string | null
+          id?: string
+          property_address?: string | null
+          results_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calculator_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          credits_used: number | null
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculator_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "calculator_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculator_chat_sessions: {
+        Row: {
+          calculator_data: Json | null
+          created_at: string
+          id: string
+          session_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculator_data?: Json | null
+          created_at?: string
+          id?: string
+          session_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculator_data?: Json | null
+          created_at?: string
+          id?: string
+          session_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          lease_id: string
+          message_content: string
+          sender_id: string
+          sender_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lease_id: string
+          message_content: string
+          sender_id: string
+          sender_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lease_id?: string
+          message_content?: string
+          sender_id?: string
+          sender_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposit_accounts: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+          deposit_amount: number
+          id: string
+          interest_rate: number | null
+          lease_id: string
+          property_owner_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          deposit_amount: number
+          id?: string
+          interest_rate?: number | null
+          lease_id: string
+          property_owner_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          deposit_amount?: number
+          id?: string
+          interest_rate?: number | null
+          lease_id?: string
+          property_owner_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equity_management: {
+        Row: {
+          created_at: string
+          default_equity_percentage: number | null
+          default_interest_rate: number | null
+          default_loan_period_years: number | null
+          id: string
+          notes: string | null
+          total_equity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_equity_percentage?: number | null
+          default_interest_rate?: number | null
+          default_loan_period_years?: number | null
+          id?: string
+          notes?: string | null
+          total_equity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_equity_percentage?: number | null
+          default_interest_rate?: number | null
+          default_loan_period_years?: number | null
+          id?: string
+          notes?: string | null
+          total_equity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      external_lender_settings: {
+        Row: {
+          created_at: string
+          external_lender_name: string | null
+          has_external_lender: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_lender_name?: string | null
+          has_external_lender?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_lender_name?: string | null
+          has_external_lender?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finn_property_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          extracted_at: string
+          finn_code: string
+          id: string
+          property_data: Json
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code: string
+          id?: string
+          property_data: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          extracted_at?: string
+          finn_code?: string
+          id?: string
+          property_data?: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      lease_agreements: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          end_date: string | null
+          id: string
+          lease_terms: string | null
+          monthly_rent: number
+          parking_included: boolean | null
+          pets_allowed: boolean | null
+          property_id: string
+          property_owner_id: string
+          signature_completed_at: string | null
+          signature_initiated_at: string | null
+          signature_status: string | null
+          signed_document_url: string | null
+          smoking_allowed: boolean | null
+          start_date: string
+          status: string | null
+          tenant_id: string
+          updated_at: string
+          utilities_included: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          end_date?: string | null
+          id?: string
+          lease_terms?: string | null
+          monthly_rent: number
+          parking_included?: boolean | null
+          pets_allowed?: boolean | null
+          property_id: string
+          property_owner_id: string
+          signature_completed_at?: string | null
+          signature_initiated_at?: string | null
+          signature_status?: string | null
+          signed_document_url?: string | null
+          smoking_allowed?: boolean | null
+          start_date: string
+          status?: string | null
+          tenant_id: string
+          updated_at?: string
+          utilities_included?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          end_date?: string | null
+          id?: string
+          lease_terms?: string | null
+          monthly_rent?: number
+          parking_included?: boolean | null
+          pets_allowed?: boolean | null
+          property_id?: string
+          property_owner_id?: string
+          signature_completed_at?: string | null
+          signature_initiated_at?: string | null
+          signature_status?: string | null
+          signed_document_url?: string | null
+          smoking_allowed?: boolean | null
+          start_date?: string
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string
+          utilities_included?: boolean | null
+        }
+        Relationships: []
+      }
+      lease_signatures: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          landlord_notified: boolean | null
+          landlord_signed: boolean | null
+          landlord_signed_at: string | null
+          landlord_signing_url: string | null
+          lease_id: string
+          signed_pdf_url: string | null
+          signicat_document_id: string
+          signicat_status: string | null
+          status: string | null
+          tenant_notified: boolean | null
+          tenant_signed: boolean | null
+          tenant_signed_at: string | null
+          tenant_signing_url: string | null
+          unsigned_pdf_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          landlord_notified?: boolean | null
+          landlord_signed?: boolean | null
+          landlord_signed_at?: string | null
+          landlord_signing_url?: string | null
+          lease_id: string
+          signed_pdf_url?: string | null
+          signicat_document_id: string
+          signicat_status?: string | null
+          status?: string | null
+          tenant_notified?: boolean | null
+          tenant_signed?: boolean | null
+          tenant_signed_at?: string | null
+          tenant_signing_url?: string | null
+          unsigned_pdf_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          landlord_notified?: boolean | null
+          landlord_signed?: boolean | null
+          landlord_signed_at?: string | null
+          landlord_signing_url?: string | null
+          lease_id?: string
+          signed_pdf_url?: string | null
+          signicat_document_id?: string
+          signicat_status?: string | null
+          status?: string | null
+          tenant_notified?: boolean | null
+          tenant_signed?: boolean | null
+          tenant_signed_at?: string | null
+          tenant_signing_url?: string | null
+          unsigned_pdf_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_signatures_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "lease_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          approved_by: string | null
+          content: string
+          content_format: string
+          created_at: string
+          document_type: string
+          effective_date: string | null
+          id: string
+          notes: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: string
+        }
+        Insert: {
+          approved_by?: string | null
+          content: string
+          content_format?: string
+          created_at?: string
+          document_type: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version: string
+        }
+        Update: {
+          approved_by?: string | null
+          content?: string
+          content_format?: string
+          created_at?: string
+          document_type?: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
+      loan_calculator_settings: {
+        Row: {
+          created_at: string
+          desired_loan_amount: number | null
+          equity_amount: number | null
+          id: string
+          interest_rate: number | null
+          loan_period: number | null
+          property_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          desired_loan_amount?: number | null
+          equity_amount?: number | null
+          id?: string
+          interest_rate?: number | null
+          loan_period?: number | null
+          property_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          desired_loan_amount?: number | null
+          equity_amount?: number | null
+          id?: string
+          interest_rate?: number | null
+          loan_period?: number | null
+          property_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loan_scenarios: {
+        Row: {
+          additional_funding_amount: number | null
+          additional_funding_source: string | null
+          calculation_id: string | null
+          created_at: string
+          equity_allocated: number
+          id: string
+          interest_rate: number
+          loan_amount: number
+          loan_period_years: number
+          loan_to_value: number | null
+          monthly_payment: number | null
+          property_address: string | null
+          property_id: string | null
+          property_value: number
+          scenario_name: string
+          total_interest: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_funding_amount?: number | null
+          additional_funding_source?: string | null
+          calculation_id?: string | null
+          created_at?: string
+          equity_allocated: number
+          id?: string
+          interest_rate: number
+          loan_amount: number
+          loan_period_years: number
+          loan_to_value?: number | null
+          monthly_payment?: number | null
+          property_address?: string | null
+          property_id?: string | null
+          property_value: number
+          scenario_name: string
+          total_interest?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_funding_amount?: number | null
+          additional_funding_source?: string | null
+          calculation_id?: string | null
+          created_at?: string
+          equity_allocated?: number
+          id?: string
+          interest_rate?: number
+          loan_amount?: number
+          loan_period_years?: number
+          loan_to_value?: number | null
+          monthly_payment?: number | null
+          property_address?: string | null
+          property_id?: string | null
+          property_value?: number
+          scenario_name?: string
+          total_interest?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_scenarios_calculation_id_fkey"
+            columns: ["calculation_id"]
+            isOneToOne: false
+            referencedRelation: "calculation_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_scenarios_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          analysis_id: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string | null
+          payment_type: string
+          updated_at: string
+          user_id: string
+          vipps_order_id: string | null
+        }
+        Insert: {
+          amount: number
+          analysis_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_type: string
+          updated_at?: string
+          user_id: string
+          vipps_order_id?: string | null
+        }
+        Update: {
+          amount?: number
+          analysis_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_type?: string
+          updated_at?: string
+          user_id?: string
+          vipps_order_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          credits: number | null
+          email: string
+          full_name: string | null
+          id: string
+          is_test_user: boolean | null
+          plan: string | null
+          plan_expires_at: string | null
+          role: string | null
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          credits?: number | null
+          email: string
+          full_name?: string | null
+          id: string
+          is_test_user?: boolean | null
+          plan?: string | null
+          plan_expires_at?: string | null
+          role?: string | null
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          credits?: number | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_test_user?: boolean | null
+          plan?: string | null
+          plan_expires_at?: string | null
+          role?: string | null
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string
+          bedrooms: number | null
+          city: string | null
+          coordinates: number[] | null
+          created_at: string
+          current_value: number | null
+          id: string
+          image_url: string | null
+          interest_rate: number | null
+          last_valuation_date: string | null
+          loan_amount: number | null
+          loan_duration_years: number | null
+          monthly_rent: number | null
+          owner_id: string
+          postal_code: string | null
+          primary_residence: boolean | null
+          property_type: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          show_in_rental: boolean | null
+          size_sqm: number | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          bedrooms?: number | null
+          city?: string | null
+          coordinates?: number[] | null
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          image_url?: string | null
+          interest_rate?: number | null
+          last_valuation_date?: string | null
+          loan_amount?: number | null
+          loan_duration_years?: number | null
+          monthly_rent?: number | null
+          owner_id: string
+          postal_code?: string | null
+          primary_residence?: boolean | null
+          property_type?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          show_in_rental?: boolean | null
+          size_sqm?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          bedrooms?: number | null
+          city?: string | null
+          coordinates?: number[] | null
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          image_url?: string | null
+          interest_rate?: number | null
+          last_valuation_date?: string | null
+          loan_amount?: number | null
+          loan_duration_years?: number | null
+          monthly_rent?: number | null
+          owner_id?: string
+          postal_code?: string | null
+          primary_residence?: boolean | null
+          property_type?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          show_in_rental?: boolean | null
+          size_sqm?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      property_documents: {
+        Row: {
+          description: string | null
+          document_category: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          property_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          description?: string | null
+          document_category?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          property_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          description?: string | null
+          document_category?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          property_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
+      property_valuations: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string
+          source: string | null
+          updated_at: string
+          valuation_amount: number
+          valuation_date: string
+          valuation_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id: string
+          source?: string | null
+          updated_at?: string
+          valuation_amount: number
+          valuation_date?: string
+          valuation_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string
+          source?: string | null
+          updated_at?: string
+          valuation_amount?: number
+          valuation_date?: string
+          valuation_type?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          identifier: string
+          request_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          identifier: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          identifier?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          calculations: Json
+          file_name: string | null
+          file_size: number | null
+          generated_at: string
+          id: string
+          payment_record_id: string | null
+          property_data: Json
+          report_type: string
+          user_id: string
+        }
+        Insert: {
+          calculations: Json
+          file_name?: string | null
+          file_size?: number | null
+          generated_at?: string
+          id?: string
+          payment_record_id?: string | null
+          property_data: Json
+          report_type?: string
+          user_id: string
+        }
+        Update: {
+          calculations?: Json
+          file_name?: string | null
+          file_size?: number | null
+          generated_at?: string
+          id?: string
+          payment_record_id?: string | null
+          property_data?: Json
+          report_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          first_name: string
+          id: string
+          last_name: string
+          monthly_income: number | null
+          national_id: string | null
+          occupation: string | null
+          phone: string | null
+          property_owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          monthly_income?: number | null
+          national_id?: string | null
+          occupation?: string | null
+          phone?: string | null
+          property_owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          monthly_income?: number | null
+          national_id?: string | null
+          occupation?: string | null
+          phone?: string | null
+          property_owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transfer_protocols: {
+        Row: {
+          condition_notes: string | null
+          created_at: string
+          damages: string | null
+          id: string
+          lease_id: string
+          photos_urls: string[] | null
+          property_owner_id: string
+          protocol_date: string
+          protocol_type: string
+          repairs_needed: string | null
+          signatures_completed: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          condition_notes?: string | null
+          created_at?: string
+          damages?: string | null
+          id?: string
+          lease_id: string
+          photos_urls?: string[] | null
+          property_owner_id: string
+          protocol_date: string
+          protocol_type: string
+          repairs_needed?: string | null
+          signatures_completed?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          condition_notes?: string | null
+          created_at?: string
+          damages?: string | null
+          id?: string
+          lease_id?: string
+          photos_urls?: string[] | null
+          property_owner_id?: string
+          protocol_date?: string
+          protocol_type?: string
+          repairs_needed?: string | null
+          signatures_completed?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      get_available_equity: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
+      get_user_roles_for_edge_function: {
+        Args: { target_user_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      use_credits: {
+        Args: { credits_to_use: number; operation_type?: string }
+        Returns: boolean
+      }
+    }
+    Enums: {
+      app_role: "admin" | "ambassador" | "user"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "ambassador", "user"],
+    },
+  },
+} as const

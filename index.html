@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Favicon for all browsers -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
+    
+    <!-- Apple Touch Icons for iOS -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" sizes="180x180">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-152x152.png" sizes="152x152">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-120x120.png" sizes="120x120">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-76x76.png" sizes="76x76">
+    
+    <!-- Android Chrome icons -->
+    <link rel="icon" href="/leily-icon-192.png" sizes="192x192" type="image/png">
+    <link rel="icon" href="/leily-icon-512.png" sizes="512x512" type="image/png">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#10B981">
+    <meta name="msapplication-TileColor" content="#10B981">
+    <meta name="msapplication-TileImage" content="/leily-icon-512.png">
+    <title>Leily - Smart Property Investment Analysis</title>
+    <meta name="description" content="Professional property investment analysis tools. Calculate yields, cash flow, and generate bank-ready PDF reports for smarter investment decisions." />
+    <meta name="author" content="Leily" />
+    <meta name="keywords" content="property investment, rental yield calculator, cash flow analysis, real estate, ROI calculator, investment analysis" />
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://*.mapbox.com https://*.supabase.co https://cdn.gpteng.co https://vercel.live https://plausible.io;
+      style-src 'self' 'unsafe-inline' https://api.mapbox.com https://*.mapbox.com https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com https://*.mapbox.com data:;
+      img-src 'self' data: blob: https: http: https://*.mapboxapi.com https://*.mapbox.com;
+      media-src 'self' data: blob:;
+      connect-src 'self' https://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://events.mapbox.com https://nominatim.openstreetmap.org wss://*.supabase.co https://vercel.live https://plausible.io;
+      worker-src 'self' blob: https://*.mapbox.com;
+      child-src 'self' https://*.mapbox.com;
+      frame-src 'self' https://*.mapbox.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    " />
+    
+    <!-- Additional Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
+
+    <meta property="og:title" content="Leily - Smart Property Investment Analysis" />
+    <meta property="og:description" content="Professional property investment analysis tools. Calculate yields, cash flow, and generate bank-ready PDF reports." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/leily-icon-512.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@leilyno" />
+    <meta name="twitter:image" content="/leily-icon-512.png" />
+    
+    <!-- Plausible Analytics - Static script for detection -->
+    <script defer data-domain="stage.leily.no" src="https://plausible.io/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js"></script>
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+    
+    <!-- Domain adjustment script -->
+    <script>
+      // Adjust domain for production
+      if (window.location.hostname === 'www.leily.no' || window.location.hostname === 'leily.no') {
+        const plausibleScript = document.querySelector('script[data-domain]');
+        if (plausibleScript) {
+          plausibleScript.setAttribute('data-domain', 'leily.no');
+        }
+      }
+    </script>
+    
+    <!-- Critical CSS for above-the-fold content -->
+    <style>
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 215 25% 27%;
+        --primary: 158 75% 48%;
+        --primary-foreground: 0 0% 100%;
+        --border: 210 20% 92%;
+        --card: 0 0% 100%;
+        --muted: 210 25% 95%;
+        --muted-foreground: 215 25% 45%;
+      }
+      .dark {
+        --background: 215 25% 12%;
+        --foreground: 210 15% 92%;
+        --primary: 158 50% 35%;
+        --border: 215 20% 22%;
+        --card: 215 20% 15%;
+        --muted: 215 20% 16%;
+        --muted-foreground: 210 10% 70%;
+      }
+      * { border-color: hsl(var(--border)); }
+      body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        line-height: 1.5;
+        margin: 0;
+      }
+      #root { min-height: 100vh; }
+    </style>
+    
+    <!-- Preload main CSS to avoid render blocking -->
+    <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
