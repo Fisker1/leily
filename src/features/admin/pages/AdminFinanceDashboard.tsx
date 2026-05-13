@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/shared/hooks/useUserRole';
-import { supabase } from '@/shared/integrations/supabase/client';
+import { localData } from '@/shared/integrations/local/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -17,11 +16,13 @@ import {
   Shield, ArrowLeft, Building2, TrendingUp, TrendingDown,
   Wallet, DollarSign, Home, PieChart, BarChart3,
   Calendar, CreditCard, Percent, ArrowUpRight, ArrowDownRight,
-  RefreshCw, Eye, ChevronDown, ChevronUp, MapPin,
-  AlertTriangle, CheckCircle2, Clock, Activity, Target
+  RefreshCw, ChevronDown, ChevronUp, MapPin,
+  AlertTriangle, CheckCircle2, Clock, Activity, Target,
+  FileText
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import AddExpenseDialog from '@/features/admin/components/AddExpenseDialog';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -103,6 +104,8 @@ interface FinanceSummary {
   debtServiceRatio: number;
 }
 
+type DateRange = '1m' | '3m' | '6m' | '1y' | 'all';
+
 const CHART_COLORS = ['#2563eb', '#16a34a', '#dc2626', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -134,6 +137,18 @@ const calculateMonthlyPayment = (principal: number, annualRate: number, years: n
 const calculateMonthlyInterest = (principal: number, annualRate: number) => {
   if (!principal || !annualRate) return 0;
   return principal * (annualRate / 100 / 12);
+};
+
+const getDateRangeStart = (range: DateRange): Date | null => {
+  if (range === 'all') return null;
+  const now = new Date();
+  const months = range === '1m' ? 1 : range === '3m' ? 3 : range === '6m' ? 6 : 12;
+  return new Date(now.getFullYear(), now.getMonth() - months, 1);
+};
+
+const getMonthCount = (range: DateRange): number => {
+  if (range === 'all') return 24;
+  return range === '1m' ? 1 : range === '3m' ? 3 : range === '6m' ? 6 : 12;
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────
@@ -346,8 +361,32 @@ const PropertyCard = ({ property, leases, valuations }: {
             </div>
           )}
 
-          {/* Valuation history */}
-          {propertyValuations.length > 0 && (
+          {/* Valuation history mini-chart */}
+          {propertyValuations.length >= 2 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Verdiutvikling</p>
+              <ResponsiveContainer width="100%" height={100}>
+                <AreaChart data={propertyValuations.map(v => ({
+                  date: new Date(v.valuation_date).toLocaleDateString('no-NO', { month: 'short', year: '2-digit' }),
+                  value: v.valuation_amount,
+                }))}>
+                  <defs>
+                    <linearGradient id={`propGrad-${property.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" fontSize={9} tickLine={false} axisLine={false} />
+                  <YAxis hide />
+                  <Tooltip formatter={(value: number) => [formatCurrency(value), 'Verdi']} />
+                  <Area type="monotone" dataKey="value" stroke="#16a34a" fill={`url(#propGrad-${property.id})`} strokeWidth={1.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Valuation history list */}
+          {propertyValuations.length > 0 && propertyValuations.length < 2 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Verdivurderinger ({propertyValuations.length})</p>
               <div className="space-y-1">
@@ -376,16 +415,17 @@ const AdminFinanceDashboard = () => {
   const [leases, setLeases] = useState<LeaseAgreement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>('1y');
   const [expenseFilter, setExpenseFilter] = useState<string>('all');
   const [propertySort, setPropertySort] = useState<string>('value');
 
   const fetchAllData = useCallback(async () => {
     try {
       const [propertiesRes, paymentsRes, valuationsRes, leasesRes] = await Promise.all([
-        supabase.from('properties').select('*').order('created_at', { ascending: false }),
-        supabase.from('payment_records').select('*').order('created_at', { ascending: false }),
-        supabase.from('property_valuations').select('*').order('valuation_date', { ascending: true }),
-        supabase.from('lease_agreements').select('*').order('start_date', { ascending: false }),
+        localData.from('properties').select('*').order('created_at', { ascending: false }),
+        localData.from('payment_records').select('*').order('created_at', { ascending: false }),
+        localData.from('property_valuations').select('*').order('valuation_date', { ascending: true }),
+        localData.from('lease_agreements').select('*').order('start_date', { ascending: false }),
       ]);
 
       if (propertiesRes.data) setProperties(propertiesRes.data);
@@ -405,31 +445,19 @@ const AdminFinanceDashboard = () => {
     }
   }, [isAdmin, roleLoading, fetchAllData]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAllData();
     setRefreshing(false);
     toast.success('Data oppdatert');
-  };
+  }, [fetchAllData]);
 
-  if (!roleLoading && !isAdmin) {
-    toast.error('Kun administratorer har tilgang til denne siden');
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  if (roleLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
-            <p className="text-muted-foreground">Verifiserer tilgang...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ─── Filtered payments by date range ──────────────────────────────
+  const filteredPayments = useMemo(() => {
+    const rangeStart = getDateRangeStart(dateRange);
+    if (!rangeStart) return payments;
+    return payments.filter(p => new Date(p.created_at) >= rangeStart);
+  }, [payments, dateRange]);
 
   // ─── Compute summary ──────────────────────────────────────────────
   const summary: FinanceSummary = useMemo(() => {
@@ -464,7 +492,7 @@ const AdminFinanceDashboard = () => {
     const grossYield = totalPortfolioValue > 0 ? (totalAnnualRent / totalPortfolioValue) * 100 : 0;
     const netYield = totalPortfolioValue > 0 ? ((totalAnnualRent - monthlyLoanCost * 12) / totalPortfolioValue) * 100 : 0;
 
-    const totalExpenses = payments
+    const totalExpenses = filteredPayments
       .filter(p => p.payment_status === 'completed')
       .reduce((sum, p) => sum + p.amount, 0);
 
@@ -482,22 +510,20 @@ const AdminFinanceDashboard = () => {
       rentalProperties: rentalProperties.length, totalExpenses,
       avgPricePerSqm, totalSqm, ltv, debtServiceRatio,
     };
-  }, [properties, payments]);
+  }, [properties, filteredPayments]);
 
   // ─── Chart: Portfolio value over time ──────────────────────────────
   const portfolioValueOverTime = useMemo(() => {
-    // Build a monthly timeline from valuations + current values
     const monthMap = new Map<string, { valuation: number; cumulative: number }>();
     const now = new Date();
+    const monthCount = getMonthCount(dateRange);
 
-    // Initialize last 12 months
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = date.toISOString().substring(0, 7);
       monthMap.set(key, { valuation: 0, cumulative: 0 });
     }
 
-    // If we have real valuations, use them
     if (valuations.length > 0) {
       valuations.forEach(v => {
         const month = v.valuation_date.substring(0, 7);
@@ -508,13 +534,12 @@ const AdminFinanceDashboard = () => {
       });
     }
 
-    // Fill with property current values for months without valuations, using growth model
     const baseValue = summary.totalPortfolioValue || 0;
     if (baseValue > 0) {
       const entries = Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b));
       entries.forEach(([, data], i) => {
         if (data.valuation === 0) {
-          const growth = 1 + ((i - 5) * 0.004); // ~0.4% monthly growth approximation
+          const growth = 1 + ((i - Math.floor(entries.length / 2)) * 0.004);
           data.cumulative = Math.round(baseValue * Math.max(growth, 0.95));
         } else {
           data.cumulative = data.valuation;
@@ -529,21 +554,22 @@ const AdminFinanceDashboard = () => {
         value: data.cumulative,
       }))
       .filter(d => d.value > 0);
-  }, [valuations, summary.totalPortfolioValue]);
+  }, [valuations, summary.totalPortfolioValue, dateRange]);
 
   // ─── Chart: Expenses by month with categories ─────────────────────
   const expensesByMonth = useMemo(() => {
     const now = new Date();
+    const monthCount = getMonthCount(dateRange);
     const grouped = new Map<string, { total: number; byType: Record<string, number> }>();
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = date.toISOString().substring(0, 7);
       grouped.set(key, { total: 0, byType: {} });
     }
 
     const filtered = expenseFilter === 'all'
-      ? payments.filter(p => p.payment_status === 'completed')
-      : payments.filter(p => p.payment_status === 'completed' && p.payment_type === expenseFilter);
+      ? filteredPayments.filter(p => p.payment_status === 'completed')
+      : filteredPayments.filter(p => p.payment_status === 'completed' && p.payment_type === expenseFilter);
 
     filtered.forEach(p => {
       const month = p.created_at.substring(0, 7);
@@ -561,7 +587,7 @@ const AdminFinanceDashboard = () => {
         amount: Math.round(data.total),
         ...data.byType,
       }));
-  }, [payments, expenseFilter]);
+  }, [filteredPayments, expenseFilter, dateRange]);
 
   // ─── Chart: Property type distribution ────────────────────────────
   const propertyTypeDistribution = useMemo(() => {
@@ -598,8 +624,9 @@ const AdminFinanceDashboard = () => {
   // ─── Chart: Income vs Expenses over time ──────────────────────────
   const incomeVsExpenses = useMemo(() => {
     const now = new Date();
+    const monthCount = getMonthCount(dateRange);
     const data: { month: string; income: number; expenses: number; net: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = date.toISOString().substring(0, 7);
       const monthLabel = date.toLocaleDateString('no-NO', { month: 'short', year: '2-digit' });
@@ -608,7 +635,6 @@ const AdminFinanceDashboard = () => {
         .filter(p => p.payment_status === 'completed' && p.created_at.startsWith(key))
         .reduce((sum, p) => sum + p.amount, 0);
 
-      // Monthly rent income is constant
       const income = summary.totalMonthlyRent;
       data.push({
         month: monthLabel,
@@ -618,13 +644,113 @@ const AdminFinanceDashboard = () => {
       });
     }
     return data;
-  }, [payments, summary.totalMonthlyRent, summary.monthlyLoanCost]);
+  }, [payments, summary.totalMonthlyRent, summary.monthlyLoanCost, dateRange]);
 
   // ─── Expense types for filter ─────────────────────────────────────
   const expenseTypes = useMemo(() => {
     const types = new Set(payments.map(p => p.payment_type));
     return Array.from(types).sort();
   }, [payments]);
+
+  // ─── Expense by type summary ──────────────────────────────────────
+  const expenseByTypeSummary = useMemo(() => {
+    const completedPayments = filteredPayments.filter(p => p.payment_status === 'completed');
+    const grouped = new Map<string, { total: number; count: number }>();
+    completedPayments.forEach(p => {
+      const existing = grouped.get(p.payment_type) || { total: 0, count: 0 };
+      grouped.set(p.payment_type, { total: existing.total + p.amount, count: existing.count + 1 });
+    });
+    return Array.from(grouped.entries())
+      .map(([type, data]) => ({ type, ...data }))
+      .sort((a, b) => b.total - a.total);
+  }, [filteredPayments]);
+
+  // ─── Profit & Loss data ───────────────────────────────────────────
+  const profitLossData = useMemo(() => {
+    const monthCount = getMonthCount(dateRange);
+    const totalIncome = summary.totalMonthlyRent * monthCount;
+    const totalLoanCosts = summary.monthlyLoanCost * monthCount;
+    const totalInterest = summary.monthlyInterestCost * monthCount;
+    const totalPrincipal = summary.monthlyPrincipal * monthCount;
+    const otherExpenses = filteredPayments
+      .filter(p => p.payment_status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const totalExpenses = totalLoanCosts + otherExpenses;
+    const netProfit = totalIncome - totalExpenses;
+    const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
+
+    return {
+      totalIncome,
+      totalLoanCosts,
+      totalInterest,
+      totalPrincipal,
+      otherExpenses,
+      totalExpenses,
+      netProfit,
+      profitMargin,
+      monthCount,
+    };
+  }, [summary, filteredPayments, dateRange]);
+
+  // ─── Per-property cost breakdown ──────────────────────────────────
+  const propertyFinancials = useMemo(() => {
+    return properties.map(p => {
+      const monthlyPayment = calculateMonthlyPayment(p.loan_amount || 0, p.interest_rate || 0, p.loan_duration_years || 0);
+      const monthlyInterest = calculateMonthlyInterest(p.loan_amount || 0, p.interest_rate || 0);
+      const monthlyPrincipal = monthlyPayment - monthlyInterest;
+      const monthlyRent = p.monthly_rent || 0;
+      const netMonthly = monthlyRent - monthlyPayment;
+      const annualNet = netMonthly * 12;
+      const grossYield = p.current_value && monthlyRent ? (monthlyRent * 12 / p.current_value) * 100 : 0;
+      const ltv = p.current_value && p.loan_amount ? (p.loan_amount / p.current_value) * 100 : 0;
+      const equity = (p.current_value || 0) - (p.loan_amount || 0);
+
+      return {
+        id: p.id,
+        address: p.address,
+        city: p.city,
+        propertyType: p.property_type,
+        currentValue: p.current_value || 0,
+        purchasePrice: p.purchase_price || 0,
+        appreciation: (p.current_value || 0) - (p.purchase_price || 0),
+        monthlyRent,
+        monthlyPayment,
+        monthlyInterest,
+        monthlyPrincipal,
+        netMonthly,
+        annualNet,
+        grossYield,
+        ltv,
+        equity,
+        loanAmount: p.loan_amount || 0,
+      };
+    }).sort((a, b) => b.currentValue - a.currentValue);
+  }, [properties]);
+
+  // ─── Individual property value history chart data ─────────────────
+  const propertyValueHistory = useMemo(() => {
+    if (valuations.length === 0) return [];
+
+    const propertyMap = new Map<string, { address: string; data: { date: string; value: number }[] }>();
+
+    properties.forEach(p => {
+      const propValuations = valuations
+        .filter(v => v.property_id === p.id)
+        .map(v => ({
+          date: new Date(v.valuation_date).toLocaleDateString('no-NO', { month: 'short', year: '2-digit' }),
+          value: v.valuation_amount,
+        }));
+
+      if (propValuations.length > 0) {
+        propertyMap.set(p.id, {
+          address: p.address.length > 20 ? p.address.substring(0, 20) + '…' : p.address,
+          data: propValuations,
+        });
+      }
+    });
+
+    return Array.from(propertyMap.values());
+  }, [properties, valuations]);
 
   // ─── Sorted properties ────────────────────────────────────────────
   const sortedProperties = useMemo(() => {
@@ -645,6 +771,26 @@ const AdminFinanceDashboard = () => {
       default: return sorted;
     }
   }, [properties, propertySort]);
+
+  // ─── Access control ──────────────────────────────────────────────────
+  if (!roleLoading && !isAdmin) {
+    toast.error('Kun administratorer har tilgang til denne siden');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="text-center">
+            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+            <p className="text-muted-foreground">Verifiserer tilgang...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Render ─────────────────────────────────────────────────────────
   if (loading) {
@@ -674,10 +820,28 @@ const AdminFinanceDashboard = () => {
               Økonomi & Eiendom
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Porteføljeoversikt · Utgifter · Verdutvikling · Cashflow
+              Porteføljeoversikt · Utgifter · Verdutvikling · Cashflow · Resultat
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Date range selector */}
+            <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
+              <SelectTrigger className="w-[130px]">
+                <Calendar className="h-3.5 w-3.5 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1m">Siste måned</SelectItem>
+                <SelectItem value="3m">Siste 3 mnd</SelectItem>
+                <SelectItem value="6m">Siste 6 mnd</SelectItem>
+                <SelectItem value="1y">Siste år</SelectItem>
+                <SelectItem value="all">Alt</SelectItem>
+              </SelectContent>
+            </Select>
+            <AddExpenseDialog
+              properties={properties.map(p => ({ id: p.id, address: p.address }))}
+              onExpenseAdded={handleRefresh}
+            />
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
               Oppdater
@@ -766,12 +930,13 @@ const AdminFinanceDashboard = () => {
 
         {/* ─── Tabs ────────────────────────────────────────────────── */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsList className="grid w-full grid-cols-6 mb-4">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
             <TabsTrigger value="expenses">Utgifter</TabsTrigger>
             <TabsTrigger value="properties">Eiendommer</TabsTrigger>
             <TabsTrigger value="cashflow">Cashflow</TabsTrigger>
-            <TabsTrigger value="health">Porteføljehelse</TabsTrigger>
+            <TabsTrigger value="pnl">Resultat</TabsTrigger>
+            <TabsTrigger value="health">Helse</TabsTrigger>
           </TabsList>
 
           {/* ════════════ OVERVIEW TAB ════════════ */}
@@ -928,6 +1093,9 @@ const AdminFinanceDashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="ml-auto text-xs text-muted-foreground">
+                Viser data for: {dateRange === '1m' ? 'siste måned' : dateRange === '3m' ? 'siste 3 måneder' : dateRange === '6m' ? 'siste 6 måneder' : dateRange === '1y' ? 'siste 12 måneder' : 'all tid'}
+              </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
@@ -937,7 +1105,7 @@ const AdminFinanceDashboard = () => {
                     <BarChart3 className="h-4 w-4 text-red-500" />
                     Utgifter per måned
                   </CardTitle>
-                  <CardDescription className="text-xs">Betalinger siste 12 måneder</CardDescription>
+                  <CardDescription className="text-xs">Betalinger i valgt periode</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -968,6 +1136,53 @@ const AdminFinanceDashboard = () => {
               </Card>
             </div>
 
+            {/* Expense by type breakdown */}
+            {expenseByTypeSummary.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <PieChart className="h-4 w-4 text-amber-500" />
+                    Utgiftsfordeling per type
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <ResponsiveContainer width="100%" height={220}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={expenseByTypeSummary.map(e => ({ name: e.type, value: e.total }))}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          innerRadius={40}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          labelLine={false}
+                        >
+                          {expenseByTypeSummary.map((_, index) => (
+                            <Cell key={`expense-cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2">
+                      {expenseByTypeSummary.map((e, i) => (
+                        <div key={e.type} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                            <span className="text-sm">{e.type}</span>
+                            <Badge variant="secondary" className="text-[10px]">{e.count}</Badge>
+                          </div>
+                          <span className="text-sm font-semibold">{formatCurrency(e.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recent payments table */}
             <Card>
               <CardHeader className="pb-2">
@@ -986,7 +1201,7 @@ const AdminFinanceDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.slice(0, 25).map((payment) => (
+                      {filteredPayments.slice(0, 25).map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="text-sm">
                             {new Date(payment.created_at).toLocaleDateString('no-NO')}
@@ -1006,10 +1221,10 @@ const AdminFinanceDashboard = () => {
                     </TableBody>
                   </Table>
                 </div>
-                {payments.length === 0 && (
+                {filteredPayments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">Ingen betalinger registrert</p>
+                    <p className="text-sm">Ingen betalinger i valgt periode</p>
                   </div>
                 )}
               </CardContent>
@@ -1034,6 +1249,118 @@ const AdminFinanceDashboard = () => {
               </Select>
               <span className="text-xs text-muted-foreground ml-auto">{properties.length} eiendommer</span>
             </div>
+
+            {/* Property value history chart */}
+            {propertyValueHistory.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                    Verdiutvikling per eiendom
+                  </CardTitle>
+                  <CardDescription className="text-xs">Basert på registrerte verdivurderinger</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                      <XAxis
+                        dataKey="date"
+                        fontSize={11}
+                        tickLine={false}
+                        allowDuplicatedCategory={false}
+                        type="category"
+                      />
+                      <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1e6).toFixed(1)}M`} tickLine={false} />
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Legend iconSize={10} wrapperStyle={{ fontSize: '11px' }} />
+                      {propertyValueHistory.map((prop, i) => (
+                        <Line
+                          key={prop.address}
+                          data={prop.data}
+                          name={prop.address}
+                          dataKey="value"
+                          type="monotone"
+                          stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          connectNulls
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Property financials comparison table */}
+            {propertyFinancials.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-500" />
+                    Finansiell oversikt per eiendom
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Eiendom</TableHead>
+                          <TableHead className="text-right">Verdi</TableHead>
+                          <TableHead className="text-right">Lån</TableHead>
+                          <TableHead className="text-right">EK</TableHead>
+                          <TableHead className="text-right">LTV</TableHead>
+                          <TableHead className="text-right">Leie/mnd</TableHead>
+                          <TableHead className="text-right">Lånekost/mnd</TableHead>
+                          <TableHead className="text-right">Netto/mnd</TableHead>
+                          <TableHead className="text-right">Yield</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {propertyFinancials.map((pf) => (
+                          <TableRow key={pf.id}>
+                            <TableCell className="font-medium text-sm">
+                              <div>{pf.address.length > 25 ? pf.address.substring(0, 25) + '…' : pf.address}</div>
+                              {pf.city && <div className="text-xs text-muted-foreground">{pf.city}</div>}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">{formatCurrency(pf.currentValue, true)}</TableCell>
+                            <TableCell className="text-right text-sm">{pf.loanAmount > 0 ? formatCurrency(pf.loanAmount, true) : '-'}</TableCell>
+                            <TableCell className="text-right text-sm">{formatCurrency(pf.equity, true)}</TableCell>
+                            <TableCell className="text-right text-sm">
+                              <Badge variant={pf.ltv > 80 ? 'destructive' : pf.ltv > 60 ? 'secondary' : 'default'} className="text-xs">
+                                {pf.ltv > 0 ? `${pf.ltv.toFixed(0)}%` : '-'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right text-sm">{pf.monthlyRent > 0 ? formatCurrency(pf.monthlyRent) : '-'}</TableCell>
+                            <TableCell className="text-right text-sm">{pf.monthlyPayment > 0 ? formatCurrency(pf.monthlyPayment) : '-'}</TableCell>
+                            <TableCell className={`text-right text-sm font-medium ${pf.netMonthly >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {pf.monthlyRent > 0 ? formatCurrency(pf.netMonthly) : '-'}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">{pf.grossYield > 0 ? `${pf.grossYield.toFixed(1)}%` : '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Totals row */}
+                        <TableRow className="font-bold border-t-2">
+                          <TableCell>Totalt</TableCell>
+                          <TableCell className="text-right">{formatCurrency(summary.totalPortfolioValue, true)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(summary.totalLoanBalance, true)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(summary.totalEquity, true)}</TableCell>
+                          <TableCell className="text-right">{summary.ltv > 0 ? `${summary.ltv.toFixed(0)}%` : '-'}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(summary.totalMonthlyRent)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(summary.monthlyLoanCost)}</TableCell>
+                          <TableCell className={`text-right ${summary.netMonthlyCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(summary.netMonthlyCashflow)}
+                          </TableCell>
+                          <TableCell className="text-right">{summary.grossYield > 0 ? `${summary.grossYield.toFixed(1)}%` : '-'}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Property cards */}
             <div className="grid gap-4 md:grid-cols-2">
@@ -1209,6 +1536,131 @@ const AdminFinanceDashboard = () => {
                     <p className="text-sm">Ingen leieavtaler registrert</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ════════════ PROFIT & LOSS TAB ════════════ */}
+          <TabsContent value="pnl" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* P&L Statement */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-500" />
+                    Resultatregnskap
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {profitLossData.monthCount} {profitLossData.monthCount === 1 ? 'måned' : 'måneder'} · {dateRange === '1m' ? 'Siste måned' : dateRange === '3m' ? 'Siste kvartal' : dateRange === '6m' ? 'Siste halvår' : dateRange === '1y' ? 'Siste 12 måneder' : 'Alle perioder'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    {/* Income section */}
+                    <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3">Inntekter</h4>
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-sm">Leieinntekter ({profitLossData.monthCount} mnd)</span>
+                        <span className="text-sm font-medium text-green-700 dark:text-green-400">{formatCurrency(profitLossData.totalIncome)}</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm font-semibold">Sum inntekter</span>
+                        <span className="text-sm font-bold text-green-700 dark:text-green-400">{formatCurrency(profitLossData.totalIncome)}</span>
+                      </div>
+                    </div>
+
+                    {/* Expenses section */}
+                    <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3">Kostnader</h4>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-sm">Rentekostnader</span>
+                          <span className="text-sm font-medium text-red-600">-{formatCurrency(profitLossData.totalInterest)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-sm">Avdrag på lån</span>
+                          <span className="text-sm font-medium text-red-600">-{formatCurrency(profitLossData.totalPrincipal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-sm">Andre utgifter</span>
+                          <span className="text-sm font-medium text-red-600">-{formatCurrency(profitLossData.otherExpenses)}</span>
+                        </div>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-sm font-semibold">Sum kostnader</span>
+                        <span className="text-sm font-bold text-red-700 dark:text-red-400">-{formatCurrency(profitLossData.totalExpenses)}</span>
+                      </div>
+                    </div>
+
+                    {/* Net result */}
+                    <div className={`rounded-lg p-4 ${profitLossData.netProfit >= 0 ? 'bg-blue-50 dark:bg-blue-950/20' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-bold">Netto resultat</span>
+                        <span className={`text-xl font-bold ${profitLossData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(profitLossData.netProfit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-muted-foreground">Resultatmargin</span>
+                        <span className={`text-sm font-medium ${profitLossData.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {profitLossData.profitMargin.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* P&L Quick Stats */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Nøkkeltall</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="p-3 bg-muted/50 rounded-lg text-center">
+                    <p className="text-[11px] text-muted-foreground">Gjsn. mnd. inntekt</p>
+                    <p className="font-semibold text-lg text-green-600">{formatCurrency(summary.totalMonthlyRent)}</p>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg text-center">
+                    <p className="text-[11px] text-muted-foreground">Gjsn. mnd. kostnad</p>
+                    <p className="font-semibold text-lg text-red-600">
+                      {formatCurrency(summary.monthlyLoanCost + (profitLossData.monthCount > 0 ? profitLossData.otherExpenses / profitLossData.monthCount : 0))}
+                    </p>
+                  </div>
+                  <Separator />
+                  <MiniStat label="Inntekt per eiendom" value={summary.rentalProperties > 0 ? formatCurrency(summary.totalMonthlyRent / summary.rentalProperties) : '-'} icon={Home} />
+                  <MiniStat label="Kostnad per eiendom" value={summary.totalProperties > 0 ? formatCurrency(summary.monthlyLoanCost / summary.totalProperties) : '-'} icon={Building2} />
+                  <MiniStat label="Verdistigning" value={formatCurrency(summary.totalAppreciation, true)} icon={TrendingUp} />
+                  <MiniStat label="Urealisert gevinst" value={formatPercent(summary.appreciationPercent)} icon={Target} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Monthly P&L trend */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-purple-500" />
+                  Resultattrend
+                </CardTitle>
+                <CardDescription className="text-xs">Månedlig netto resultat over tid</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <ComposedChart data={incomeVsExpenses}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                    <XAxis dataKey="month" fontSize={11} tickLine={false} />
+                    <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tickLine={false} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: '12px' }} />
+                    <Area type="monotone" dataKey="income" name="Inntekt" fill="#16a34a" fillOpacity={0.1} stroke="#16a34a" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="expenses" name="Utgifter" fill="#dc2626" fillOpacity={0.1} stroke="#dc2626" strokeWidth={1.5} />
+                    <Line type="monotone" dataKey="net" name="Netto" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3 }} />
+                    <ReferenceLine y={0} stroke="#888" strokeDasharray="3 3" />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </TabsContent>
