@@ -1,0 +1,25 @@
+name: Auto-merge PR
+
+on:
+  # Run when CI check suite completes on a PR
+  check_suite:
+    types: [completed]
+  # Also run when PR is opened/updated (to enable auto-merge early)
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event.check_suite.conclusion == 'success'
+    steps:
+      - name: Enable auto-merge for PR
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ github.event.pull_request.number || '' }}
+          merge-method: squash
+          token: ${{ secrets.GITHUB_TOKEN }}
