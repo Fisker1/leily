@@ -46,7 +46,7 @@
     "handsontable": "^16.1.1",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
-    "isomorphic-dompurify": "^2.28.0",
+    "isomorphic-dompurify": "^3.12.0",
     "jspdf": "^4.1.0",
     "lucide-react": "^0.462.0",
     "mapbox-gl": "^3.14.0",
