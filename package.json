@@ -49,7 +49,7 @@
     "isomorphic-dompurify": "^3.12.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.14.0",
-    "mapbox-gl": "^3.14.0",
+    "mapbox-gl": "^3.23.1",
     "next-themes": "^0.3.0",
     "react": "^19.2.6",
     "react-day-picker": "^9.11.0",
