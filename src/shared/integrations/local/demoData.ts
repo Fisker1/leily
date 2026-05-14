@@ -436,3 +436,94 @@ export const demoProfiles = [
     created_at: '2018-01-01T10:00:00Z',
   },
 ];
+
+// ─── Rent Payment Tracking (Husleieoppfølging) ──────────────────────────
+// Tracks monthly rent payments per lease — inspired by husleie.no / hybel.no
+const generateRentPayments = () => {
+  const rentPayments: Array<{
+    id: string;
+    lease_id: string;
+    property_id: string;
+    tenant_name: string;
+    amount: number;
+    due_date: string;
+    paid_date: string | null;
+    status: 'paid' | 'pending' | 'overdue';
+    payment_method: string | null;
+    month_label: string;
+  }> = [];
+
+  // Active leases with rent tracking
+  const activeLeaseData = [
+    { leaseId: 'lease-1', propertyId: 'prop-1', tenant: 'Erik Hansen', rent: 22000 },
+    { leaseId: 'lease-2', propertyId: 'prop-2', tenant: 'Maria Olsen', rent: 14500 },
+    { leaseId: 'lease-3', propertyId: 'prop-3', tenant: 'Thomas Berg', rent: 18000 },
+    { leaseId: 'lease-4', propertyId: 'prop-4', tenant: 'Ingrid Larsen', rent: 15500 },
+  ];
+
+  let seed = 137;
+  const rng = () => {
+    seed = (seed * 16807 + 0) % 2147483647;
+    return seed / 2147483647;
+  };
+
+  const paymentMethods = ['Bankoverføring', 'AvtaleGiro', 'Vipps'];
+
+  // Generate 12 months of rent payment records
+  for (let monthOffset = 11; monthOffset >= 0; monthOffset--) {
+    const dueDate = new Date(now);
+    dueDate.setMonth(dueDate.getMonth() - monthOffset);
+    dueDate.setDate(1); // Due on the 1st
+
+    const monthLabel = dueDate.toLocaleDateString('no-NO', { month: 'short', year: 'numeric' });
+    const dueDateStr = dueDate.toISOString().substring(0, 10);
+
+    activeLeaseData.forEach((lease) => {
+      const r = rng();
+      let status: 'paid' | 'pending' | 'overdue';
+      let paidDate: string | null = null;
+      let method: string | null = null;
+
+      if (monthOffset === 0) {
+        // Current month: mix of paid / pending
+        if (r > 0.4) {
+          status = 'paid';
+          const payDay = new Date(dueDate);
+          payDay.setDate(1 + Math.floor(rng() * 5));
+          paidDate = payDay.toISOString().substring(0, 10);
+          method = paymentMethods[Math.floor(rng() * paymentMethods.length)];
+        } else {
+          status = 'pending';
+        }
+      } else if (monthOffset === 1 && r > 0.85) {
+        // Last month: occasional late / overdue
+        status = 'overdue';
+      } else {
+        // Older months: mostly paid, small chance late
+        status = 'paid';
+        const payDay = new Date(dueDate);
+        const lateDays = r > 0.9 ? Math.floor(rng() * 15) + 5 : Math.floor(rng() * 4);
+        payDay.setDate(1 + lateDays);
+        paidDate = payDay.toISOString().substring(0, 10);
+        method = paymentMethods[Math.floor(rng() * paymentMethods.length)];
+      }
+
+      rentPayments.push({
+        id: `rp-${lease.leaseId}-${monthOffset}`,
+        lease_id: lease.leaseId,
+        property_id: lease.propertyId,
+        tenant_name: lease.tenant,
+        amount: lease.rent,
+        due_date: dueDateStr,
+        paid_date: paidDate,
+        status,
+        payment_method: method,
+        month_label: monthLabel,
+      });
+    });
+  }
+
+  return rentPayments;
+};
+
+export const demoRentPayments = generateRentPayments();

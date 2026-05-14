@@ -79,6 +79,19 @@ interface LeaseAgreement {
   deposit_amount: number | null;
 }
 
+interface RentPayment {
+  id: string;
+  lease_id: string;
+  property_id: string;
+  tenant_name: string;
+  amount: number;
+  due_date: string;
+  paid_date: string | null;
+  status: 'paid' | 'pending' | 'overdue';
+  payment_method: string | null;
+  month_label: string;
+}
+
 interface FinanceSummary {
   totalPortfolioValue: number;
   totalPurchaseValue: number;
@@ -413,6 +426,7 @@ const AdminFinanceDashboard = () => {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [valuations, setValuations] = useState<PropertyValuation[]>([]);
   const [leases, setLeases] = useState<LeaseAgreement[]>([]);
+  const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>('1y');
@@ -421,17 +435,19 @@ const AdminFinanceDashboard = () => {
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [propertiesRes, paymentsRes, valuationsRes, leasesRes] = await Promise.all([
+      const [propertiesRes, paymentsRes, valuationsRes, leasesRes, rentPaymentsRes] = await Promise.all([
         localData.from('properties').select('*').order('created_at', { ascending: false }),
         localData.from('payment_records').select('*').order('created_at', { ascending: false }),
         localData.from('property_valuations').select('*').order('valuation_date', { ascending: true }),
         localData.from('lease_agreements').select('*').order('start_date', { ascending: false }),
+        localData.from('rent_payments').select('*').order('due_date', { ascending: false }),
       ]);
 
       if (propertiesRes.data) setProperties(propertiesRes.data);
       if (paymentsRes.data) setPayments(paymentsRes.data);
       if (valuationsRes.data) setValuations(valuationsRes.data);
       if (leasesRes.data) setLeases(leasesRes.data);
+      if (rentPaymentsRes.data) setRentPayments(rentPaymentsRes.data as RentPayment[]);
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error('Feil ved henting av finansdata');
@@ -692,6 +708,59 @@ const AdminFinanceDashboard = () => {
     };
   }, [summary, filteredPayments, dateRange]);
 
+  // ─── Rent tracking summary ─────────────────────────────────────────
+  const rentTrackingSummary = useMemo(() => {
+    const totalExpected = rentPayments.reduce((sum, rp) => sum + rp.amount, 0);
+    const paidPayments = rentPayments.filter(rp => rp.status === 'paid');
+    const totalReceived = paidPayments.reduce((sum, rp) => sum + rp.amount, 0);
+    const pendingPayments = rentPayments.filter(rp => rp.status === 'pending');
+    const totalPending = pendingPayments.reduce((sum, rp) => sum + rp.amount, 0);
+    const overduePayments = rentPayments.filter(rp => rp.status === 'overdue');
+    const totalOverdue = overduePayments.reduce((sum, rp) => sum + rp.amount, 0);
+    const collectionRate = totalExpected > 0 ? (totalReceived / totalExpected) * 100 : 0;
+
+    // Group by month
+    const byMonth = new Map<string, RentPayment[]>();
+    rentPayments.forEach(rp => {
+      const key = rp.due_date.substring(0, 7);
+      const existing = byMonth.get(key) || [];
+      existing.push(rp);
+      byMonth.set(key, existing);
+    });
+
+    const monthlyData = Array.from(byMonth.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, payments]) => ({
+        month: new Date(month + '-01').toLocaleDateString('no-NO', { month: 'short', year: '2-digit' }),
+        monthKey: month,
+        paid: payments.filter(p => p.status === 'paid').reduce((s, p) => s + p.amount, 0),
+        pending: payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0),
+        overdue: payments.filter(p => p.status === 'overdue').reduce((s, p) => s + p.amount, 0),
+        payments,
+      }));
+
+    // Group by property
+    const byProperty = new Map<string, RentPayment[]>();
+    rentPayments.forEach(rp => {
+      const existing = byProperty.get(rp.property_id) || [];
+      existing.push(rp);
+      byProperty.set(rp.property_id, existing);
+    });
+
+    return {
+      totalExpected,
+      totalReceived,
+      totalPending,
+      totalOverdue,
+      collectionRate,
+      paidCount: paidPayments.length,
+      pendingCount: pendingPayments.length,
+      overdueCount: overduePayments.length,
+      monthlyData,
+      byProperty,
+    };
+  }, [rentPayments]);
+
   // ─── Per-property cost breakdown ──────────────────────────────────
   const propertyFinancials = useMemo(() => {
     return properties.map(p => {
@@ -930,8 +999,9 @@ const AdminFinanceDashboard = () => {
 
         {/* ─── Tabs ────────────────────────────────────────────────── */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-4">
+          <TabsList className="grid w-full grid-cols-7 mb-4">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
+            <TabsTrigger value="rent-tracking">Husleie</TabsTrigger>
             <TabsTrigger value="expenses">Utgifter</TabsTrigger>
             <TabsTrigger value="properties">Eiendommer</TabsTrigger>
             <TabsTrigger value="cashflow">Cashflow</TabsTrigger>
@@ -1073,6 +1143,205 @@ const AdminFinanceDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* ════════════ RENT TRACKING TAB (Husleieoppfølging) ════════════ */}
+          <TabsContent value="rent-tracking" className="space-y-6">
+            {/* Rent KPIs */}
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <KPICard
+                title="Forventet husleie"
+                value={formatCurrency(rentTrackingSummary.totalExpected, true)}
+                icon={Home}
+                subtitle={`${rentPayments.length} fakturaer (12 mnd)`}
+                accent="blue"
+              />
+              <KPICard
+                title="Mottatt husleie"
+                value={formatCurrency(rentTrackingSummary.totalReceived, true)}
+                icon={CheckCircle2}
+                subtitle={`${rentTrackingSummary.paidCount} betalinger`}
+                accent="green"
+              />
+              <KPICard
+                title="Ventende"
+                value={formatCurrency(rentTrackingSummary.totalPending, true)}
+                icon={Clock}
+                subtitle={`${rentTrackingSummary.pendingCount} ubetalte`}
+                accent="amber"
+              />
+              <KPICard
+                title="Innkrevingsrate"
+                value={`${rentTrackingSummary.collectionRate.toFixed(1)}%`}
+                icon={Target}
+                subtitle={rentTrackingSummary.overdueCount > 0 ? `${rentTrackingSummary.overdueCount} forfalt` : 'Ingen forfalte'}
+                accent={rentTrackingSummary.collectionRate >= 95 ? 'green' : rentTrackingSummary.collectionRate >= 80 ? 'amber' : 'red'}
+              />
+            </div>
+
+            {/* Monthly rent collection chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-green-500" />
+                  Husleieinngang per måned
+                </CardTitle>
+                <CardDescription className="text-xs">Betalt, ventende og forfalt husleie</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={rentTrackingSummary.monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                    <XAxis dataKey="month" fontSize={11} tickLine={false} />
+                    <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tickLine={false} />
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="paid" name="Betalt" stackId="a" fill="#16a34a" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="pending" name="Ventende" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="overdue" name="Forfalt" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Per-property rent tracking grid */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-500" />
+                  Betalingsstatus per eiendom
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Månedlig oversikt over husleiebetalinger per leietaker
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Eiendom / Leietaker</TableHead>
+                        {rentTrackingSummary.monthlyData.map(m => (
+                          <TableHead key={m.monthKey} className="text-center min-w-[80px] text-xs">
+                            {m.month}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Array.from(rentTrackingSummary.byProperty.entries()).map(([propertyId, payments]) => {
+                        const property = properties.find(p => p.id === propertyId);
+                        const tenantName = payments[0]?.tenant_name || 'Ukjent';
+                        return (
+                          <TableRow key={propertyId}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-sm">{property?.address || propertyId}</p>
+                                <p className="text-xs text-muted-foreground">{tenantName}</p>
+                              </div>
+                            </TableCell>
+                            {rentTrackingSummary.monthlyData.map(m => {
+                              const payment = payments.find(p => p.due_date.startsWith(m.monthKey));
+                              if (!payment) {
+                                return (
+                                  <TableCell key={m.monthKey} className="text-center">
+                                    <span className="text-muted-foreground text-xs">—</span>
+                                  </TableCell>
+                                );
+                              }
+                              return (
+                                <TableCell key={m.monthKey} className="text-center">
+                                  <Badge
+                                    variant={payment.status === 'paid' ? 'default' : payment.status === 'overdue' ? 'destructive' : 'secondary'}
+                                    className="text-[10px] px-1.5 py-0"
+                                  >
+                                    {payment.status === 'paid' ? '✓ Betalt' : payment.status === 'overdue' ? '! Forfalt' : '⏳ Venter'}
+                                  </Badge>
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent rent payment details */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-purple-500" />
+                  Siste husleiebetalinger
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Leietaker</TableHead>
+                        <TableHead>Eiendom</TableHead>
+                        <TableHead>Periode</TableHead>
+                        <TableHead>Forfallsdato</TableHead>
+                        <TableHead>Betalt dato</TableHead>
+                        <TableHead>Metode</TableHead>
+                        <TableHead className="text-right">Beløp</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rentPayments.slice(0, 20).map((rp) => {
+                        const property = properties.find(p => p.id === rp.property_id);
+                        const isLate = rp.paid_date && rp.paid_date > rp.due_date.substring(0, 7) + '-05';
+                        return (
+                          <TableRow key={rp.id}>
+                            <TableCell className="font-medium text-sm">{rp.tenant_name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {property?.address ? (property.address.length > 20 ? property.address.substring(0, 20) + '…' : property.address) : rp.property_id}
+                            </TableCell>
+                            <TableCell className="text-sm">{rp.month_label}</TableCell>
+                            <TableCell className="text-sm">
+                              {new Date(rp.due_date).toLocaleDateString('no-NO')}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {rp.paid_date ? (
+                                <span className={isLate ? 'text-amber-600' : ''}>
+                                  {new Date(rp.paid_date).toLocaleDateString('no-NO')}
+                                  {isLate && ' (sen)'}
+                                </span>
+                              ) : '—'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {rp.payment_method || '—'}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-sm">
+                              {formatCurrency(rp.amount)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={rp.status === 'paid' ? 'default' : rp.status === 'overdue' ? 'destructive' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {rp.status === 'paid' ? 'Betalt' : rp.status === 'overdue' ? 'Forfalt' : 'Ventende'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                {rentPayments.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Home className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">Ingen husleiebetalinger registrert</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ════════════ EXPENSES TAB ════════════ */}
