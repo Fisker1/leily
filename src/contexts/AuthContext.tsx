@@ -5,6 +5,9 @@ import { useToast } from '@/shared/hooks/use-toast';
 import { useRateLimit } from '@/shared/hooks/useRateLimit';
 import { useAccountCreatedEmail, useEmailVerificationEmail, usePasswordResetEmail } from '@/shared/hooks/useEmailService';
 
+// Check if we're running in local mode (no Supabase configured)
+const isLocalMode = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 interface Profile {
   id: string;
   email: string;
@@ -38,16 +41,44 @@ export const useAuth = () => {
   return context;
 };
 
+// ─── Local user for offline / local-only mode ─────────────────────────────
+const LOCAL_USER: User = {
+  id: 'local-user',
+  email: 'me@leily.local',
+  app_metadata: {},
+  user_metadata: { full_name: 'Leily Admin' },
+  aud: 'authenticated',
+  created_at: '2018-01-01T10:00:00Z',
+} as User;
+
+const LOCAL_SESSION: Session = {
+  access_token: 'local-token',
+  refresh_token: 'local-refresh',
+  expires_in: 999999,
+  token_type: 'bearer',
+  user: LOCAL_USER,
+} as Session;
+
+const LOCAL_PROFILE: Profile = {
+  id: 'local-user',
+  email: 'me@leily.local',
+  full_name: 'Leily Admin',
+  avatar_url: null,
+  subscription_tier: 'premium',
+  subscription_end: null,
+  credits: 9999,
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const { checkRateLimit } = useRateLimit();
   const { sendAccountCreatedEmail } = useAccountCreatedEmail();
   const { sendEmailVerificationEmail } = useEmailVerificationEmail();
   const { sendPasswordResetEmail } = usePasswordResetEmail();
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(isLocalMode ? LOCAL_USER : null);
+  const [session, setSession] = useState<Session | null>(isLocalMode ? LOCAL_SESSION : null);
+  const [profile, setProfile] = useState<Profile | null>(isLocalMode ? LOCAL_PROFILE : null);
+  const [loading, setLoading] = useState(!isLocalMode);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -55,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to handle missing profiles gracefully
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -69,27 +100,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // In local mode, everything is already set — skip Supabase auth
+    if (isLocalMode) {
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: Session | null) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
-          // Defer profile fetch to avoid blocking auth state updates
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
         } else {
           setProfile(null);
         }
-        
+
         setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -104,6 +140,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    if (isLocalMode) {
+      setUser(LOCAL_USER);
+      setSession(LOCAL_SESSION);
+      setProfile(LOCAL_PROFILE);
+      return { error: null };
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -112,15 +155,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign in error:', error);
-        
-        // Log failed authentication attempt
         await logSecurityEvent('auth_failure', 'auth_attempts', {
           email,
           error: error.message,
           timestamp: new Date().toISOString()
         });
       } else {
-        // Log successful authentication
         await logSecurityEvent('auth_success', 'auth_attempts', {
           email,
           timestamp: new Date().toISOString(),
@@ -142,12 +182,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    if (isLocalMode) {
+      return { error: null };
+    }
+
     try {
-      // Environment-aware redirect URL
-      const redirectUrl = import.meta.env.VITE_APP_URL 
+      const redirectUrl = import.meta.env.VITE_APP_URL
         ? `${import.meta.env.VITE_APP_URL}/`
         : `${window.location.origin}/`;
-      
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -160,27 +203,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Log failed registration attempt
         await logSecurityEvent('signup_failure', 'auth_attempts', {
           email,
           error: error.message,
           timestamp: new Date().toISOString()
         });
       } else {
-        // Log successful registration
         await logSecurityEvent('signup_success', 'auth_attempts', {
           email,
           timestamp: new Date().toISOString()
         });
 
-        // Send welcome email if signup was successful
         if (fullName) {
           try {
             await sendAccountCreatedEmail(email, fullName, 'kontakt@leily.no');
-            console.log('Welcome email sent successfully');
           } catch (emailError) {
             console.error('Failed to send welcome email:', emailError);
-            // Don't fail the signup if email fails
           }
         }
       }
@@ -198,8 +236,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Helper function to log security events
   const logSecurityEvent = async (action: string, table_name: string, details: Record<string, unknown>) => {
+    if (isLocalMode) return;
     try {
       await supabase
         .from('audit_log')
@@ -207,6 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           table_name,
           action,
           user_id: user?.id || null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           details: details as any
         });
     } catch (error) {
@@ -215,15 +254,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    if (isLocalMode) {
+      // In local mode, just stay logged in
+      return;
+    }
     await supabase.auth.signOut();
   };
 
   const signInWithProvider = async (provider: 'google' | 'facebook') => {
-    // Environment-aware redirect URL
-    const redirectUrl = import.meta.env.VITE_APP_URL 
+    if (isLocalMode) {
+      return { error: null };
+    }
+    const redirectUrl = import.meta.env.VITE_APP_URL
       ? `${import.meta.env.VITE_APP_URL}/`
       : `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -235,6 +280,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: new Error('No user logged in') };
+
+    if (isLocalMode) {
+      setProfile(prev => prev ? { ...prev, ...updates } as Profile : null);
+      return { error: null };
+    }
 
     const { error } = await supabase
       .from('profiles')
@@ -249,9 +299,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
+    if (isLocalMode) {
+      return { error: null };
+    }
+
     try {
-      // Environment-aware redirect URL
-      const redirectUrl = import.meta.env.VITE_APP_URL 
+      const redirectUrl = import.meta.env.VITE_APP_URL
         ? `${import.meta.env.VITE_APP_URL}/reset-password`
         : `${window.location.origin}/reset-password`;
 
@@ -260,22 +313,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Log failed password reset attempt
         await logSecurityEvent('password_reset_failure', 'auth_attempts', {
           email,
           error: error.message,
           timestamp: new Date().toISOString()
         });
       } else {
-        // Log successful password reset request
         await logSecurityEvent('password_reset_requested', 'auth_attempts', {
           email,
           timestamp: new Date().toISOString()
         });
 
-        // Send custom password reset email via Microsoft Exchange
         try {
-          // Get user profile to get full name
           const { data: profileData } = await supabase
             .from('profiles')
             .select('full_name')
@@ -283,12 +332,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           const fullName = profileData?.full_name || email.split('@')[0];
-          
           await sendPasswordResetEmail(email, fullName, redirectUrl);
-          console.log('Password reset email sent successfully');
         } catch (emailError) {
           console.error('Failed to send password reset email:', emailError);
-          // Don't fail the reset if email fails - Supabase will still send its own email
         }
       }
 
