@@ -285,12 +285,20 @@ const AdminDashboard = () => {
               Oversikt over systemet, brukere og sikkerhet
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Tilbake
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="default">
+              <Link to="/admin/finance" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Økonomi & Eiendom
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/dashboard" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Tilbake
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Tabbed Dashboard Content */}

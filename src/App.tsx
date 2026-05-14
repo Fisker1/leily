@@ -18,6 +18,7 @@ const Index = lazy(() => import("@/features/marketing/pages/Index"));
 const SimpleAuth = lazy(() => import("@/features/auth/pages/SimpleAuth"));
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
 const AdminDashboard = lazy(() => import("@/features/admin/pages/AdminDashboard"));
+const AdminFinanceDashboard = lazy(() => import("@/features/admin/pages/AdminFinanceDashboard"));
 const NotFound = lazy(() => import("@/shared/components/NotFound"));
 const Rental = lazy(() => import("@/features/rental/pages/Rental"));
 const Portfolio = lazy(() => import("@/features/rental/pages/Portfolio"));
@@ -91,6 +92,7 @@ const App = () => {
                       <Route path="/bank-report" element={<BankReport />} />
                       <Route path="/min-side" element={<MyProfile />} />
                       <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/finance" element={<AdminFinanceDashboard />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/cookies" element={<Cookies />} />
