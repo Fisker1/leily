@@ -48,7 +48,7 @@
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^3.12.0",
     "jspdf": "^4.1.0",
-    "lucide-react": "^0.462.0",
+    "lucide-react": "^1.14.0",
     "mapbox-gl": "^3.14.0",
     "next-themes": "^0.3.0",
     "react": "^19.2.6",
