@@ -23,6 +23,7 @@ import {
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AddExpenseDialog from '@/features/admin/components/AddExpenseDialog';
+import TenantDirectory from '@/features/admin/components/TenantDirectory';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -427,6 +428,7 @@ const AdminFinanceDashboard = () => {
   const [valuations, setValuations] = useState<PropertyValuation[]>([]);
   const [leases, setLeases] = useState<LeaseAgreement[]>([]);
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>('1y');
@@ -435,12 +437,13 @@ const AdminFinanceDashboard = () => {
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [propertiesRes, paymentsRes, valuationsRes, leasesRes, rentPaymentsRes] = await Promise.all([
+      const [propertiesRes, paymentsRes, valuationsRes, leasesRes, rentPaymentsRes, tenantsRes] = await Promise.all([
         localData.from('properties').select('*').order('created_at', { ascending: false }),
         localData.from('payment_records').select('*').order('created_at', { ascending: false }),
         localData.from('property_valuations').select('*').order('valuation_date', { ascending: true }),
         localData.from('lease_agreements').select('*').order('start_date', { ascending: false }),
         localData.from('rent_payments').select('*').order('due_date', { ascending: false }),
+        localData.from('tenants').select('*'),
       ]);
 
       if (propertiesRes.data) setProperties(propertiesRes.data);
@@ -448,6 +451,7 @@ const AdminFinanceDashboard = () => {
       if (valuationsRes.data) setValuations(valuationsRes.data);
       if (leasesRes.data) setLeases(leasesRes.data);
       if (rentPaymentsRes.data) setRentPayments(rentPaymentsRes.data as RentPayment[]);
+      if (tenantsRes.data) setTenants(tenantsRes.data);
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error('Feil ved henting av finansdata');
@@ -999,7 +1003,7 @@ const AdminFinanceDashboard = () => {
 
         {/* ─── Tabs ────────────────────────────────────────────────── */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-4">
+          <TabsList className="grid w-full grid-cols-8 mb-4">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
             <TabsTrigger value="rent-tracking">Husleie</TabsTrigger>
             <TabsTrigger value="expenses">Utgifter</TabsTrigger>
@@ -1007,6 +1011,7 @@ const AdminFinanceDashboard = () => {
             <TabsTrigger value="cashflow">Cashflow</TabsTrigger>
             <TabsTrigger value="pnl">Resultat</TabsTrigger>
             <TabsTrigger value="health">Helse</TabsTrigger>
+            <TabsTrigger value="tenants">Leietakere</TabsTrigger>
           </TabsList>
 
           {/* ════════════ OVERVIEW TAB ════════════ */}
@@ -2062,6 +2067,16 @@ const AdminFinanceDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ════════════ TENANTS TAB ════════════ */}
+          <TabsContent value="tenants" className="space-y-6">
+            <TenantDirectory
+              tenants={tenants}
+              leases={leases}
+              properties={properties.map(p => ({ id: p.id, address: p.address, city: p.city }))}
+              rentPayments={rentPayments}
+            />
           </TabsContent>
         </Tabs>
       </div>

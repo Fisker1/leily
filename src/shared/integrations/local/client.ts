@@ -6,6 +6,7 @@ import {
   demoReports,
   demoProfiles,
   demoRentPayments,
+  demoTenants,
 } from './demoData';
 
 type LocalResult<T = unknown> = {
@@ -50,6 +51,7 @@ const store: Record<string, unknown[]> = {
   reports: JSON.parse(JSON.stringify(demoReports)),
   profiles: JSON.parse(JSON.stringify(demoProfiles)),
   rent_payments: JSON.parse(JSON.stringify(demoRentPayments)),
+  tenants: JSON.parse(JSON.stringify(demoTenants)),
 };
 
 const getTableData = (tableName: string): unknown[] => {
