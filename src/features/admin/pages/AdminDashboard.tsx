@@ -1,17 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/shared/hooks/useUserRole';
 import { supabase } from '@/shared/integrations/supabase/client';
+import { localData } from '@/shared/integrations/local/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/shared/components/Navigation';
-import { FileText, Users, Download, Calendar, DollarSign, Shield, ArrowLeft, Scale } from 'lucide-react';
+import {
+  FileText, Users, Calendar, DollarSign, Shield, ArrowLeft,
+  Building2, TrendingUp, TrendingDown, Wallet, PieChart,
+  ArrowUpRight, ArrowDownRight, Activity,
+} from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LegalDocumentsManager } from '@/features/admin/components/LegalDocumentsManager';
+import {
+  BarChart, Bar,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart as RechartsPieChart, Pie, Cell, Legend,
+} from 'recharts';
+
+const CHART_COLORS = ['#2563eb', '#16a34a', '#dc2626', '#f59e0b', '#8b5cf6', '#06b6d4'];
 
 interface Report {
   id: string;
@@ -53,13 +66,82 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [dataCopyLoading, setDataCopyLoading] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchReports();
       fetchStats();
+      fetchFinanceData();
     }
   }, [isAdmin, roleLoading]);
+
+  const fetchFinanceData = async () => {
+    try {
+      const [propRes, expRes] = await Promise.all([
+        localData.from('properties').select('*'),
+        localData.from('payment_records').select('*'),
+      ]);
+      if (propRes.data) setProperties(propRes.data as any[]);
+      if (expRes.data) setExpenses(expRes.data as any[]);
+    } catch (e) {
+      console.error('Error fetching finance data:', e);
+    }
+  };
+
+  // ─── Computed portfolio summary ─────────────────────────────────────
+  const portfolioSummary = useMemo(() => {
+    const totalValue = properties.reduce((s: number, p: any) => s + (p.current_value || 0), 0);
+    const totalPurchase = properties.reduce((s: number, p: any) => s + (p.purchase_price || 0), 0);
+    const totalAppreciation = totalValue - totalPurchase;
+    const appreciationPct = totalPurchase > 0 ? (totalAppreciation / totalPurchase) * 100 : 0;
+    const totalLoan = properties.reduce((s: number, p: any) => s + (p.loan_amount || 0), 0);
+    const totalEquity = totalValue - totalLoan;
+    const totalMonthlyRent = properties.filter((p: any) => !p.primary_residence).reduce((s: number, p: any) => s + (p.monthly_rent || 0), 0);
+    const ltv = totalValue > 0 ? (totalLoan / totalValue) * 100 : 0;
+
+    // Expenses last 12 months
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+    const recentExpenses = expenses.filter((e: any) => e.payment_status === 'completed' && new Date(e.created_at) >= oneYearAgo);
+    const totalExpenses12m = recentExpenses.reduce((s: number, e: any) => s + e.amount, 0);
+    const monthlyAvgExpense = totalExpenses12m / 12;
+
+    // Expenses by category
+    const byCategory: Record<string, number> = {};
+    recentExpenses.forEach((e: any) => {
+      byCategory[e.payment_type] = (byCategory[e.payment_type] || 0) + e.amount;
+    });
+    const expenseCategories = Object.entries(byCategory)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+    // Expenses by month (last 6 months)
+    const expensesByMonth: Array<{ month: string; amount: number }> = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toISOString().substring(0, 7);
+      const label = d.toLocaleDateString('no-NO', { month: 'short' });
+      const monthExpenses = recentExpenses.filter((e: any) => e.created_at.substring(0, 7) === key);
+      expensesByMonth.push({ month: label, amount: monthExpenses.reduce((s: number, e: any) => s + e.amount, 0) });
+    }
+
+    // Property value breakdown
+    const propertyValues = properties.map((p: any) => ({
+      name: p.address?.split(' ').slice(0, 2).join(' ') || 'Ukjent',
+      value: p.current_value || 0,
+    }));
+
+    return {
+      totalValue, totalPurchase, totalAppreciation, appreciationPct,
+      totalLoan, totalEquity, totalMonthlyRent, ltv,
+      totalExpenses12m, monthlyAvgExpense,
+      expenseCategories, expensesByMonth, propertyValues,
+      propertyCount: properties.length,
+      rentalCount: properties.filter((p: any) => !p.primary_residence && (p.monthly_rent || 0) > 0).length,
+    };
+  }, [properties, expenses]);
 
   // Redirect non-admins - security boundary
   if (!roleLoading && !isAdmin) {
@@ -365,6 +447,206 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
             </div>
+
+            {/* ─── Real Estate & Expense Summary ──────────────────────── */}
+            {properties.length > 0 && (
+              <>
+                {/* Portfolio KPI row */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Porteføljeverdi</CardTitle>
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(portfolioSummary.totalValue)}</div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        {portfolioSummary.totalAppreciation >= 0 ? (
+                          <ArrowUpRight className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className={portfolioSummary.totalAppreciation >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {portfolioSummary.appreciationPct >= 0 ? '+' : ''}{portfolioSummary.appreciationPct.toFixed(1)}%
+                        </span>
+                        <span>siden kjøp</span>
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Egenkapital</CardTitle>
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(portfolioSummary.totalEquity)}</div>
+                      <p className="text-xs text-muted-foreground">
+                        LTV: {portfolioSummary.ltv.toFixed(0)}%
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-amber-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Leieinntekter/mnd</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(portfolioSummary.totalMonthlyRent)}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {portfolioSummary.rentalCount} utleieenheter
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-red-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Utgifter (12 mnd)</CardTitle>
+                      <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(portfolioSummary.totalExpenses12m)}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Snitt {formatCurrency(portfolioSummary.monthlyAvgExpense)}/mnd
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Charts row */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* Property Value Breakdown */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-blue-500" />
+                        Eiendomsverdi fordeling
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={220}>
+                        <RechartsPieChart>
+                          <Pie
+                            data={portfolioSummary.propertyValues}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            label={({ name, percent }: any) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
+                          >
+                            {portfolioSummary.propertyValues.map((_: any, i: number) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => [formatCurrency(value), 'Verdi']} />
+                          <Legend />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Expense trend (last 6 months) */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-amber-500" />
+                        Utgifter siste 6 måneder
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={portfolioSummary.expensesByMonth}>
+                          <XAxis dataKey="month" fontSize={12} tickLine={false} />
+                          <YAxis hide />
+                          <Tooltip formatter={(value: number) => [formatCurrency(value), 'Utgifter']} />
+                          <Bar dataKey="amount" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Expense categories + LTV Progress */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <PieChart className="h-4 w-4 text-purple-500" />
+                        Utgifter etter kategori (12 mnd)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {portfolioSummary.expenseCategories.slice(0, 6).map((cat: any, i: number) => (
+                          <div key={cat.name} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">{cat.name}</span>
+                              <span className="font-medium">{formatCurrency(cat.value)}</span>
+                            </div>
+                            <Progress
+                              value={(cat.value / (portfolioSummary.expenseCategories[0]?.value || 1)) * 100}
+                              className="h-2"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500" />
+                        Portefølje helseoversikt
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Belåningsgrad (LTV)</span>
+                            <span className="font-medium">{portfolioSummary.ltv.toFixed(1)}%</span>
+                          </div>
+                          <Progress value={portfolioSummary.ltv} className="h-2" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="p-3 bg-muted/40 rounded-lg">
+                            <p className="text-muted-foreground">Eiendommer</p>
+                            <p className="text-lg font-semibold">{portfolioSummary.propertyCount}</p>
+                          </div>
+                          <div className="p-3 bg-muted/40 rounded-lg">
+                            <p className="text-muted-foreground">Utleie</p>
+                            <p className="text-lg font-semibold">{portfolioSummary.rentalCount}</p>
+                          </div>
+                          <div className="p-3 bg-muted/40 rounded-lg">
+                            <p className="text-muted-foreground">Total lån</p>
+                            <p className="text-lg font-semibold">{formatCurrency(portfolioSummary.totalLoan)}</p>
+                          </div>
+                          <div className="p-3 bg-muted/40 rounded-lg">
+                            <p className="text-muted-foreground">Verdistigning</p>
+                            <p className={`text-lg font-semibold ${portfolioSummary.totalAppreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(portfolioSummary.totalAppreciation)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="flex justify-center">
+                  <Button asChild variant="outline" size="lg">
+                    <Link to="/admin/finance" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Se fullstendig finansoversikt
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
 
             {/* Reports Table */}
         <Card>

@@ -24,6 +24,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import AddExpenseDialog from '@/features/admin/components/AddExpenseDialog';
 import TenantDirectory from '@/features/admin/components/TenantDirectory';
+import DepositAccountManager from '@/features/admin/components/DepositAccountManager';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1003,9 +1004,10 @@ const AdminFinanceDashboard = () => {
 
         {/* ─── Tabs ────────────────────────────────────────────────── */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-4">
+          <TabsList className="grid w-full grid-cols-9 mb-4">
             <TabsTrigger value="overview">Oversikt</TabsTrigger>
             <TabsTrigger value="rent-tracking">Husleie</TabsTrigger>
+            <TabsTrigger value="deposits">Depositum</TabsTrigger>
             <TabsTrigger value="expenses">Utgifter</TabsTrigger>
             <TabsTrigger value="properties">Eiendommer</TabsTrigger>
             <TabsTrigger value="cashflow">Cashflow</TabsTrigger>
@@ -2067,6 +2069,22 @@ const AdminFinanceDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ════════════ DEPOSITS TAB ════════════ */}
+          <TabsContent value="deposits" className="space-y-6">
+            <DepositAccountManager
+              leases={leases.map(l => ({
+                id: l.id,
+                property_id: l.property_id,
+                tenant_name: (l as any).tenant_name,
+                deposit_amount: l.deposit_amount,
+                status: l.status,
+                start_date: l.start_date,
+                end_date: l.end_date,
+              }))}
+              properties={properties.map(p => ({ id: p.id, address: p.address }))}
+            />
           </TabsContent>
 
           {/* ════════════ TENANTS TAB ════════════ */}
